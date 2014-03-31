@@ -66,14 +66,13 @@ class Store:
     
     return region
     
-  def sparse_slice(self, dataset_id, axis_selections):
+  def slice(self, dataset_id, axis_selections, target):
     hdf5_path = self.get_hdf5_path(dataset_id)
     
     with self.hdf5_open(hdf5_path) as f:
       data = f['data']
-      rows = []
       for src_index, dest_index in _gen_index_mapping(axis_selections):
-        rows.append(list(src_index) + [data[src_index]]) 
+        target.update(src_index, data[src_index])
     
     return rows
 

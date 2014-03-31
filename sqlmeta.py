@@ -13,6 +13,7 @@ import numpy as np
 import h5py
 import time
 from contextlib import contextmanager
+import math
 
 DatasetSummary = namedtuple("DatasetSummary", ["id", "name", "created_timestamp", "description", "dataset_id", "created_by", "hdf5_path"])
 
@@ -39,16 +40,27 @@ class MetaDb:
     raise
     
   def get_dataset_by_id(self, dataset_id):
-    self.db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id")
+    self.db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id where v.dataset_id = ?", [dataset_id])
     row = self.db.fetchone()
     if row == None:
       return None
     return DatasetSummary(*row)
     
-  def get_dataset_by_name(self, dataset_name, version=None):
-    raise
-    #self.db.execute("select v.data_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name from named_data n join data_version v on n.named_data_id = v.named_data_id join user u on u.user_id = v.created_by_user_id where ")
-    #return DatasetSummary(*x) for x in self.db.fetch()
+  def get_dataset_id_by_name(self, dataset_name, version=None):
+    query = "select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id WHERE n.name = ? "
+    params = [dataset_name]
+    if version == None or version == '':
+      query += "AND n.latest_version = v.version"
+    else:
+      query += "AND v.version = ?"
+      params.append(version)
+      
+    self.db.execute(query, params)
+    row = self.db.fetchone()
+    if row == None:
+      return None
+    else:
+      return row[0]
 
   def list_names(self):
     self.db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id")
@@ -109,10 +121,48 @@ class Hdf5Fs:
     print "openning %s" % hdf5_path
     return open_hdf5_ctx_mgr(hdf5_path)
 
-class ImportService:
+class ConvertService:
   def __init__(self, hdf5fs):
     self.hdf5fs = hdf5fs
   
+  def hdf5_to_csv(self, hdf5_path, destination_file, delimiter=","):
+    f = h5py.File(hdf5_path, "r")
+    fd_out = open(destination_file, "w")
+    w = csv.writer(fd_out, delimiter=delimiter)
+
+    data = f['data']
+
+    row_header = f['dim_0']
+    col_header = f['dim_1']
+
+    row_count = row_header.shape[0]
+    col_count = col_header.shape[0]
+    for col_i in xrange(col_count):
+      for row_i in xrange(row_count):
+        element = data[row_i,col_i]
+        if not math.isnan(element):
+          w.writerow([row_header[row_i], col_header[col_i], element])
+    fd_out.close()
+    f.close()
+    
+  def hdf5_to_tabular_csv(self, hdf5_path, destination_file, delimiter=","):
+    f = h5py.File(hdf5_path, "r")
+    fd_out = open(destination_file, "w")
+    w = csv.writer(fd_out, delimiter=delimiter)
+
+    data = f['data']
+
+    row_header = f['dim_0']
+    col_header = f['dim_1']
+    
+    w.writerow(col_header)
+    row_count = row_header.shape[0]
+    for i in xrange(row_count):
+      row = data[i,:]
+      w.writerow([row_header[i]] + list(row))
+    fd_out.close()
+    f.close()
+
   def convert_2d_csv_to_hdf5(self, input_file, col_axis, row_axis):
     dataset_id, hdf5_path = self.hdf5fs.create_new_dataset_id()
     
@@ -125,7 +175,8 @@ class ImportService:
       for row in r:
         row_header.append(row[0])
         rows.append(row[1:])
-    data = np.zeros((len(rows), len(rows[0])),'f')
+    data = np.empty((len(rows), len(rows[0])),'d')
+    data[:] = np.nan
     for row_i, row in enumerate(rows):
       for col_i, value in enumerate(row):
         data[row_i, col_i] = value

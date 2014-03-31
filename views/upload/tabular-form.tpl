@@ -2,31 +2,40 @@
 {% block title %}Upload Tabular File{% endblock %}
 {% block content %}
 
-  <h1>Upload CSV</h1>
+  <h1>Upload CSV as a new
+    {% if new_version %} 
+      Version of an existing Dataset
+    {% else %}
+      Dataset
+    {% endif %}
+  </h1>
 
   <form class="form-horizontal" role="form" method="post" action="/upload/tabular" enctype="multipart/form-data">
+    {% if new_version %} 
+      <input type="hidden" name="overwrite_existing" value="true">
+    {% endif %}
     <div class="form-group">
       <label for="inputName" class="col-sm-2 control-label">Dataset Name</label>
       <div class="col-sm-10">
-        <input type="text" class="form-control" id="inputName" placeholder="Name" name="name">
+        <input type="text" {% if new_version %} disabled value="{{name}}" {% endif %} class="form-control" id="inputName" placeholder="Name" name="name">
       </div>
     </div>
     <div class="form-group">
       <label for="inputColumnValues" class="col-sm-2 control-label">Columns represent</label>
       <div class="col-sm-10">
-        <input type="text" class="form-control" id="inputColumnValues" placeholder="Description" name="columns">
+        <input type="text" class="form-control" id="inputColumnValues" placeholder="Description" name="columns" value="{{columns}}">
       </div>
     </div>
     <div class="form-group">
       <label for="inputRowValues" class="col-sm-2 control-label">Rows represent</label>
       <div class="col-sm-10">
-        <input type="text" class="form-control" id="inputRowValues" placeholder="Description" name="rows">
+        <input type="text" class="form-control" id="inputRowValues" placeholder="Description" name="rows" value="{{rows}}">
       </div>
     </div>
     <div class="form-group">
       <label for="inputDescription" class="col-sm-2 control-label">Description</label>
       <div class="col-sm-10">
-        <textarea id="inputDescription" class="form-control" rows="3" name="description"></textarea>
+        <textarea id="inputDescription" class="form-control" rows="3" name="description">{{description}}</textarea>
       </div>
     </div>
     <div class="form-group">
