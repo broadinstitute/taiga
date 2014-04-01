@@ -20,17 +20,18 @@ def dataset_show(dataset_id):
   meta_store = app().meta_store
   hdf5_store = app().hdf5_store
   meta = meta_store.get_dataset_by_id(dataset_id)
+  versions = meta_store.get_dataset_versions(meta.name)
   dims = hdf5_store.get_dimensions(meta.hdf5_path)
-  return {"meta": meta, "dims":dims}
+  return {"meta": meta, "dims":dims, "versions": versions}
 
 @route("/upload/tabular-form")
 @view("upload/tabular-form")
 def upload_tabular_form():
   params = {}
   meta_store = app().meta_store
-  existing_dsid = forms['dataset_id']
-  if existing_dsid != None:
-    ds = meta_store.get_dataset_by_id(dataset_id)
+  if 'dataset_id' in request.forms:
+    existing_dsid = request.forms['dataset_id']
+    ds = meta_store.get_dataset_by_id(existing_dsid)
     params["new_version"] = "true"
     params["name"] = ds.name
     params["description"] = ds.description

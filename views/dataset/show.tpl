@@ -8,7 +8,13 @@
 {% block content %}
   <a href="/">Home</a>
   <h1>Name: {{ meta.name }}</h1>
-  <p> Created by {{ meta.created_by }}</p>
+  <p> Created by {{ meta.created_by }} on {{ meta.created_timestamp }}</p> 
+  <p> Version {{ meta.version }}</p>
+  <p> Versions: 
+    {% for version in versions %} 
+      <a href="/dataset/show/{{ version.dataset_id }}">v{{ version.version }}</a>
+    {% endfor %}
+  </p>
   <p> Download as 
     {{ download_link('hdf5') }} | 
     {{ download_link('tabular_csv') }} | 

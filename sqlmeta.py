@@ -14,8 +14,9 @@ import h5py
 import time
 from contextlib import contextmanager
 import math
+import time
 
-DatasetSummary = namedtuple("DatasetSummary", ["id", "name", "created_timestamp", "description", "dataset_id", "created_by", "hdf5_path"])
+DatasetSummary = namedtuple("DatasetSummary", ["id", "name", "created_timestamp", "description", "dataset_id", "created_by", "hdf5_path", "version"])
 
 # named_data(named_data_id, name, latest_version)
 # data_version(data_id, named_data_id, version_id, description, created_date, created_by_user_id)
@@ -37,15 +38,19 @@ class MetaDb:
         self.db.execute(stmt)
 
   def get_dataset_versions(self, dataset_name):
-    raise
+    self.db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id where n.name = ? order by v.version", (dataset_name,))
+    return [self.get_dataset_by_id(x[0]) for x in self.db.fetchall()]
     
   def get_dataset_by_id(self, dataset_id):
-    self.db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id where v.dataset_id = ?", [dataset_id])
+    self.db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path, v.version from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id where v.dataset_id = ?", [dataset_id])
     row = self.db.fetchone()
     if row == None:
       return None
+    # convert created_timestamp to a string
+    row = list(row)
+    row[2] = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.localtime(row[2]))
     return DatasetSummary(*row)
-    
+  
   def get_dataset_id_by_name(self, dataset_name, version=None):
     query = "select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id WHERE n.name = ? "
     params = [dataset_name]
@@ -63,14 +68,14 @@ class MetaDb:
       return row[0]
 
   def list_names(self):
-    self.db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id")
-    return [DatasetSummary(*x) for x in self.db.fetchall()]
+    self.db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id AND n.latest_version = v.version")
+    return [self.get_dataset_by_id(x[0]) for x in self.db.fetchall()]
 
   def register_dataset(self, name, dataset_id, description, created_by_user_id, hdf5_path, name_exists=False):
     if not name_exists:
       self.db.execute("insert into named_data (name, latest_version) values (?, 0)", [name])
       named_data_id = self.db.lastrowid
-      next_version = 0
+      next_version = 1
     else:
       named_data_id = self.db.execute("select named_data_id from named_data where name = ?", [name])
       self.db.execute("select max(version) from named_data where named_data_id = ?", [named_data_id])
@@ -179,7 +184,11 @@ class ConvertService:
     data[:] = np.nan
     for row_i, row in enumerate(rows):
       for col_i, value in enumerate(row):
-        data[row_i, col_i] = value
+        if value == "NA":
+          parsed_value = np.nan
+        else:
+          parsed_value = float(value)
+        data[row_i, col_i] = parsed_value
 
     f = h5py.File(hdf5_path, "w")
     str_dt = h5py.special_dtype(vlen=bytes)
