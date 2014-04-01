@@ -126,6 +126,12 @@ class Hdf5Fs:
     print "openning %s" % hdf5_path
     return open_hdf5_ctx_mgr(hdf5_path)
 
+def to_string_with_nan_mask(x):
+  if math.isnan(x):
+    return "NA"
+  else:
+    return str(x)
+
 class ConvertService:
   def __init__(self, hdf5fs):
     self.hdf5fs = hdf5fs
@@ -164,7 +170,7 @@ class ConvertService:
     row_count = row_header.shape[0]
     for i in xrange(row_count):
       row = data[i,:]
-      w.writerow([row_header[i]] + list(row))
+      w.writerow([row_header[i]] + [to_string_with_nan_mask(x) for x in row])
     fd_out.close()
     f.close()
 
