@@ -48,7 +48,7 @@ class MetaDb:
       return None
     # convert created_timestamp to a string
     row = list(row)
-    row[2] = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.localtime(row[2]))
+    row[2] = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(row[2]))
     return DatasetSummary(*row)
   
   def get_dataset_id_by_name(self, dataset_name, version=None):
