@@ -22,7 +22,10 @@
     {{ download_link('csv') }} | 
     {{ download_link('tsv') }}</p>
   <p> <a href="/upload/tabular-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
-  <p> Description: {{ meta.description }} </p>
+  <p> Description: </p>
+  <p>
+    <a href="#" class="x-editable-class" data-name="description" data-type="textarea" data-pk="{{ dataset_id }}" data-url="/dataset/update" data-title="Enter description">{{ meta.description }}</a>
+  </p>
   
   <h2>Dimensions</h2>
   
@@ -45,4 +48,13 @@
       {% endfor %}
     </tbody>
   </table>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $.fn.editable.defaults.mode = 'inline';
+  $(document).ready(function() {
+      $('.x-editable-class').editable();
+  });
+</script>
 {% endblock %}

@@ -41,6 +41,9 @@ class MetaDb:
     self.db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id where n.name = ? order by v.version", (dataset_name,))
     return [self.get_dataset_by_id(x[0]) for x in self.db.fetchall()]
     
+  def update_description(self, dataset_id, description):
+    self.db.execute("update data_version set description = ? where dataset_id = ?", (description, dataset_id))
+    
   def get_dataset_by_id(self, dataset_id):
     self.db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path, v.version from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id where v.dataset_id = ?", [dataset_id])
     row = self.db.fetchone()

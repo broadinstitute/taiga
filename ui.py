@@ -24,6 +24,14 @@ def dataset_show(dataset_id):
   dims = hdf5_store.get_dimensions(meta.hdf5_path)
   return {"meta": meta, "dims":dims, "versions": versions}
 
+@route("/dataset/update")
+def dataset_update():
+  meta_store = app().meta_store
+  j = request.json
+  assert j['name'] == "description"
+  meta_store.update_description(j['pk'], j['value'])
+  return ""
+
 @route("/upload/tabular-form")
 @view("upload/tabular-form")
 def upload_tabular_form():
