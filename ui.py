@@ -86,11 +86,17 @@ def list_datasets():
 
 @route("/rest/v0/namedDataset")
 def get_dataset_by_name():
+  fetch = request.query.fetch
   name = request.query.name
   version = request.query.version
   meta_store = app().meta_store
   dataset_id = meta_store.get_dataset_id_by_name(name, version)
-  return get_dataset(dataset_id)
+  if fetch == "content":
+    return get_dataset(dataset_id)
+  elif fetch == "id":
+    return dataset_id
+  else:
+      abort(400, "Invalid value for fetch: %s" % fetch)
 
 # define a common interface which can be used to create a view on multiple sources
 # should we make it numpy like?  I suppose so.  So, we'd support "shape" and indexing,
