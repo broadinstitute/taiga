@@ -37,8 +37,8 @@ def dataset_update():
 def upload_tabular_form():
   params = {}
   meta_store = app().meta_store
-  if 'dataset_id' in request.forms:
-    existing_dsid = request.forms['dataset_id']
+  if 'dataset_id' in request.query:
+    existing_dsid = request.query['dataset_id']
     ds = meta_store.get_dataset_by_id(existing_dsid)
     params["new_version"] = "true"
     params["name"] = ds.name

@@ -13,11 +13,17 @@
   <form class="form-horizontal" role="form" method="post" action="/upload/tabular" enctype="multipart/form-data">
     {% if new_version %} 
       <input type="hidden" name="overwrite_existing" value="true">
+      <input type="hidden" name="name" value="{{name}}">
+      <input type="hidden" name="overwrite_existing" value="true">
     {% endif %}
     <div class="form-group">
       <label for="inputName" class="col-sm-2 control-label">Dataset Name</label>
       <div class="col-sm-10">
-        <input type="text" {% if new_version %} disabled value="{{name}}" {% endif %} class="form-control" id="inputName" placeholder="Name" name="name">
+        {% if new_version %}
+          <input type="text" disabled value="{{name}}" class="form-control" id="inputName" placeholder="Name">
+        {% else %}
+          <input type="text" class="form-control" id="inputName" placeholder="Name" name="name">
+        {% endif %}
       </div>
     </div>
     <div class="form-group">

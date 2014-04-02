@@ -76,18 +76,21 @@ class MetaDb:
 
   def register_dataset(self, name, dataset_id, description, created_by_user_id, hdf5_path, name_exists=False):
     if not name_exists:
-      self.db.execute("insert into named_data (name, latest_version) values (?, 0)", [name])
-      named_data_id = self.db.lastrowid
       next_version = 1
+      self.db.execute("insert into named_data (name, latest_version) values (?, ?)", [name, next_version])
+      named_data_id = self.db.lastrowid
     else:
-      named_data_id = self.db.execute("select named_data_id from named_data where name = ?", [name])
-      self.db.execute("select max(version) from named_data where named_data_id = ?", [named_data_id])
-      next_version = self.fetch()[0] + 1
+      self.db.execute("select named_data_id from named_data where name = ?", [name])
+      named_data_id = self.db.fetchone()[0]
+      print "found %s, looking for %s" % (named_data_id, repr(name))
+      self.db.execute("select max(version) from data_version where named_data_id = ?", [named_data_id])
+      max_version = self.db.fetchone()[0]
+      next_version = max_version + 1
       
     self.db.execute("insert into data_version (dataset_id, named_data_id, version, description, created_by_user_id, created_timestamp, hdf5_path) values (?, ?, ?, ?, ?, ?, ?)", 
        [dataset_id, named_data_id, next_version, description, created_by_user_id, time.time(), hdf5_path])
 
-    if next_version != 0:
+    if next_version != 1:
       self.db.execute("update named_data set latest_version = ? where named_data_id = ?", [next_version, named_data_id])
       
     self.connection.commit()
