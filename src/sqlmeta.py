@@ -82,7 +82,6 @@ class MetaDb:
     else:
       self.db.execute("select named_data_id from named_data where name = ?", [name])
       named_data_id = self.db.fetchone()[0]
-      print "found %s, looking for %s" % (named_data_id, repr(name))
       self.db.execute("select max(version) from data_version where named_data_id = ?", [named_data_id])
       max_version = self.db.fetchone()[0]
       next_version = max_version + 1
@@ -96,7 +95,7 @@ class MetaDb:
     self.connection.commit()
 
   def close(self):
-    self.cursor.close()
+    self.db.close()
     self.connection.close()
 
 @contextmanager
