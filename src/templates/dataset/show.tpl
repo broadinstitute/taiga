@@ -27,7 +27,7 @@
   <p> <a href="/upload/tabular-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
   <p> Description: </p>
   <p>
-    <a href="#" class="x-editable-class" data-name="description" data-type="textarea" data-pk="{{ dataset_id }}" data-url="/dataset/update" data-title="Enter description">{{ meta.description }}</a>
+    <a href="#" class="x-editable-class" data-name="description" data-type="textarea" data-pk="{{ meta.dataset_id }}" data-url="/dataset/update" data-title="Enter description">{{ meta.description }}</a>
   </p>
   
   <h2>Dimensions</h2>

@@ -1,42 +1,52 @@
-from bottle import route, run, auth_basic, post, redirect, install, request, response, app, static_file
-from bottle import jinja2_view as view, jinja2_template as template
+from flask import Flask, render_template
+app = Flask(__name__)
+
 from collections import namedtuple
 from tempfile import NamedTemporaryFile
 import sqlmeta
+import convert
 
-@route("/")
+def view(template_name):
+  full_template_name = template_name + ".tpl"
+  def decorator(func):
+    def wrapped(*args, **kwargs):
+      template_param = func(*args, **kwargs)
+      return render_template(full_template_name, **template_param)
+    wrapped.__name__ = func.__name__
+    return wrapped
+  return decorator
+
+@app.route("/")
 @view("index")
 def index():
-  meta_store = app().meta_store
+  meta_store = app.meta_store
+  print "returning dict"
   return {'datasets': meta_store.list_names()}
+  
 
-#@route("/dataset/list")
-#@view("dataset/list")
-#def dataset_list():
-
-@route("/dataset/show/<dataset_id>")
+@app.route("/dataset/show/<dataset_id>")
 @view("dataset/show")
 def dataset_show(dataset_id):
-  meta_store = app().meta_store
-  hdf5_store = app().hdf5_store
+  meta_store = app.meta_store
+  hdf5_store = app.hdf5_store
   meta = meta_store.get_dataset_by_id(dataset_id)
   versions = meta_store.get_dataset_versions(meta.name)
   dims = hdf5_store.get_dimensions(meta.hdf5_path)
   return {"meta": meta, "dims":dims, "versions": versions}
 
-@route("/dataset/update")
+@app.route("/dataset/update", methods=["POST"])
 def dataset_update():
-  meta_store = app().meta_store
-  j = request.json
+  meta_store = app.meta_store
+  j = request.forms
   assert j['name'] == "description"
   meta_store.update_description(j['pk'], j['value'])
   return ""
 
-@route("/upload/tabular-form")
+@app.route("/upload/tabular-form")
 @view("upload/tabular-form")
 def upload_tabular_form():
   params = {}
-  meta_store = app().meta_store
+  meta_store = app.meta_store
   if 'dataset_id' in request.query:
     existing_dsid = request.query['dataset_id']
     ds = meta_store.get_dataset_by_id(existing_dsid)
@@ -49,7 +59,7 @@ def upload_tabular_form():
 def redirect_with_success(msg, url):
   redirect(url)
 
-@route("/upload/tabular", method="POST")
+@app.route("/upload/tabular", methods=["POST"])
 def upload():
   forms = request.forms
 
@@ -70,26 +80,26 @@ def upload():
     
     # convert file
     dataset_id, hdf5_path = app().import_service.convert_2d_csv_to_hdf5(temp_file, columns, rows)
-    app().meta_store.register_dataset(name, dataset_id, description, created_by_user_id, hdf5_path, is_new_version)
+    app.meta_store.register_dataset(name, dataset_id, description, created_by_user_id, hdf5_path, is_new_version)
     
   redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
 
-@route("/rest/v0/datasets")
+@app.route("/rest/v0/datasets")
 def list_datasets():
   # http://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api#pagination
   # if using pagination add header:
   # Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next", <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
   # X-Total-Count
   """ Returns a json result with properties name, description, latest_date, version_count"""
-  meta_store = app().meta_store
+  meta_store = app.meta_store
   return {'datasets': meta_store.list_names()}
 
-@route("/rest/v0/namedDataset")
+@app.route("/rest/v0/namedDataset")
 def get_dataset_by_name():
   fetch = request.query.fetch
   name = request.query.name
   version = request.query.version
-  meta_store = app().meta_store
+  meta_store = app.meta_store
   dataset_id = meta_store.get_dataset_id_by_name(name, version)
   if fetch == "content":
     return get_dataset(dataset_id)
@@ -109,7 +119,7 @@ class SourceMatrix:
   def enumerate_coordinates(self):
     pass
 
-@route("/rest/v0/datasets/<dataset_id>")
+@app.route("/rest/v0/datasets/<dataset_id>")
 def get_dataset(dataset_id):
   """ Write dataset in the response.  Options: 
     format=tabular_csv|tabular_tsv|csv|tsv|hdf5
@@ -121,7 +131,7 @@ def get_dataset(dataset_id):
   temp_file = temp_fd.name
   
   format = request.query.format
-  meta_store = app().meta_store
+  meta_store = app.meta_store
   import_service = app().import_service
   # TODO: rework this so we can clean up temp files
   hdf5_path = meta_store.get_dataset_by_id(dataset_id).hdf5_path
@@ -147,8 +157,8 @@ def get_dataset(dataset_id):
 #  os.unlink(temp_file)
 
 if __name__ == "__main__":
-  app().meta_store = sqlmeta.MetaDb("build/v2.sqlite3")
-  app().hdf5_store = sqlmeta.Hdf5Fs("build")
-  app().import_service = sqlmeta.ConvertService(app().hdf5_store)
-  run(host='0.0.0.0', port=8999, debug=True)
+  app.meta_store = sqlmeta.MetaDb("build/v2.sqlite3")
+  app.hdf5_store = sqlmeta.Hdf5Fs("build")
+  app.import_service = convert.ConvertService(app.hdf5_store)
+  app.run(host='0.0.0.0', port=8999, debug=True)
 
