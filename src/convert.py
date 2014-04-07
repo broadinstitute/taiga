@@ -6,7 +6,7 @@ def to_string_with_nan_mask(x):
   else:
     return str(x)
 
-class ConvertService:
+class ConvertService(object):
   def __init__(self, hdf5fs):
     self.hdf5fs = hdf5fs
   

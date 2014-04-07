@@ -1,10 +1,15 @@
-from flask import Flask, render_template
-app = Flask(__name__)
+from flask import Flask, render_template, request
+from flask import Blueprint, abort
 
 from collections import namedtuple
 from tempfile import NamedTemporaryFile
 import sqlmeta
+from sqlmeta import MetaStore, Hdf5Store
+from convert import ConvertService
 import convert
+
+import flask_injector
+from injector import inject, Injector
 
 def view(template_name):
   full_template_name = template_name + ".tpl"
@@ -16,37 +21,40 @@ def view(template_name):
     return wrapped
   return decorator
 
-@app.route("/")
-@view("index")
-def index():
-  meta_store = app.meta_store
+ui = Blueprint('ui', __name__, template_folder='templates')
+rest = Blueprint('rest', __name__, template_folder='templates')
+
+@ui.route("/")
+#@view("index")
+@inject(meta_store=MetaStore)
+def index(meta_store):
   print "returning dict"
-  return {'datasets': meta_store.list_names()}
+  x = {'datasets': meta_store.list_names()}
+  return render_template("index.tpl", **x)
   
 
-@app.route("/dataset/show/<dataset_id>")
+@ui.route("/dataset/show/<dataset_id>")
 @view("dataset/show")
-def dataset_show(dataset_id):
-  meta_store = app.meta_store
-  hdf5_store = app.hdf5_store
+@inject(meta_store=MetaStore, hdf5_store=Hdf5Store)
+def dataset_show(meta_store, hdf5_store, dataset_id):
   meta = meta_store.get_dataset_by_id(dataset_id)
   versions = meta_store.get_dataset_versions(meta.name)
   dims = hdf5_store.get_dimensions(meta.hdf5_path)
   return {"meta": meta, "dims":dims, "versions": versions}
 
-@app.route("/dataset/update", methods=["POST"])
-def dataset_update():
-  meta_store = app.meta_store
-  j = request.forms
+@ui.route("/dataset/update", methods=["POST"])
+@inject(meta_store=MetaStore)
+def dataset_update(meta_store):
+  j = request.form
   assert j['name'] == "description"
   meta_store.update_description(j['pk'], j['value'])
   return ""
 
-@app.route("/upload/tabular-form")
+@ui.route("/upload/tabular-form")
 @view("upload/tabular-form")
-def upload_tabular_form():
+@inject(meta_store=MetaStore)
+def upload_tabular_form(meta_store):
   params = {}
-  meta_store = app.meta_store
   if 'dataset_id' in request.query:
     existing_dsid = request.query['dataset_id']
     ds = meta_store.get_dataset_by_id(existing_dsid)
@@ -59,9 +67,10 @@ def upload_tabular_form():
 def redirect_with_success(msg, url):
   redirect(url)
 
-@app.route("/upload/tabular", methods=["POST"])
-def upload():
-  forms = request.forms
+@ui.route("/upload/tabular", methods=["POST"])
+@inject(meta_store=MetaStore, import_service=ConvertService)
+def upload(import_service, meta_store):
+  forms = request.form
 
   uploaded_file = request.files.get('file')
   columns = forms.get('columns')
@@ -79,27 +88,27 @@ def upload():
     uploaded_file.save(temp_file, overwrite=True)
     
     # convert file
-    dataset_id, hdf5_path = app().import_service.convert_2d_csv_to_hdf5(temp_file, columns, rows)
-    app.meta_store.register_dataset(name, dataset_id, description, created_by_user_id, hdf5_path, is_new_version)
+    dataset_id, hdf5_path = import_service.convert_2d_csv_to_hdf5(temp_file, columns, rows)
+    meta_store.register_dataset(name, dataset_id, description, created_by_user_id, hdf5_path, is_new_version)
     
   redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
 
-@app.route("/rest/v0/datasets")
-def list_datasets():
+@rest.route("/rest/v0/datasets")
+@inject(meta_store=MetaStore)
+def list_datasets(meta_store):
   # http://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api#pagination
   # if using pagination add header:
   # Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next", <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
   # X-Total-Count
   """ Returns a json result with properties name, description, latest_date, version_count"""
-  meta_store = app.meta_store
   return {'datasets': meta_store.list_names()}
 
-@app.route("/rest/v0/namedDataset")
-def get_dataset_by_name():
+@rest.route("/rest/v0/namedDataset")
+@inject(meta_store=MetaStore)
+def get_dataset_by_name(meta_store):
   fetch = request.query.fetch
   name = request.query.name
   version = request.query.version
-  meta_store = app.meta_store
   dataset_id = meta_store.get_dataset_id_by_name(name, version)
   if fetch == "content":
     return get_dataset(dataset_id)
@@ -108,19 +117,9 @@ def get_dataset_by_name():
   else:
       abort(400, "Invalid value for fetch: %s" % fetch)
 
-# define a common interface which can be used to create a view on multiple sources
-# should we make it numpy like?  I suppose so.  So, we'd support "shape" and indexing,
-# but not "fancy" indexing, and add a generator for enumerating non-nan elements
-class SourceMatrix:
-  def __init__(self, keys, dimensions):
-    pass
-  def get_selection_dimensions(self):
-    pass
-  def enumerate_coordinates(self):
-    pass
-
-@app.route("/rest/v0/datasets/<dataset_id>")
-def get_dataset(dataset_id):
+@rest.route("/rest/v0/datasets/<dataset_id>")
+@inject(meta_store=MetaStore, import_service=ConvertService)
+def get_dataset(meta_store, import_service, dataset_id):
   """ Write dataset in the response.  Options: 
     format=tabular_csv|tabular_tsv|csv|tsv|hdf5
     
@@ -131,7 +130,6 @@ def get_dataset(dataset_id):
   temp_file = temp_fd.name
   
   format = request.query.format
-  meta_store = app.meta_store
   import_service = app().import_service
   # TODO: rework this so we can clean up temp files
   hdf5_path = meta_store.get_dataset_by_id(dataset_id).hdf5_path
@@ -156,9 +154,27 @@ def get_dataset(dataset_id):
 #  write_file(temp_file)
 #  os.unlink(temp_file)
 
+# I suspect there's a better way
+def configure_injector(binder):
+  print "configuring injector"
+  meta_store = MetaStore("build/v3.sqlite")
+  hdf5_store = Hdf5Store("build")
+  binder.bind(MetaStore, to=meta_store)
+  binder.bind(Hdf5Store, to=hdf5_store)
+
+def create_app(config_filename):
+  app = Flask(__name__)
+#  app.config.from_pyfile(config_filename)
+
+  injector = Injector([configure_injector])
+  flask_injector.init_app(app=app, injector=injector)
+  app.register_blueprint(ui)
+  app.register_blueprint(rest)
+  flask_injector.post_init_app(app=app, injector=injector)
+  
+  return app
+
 if __name__ == "__main__":
-  app.meta_store = sqlmeta.MetaDb("build/v2.sqlite3")
-  app.hdf5_store = sqlmeta.Hdf5Fs("build")
-  app.import_service = convert.ConvertService(app.hdf5_store)
+  app = create_app("")
   app.run(host='0.0.0.0', port=8999, debug=True)
 

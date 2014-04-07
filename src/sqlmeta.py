@@ -50,7 +50,7 @@ user = Table('user', metadata,
      Column('email', String),
 )
 
-class MetaDb:
+class MetaStore(object):
   def __init__(self, filename):
     new_db = not os.path.exists(filename)
     self.engine = create_engine('sqlite:///%s' % filename, echo=True)
@@ -133,7 +133,7 @@ def open_hdf5_ctx_mgr(hdf5_path):
 
 Dimension = namedtuple("Dimension", ["name", "values"])
 
-class Hdf5Fs:
+class Hdf5Store(object):
   def __init__(self, hdf5_root):
     self.hdf5_root = hdf5_root
 
