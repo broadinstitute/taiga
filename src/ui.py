@@ -10,14 +10,15 @@ import convert
 
 import flask_injector
 from injector import inject, Injector
+import functools
 
 def view(template_name):
   full_template_name = template_name + ".tpl"
   def decorator(func):
+    @functools.wraps(func)
     def wrapped(*args, **kwargs):
       template_param = func(*args, **kwargs)
       return render_template(full_template_name, **template_param)
-    wrapped.__name__ = func.__name__
     return wrapped
   return decorator
 
@@ -25,13 +26,13 @@ ui = Blueprint('ui', __name__, template_folder='templates')
 rest = Blueprint('rest', __name__, template_folder='templates')
 
 @ui.route("/")
-#@view("index")
+@view("index")
 @inject(meta_store=MetaStore)
 def index(meta_store):
   print "returning dict"
   x = {'datasets': meta_store.list_names()}
-  return render_template("index.tpl", **x)
-  
+#  return render_template("index.tpl", **x)
+  return x
 
 @ui.route("/dataset/show/<dataset_id>")
 @view("dataset/show")
