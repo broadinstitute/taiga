@@ -203,13 +203,13 @@ def setup_app(app):
 
 def create_app(config_filename):
   app = Flask(__name__)
-  app.config.from_pyfile(config_filename)
+  app.config['data_dir'] = 'build'
 
   setup_app(app)
   
   return app
 
 if __name__ == "__main__":
-  app = create_app("")
+  app = create_app("taiga.cfg")
   app.run(host='0.0.0.0', port=8999, debug=True)
 

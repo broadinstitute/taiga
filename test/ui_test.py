@@ -2,10 +2,9 @@ import ui
 import tempfile
 import os
 import shutil
-from StringIO import StringIO
-
 import sqlmeta
 from IPython import embed
+from StringIO import StringIO
 
 # 2x2 matrix
 sample_tabular_contents = "a,b\nx,0,1\ny,2,3\n"
