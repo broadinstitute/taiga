@@ -1,4 +1,9 @@
 import csv
+import sqlmeta
+from injector import inject
+import numpy as np
+import h5py
+import math
 
 def to_string_with_nan_mask(x):
   if math.isnan(x):
@@ -7,6 +12,7 @@ def to_string_with_nan_mask(x):
     return str(x)
 
 class ConvertService(object):
+  @inject(hdf5fs=sqlmeta.Hdf5Store)
   def __init__(self, hdf5fs):
     self.hdf5fs = hdf5fs
   

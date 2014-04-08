@@ -19,7 +19,7 @@ def cleanup_temp_file():
 
 @with_setup(find_temp_file, cleanup_temp_file)
 def test_basic_usages():
-  meta = sqlmeta.MetaDb(temp_filename)
+  meta = sqlmeta.MetaStore(temp_filename)
   names = meta.list_names()
 
   assert len(names) == 0
@@ -27,7 +27,7 @@ def test_basic_usages():
   meta.register_dataset("name1", "dsid1", "description1", None, "path1")
   meta.close()
 
-  meta = sqlmeta.MetaDb(temp_filename)
+  meta = sqlmeta.MetaStore(temp_filename)
   names = meta.list_names()
   assert len(names) == 1
 
@@ -41,7 +41,7 @@ def test_basic_usages():
 
 @with_setup(find_temp_file, cleanup_temp_file)
 def test_multiple_names():
-  meta = sqlmeta.MetaDb(temp_filename)
+  meta = sqlmeta.MetaStore(temp_filename)
 
   meta.register_dataset("name1", "dsid1", "description1", None, "path1")
   meta.register_dataset("name2", "dsid2", "description2", None, "path2")
@@ -52,7 +52,7 @@ def test_multiple_names():
 
 @with_setup(find_temp_file, cleanup_temp_file)
 def test_multiple_versions():
-  meta = sqlmeta.MetaDb(temp_filename)
+  meta = sqlmeta.MetaStore(temp_filename)
 
   meta.register_dataset("name1", "dsid1", "description1", None, "path1")
   versions = meta.get_dataset_versions("name1")
@@ -70,7 +70,7 @@ def test_multiple_versions():
   
 @with_setup(find_temp_file, cleanup_temp_file)
 def test_update_description():
-  meta = sqlmeta.MetaDb(temp_filename)
+  meta = sqlmeta.MetaStore(temp_filename)
 
   meta.register_dataset("name1", "dsid1", "description1", None, "path1")
   meta.update_description("dsid1", "description updated")
