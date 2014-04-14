@@ -28,6 +28,7 @@ DatasetSummary = namedtuple("DatasetSummary", ["id", "name", "created_timestamp"
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///build/v2.sqlite3'
 
 metadata = MetaData()
+
 named_data = Table('named_data', metadata,
      Column('named_data_id', Integer, primary_key=True),
      Column('name', String),
@@ -35,7 +36,7 @@ named_data = Table('named_data', metadata,
 )
 
 data_version = Table('data_version', metadata,
-     Column('dataset_id', Integer, primary_key=True),
+     Column('dataset_id', String, primary_key=True),
      Column('named_data_id', None, ForeignKey('named_data.named_data_id')),
      Column('version', Integer),
      Column('description', String),
@@ -50,20 +51,40 @@ user = Table('user', metadata,
      Column('email', String),
 )
 
+statement = Table("statements", metadata,
+        Column("statement_id", Integer, primary_key=True),
+        Column('subject', String, nullable=False),
+        Column('predicate', String, nullable=False),
+        Column('object_type', Integer, nullable=False),
+        Column('object', String, nullable=False)
+)
+
+
+Ref = namedtuple("Ref", ["id"])
+
+LITERAL_TYPE=1
+REF_TYPE=2
+
+def prefix_object(object):
+  if isinstance(object, Ref):
+    return REF_TYPE, object.id
+  else:
+    return LITERAL_TYPE, object
+
+def unprefix_object(object_str, object_type):
+  if object_type == REF_TYPE:
+    return Ref(object_str)
+  elif object_type == LITERAL_TYPE:
+    return object_str
+  else:
+    raise Exception("invalid type %d" % object_type)
+
 class MetaStore(object):
   def __init__(self, filename):
     new_db = not os.path.exists(filename)
     self.engine = create_engine('sqlite:///%s' % filename, echo=True)
     if new_db:
-      with self.engine.begin() as db:
-        stmts = [
-          "create table named_data (named_data_id integer primary key not null, name text, latest_version integer)",
-          "create table data_version (dataset_id text primary key not null, named_data_id integer, version integer, description text, created_by_user_id integer, created_timestamp datetime, hdf5_path text)",
-          "create table user (user_id integer primary key not null, name text, email text, api_token text)",
-  #        "alter table data_version add constraint uk_data_version_1 unique (named_data_id, version)"
-          ]
-        for stmt in stmts:
-          db.execute(stmt)
+      metadata.create_all(self.engine)
 
   def get_dataset_versions(self, dataset_name):
     with self.engine.begin() as db:
@@ -120,6 +141,34 @@ class MetaStore(object):
 
       if next_version != 1:
         db.execute("update named_data set latest_version = ? where named_data_id = ?", [next_version, named_data_id])
+
+  def insert_stmt(self, subject, predicate, object):
+    object_type, object_str = prefix_object(object)
+    with self.engine.begin() as db:
+      db.execute("insert into statements (subject, predicate, object_type, object) values (?, ?, ?, ?)", (subject.id, predicate.id, object_type, object_str))
+    
+  def delete_stmt(self, subject, predicate, object):
+    object_type, object_str = prefix_object(object)
+    with self.engine.begin() as db:
+      db.execute("delete from statements where subject = ? and predicate = ? and object = ? and object_type = ?", (subject.id, predicate.id, object_str, object_type))
+
+  def find_stmt(self, subject, predicate, object):
+    predicates = []
+    parameters = []
+    if subject != None:
+      predicates.append("subject = ?")
+      parameters.append(subject.id)
+    if predicate != None:
+      predicates.append("predicate = ?")
+      parameters.append(predicate.id)
+    if object != None:
+      predicates.append("object_type = ? and object = ?")
+      parameters.extend(prefix_object(object))
+    
+    query = "select subject, predicate, object_type, object from statements where %s" % (" AND ".join(predicates))
+    with self.engine.begin() as db:
+      result = db.execute(query, parameters)
+      return [ (Ref(s), Ref(p), unprefix_object(o,ot)) for s, p, ot, o in result.fetchall() ]
       
   def close(self):
     #self.engine.close()

@@ -2,6 +2,7 @@ import sqlmeta
 import tempfile
 import os
 from nose import with_setup
+from sqlmeta import Ref
 
 temp_filename = None
 
@@ -77,5 +78,45 @@ def test_update_description():
   ds = meta.get_dataset_by_id("dsid1")
   
   assert ds.description == "description updated"
+
+  meta.close()
+
+@with_setup(find_temp_file, cleanup_temp_file)
+def test_insert_and_query():
+  meta = sqlmeta.MetaStore(temp_filename)
+  
+  meta.insert_stmt(Ref("x"), Ref("y"), Ref("z"))
+  meta.insert_stmt(Ref("a"), Ref("y"), Ref("z"))
+  meta.insert_stmt(Ref("a"), Ref("b"), Ref("z"))
+  
+  assert meta.find_stmt(Ref("x"), None, None) == [(Ref("x"),Ref("y"),Ref("z"))]
+  assert meta.find_stmt(Ref("x"), Ref("y"), None) == [(Ref("x"),Ref("y"),Ref("z"))]
+  assert meta.find_stmt(Ref("x"), Ref("y"), Ref("z")) == [(Ref("x"),Ref("y"),Ref("z"))]
+  
+  meta.close()
+
+@with_setup(find_temp_file, cleanup_temp_file)
+def test_insert_dups():
+  meta = sqlmeta.MetaStore(temp_filename)
+  
+  meta.insert_stmt(Ref("x"), Ref("y"), Ref("z"))
+  meta.insert_stmt(Ref("a"), Ref("y"), Ref("z"))
+  meta.insert_stmt(Ref("a"), Ref("b"), Ref("z"))
+  
+  assert meta.find_stmt(Ref("x"), None, None) == [(Ref("x"),Ref("y"),Ref("z"))]
+  assert meta.find_stmt(Ref("x"), Ref("y"), None) == [(Ref("x"),Ref("y"),Ref("z"))]
+  assert meta.find_stmt(Ref("x"), Ref("y"), Ref("z")) == [(Ref("x"),Ref("y"),Ref("z"))]
+  
+  meta.close()
+
+@with_setup(find_temp_file, cleanup_temp_file)
+def test_delete():
+  meta = sqlmeta.MetaStore(temp_filename)
+  
+  meta.insert_stmt(Ref("x"), Ref("y"), Ref("z"))
+  meta.insert_stmt(Ref("a"), Ref("y"), Ref("z"))
+  meta.delete_stmt(Ref("x"), Ref("y"), Ref("z"))
+
+  assert meta.find_stmt(None, None, Ref("z")) == [(Ref("a"),Ref("y"),Ref("z"))]
 
   meta.close()
