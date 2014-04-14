@@ -25,6 +25,7 @@
     {{ download_link('csv') }} | 
     {{ download_link('tsv') }}</p>
   <p> <a href="/upload/tabular-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
+  <p> Tags: <a href="#" id="tags" data-name="tags" data-type="select2" data-pk="{{meta.dataset_id}}" data-url="/dataset/update" data-title="Enter tags">{{ dataset_tags }}</a></p>
   <p> Description: </p>
   <p>
     <a href="#" class="x-editable-class" data-name="description" data-type="textarea" data-pk="{{ meta.dataset_id }}" data-url="/dataset/update" data-title="Enter description">{{ meta.description }}</a>
@@ -58,6 +59,14 @@
   $.fn.editable.defaults.mode = 'inline';
   $(document).ready(function() {
       $('.x-editable-class').editable();
+      
+      $('#tags').editable({
+              inputclass: 'input-large',
+              select2: {
+                  tags: [],
+                  tokenSeparators: [",", " "]
+              }
+      });      
   });
 </script>
 {% endblock %}

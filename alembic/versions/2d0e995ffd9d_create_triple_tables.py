@@ -14,7 +14,7 @@ from alembic import op
 import sqlalchemy as sa
 
 def upgrade():
-    op.create_table("statements", 
+    op.create_table("statement", 
         sa.Column("statement_id", sa.Integer, primary_key=True),
         sa.Column('subject', sa.String, nullable=False),
         sa.Column('predicate', sa.String, nullable=False),

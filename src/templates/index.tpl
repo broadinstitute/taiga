@@ -5,6 +5,13 @@
   <a href="/upload/tabular-form">Upload tabular data</a>
   </p>
 
+  <h1>Tags</h1>
+  <ul>
+    {% for tag in tags %}
+      <li>{{ tag.name }} : {{ tag.count }}</li>
+    {% endfor %}
+  </ul>
+
   <h1>Datasets</h1>
   
   <table class="table table-bordered table-striped">

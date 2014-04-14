@@ -4,8 +4,11 @@ from flask import Config
 import flask
 
 from collections import namedtuple
+import collections
+
 from tempfile import NamedTemporaryFile
 import sqlmeta
+from sqlmeta import Ref
 from sqlmeta import MetaStore, Hdf5Store
 from convert import ConvertService
 import convert
@@ -41,8 +44,11 @@ rest = Blueprint('rest', __name__, template_folder='templates')
 @view("index")
 @inject(meta_store=MetaStore)
 def index(meta_store):
-  print "returning dict"
-  return {'datasets': meta_store.list_names()}
+  tags = collections.defaultdict(lambda key: 0)
+  for subj, pred, obj in meta_store.find_stmt(None, Ref("hasTag"), None):
+    tags[obj] += 1
+  
+  return {'datasets': meta_store.list_names(), 'tags': [dict(name=k, count=v) for k,v in tags.items()]}
 
 @ui.route("/dataset/show/<dataset_id>")
 @view("dataset/show")
@@ -60,8 +66,14 @@ def dataset_show(meta_store, hdf5_store, dataset_id):
 @inject(meta_store=MetaStore)
 def dataset_update(meta_store):
   j = request.form
-  assert j['name'] == "description"
-  meta_store.update_description(j['pk'], j['value'])
+  name = j['name']
+  id = j['pk']
+  if name == "tags":
+    values = j.getlist("value[]")
+    meta_store.update_tags(id, values)
+  else:
+    assert name == "description"
+    meta_store.update_description(id, j['value'])
   return ""
 
 @ui.route("/upload/tabular-form")

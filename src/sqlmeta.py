@@ -51,7 +51,7 @@ user = Table('user', metadata,
      Column('email', String),
 )
 
-statement = Table("statements", metadata,
+statement = Table("statement", metadata,
         Column("statement_id", Integer, primary_key=True),
         Column('subject', String, nullable=False),
         Column('predicate', String, nullable=False),
@@ -90,6 +90,9 @@ class MetaStore(object):
     with self.engine.begin() as db:
       result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id where n.name = ? order by v.version", (dataset_name,))
       return [self.get_dataset_by_id(x[0]) for x in result.fetchall()]
+
+  def update_tags(self, dataset_id, tags):
+    print "tags=%s" % repr(tags)
     
   def update_description(self, dataset_id, description):
     with self.engine.begin() as db:
@@ -145,12 +148,12 @@ class MetaStore(object):
   def insert_stmt(self, subject, predicate, object):
     object_type, object_str = prefix_object(object)
     with self.engine.begin() as db:
-      db.execute("insert into statements (subject, predicate, object_type, object) values (?, ?, ?, ?)", (subject.id, predicate.id, object_type, object_str))
+      db.execute("insert into statement (subject, predicate, object_type, object) values (?, ?, ?, ?)", (subject.id, predicate.id, object_type, object_str))
     
   def delete_stmt(self, subject, predicate, object):
     object_type, object_str = prefix_object(object)
     with self.engine.begin() as db:
-      db.execute("delete from statements where subject = ? and predicate = ? and object = ? and object_type = ?", (subject.id, predicate.id, object_str, object_type))
+      db.execute("delete from statement where subject = ? and predicate = ? and object = ? and object_type = ?", (subject.id, predicate.id, object_str, object_type))
 
   def find_stmt(self, subject, predicate, object):
     predicates = []
@@ -165,7 +168,7 @@ class MetaStore(object):
       predicates.append("object_type = ? and object = ?")
       parameters.extend(prefix_object(object))
     
-    query = "select subject, predicate, object_type, object from statements where %s" % (" AND ".join(predicates))
+    query = "select subject, predicate, object_type, object from statement where %s" % (" AND ".join(predicates))
     with self.engine.begin() as db:
       result = db.execute(query, parameters)
       return [ (Ref(s), Ref(p), unprefix_object(o,ot)) for s, p, ot, o in result.fetchall() ]
