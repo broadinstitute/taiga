@@ -101,6 +101,7 @@ def write_block_header(fd, row_count, column_lengths):
   write_int(fd, len(column_lengths))
   for length in column_lengths:
     write_int(fd, length)
+  print "column_lengths %s" % repr(column_lengths)
   #print "after write header", fd.tell()
 
 def read_block_header(fd):
@@ -136,7 +137,7 @@ def persist_block(fd, column_persisters, values):
   fd.seek(length_table_offset)
   write_block_header(fd, len(values), column_lengths)
   fd.seek(next_block)
-  #print column_lengths
+  print "persist_block size = %s" % (next_block - length_table_offset)
 
 def compute_column_offsets(base_offset, column_lengths):
   column_offsets = []
@@ -250,30 +251,59 @@ def read_column_definitions(fd):
     columns.append( ColumnDef(name, str, i, StringSerializer()) )
   return TableInfo(columns)
 
-fn = "/Users/pmontgom/data/fh_WM793_SKIN.maf.ccle.annotated"
-#fn = "sample.maf"
-input = open(fn)
+
 import csv
 import os
-if not os.path.exists("dump"):
-#if True:
-  r = csv.reader(input, delimiter="\t")
-  header = r.next()
+
+def import_index_file(dirname, filename, output):
+  file_count = 0
+  with open(filename, "r") as fd:
+    r = csv.reader(fd, delimiter="\t")
+    header = r.next()
+    columns = header[1:]
+    
+    for row in r:
+      datafile = row[0]
+      values = row[1:]
+
+      print "reading %s" % datafile
+      file_count += 1
+      with open("%s/%s" % (dirname, datafile), "r") as datafd:
+        datar = csv.reader(datafd, delimiter="\t")
+        datafile_header = datar.next()
+
+        import_file(columns, datafile_header, values, datar, output, file_count == 1)
+
+
+def import_file(const_columns, var_columns, const_values, reader, output, include_col_defs):
+  header = const_columns + var_columns
+
+  if include_col_defs:
+    write_column_definitions(output, [(header[i], str) for i in xrange(len(header))])
+    
   persisters = [StringSerializer() for i in xrange(len(header))]
-
   rows = []
-  for row in r:
-    rows.append(row)
+  for row in reader:
+    rows.append(const_values + row)
+  print header, len(rows)
 
-  fd = open("dump","w")
-  write_column_definitions(fd, [(header[i], str) for i in xrange(len(header))])
-  persist_block(fd, persisters, rows)
-  fd.close()
+  persist_block(output, persisters, rows)
 
-print "transformed"
+#with open("dump","w") as fd:
+#  import_index_file("/Users/pmontgom/data/ccle_rna_unpublished", "/Users/pmontgom/data/ccle_rna_unpublished/index.txt", fd)
+
+#input = open(fn)
+#if not os.path.exists("dump"):
+#  fd = open("dump","w")
+#
+#  print "transformed"
+
 fd = open("dump")
+count = 0
 for row in execute_query(fd, ["Hugo_Symbol"], InPred("Entrez_Gene_Id", set(["653635"]))):
-  print "row", row
+  count += 1
+#  print "row", row
+print count
 fd.close()
 
 
