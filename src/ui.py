@@ -44,7 +44,7 @@ rest = Blueprint('rest', __name__, template_folder='templates')
 @view("index")
 @inject(meta_store=MetaStore)
 def index(meta_store):
-  tags = collections.defaultdict(lambda key: 0)
+  tags = collections.defaultdict(lambda: 0)
   for subj, pred, obj in meta_store.find_stmt(None, Ref("hasTag"), None):
     tags[obj] += 1
   
@@ -60,7 +60,10 @@ def dataset_show(meta_store, hdf5_store, dataset_id):
     
   versions = meta_store.get_dataset_versions(meta.name)
   dims = hdf5_store.get_dimensions(meta.hdf5_path)
-  return {"meta": meta, "dims":dims, "versions": versions}
+  all_tags = meta_store.get_all_tags()
+  dataset_tags = meta_store.get_dataset_tags(dataset_id)
+  
+  return {"meta": meta, "dims":dims, "versions": versions, "all_tags_as_json": json.dumps(list(all_tags)), "dataset_tags": dataset_tags}
 
 @ui.route("/dataset/update", methods=["POST"])
 @inject(meta_store=MetaStore)

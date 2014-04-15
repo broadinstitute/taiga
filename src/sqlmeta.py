@@ -92,8 +92,17 @@ class MetaStore(object):
       return [self.get_dataset_by_id(x[0]) for x in result.fetchall()]
 
   def update_tags(self, dataset_id, tags):
-    print "tags=%s" % repr(tags)
-    
+    for s, p, o in self.find_stmt(Ref(dataset_id), Ref("hasTag"), None):
+      self.delete_stmt(s, p, o)
+    for tag in tags:
+      self.insert_stmt(Ref(dataset_id), Ref("hasTag"), tag)
+  
+  def get_all_tags(self):
+    return set([o for s, p, o in self.find_stmt(None, Ref("hasTag"), None)])
+  
+  def get_dataset_tags(self, dataset_id):
+    return set([o for s, p, o in self.find_stmt(Ref(dataset_id), Ref("hasTag"), None)])
+  
   def update_description(self, dataset_id, description):
     with self.engine.begin() as db:
       updated = db.execute("update data_version set description = ? where dataset_id = ?", (description, dataset_id))
