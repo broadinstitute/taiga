@@ -210,6 +210,11 @@ def setup_app(app):
     hdf5_store = Hdf5Store(data_dir)
     binder.bind(MetaStore, to=meta_store)
     binder.bind(Hdf5Store, to=hdf5_store)
+
+  from logging.handlers import RotatingFileHandler
+  file_handler = RotatingFileHandler(app.config['LOG_DIR']+"/taiga.log")
+  file_handler.setLevel(logging.WARNING)
+  app.logger.addHandler(file_handler)
   
   injector = Injector(configure_injector)
   flask_injector.init_app(app=app, injector=injector)
