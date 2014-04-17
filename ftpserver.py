@@ -5,17 +5,18 @@
 import socket,threading,time
 #import traceback
 
-allow_delete = False
 local_ip = socket.gethostbyname(socket.gethostname())
-local_port = 8888
+local_port = 8882
 
 class FTPserverThread(threading.Thread):
     def __init__(self,(conn,addr), list_dir_callback, open_file_callback):
         self.conn=conn
         self.addr=addr
-        self.cwd="dirname"
+        self.cwd="/"
         self.rest=False
         self.pasv_mode=False
+        self.list_dir_callback = list_dir_callback
+        self.open_file_callback = open_file_callback
         threading.Thread.__init__(self)
 
     def run(self):
@@ -57,10 +58,10 @@ class FTPserverThread(threading.Thread):
         self.conn.send('200 OK.\r\n')
 
     def PWD(self,cmd):
-        cwd='/'
-        self.conn.send('257 \"%s\"\r\n' % cwd)
+        self.conn.send('257 \"%s\"\r\n' % self.cwd)
 
     def CWD(self,cmd):
+        self.cwd=cmd[5:-2]
         self.conn.send('250 OK.\r\n')
 
     def PORT(self,cmd):
@@ -105,14 +106,11 @@ class FTPserverThread(threading.Thread):
         self.stop_datasock()
         self.conn.send('226 Directory send OK.\r\n')
 
-    def toListItem(self,fn):
-        fullmode='r--r--r--'
-        mode=''
-        for i in range(9):
-            mode+=((st.st_mode>>(8-i))&1) and fullmode[i] or '-'
+    def toListItem(self, fn):
+        mode='r--r--r--'
         d='-'
         size=1
-        ftime=time.strftime(' %b %d %H:%M ', time.gmtime(st.st_mtime))
+        ftime=time.strftime(' %b %d %H:%M ', time.gmtime(time.time()))
         return d+mode+' 1 user group '+str(size)+ftime+fn
 
     def MKD(self,cmd):
@@ -125,7 +123,6 @@ class FTPserverThread(threading.Thread):
         self.conn.send('450 Not allowed.\r\n')
 
     def RNFR(self,cmd):
-        self.rnfn=os.path.join(self.cwd,cmd[5:-2])
         self.conn.send('350 Ready.\r\n')
 
     def RNTO(self,cmd):
@@ -136,19 +133,19 @@ class FTPserverThread(threading.Thread):
         self.rest=True
         self.conn.send('250 File position reseted.\r\n')
 
+    def SIZE(self, cmd):
+        filename = cmd[5:-2]
+        self.conn.send('450 Not allowed.\r\n')
+
     def RETR(self,cmd):
         filename = cmd[5:-2]
-        fi = self.open_file_callback(self.cwd, filename)
+        fi = self.open_file_callback(self.cwd, filename, self.mode)
         print 'Downloading:',filename
-        if self.mode=='I':
-            fi=open(fn,'rb')
-        else:
-            fi=open(fn,'r')
         self.conn.send('150 Opening data connection.\r\n')
         if self.rest:
             fi.seek(self.pos)
             self.rest=False
-        data= fi.read(1024)
+        data = fi.read(1024)
         self.start_datasock()
         while data:
             self.datasock.send(data)
@@ -160,6 +157,13 @@ class FTPserverThread(threading.Thread):
     def STOR(self,cmd):
         self.conn.send('450 Not allowed.\r\n')
 
+class TaigaClient(object):
+  def list_dir_callback(self, dirname):
+    return ["file1", "file2", "file3"]
+    
+  def open_file_callback(self, dirname, filename, mode):
+    return StringIO.StringIO("virtual file %s" % filename)
+
 class FTPserver(threading.Thread):
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -169,7 +173,8 @@ class FTPserver(threading.Thread):
     def run(self):
         self.sock.listen(5)
         while True:
-            th=FTPserverThread(self.sock.accept())
+            tc=TaigaClient()
+            th=FTPserverThread(self.sock.accept(), tc.list_dir_callback, tc.open_file_callback)
             th.daemon=True
             th.start()
 
