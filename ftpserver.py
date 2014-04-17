@@ -183,8 +183,8 @@ class FTPserver(threading.Thread):
 
 if __name__=='__main__':
     ftp=FTPserver()
-    ftp.daemon=True
+    ftp.daemon=False
     ftp.start()
     print 'On', local_ip, ':', local_port
-    raw_input('Enter to end...\n')
-    ftp.stop()
+    #raw_input('Enter to end...\n')
+    #ftp.stop()
