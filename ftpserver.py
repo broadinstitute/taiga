@@ -5,7 +5,7 @@
 import socket,threading,time
 #import traceback
 
-local_ip = socket.gethostbyname(socket.gethostname())
+local_ip = "0.0.0.0"
 local_port = 8882
 
 class FTPserverThread(threading.Thread):
