@@ -109,7 +109,7 @@ def upload(import_service, meta_store):
   name = forms['name']
   description = forms['description']
   created_by_user_id = None
-  is_new_version = (forms['overwrite_existing'] == "true")
+  is_new_version = 'overwrite_existing' in forms and (forms['overwrite_existing'] == "true")
 
   # TODO: check that name doesn't exist and matches is_new_version flag
   # if error, redirect to "/upload/csv-form"
@@ -157,8 +157,8 @@ def get_dataset_by_name(meta_store, import_service):
       abort(400, "Invalid value for fetch: %s" % fetch)
 
 @rest.route("/rest/v0/datasets/<dataset_id>")
-@inject(meta_store=MetaStore, import_service=ConvertService)
-def get_dataset(meta_store, import_service, dataset_id):
+@inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store)
+def get_dataset(meta_store, import_service, hdf5_store, dataset_id):
   """ Write dataset in the response.  Options: 
     format=tabular_csv|tabular_tsv|csv|tsv|hdf5
     
@@ -184,7 +184,8 @@ def get_dataset(meta_store, import_service, dataset_id):
     import_service.hdf5_to_csv(hdf5_path, temp_file, delimiter=",")
     suffix = "csv"
   elif format == "hdf5":
-    return flask.send_file(hdf5_path, as_attachment=True, attachment_filename="%s.hdf5" % dataset_id)
+    print "os.path.join(hdf5_store.hdf5_root, hdf5_path)", os.path.join(hdf5_store.hdf5_root, hdf5_path)
+    return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename="%s.hdf5" % dataset_id)
   else:
     abort("unknown format: %s" % format)
 

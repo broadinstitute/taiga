@@ -190,8 +190,8 @@ class MetaStore(object):
     pass
 
 @contextmanager
-def open_hdf5_ctx_mgr(hdf5_path):
-  f = h5py.File(hdf5_path, "r")
+def open_hdf5_ctx_mgr(hdf5_path, mode="r"):
+  f = h5py.File(hdf5_path, mode)
   yield f
   f.close()
 
@@ -204,7 +204,7 @@ class Hdf5Store(object):
   def create_new_dataset_id(self):
     dataset_id = str(uuid.uuid4())
     # TODO: make staggered dirs
-    return (dataset_id, os.path.join(self.hdf5_root, dataset_id+".hdf5"))
+    return (dataset_id, dataset_id+".hdf5")
 
   def get_dimensions(self, hdf5_path):
     with self.hdf5_open(hdf5_path) as f:
@@ -218,10 +218,10 @@ class Hdf5Store(object):
     
     return dims
   
-  def hdf5_open(self, hdf5_path):
-    print "openning %s" % hdf5_path
-    return open_hdf5_ctx_mgr(hdf5_path)
-
+  def hdf5_open(self, hdf5_path, mode="r"):
+    hdf5_path = os.path.join(self.hdf5_root, hdf5_path)
+    print "opening %s" % hdf5_path
+    return open_hdf5_ctx_mgr(hdf5_path, mode)
 
 def exec_sub_stmt_query(query, find_stmt, bindings):
   """ query is a list of statements, where each element in the triple is a dict {"id": ...} for references, 
