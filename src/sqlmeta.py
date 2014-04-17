@@ -181,6 +181,9 @@ class MetaStore(object):
     with self.engine.begin() as db:
       result = db.execute(query, parameters)
       return [ (Ref(s), Ref(p), unprefix_object(o,ot)) for s, p, ot, o in result.fetchall() ]
+
+  def exec_stmt_query(self, query):
+    return exec_sub_stmt_query(query, self.find_stmt, {})
       
   def close(self):
     #self.engine.close()
@@ -218,4 +221,56 @@ class Hdf5Store(object):
   def hdf5_open(self, hdf5_path):
     print "openning %s" % hdf5_path
     return open_hdf5_ctx_mgr(hdf5_path)
+
+
+def exec_sub_stmt_query(query, find_stmt, bindings):
+  """ query is a list of statements, where each element in the triple is a dict {"id": ...} for references, 
+      a dict {"var": ...} for a variable, or a literal.  Will return a list of dicts with assignments for each variable
+  """
+  if len(query) == 0:
+    return [bindings]
+
+  # for each call, we only worry about trying to satisfy a single statment
+  first_stmt = query[0]
+  masked_stmt = []
+  vars_to_assign = []
+  
+  # convert statement into form with None for wildcard
+  for i,x in enumerate(first_stmt):
+    if type(x) == dict:
+      if "id" in x:
+        x=Ref(x['id'])
+      elif "var" in x:
+        vars_to_assign.append( (i, x['var']) )
+        x=None
+      else:
+        raise Exception("malformed query: %s" % repr(query))
+    else:
+      x = str(x)
+
+    masked_stmt.append(x)
+
+  def assign(stmt, binding):
+    result = []
+    for x in stmt:
+      if 'var' in x:
+        name = x['var']
+        if name in binding:
+          x = binding[name]
+      result.append(x)
+    return result
+      
+  rest = query[1:]
+  stmts = find_stmt(*masked_stmt)
+  
+  # for each result, bind the value and save it into the list of results
+  results = []
+  for stmt in stmts:
+    row = dict(bindings)
+    for i, var_name in vars_to_assign:
+      row[var_name] = stmt[i]
+    rest_with_assignments = [assign(x, row) for x in rest]
+    # recurse to satisfy remaining statements
+    results.extend(exec_sub_stmt_query(rest_with_assignments, find_stmt, row))
+  return results
 
