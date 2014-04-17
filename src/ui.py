@@ -17,6 +17,8 @@ import json
 import flask_injector
 from injector import inject, Injector
 import functools
+import logging
+import os
 
 def view(template_name):
   full_template_name = template_name + ".tpl"
@@ -196,15 +198,14 @@ def create_test_app(base_dir):
   app = Flask(__name__)
 
   app.config['TESTING'] = True
-  app.config['data_dir'] = base_dir
+  app.config['DATA_DIR'] = base_dir
   setup_app(app)
 
   return app
 
 def setup_app(app):
   def configure_injector(binder):
-    print "configuring injector"
-    data_dir = app.config['data_dir']
+    data_dir = app.config['DATA_DIR']
     meta_store = MetaStore(data_dir+"/metadata.sqlite3")
     hdf5_store = Hdf5Store(data_dir)
     binder.bind(MetaStore, to=meta_store)
@@ -216,15 +217,21 @@ def setup_app(app):
   app.register_blueprint(rest)
   flask_injector.post_init_app(app=app, injector=injector)
 
-def create_app(config_filename):
+def create_app():
+  log = logging.getLogger(__name__)
   app = Flask(__name__)
-  app.config['data_dir'] = 'build'
-
+  app.config.from_object("default_config")
+  config_override_path = os.path.expanduser("~/.taiga/taiga.cfg")
+  if os.path.exists(config_override_path):
+    log.info("Loading config from %s" % config_override_path)
+    app.config.from_pyfile(config_override_path)
+  else:
+    log.info("No file named %s.  Skipping" % config_override_path)
   setup_app(app)
   
   return app
 
 if __name__ == "__main__":
-  app = create_app("taiga.cfg")
-  app.run(host='0.0.0.0', port=8999, debug=True)
+  app = create_app()
+  app.run(host='0.0.0.0', port=8999)
 
