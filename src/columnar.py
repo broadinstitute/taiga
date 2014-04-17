@@ -1,6 +1,8 @@
 import cStringIO
 import struct
 import zlib
+import array
+import sniff
 
 class Predicate(object):
   def create_evaluator(self, cursorMap):
@@ -9,23 +11,40 @@ class Predicate(object):
   def get_columns(self):
     raise Exception("unimp")
 
-class InPred(object):
-  def __init__(self, name, values):
-    self.values = values
+class ComparisonPred(object):
+  def __init__(self, name, value, fn, value_is_set=False):
+    self.value = value
     self.name = name
-    
+    self.comparison_fn = fn
+    self.value_is_set = value_is_set
+
   def create_evaluator(self, cursorMap):
     cursor = cursorMap[self.name]
     assert cursor != None, "No cursor for %s in %s" % (repr(self.name), repr(cursorMap))
-    values = self.values
-    
+    value = self.value
+    if self.value_is_set:
+      value = set([cursor.col_type(v) for v in value])
+    else:
+      value = cursor.col_type(value)
+    fn = self.comparison_fn 
+
     def is_satified():
-      #print "is_satified", cursor.get_value(), values
-      return cursor.get_value() in values
+      return fn(cursor.get_value(), value)
+
     return is_satified
-    
+
   def get_columns(self):
     return [self.name]
+
+InPred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value in ref, True)
+NinPred = lambda name, value: ComparisonPred(name, value, lambda value, ref: not (value in ref), True)
+
+GtePred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value >= ref)
+GtPred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value > ref)
+LtPred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value < ref)
+LtePred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value <= ref)
+NePred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value != ref)
+EqPred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value == ref)
 
 class AndPred(object):
   def __init__(self, preds):
@@ -33,19 +52,23 @@ class AndPred(object):
 
   def create_evaluator(self, cursorMap):
     and_list = [p.create_evaluator(cursorMap) for p in self.preds]
+
     def all_true():
       for p in and_list:
         if not p():
-          break
+          return False
       return True
+      
     return all_true
 
   def get_columns(self):
-    return sum([p.get_columns() for p in self.preds])
+    all = [p.get_columns() for p in self.preds]
+    return set().union(*all)
 
 class ColumnCursor(object):
-  def __init__(self, values):
+  def __init__(self, values, col_type):
     self.index = 0
+    self.col_type = col_type
     self.values = values
     
   def next(self):
@@ -73,7 +96,9 @@ def read_str(fd):
     return None
   return fd.read(length)
   
-class StringSerializer:
+class StringSerializer(object):
+  type_name = "str"
+  
   def to_buffer(self, values):
     output = cStringIO.StringIO()
     for s in values:
@@ -88,7 +113,32 @@ class StringSerializer:
       if v == None:
         break
       values.append(v)
-    return ColumnCursor(values)
+    return ColumnCursor(values, str)
+
+class DoubleSerializer(object):
+  type_name = "float"
+  
+  def to_buffer(self, values):
+    v_array = array.array("d", [float(v) for v in values])
+    return v_array.tostring()
+  
+  def from_buffer(self, buffer):
+    values = array.array("d")
+    values.fromstring(buffer)
+    return ColumnCursor(values, float)
+
+class IntSerializer(object):
+  type_name = "int"
+  
+  def to_buffer(self, values):
+    v_array = array.array("i", [int(v) for v in values])
+    return v_array.tostring()
+  
+  def from_buffer(self, buffer):
+    values = array.array("i")
+    values.fromstring(buffer)
+    return ColumnCursor(values, int)
+
 
 # Block length (4b)
 # Column lengths (4b * column_count)
@@ -226,7 +276,7 @@ def write_column_definitions(fd, name_type_pairs):
   fd.write(struct.pack("I", len(name_type_pairs)))
   for name, col_type in name_type_pairs:
     write_str(fd, name)
-    write_str(fd, col_type.__name__)
+    write_str(fd, col_type.type_name)
 from collections import namedtuple
 ColumnDef = namedtuple("ColumnDef", ["name", "ty", "index", "persister"])
 class TableInfo:
@@ -247,8 +297,14 @@ def read_column_definitions(fd):
   for i in xrange(col_count):
     name = read_str(fd)
     type_name = read_str(fd)
-    assert type_name == 'str'
-    columns.append( ColumnDef(name, str, i, StringSerializer()) )
+    if type_name == 'str':
+      columns.append( ColumnDef(name, str, i, StringSerializer()) )
+    elif type_name == 'float':
+      columns.append( ColumnDef(name, float, i, DoubleSerializer()) )
+    elif type_name == 'int':
+      columns.append( ColumnDef(name, int, i, IntSerializer()) )
+    else:
+      raise Exception("unknown type")
   return TableInfo(columns)
 
 
@@ -257,6 +313,7 @@ import os
 
 def import_index_file(dirname, filename, output):
   file_count = 0
+  datafile_columns = None
   with open(filename, "r") as fd:
     r = csv.reader(fd, delimiter="\t")
     header = r.next()
@@ -268,20 +325,36 @@ def import_index_file(dirname, filename, output):
 
       print "reading %s" % datafile
       file_count += 1
-      with open("%s/%s" % (dirname, datafile), "r") as datafd:
+      datafile_full_path = "%s/%s" % (dirname, datafile)
+#      if datafile_columns == None:
+      hasRowNames, datafile_columns = sniff.sniff(datafile_full_path, rows_to_check=1000000)
+        
+      with open(datafile_full_path, "r") as datafd:
         datar = csv.reader(datafd, delimiter="\t")
         datafile_header = datar.next()
 
-        import_file(columns, datafile_header, values, datar, output, file_count == 1)
+        persisters = [StringSerializer() for i in xrange(len(columns))]
+        for c in datafile_columns:
+          if c.type == str:
+            persisters.append(StringSerializer())
+          elif c.type == float:
+            persisters.append(DoubleSerializer())
+          elif c.type == int:
+            persisters.append(IntSerializer())
+          else:
+            raise Exception("unknown")
+        #print columns
+        #print datafile_header
+        #print persisters
+        #print datafile_columns
+        import_file(columns, datafile_header, values, datar, output, file_count == 1, persisters)
 
-
-def import_file(const_columns, var_columns, const_values, reader, output, include_col_defs):
+def import_file(const_columns, var_columns, const_values, reader, output, include_col_defs, persisters):
   header = const_columns + var_columns
 
   if include_col_defs:
-    write_column_definitions(output, [(header[i], str) for i in xrange(len(header))])
+    write_column_definitions(output, [(header[i], persisters[i]) for i in xrange(len(header))])
     
-  persisters = [StringSerializer() for i in xrange(len(header))]
   rows = []
   for row in reader:
     rows.append(const_values + row)
@@ -289,21 +362,43 @@ def import_file(const_columns, var_columns, const_values, reader, output, includ
 
   persist_block(output, persisters, rows)
 
-#with open("dump","w") as fd:
-#  import_index_file("/Users/pmontgom/data/ccle_rna_unpublished", "/Users/pmontgom/data/ccle_rna_unpublished/index.txt", fd)
+with open("dump","w") as fd:
+  import_index_file("/Users/pmontgom/data/ccle_rna_unpublished", "/Users/pmontgom/data/ccle_rna_unpublished/index.txt", fd)
 
-#input = open(fn)
-#if not os.path.exists("dump"):
-#  fd = open("dump","w")
-#
-#  print "transformed"
+print "transformed"
+
+op_name_to_factory = {}
+for op_name in ["gt", "gte", "in", "lt", "lte", "ne", "nin"]:
+  op_name_to_factory["$"+op_name] = globals()[op_name[0].upper()+op_name[1:]+"Pred"]
+
+def convert_op_to_predicate(column_name, condition):
+  p = None
+  for op_name, factory in op_name_to_factory.items():
+    if op_name in condition:
+      p = factory(column_name, condition[op_name])
+      break
+
+  if p == None:
+    raise Exception("unknown %s" % condition)
+
+  return p
+
+def convert_criteria_to_predicate(criteria):
+  and_clauses = []
+  for column_name, condition in criteria.items():
+    if type(condition) == dict:
+      and_clauses.append(convert_op_to_predicate(column_name, condition))
+    else:
+      and_clauses.append(EqPred(column_name, condition))
+  return AndPred(and_clauses)
 
 fd = open("dump")
-count = 0
-for row in execute_query(fd, ["Hugo_Symbol"], InPred("Entrez_Gene_Id", set(["653635"]))):
-  count += 1
-#  print "row", row
-print count
+import sys
+w = csv.writer(sys.stdout)
+
+criteria = {"Entrez_Gene_Id": {"$gt": 653635}}
+for row in execute_query(fd, ["Hugo_Symbol","Start_position","End_position"], convert_criteria_to_predicate(criteria)):
+  w.writerow(row)
 fd.close()
 
 
