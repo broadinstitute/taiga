@@ -136,8 +136,8 @@ def list_datasets(meta_store):
   return {'datasets': meta_store.list_names()}
 
 @rest.route("/rest/v0/namedDataset")
-@inject(meta_store=MetaStore, import_service=ConvertService)
-def get_dataset_by_name(meta_store, import_service):
+@inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store)
+def get_dataset_by_name(meta_store, import_service, hdf5_store):
   print "get_dataset_by_name, %s" % request.values
   fetch = request.values['fetch']
   print "get_dataset_by_name1"
@@ -150,7 +150,7 @@ def get_dataset_by_name(meta_store, import_service):
   dataset_id = meta_store.get_dataset_id_by_name(name, version)
   print "Fetch = %s" % fetch
   if fetch == "content":
-    return get_dataset(meta_store, import_service, dataset_id)
+    return get_dataset(meta_store, import_service, hdf5_store, dataset_id)
   elif fetch == "id":
     return dataset_id
   else:
@@ -212,10 +212,11 @@ def setup_app(app):
     binder.bind(MetaStore, to=meta_store)
     binder.bind(Hdf5Store, to=hdf5_store)
 
-  from logging.handlers import RotatingFileHandler
-  file_handler = RotatingFileHandler(app.config['LOG_DIR']+"/taiga.log")
-  file_handler.setLevel(logging.WARNING)
-  app.logger.addHandler(file_handler)
+  if "LOG_DIR" in app.config:
+    from logging.handlers import RotatingFileHandler
+    file_handler = RotatingFileHandler(app.config['LOG_DIR']+"/taiga.log")
+    file_handler.setLevel(logging.WARNING)
+    app.logger.addHandler(file_handler)
   
   injector = Injector(configure_injector)
   flask_injector.init_app(app=app, injector=injector)

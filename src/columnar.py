@@ -3,6 +3,9 @@ import struct
 import zlib
 import array
 import sniff
+from collections import namedtuple
+
+ColumnDef = namedtuple("ColumnDef", ["name", "index", "persister"])
 
 class Predicate(object):
   def create_evaluator(self, cursorMap):
@@ -151,7 +154,7 @@ def write_block_header(fd, row_count, column_lengths):
   write_int(fd, len(column_lengths))
   for length in column_lengths:
     write_int(fd, length)
-  print "column_lengths %s" % repr(column_lengths)
+  #print "column_lengths %s" % repr(column_lengths)
   #print "after write header", fd.tell()
 
 def read_block_header(fd):
@@ -187,7 +190,7 @@ def persist_block(fd, column_persisters, values):
   fd.seek(length_table_offset)
   write_block_header(fd, len(values), column_lengths)
   fd.seek(next_block)
-  print "persist_block size = %s" % (next_block - length_table_offset)
+  #print "persist_block size = %s" % (next_block - length_table_offset)
 
 def compute_column_offsets(base_offset, column_lengths):
   column_offsets = []
@@ -277,8 +280,7 @@ def write_column_definitions(fd, name_type_pairs):
   for name, col_type in name_type_pairs:
     write_str(fd, name)
     write_str(fd, col_type.type_name)
-from collections import namedtuple
-ColumnDef = namedtuple("ColumnDef", ["name", "ty", "index", "persister"])
+
 class TableInfo:
   def __init__(self, columns):
     self.columns = columns

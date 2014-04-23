@@ -2,6 +2,8 @@ import sqlite3
 from collections import namedtuple
 import csv
 
+from sniff import Column
+from sniff import sniff
 
 type_to_sqlite_type = {str: 'text', float: 'real', int: 'integer'}
 
