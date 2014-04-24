@@ -45,3 +45,4 @@ def test_sniff():
   assert columns[1].type == float
   assert columns[2].name == 'c'
   assert columns[2].type == str 
+  

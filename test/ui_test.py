@@ -5,6 +5,7 @@ import shutil
 import sqlmeta
 from IPython import embed
 from StringIO import StringIO
+import json
 
 # 2x2 matrix
 sample_tabular_contents = "a,b\nx,0,1\ny,2,3\n"
@@ -45,6 +46,7 @@ def test_workflow():
 
   shutil.rmtree(tempdir)
 
+
 def test_rest_endpoints():
   tempdir = tempfile.mkdtemp("ui-test")
   app = ui.create_test_app(tempdir)
@@ -61,6 +63,9 @@ def test_rest_endpoints():
   assert resp.status_code == 302
   dataset_id = resp.location.split("/")[-1]
 
+  resp = c.post("/dataset/update", data={"name":"tags", "value[]":"tag1", "pk":dataset_id})
+  assert resp.status_code == 200
+
   resp = c.get("/rest/v0/datasets")
   assert resp.status_code == 200
 
@@ -75,3 +80,9 @@ def test_rest_endpoints():
   resp = c.get("/rest/v0/datasets/"+dataset_id, query_string=dict(format="tabular_csv"))
   assert resp.status_code == 200
   assert resp.data == sample_after_processing
+
+  resp = c.post("/rest/v0/triples/find", data=json.dumps({"query":[[{"var":"dataset"}, {"id":"hasTag"}, {"var":"tag"}]]}))
+  assert resp.status_code == 200
+  json_resp = json.loads(resp.data)
+  assert json_resp["results"] == [{"dataset": {"id":dataset_id}, "tag": "tag1"}]
+  

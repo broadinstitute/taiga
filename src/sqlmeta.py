@@ -183,6 +183,9 @@ class MetaStore(object):
       return [ (Ref(s), Ref(p), unprefix_object(o,ot)) for s, p, ot, o in result.fetchall() ]
 
   def exec_stmt_query(self, query):
+    """ query is a list of statements, where each element in the triple is a dict {"id": ...} for references, 
+      a dict {"var": ...} for a variable, or a literal.  Will return a list of dicts with assignments for each variable
+    """
     return exec_sub_stmt_query(query, self.find_stmt, {})
       
   def close(self):
@@ -268,7 +271,11 @@ def exec_sub_stmt_query(query, find_stmt, bindings):
   for stmt in stmts:
     row = dict(bindings)
     for i, var_name in vars_to_assign:
-      row[var_name] = stmt[i]
+      value = stmt[i]
+      if isinstance(value, Ref):
+        value = {"id": value.id}
+      row[var_name] = value
+    print "row=%s" % repr(row)
     rest_with_assignments = [assign(x, row) for x in rest]
     # recurse to satisfy remaining statements
     results.extend(exec_sub_stmt_query(rest_with_assignments, find_stmt, row))

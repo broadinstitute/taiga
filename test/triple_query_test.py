@@ -35,4 +35,4 @@ def test_constrained_variable():
   assert sqlmeta.exec_sub_stmt_query((
     ({"id":"a"}, {"id":"b"}, {"var": "x"}),
     ({"var":"y"}, {"id":"d"}, {"var": "x"}),
-  ), find_stmt, {}) == [{"x":"c","y":Ref("e")}]
+  ), find_stmt, {}) == [{"x":"c","y":{"id":"e"}}]

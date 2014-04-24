@@ -138,17 +138,12 @@ def list_datasets(meta_store):
 @rest.route("/rest/v0/namedDataset")
 @inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store)
 def get_dataset_by_name(meta_store, import_service, hdf5_store):
-  print "get_dataset_by_name, %s" % request.values
   fetch = request.values['fetch']
-  print "get_dataset_by_name1"
   name = request.values['name']
-  print "get_dataset_by_name2"
   version = None
   if 'version' in request.values:
     version = request.values['version']
-  print "get_dataset_by_name3"
   dataset_id = meta_store.get_dataset_id_by_name(name, version)
-  print "Fetch = %s" % fetch
   if fetch == "content":
     return get_dataset(meta_store, import_service, hdf5_store, dataset_id)
   elif fetch == "id":
@@ -156,6 +151,13 @@ def get_dataset_by_name(meta_store, import_service, hdf5_store):
   else:
       abort(400, "Invalid value for fetch: %s" % fetch)
 
+@rest.route("/rest/v0/triples/find", methods=["POST"])
+@inject(meta_store=MetaStore)
+def find_triples(meta_store):
+  json = request.get_json(force=True)
+  result = meta_store.exec_stmt_query(json['query'])
+  return flask.jsonify(results=result)
+  
 @rest.route("/rest/v0/datasets/<dataset_id>")
 @inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store)
 def get_dataset(meta_store, import_service, hdf5_store, dataset_id):
