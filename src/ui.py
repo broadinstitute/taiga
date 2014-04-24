@@ -157,7 +157,17 @@ def find_triples(meta_store):
   json = request.get_json(force=True)
   result = meta_store.exec_stmt_query(json['query'])
   return flask.jsonify(results=result)
+
+@rest.route("/rest/v0/metadata/<dataset_id>")
+@json_response
+@inject(meta_store=MetaStore)
+def get_metadata(meta_store, dataset_id):
+  meta = meta_store.get_dataset_by_id(dataset_id)
+  if meta == None:
+    abort(404)
   
+  return {'name': meta.name}
+
 @rest.route("/rest/v0/datasets/<dataset_id>")
 @inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store)
 def get_dataset(meta_store, import_service, hdf5_store, dataset_id):
