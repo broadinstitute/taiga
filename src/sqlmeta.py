@@ -49,6 +49,7 @@ user = Table('user', metadata,
      Column('user_id', Integer, primary_key=True),
      Column('name', String),
      Column('email', String),
+     Column('openid', String)
 )
 
 statement = Table("statement", metadata,
@@ -187,7 +188,19 @@ class MetaStore(object):
       a dict {"var": ...} for a variable, or a literal.  Will return a list of dicts with assignments for each variable
     """
     return exec_sub_stmt_query(query, self.find_stmt, {})
-      
+
+  def get_user_details(self, openid):
+    with self.engine.begin() as db:
+      result = db.execute("select user_id, name, email from user where openid = ?", [openid])
+      return result.fetchone()
+
+  def persist_user_details(self, openid, email='', name=''):
+    with self.engine.begin() as db:
+      result = db.execute("select user_id from user where openid = ?", [openid])
+      user_id = result.fetchone()
+      if user_id == None:
+        user_id = db.execute(user.insert().values(name=name, email=email, openid=openid)).inserted_primary_key[0]
+  
   def close(self):
     #self.engine.close()
     pass

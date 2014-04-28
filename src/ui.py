@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, make_response
+from flask import Flask, render_template, request, make_response, session, flash, redirect
 from flask import Blueprint, abort
 from flask import Config
 import flask
+
+import urllib
 
 from collections import namedtuple
 import collections
@@ -19,6 +21,8 @@ from injector import inject, Injector
 import functools
 import logging
 import os
+
+from flask.ext.openid import OpenID
 
 def view(template_name):
   full_template_name = template_name + ".tpl"
@@ -41,6 +45,33 @@ def json_response(func):
 
 ui = Blueprint('ui', __name__, template_folder='templates')
 rest = Blueprint('rest', __name__, template_folder='templates')
+oid = OpenID()
+
+@ui.route('/login', methods=['GET', 'POST'])
+@oid.loginhandler
+def login():
+    """Does the login via OpenID.  Has to call into `oid.try_login`
+    to start the OpenID machinery.
+    """
+    # if we are already logged in, go back to were we came from
+    if 'openid' in session:
+      return redirect(oid.get_next_url())
+        
+    openid = "https://crowd.broadinstitute.org:8443/openidserver/op"
+    return oid.try_login(openid, ask_for=['email', 'fullname'])
+
+@inject(meta_store=MetaStore)
+def create_or_login(resp, meta_store):
+    """This is called when login with OpenID succeeded and it's not
+    necessary to figure out if this is the users's first login or not.
+    This function has to redirect otherwise the user will be presented
+    with a terrible URL which we certainly don't want.
+    """
+    session['openid'] = resp.identity_url
+    # call this to force user record to get created
+    meta_store.persist_user_details(resp.identity_url, email=resp.email, name=resp.fullname)
+    flash(u'Successfully signed in')
+    return redirect(oid.get_next_url())
 
 @ui.route("/")
 @view("index")
@@ -82,9 +113,12 @@ def dataset_update(meta_store):
   return ""
 
 @ui.route("/upload/tabular-form")
-@view("upload/tabular-form")
 @inject(meta_store=MetaStore)
 def upload_tabular_form(meta_store):
+  # make sure we're logged in before showing this form
+  if not ('openid' in session):
+    return redirect("/login?"+urllib.urlencode( (("next","/upload/tabular-form"),) ))
+    
   params = {}
   if 'dataset_id' in request.values:
     existing_dsid = request.values['dataset_id']
@@ -93,7 +127,7 @@ def upload_tabular_form(meta_store):
     params["name"] = ds.name
     params["description"] = ds.description
   
-  return params
+  return render_template("upload/tabular-form.tpl", **params)
 
 def redirect_with_success(msg, url):
   return flask.redirect(url)
@@ -101,6 +135,10 @@ def redirect_with_success(msg, url):
 @ui.route("/upload/tabular", methods=["POST"])
 @inject(meta_store=MetaStore, import_service=ConvertService)
 def upload(import_service, meta_store):
+  if not ('openid' in session):
+    # permission denied if not logged in
+    abort(403)
+
   forms = request.form
 
   uploaded_file = request.files['file']
@@ -108,7 +146,7 @@ def upload(import_service, meta_store):
   rows = forms['rows']
   name = forms['name']
   description = forms['description']
-  created_by_user_id = None
+  created_by_user_id = meta_store.get_user_details(session['openid'])[0]
   is_new_version = 'overwrite_existing' in forms and (forms['overwrite_existing'] == "true")
 
   # TODO: check that name doesn't exist and matches is_new_version flag
@@ -232,6 +270,8 @@ def setup_app(app):
   
   injector = Injector(configure_injector)
   flask_injector.init_app(app=app, injector=injector)
+  oid.init_app(app)
+  oid.after_login_func = injector.get(create_or_login)
   app.register_blueprint(ui)
   app.register_blueprint(rest)
   flask_injector.post_init_app(app=app, injector=injector)
