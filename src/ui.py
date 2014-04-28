@@ -248,6 +248,7 @@ def get_dataset(meta_store, import_service, hdf5_store, dataset_id):
 def create_test_app(base_dir):
   app = Flask(__name__)
 
+  app.config['SECRET_KEY'] = 'secret'
   app.config['TESTING'] = True
   app.config['DATA_DIR'] = base_dir
   setup_app(app)
