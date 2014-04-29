@@ -126,8 +126,10 @@ def upload_tabular_form(meta_store):
   # make sure we're logged in before showing this form
   if not ('openid' in session):
     return redirect("/login?"+urllib.urlencode( (("next","/upload/tabular-form"),) ))
-    
-  params = {}
+  
+  existing_data_types = json.dumps(meta_store.find_all_data_types())
+  
+  params = {"existing_data_types": existing_data_types}
   if 'dataset_id' in request.values:
     existing_dsid = request.values['dataset_id']
     ds = meta_store.get_dataset_by_id(existing_dsid)
@@ -218,6 +220,11 @@ def get_metadata(meta_store, dataset_id):
   
   return {'name': meta.name}
 
+def generate_dataset_filename(meta_store, dataset_id, extension):
+  ds = meta_store.get_dataset_by_id(dataset_id)
+  filename = "".join([ x if x.isalnum() else "_" for x in ds.name ])
+  return "%s_v%s.%s" % (filename, ds.version, extension)
+
 @rest.route("/rest/v0/datasets/<dataset_id>")
 @inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store)
 def get_dataset(meta_store, import_service, hdf5_store, dataset_id):
@@ -246,12 +253,11 @@ def get_dataset(meta_store, import_service, hdf5_store, dataset_id):
     import_service.hdf5_to_csv(hdf5_path, temp_file, delimiter=",")
     suffix = "csv"
   elif format == "hdf5":
-    print "os.path.join(hdf5_store.hdf5_root, hdf5_path)", os.path.join(hdf5_store.hdf5_root, hdf5_path)
-    return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename="%s.hdf5" % dataset_id)
+    return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, "hdf5"))
   else:
     abort("unknown format: %s" % format)
 
-  return flask.send_file(temp_file, as_attachment=True, attachment_filename="%s.%s" % (dataset_id, suffix))
+  return flask.send_file(temp_file, as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, suffix))
 #  write_file(temp_file)
 #  os.unlink(temp_file)
 
