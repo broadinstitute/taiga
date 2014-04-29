@@ -40,7 +40,9 @@ def test_workflow():
       rows="rows",
       name="name",
       description="desc",
-      overwrite_existing="false"
+      overwrite_existing="false",
+      is_published = "false",
+      data_type = "data"      
     ))
     assert resp.status_code == 302
     dataset_id = resp.location.split("/")[-1]
@@ -72,7 +74,9 @@ def test_rest_endpoints():
       rows="rows",
       name="name",
       description="desc",
-      overwrite_existing="false"
+      overwrite_existing="false",
+      is_published = "false",
+      data_type = "data"      
     ))
     assert resp.status_code == 302
     dataset_id = resp.location.split("/")[-1]

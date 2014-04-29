@@ -25,7 +25,7 @@ def test_basic_usages():
 
   assert len(names) == 0
 
-  meta.register_dataset("name1", "dsid1", "description1", None, "path1")
+  meta.register_dataset("name1", "dsid1", True, "data", "description1", None, "path1")
   meta.close()
 
   meta = sqlmeta.MetaStore(temp_filename)
@@ -44,8 +44,8 @@ def test_basic_usages():
 def test_multiple_names():
   meta = sqlmeta.MetaStore(temp_filename)
 
-  meta.register_dataset("name1", "dsid1", "description1", None, "path1")
-  meta.register_dataset("name2", "dsid2", "description2", None, "path2")
+  meta.register_dataset("name1", "dsid1", True, "data", "description1", None, "path1")
+  meta.register_dataset("name2", "dsid2", True, "data", "description2", None, "path2")
   names = meta.list_names()
   assert len(names) == 2
 
@@ -55,11 +55,11 @@ def test_multiple_names():
 def test_multiple_versions():
   meta = sqlmeta.MetaStore(temp_filename)
 
-  meta.register_dataset("name1", "dsid1", "description1", None, "path1")
+  meta.register_dataset("name1", "dsid1", True, "data", "description1", None, "path1")
   versions = meta.get_dataset_versions("name1")
   assert len(versions) == 1
 
-  meta.register_dataset("name1", "dsid1v2", "description1v2", None, "path1v2", True)
+  meta.register_dataset("name1", "dsid1v2", True, "data", "description1v2", None, "path1v2", True)
   versions = meta.get_dataset_versions("name1")
   assert len(versions) == 2
 
@@ -73,7 +73,7 @@ def test_multiple_versions():
 def test_update_description():
   meta = sqlmeta.MetaStore(temp_filename)
 
-  meta.register_dataset("name1", "dsid1", "description1", None, "path1")
+  meta.register_dataset("name1", "dsid1", True, "data", "description1", None, "path1")
   meta.update_description("dsid1", "description updated")
   ds = meta.get_dataset_by_id("dsid1")
   
