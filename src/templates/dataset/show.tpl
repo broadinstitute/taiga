@@ -35,6 +35,7 @@
     {{ download_link('tabular_tsv') }} | 
     {{ download_link('csv') }} | 
     {{ download_link('tsv') }}</p>
+    
   <p> <a href="/upload/tabular-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
   <p> Tags: <a href="#" id="tags" data-name="tags" data-type="select2" data-pk="{{meta.dataset_id}}" data-url="/dataset/update" data-title="Enter tags">{{ dataset_tags|join(', ') }}</a></p>
   <p> Data type: {{ meta.data_type }}</p>
@@ -64,6 +65,15 @@
       {% endfor %}
     </tbody>
   </table>
+
+  <h3>Retrieving this dataset within R</h3>
+  <p>
+    You can fetch this dataset by executing: 
+    <div class="well">
+      dataset &lt;- read.table("/rest/v0/datasets/{{meta.dataset_id}}?format=tabular_tsv");
+    </div>
+  </p>
+
 {% endblock %}
 
 {% block scripts %}
