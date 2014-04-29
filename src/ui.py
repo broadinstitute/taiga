@@ -83,6 +83,14 @@ def index(meta_store):
   
   return {'datasets': meta_store.list_names(), 'tags': [dict(name=k, count=v) for k,v in tags.items()]}
 
+@ui.route("/dataset/tagged")
+@view("dataset/tagged")
+@inject(meta_store=MetaStore)
+def dataset_tagged(meta_store):
+  tag = request.values["tag"]
+  datasets = meta_store.get_by_tag(tag)
+  return {'tag': tag, 'datasets': datasets}
+
 @ui.route("/dataset/show/<dataset_id>")
 @view("dataset/show")
 @inject(meta_store=MetaStore, hdf5_store=Hdf5Store)
@@ -147,6 +155,8 @@ def upload(import_service, meta_store):
   name = forms['name']
   description = forms['description']
   created_by_user_id = meta_store.get_user_details(session['openid'])[0]
+  is_published = bool(forms['is_published'])
+  data_type = forms['data_type']
   is_new_version = 'overwrite_existing' in forms and (forms['overwrite_existing'] == "true")
 
   # TODO: check that name doesn't exist and matches is_new_version flag
@@ -158,7 +168,9 @@ def upload(import_service, meta_store):
     
     # convert file
     dataset_id, hdf5_path = import_service.convert_2d_csv_to_hdf5(temp_file, columns, rows)
-    meta_store.register_dataset(name, dataset_id, description, created_by_user_id, hdf5_path, is_new_version)
+    meta_store.register_dataset(name, dataset_id, is_published, 
+      data_type,
+      description, created_by_user_id, hdf5_path, is_new_version)
     
   return redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
 

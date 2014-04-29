@@ -7,8 +7,19 @@
 {% block title %}Dataset{% endblock %}
 {% block content %}
   <a href="/">Home</a>
-  <h1>Name: {{ meta.name }}</h1>
-  <p> Created by {{ meta.created_by }} on {{ meta.created_timestamp }}</p> 
+  <h1>
+    Name: {{ meta.name }}
+  </h1>
+  <p> 
+    {% if meta.is_published %}
+      <span class="badge alert-info">Published</span>
+    {% else %}
+      <span class="badge alert-danger">Unpublished</span>
+    {% endif %}
+  </p>
+  <p>
+    Created by {{ meta.created_by }} on {{ meta.created_timestamp }} 
+  </p> 
   <p> Versions: 
     {% for version in versions %} 
       {% if version.version == meta.version %}
@@ -26,6 +37,7 @@
     {{ download_link('tsv') }}</p>
   <p> <a href="/upload/tabular-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
   <p> Tags: <a href="#" id="tags" data-name="tags" data-type="select2" data-pk="{{meta.dataset_id}}" data-url="/dataset/update" data-title="Enter tags">{{ dataset_tags|join(', ') }}</a></p>
+  <p> Data type: {{ meta.data_type }}</p>
   <p> Description: </p>
   <p>
     <a href="#" class="x-editable-class" data-name="description" data-type="textarea" data-pk="{{ meta.dataset_id }}" data-url="/dataset/update" data-title="Enter description">{{ meta.description }}</a>

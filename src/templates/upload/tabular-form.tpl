@@ -26,6 +26,24 @@
         {% endif %}
       </div>
     </div>
+    
+    <div class="form-group">
+      <label for="publishState" class="col-sm-2 control-label">Publish status</label>
+      <div class="col-sm-2">
+        <select class="form-control" id="publishedState" name="is_published">
+          <option selected value="False">Unpublished</option>
+          <option value="True">Published</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="inputDataType" class="col-sm-2 control-label">Data type</label>
+      <div class="controls col-sm-2">
+        <input type="hidden" class="form-control select2" id="inputDataType" name="data_type"/>
+      </div>
+    </div>
+
     <div class="form-group">
       <label for="inputColumnValues" class="col-sm-2 control-label">Columns represent</label>
       <div class="col-sm-10">
@@ -57,4 +75,31 @@
     </div>
   </form>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function () {
+  
+  var existing_data_types = ["cat", "dog", "hamster"]
+  
+  $('#inputDataType').select2({
+    query: function (query){
+          var data = {results: []};
+ 
+          $.each(existing_data_types, function(){
+              if(query.term.length == 0 || this.toUpperCase().indexOf(query.term.toUpperCase()) >= 0 ){
+                  data.results.push({id: this, text: this });
+              }
+          });
+
+          if(data.results.length == 0) {
+            data.results.push({id: query.term, text: query.term})
+          }
+
+          query.callback(data);
+      }
+  });
+});
+</script>
 {% endblock %}

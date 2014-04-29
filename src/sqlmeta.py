@@ -13,12 +13,19 @@ import h5py
 import time
 from contextlib import contextmanager
 import math
+import datetime
 import time
 
 from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, DateTime
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, DateTime, Boolean
 
-DatasetSummary = namedtuple("DatasetSummary", ["id", "name", "created_timestamp", "description", "dataset_id", "created_by", "hdf5_path", "version"])
+DatasetSummary = namedtuple("DatasetSummary", [
+  "id", 
+  "name", 
+  "created_timestamp", 
+  "description", 
+  "dataset_id", "created_by", "hdf5_path", 
+  "version", "is_published", "data_type"])
 
 # named_data(named_data_id, name, latest_version)
 # data_version(data_id, named_data_id, version_id, description, created_date, created_by_user_id)
@@ -42,7 +49,9 @@ data_version = Table('data_version', metadata,
      Column('description', String),
      Column('created_by_user_id', None, ForeignKey('user.user_id')),
      Column('created_timestamp', DateTime),
-     Column('hdf5_path', String)
+     Column('hdf5_path', String),
+     Column('is_published', Boolean),
+     Column('data_type', String)
 )
 
 user = Table('user', metadata, 
@@ -101,6 +110,10 @@ class MetaStore(object):
   def get_all_tags(self):
     return set([o for s, p, o in self.find_stmt(None, Ref("hasTag"), None)])
   
+  def get_by_tag(self, tag):
+    dataset_ids = set([s for s, p, o in self.find_stmt(None, Ref("hasTag"), tag)])
+    return [self.get_dataset_by_id(dsid) for dsid in dataset_ids]
+  
   def get_dataset_tags(self, dataset_id):
     return set([o for s, p, o in self.find_stmt(Ref(dataset_id), Ref("hasTag"), None)])
   
@@ -110,12 +123,12 @@ class MetaStore(object):
     
   def get_dataset_by_id(self, dataset_id):
     with self.engine.begin() as db:
-      row = db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path, v.version from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id where v.dataset_id = ?", [dataset_id]).first()
+      row = db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path, v.version, v.is_published, v.data_type from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id where v.dataset_id = ?", [dataset_id]).first()
       if row == None:
         return None
       # convert created_timestamp to a string
       row = list(row)
-      row[2] = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(row[2]))
+      #row[2] = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(row[2]))
       return DatasetSummary(*row)
   
   def get_dataset_id_by_name(self, dataset_name, version=None):
@@ -139,7 +152,8 @@ class MetaStore(object):
       result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id AND n.latest_version = v.version")
       return [self.get_dataset_by_id(x[0]) for x in result.fetchall()]
 
-  def register_dataset(self, name, dataset_id, description, created_by_user_id, hdf5_path, name_exists=False):
+  def register_dataset(self, name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path, name_exists=False):
+    print "register ", name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path
     with self.engine.begin() as db:
       if not name_exists:
         next_version = 1
@@ -149,8 +163,15 @@ class MetaStore(object):
         max_version = db.execute("select max(version) from data_version where named_data_id = ?", [named_data_id]).first()[0]
         next_version = max_version + 1
       
-      db.execute("insert into data_version (dataset_id, named_data_id, version, description, created_by_user_id, created_timestamp, hdf5_path) values (?, ?, ?, ?, ?, ?, ?)", 
-         [dataset_id, named_data_id, next_version, description, created_by_user_id, time.time(), hdf5_path])
+      db.execute(data_version.insert().values(dataset_id=dataset_id,
+        named_data_id=named_data_id, 
+        version=next_version, 
+        description=description, 
+        created_by_user_id=created_by_user_id, 
+        created_timestamp=datetime.datetime.now(), 
+        hdf5_path=hdf5_path,
+        data_type=data_type,
+        is_published=is_published))
 
       if next_version != 1:
         db.execute("update named_data set latest_version = ? where named_data_id = ?", [next_version, named_data_id])
@@ -200,6 +221,11 @@ class MetaStore(object):
       user_id = result.fetchone()
       if user_id == None:
         user_id = db.execute(user.insert().values(name=name, email=email, openid=openid)).inserted_primary_key[0]
+  
+  def find_all_data_types(self):
+    with self.engine.begin() as db:
+      result = db.execute("select distinct data_type from data_version")
+      return [x[0] for x in result.fetchall()]
   
   def close(self):
     #self.engine.close()

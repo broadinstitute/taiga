@@ -8,7 +8,7 @@
   <h1>Tags</h1>
   <ul>
     {% for tag in tags %}
-      <li>{{ tag.name }} : {{ tag.count }}</li>
+      <li><a href="/dataset/tagged?tag={{ tag.name }}">{{ tag.name }}</a> : {{ tag.count }}</li>
     {% endfor %}
   </ul>
 

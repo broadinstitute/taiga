@@ -16,6 +16,7 @@
     <link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.1/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet"/>
 
     <link href="/static/select2-3.4.5/select2.css" rel="stylesheet"/>
+    <link href="/static/select2-bootstrap-css/select2-bootstrap.css" rel="stylesheet"/>
 
     <!-- Latest compiled and minified JavaScript -->
 
