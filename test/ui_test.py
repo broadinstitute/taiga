@@ -1,12 +1,12 @@
-import ui
 import tempfile
 import os
 import shutil
-import sqlmeta
-from IPython import embed
+#from IPython import embed
 from StringIO import StringIO
 import json
-import sqlmeta
+
+from taiga import ui
+from taiga import sqlmeta
 
 # 2x2 matrix
 sample_tabular_contents = "a,b\nx,0,1\ny,2,3\n"

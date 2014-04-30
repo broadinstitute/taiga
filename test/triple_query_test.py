@@ -1,5 +1,5 @@
-import sqlmeta
-from sqlmeta import Ref
+from taiga import sqlmeta
+from taiga.sqlmeta import Ref
 
 def test_find_perfect_match():
   def find_stmt(s, p, o):

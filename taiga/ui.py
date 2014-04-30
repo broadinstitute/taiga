@@ -298,7 +298,7 @@ def setup_app(app):
 def create_app():
   log = logging.getLogger(__name__)
   app = Flask(__name__)
-  app.config.from_object("default_config")
+  app.config.from_object("taiga.default_config")
   config_override_path = os.path.expanduser("~/.taiga/taiga.cfg")
   if os.path.exists(config_override_path):
     log.info("Loading config from %s" % config_override_path)
@@ -308,8 +308,4 @@ def create_app():
   setup_app(app)
   
   return app
-
-if __name__ == "__main__":
-  app = create_app()
-  app.run(host='0.0.0.0', port=8999)
 

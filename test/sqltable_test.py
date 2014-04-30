@@ -1,7 +1,7 @@
-import sqltable
 import tempfile
 import os
 from nose import with_setup
+from taiga import sqltable
 
 temp_filename = None
 

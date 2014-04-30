@@ -24,7 +24,9 @@ DatasetSummary = namedtuple("DatasetSummary", [
   "name", 
   "created_timestamp", 
   "description", 
-  "dataset_id", "created_by", "hdf5_path", 
+  "dataset_id", 
+  "created_by", 
+  "hdf5_path", 
   "version", "is_published", "data_type"])
 
 # named_data(named_data_id, name, latest_version)

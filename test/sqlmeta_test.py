@@ -1,8 +1,9 @@
-import sqlmeta
+from taiga import sqlmeta
+from taiga.sqlmeta import Ref
+
 import tempfile
 import os
 from nose import with_setup
-from sqlmeta import Ref
 
 temp_filename = None
 
