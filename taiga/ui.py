@@ -16,10 +16,8 @@ from convert import ConvertService
 import convert
 import json
 
-import flask_injector
-from injector import inject, Injector
+from injector import inject
 import functools
-import logging
 import os
 
 from flask.ext.openid import OpenID
@@ -34,17 +32,8 @@ def view(template_name):
     return wrapped
   return decorator
 
-def json_response(func):
-  @functools.wraps(func)
-  def wrapped(*args, **kwargs):
-    python_dict = func(*args, **kwargs)
-    resp = make_response(json.dumps(python_dict))
-    resp.headers['Content-Type'] = 'application/json'
-    return resp
-  return wrapped
 
 ui = Blueprint('ui', __name__, template_folder='templates')
-rest = Blueprint('rest', __name__, template_folder='templates')
 oid = OpenID()
 
 @ui.route('/login', methods=['GET', 'POST'])
@@ -175,137 +164,4 @@ def upload(import_service, meta_store):
       description, created_by_user_id, hdf5_path, is_new_version)
     
   return redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
-
-@rest.route("/rest/v0/datasets")
-@json_response
-@inject(meta_store=MetaStore)
-def list_datasets(meta_store):
-  # http://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api#pagination
-  # if using pagination add header:
-  # Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next", <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
-  # X-Total-Count
-  """ Returns a json result with properties name, description, latest_date, version_count"""
-  return {'datasets': meta_store.list_names()}
-
-@rest.route("/rest/v0/namedDataset")
-@inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store)
-def get_dataset_by_name(meta_store, import_service, hdf5_store):
-  fetch = request.values['fetch']
-  name = request.values['name']
-  version = None
-  if 'version' in request.values:
-    version = request.values['version']
-  dataset_id = meta_store.get_dataset_id_by_name(name, version)
-  if fetch == "content":
-    return get_dataset(meta_store, import_service, hdf5_store, dataset_id)
-  elif fetch == "id":
-    return dataset_id
-  else:
-      abort(400, "Invalid value for fetch: %s" % fetch)
-
-@rest.route("/rest/v0/triples/find", methods=["POST"])
-@inject(meta_store=MetaStore)
-def find_triples(meta_store):
-  json = request.get_json(force=True)
-  result = meta_store.exec_stmt_query(json['query'])
-  return flask.jsonify(results=result)
-
-@rest.route("/rest/v0/metadata/<dataset_id>")
-@json_response
-@inject(meta_store=MetaStore)
-def get_metadata(meta_store, dataset_id):
-  meta = meta_store.get_dataset_by_id(dataset_id)
-  if meta == None:
-    abort(404)
-  
-  return {'name': meta.name}
-
-def generate_dataset_filename(meta_store, dataset_id, extension):
-  ds = meta_store.get_dataset_by_id(dataset_id)
-  filename = "".join([ x if x.isalnum() else "_" for x in ds.name ])
-  return "%s_v%s.%s" % (filename, ds.version, extension)
-
-@rest.route("/rest/v0/datasets/<dataset_id>")
-@inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store)
-def get_dataset(meta_store, import_service, hdf5_store, dataset_id):
-  """ Write dataset in the response.  Options: 
-    format=tabular_csv|tabular_tsv|csv|tsv|hdf5
-    
-    matrix_csv and matrix_tsv:
-       will fail if dims != 2
-  """
-  temp_fd = NamedTemporaryFile(delete=False)
-  temp_file = temp_fd.name
-  
-  format = request.values['format']
-  # TODO: rework this so we can clean up temp files
-  hdf5_path = meta_store.get_dataset_by_id(dataset_id).hdf5_path
-  if format == "tabular_csv":
-    import_service.hdf5_to_tabular_csv(hdf5_path, temp_file, delimiter=",")
-    suffix = "csv"
-  elif format == "tabular_tsv":
-    import_service.hdf5_to_tabular_csv(hdf5_path, temp_file, delimiter="\t")
-    suffix = "tsv"
-  elif format == "tsv":
-    import_service.hdf5_to_csv(hdf5_path, temp_file, delimiter="\t")
-    suffix = "tsv"
-  elif format == "csv":
-    import_service.hdf5_to_csv(hdf5_path, temp_file, delimiter=",")
-    suffix = "csv"
-  elif format == "hdf5":
-    return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, "hdf5"))
-  else:
-    abort("unknown format: %s" % format)
-
-  return flask.send_file(temp_file, as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, suffix))
-#  write_file(temp_file)
-#  os.unlink(temp_file)
-
-# I suspect there's a better way
-
-def create_test_app(base_dir):
-  app = Flask(__name__)
-
-  app.config['SECRET_KEY'] = 'secret'
-  app.config['TESTING'] = True
-  app.config['DATA_DIR'] = base_dir
-  setup_app(app)
-
-  return app
-
-def setup_app(app):
-  def configure_injector(binder):
-    data_dir = app.config['DATA_DIR']
-    meta_store = MetaStore(data_dir+"/metadata.sqlite3")
-    hdf5_store = Hdf5Store(data_dir)
-    binder.bind(MetaStore, to=meta_store)
-    binder.bind(Hdf5Store, to=hdf5_store)
-
-  if "LOG_DIR" in app.config:
-    from logging.handlers import RotatingFileHandler
-    file_handler = RotatingFileHandler(app.config['LOG_DIR']+"/taiga.log")
-    file_handler.setLevel(logging.WARNING)
-    app.logger.addHandler(file_handler)
-  
-  injector = Injector(configure_injector)
-  flask_injector.init_app(app=app, injector=injector)
-  oid.init_app(app)
-  oid.after_login_func = injector.get(create_or_login)
-  app.register_blueprint(ui)
-  app.register_blueprint(rest)
-  flask_injector.post_init_app(app=app, injector=injector)
-
-def create_app():
-  log = logging.getLogger(__name__)
-  app = Flask(__name__)
-  app.config.from_object("taiga.default_config")
-  config_override_path = os.path.expanduser("~/.taiga/taiga.cfg")
-  if os.path.exists(config_override_path):
-    log.info("Loading config from %s" % config_override_path)
-    app.config.from_pyfile(config_override_path)
-  else:
-    log.info("No file named %s.  Skipping" % config_override_path)
-  setup_app(app)
-  
-  return app
 

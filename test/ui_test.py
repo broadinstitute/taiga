@@ -5,6 +5,7 @@ import shutil
 from StringIO import StringIO
 import json
 
+import taiga.app
 from taiga import ui
 from taiga import sqlmeta
 
@@ -20,7 +21,7 @@ def create_fake_user(tempdir, openid):
 def test_workflow():
   tempdir = tempfile.mkdtemp("ui-test")
   
-  app = ui.create_test_app(tempdir)
+  app = taiga.app.create_test_app(tempdir)
   create_fake_user(tempdir, "mockopenid")
 
   with app.test_client() as c:
@@ -61,7 +62,7 @@ def test_workflow():
 
 def test_rest_endpoints():
   tempdir = tempfile.mkdtemp("ui-test")
-  app = ui.create_test_app(tempdir)
+  app = taiga.app.create_test_app(tempdir)
   create_fake_user(tempdir, "mockopenid")
 
   with app.test_client() as c:
