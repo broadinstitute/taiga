@@ -2,3 +2,6 @@
 *~
 *.hdf5
 *.sqlite3
+build
+cover
+.*
