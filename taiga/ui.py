@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, make_response, session, flash, redirect
 from flask import Blueprint, abort
-from flask import Config
 import flask
 
 import urllib
@@ -107,8 +106,9 @@ def dataset_show(meta_store, hdf5_store, dataset_id):
   dims = hdf5_store.get_dimensions(meta.hdf5_path)
   all_tags = meta_store.get_all_tags()
   dataset_tags = meta_store.get_dataset_tags(dataset_id)
+  root_url = flask.current_app.config["ROOT_URL"]
   
-  return {"meta": meta, "dims":dims, "versions": versions, "all_tags_as_json": json.dumps(list(all_tags)), "dataset_tags": dataset_tags}
+  return {"root_url": root_url, "meta": meta, "dims":dims, "versions": versions, "all_tags_as_json": json.dumps(list(all_tags)), "dataset_tags": dataset_tags}
 
 @ui.route("/dataset/update", methods=["POST"])
 @inject(meta_store=MetaStore)

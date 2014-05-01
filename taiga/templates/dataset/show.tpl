@@ -6,7 +6,6 @@
 
 {% block title %}Dataset{% endblock %}
 {% block content %}
-  <a href="/">Home</a>
   <h1>
     Name: {{ meta.name }}
   </h1>
@@ -70,7 +69,7 @@
   <p>
     You can fetch this dataset by executing: 
     <div class="well">
-      dataset &lt;- read.table("/rest/v0/datasets/{{meta.dataset_id}}?format=tabular_tsv");
+      dataset &lt;- read.table("{{root_url}}/rest/v0/datasets/{{meta.dataset_id}}?format=tabular_tsv");
     </div>
   </p>
 
