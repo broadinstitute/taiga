@@ -1,5 +1,5 @@
-scipy==0.13.3
 numpy==1.8.0
+scipy==0.13.3
 Flask==0.10.1
 Flask-Injector==0.3.1
 Flask-SQLAlchemy==1.0
