@@ -18,6 +18,7 @@ def create_test_app(base_dir):
   app.config['SECRET_KEY'] = 'secret'
   app.config['TESTING'] = True
   app.config['DATA_DIR'] = base_dir
+  app.config['ROOT_URL'] = "http://localhost"
   setup_app(app)
 
   return app
