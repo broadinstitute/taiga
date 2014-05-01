@@ -66,11 +66,26 @@ def create_or_login(resp, meta_store):
 @view("index")
 @inject(meta_store=MetaStore)
 def index(meta_store):
+  return {}
+
+@ui.route("/datasets-by-timestamp")
+@view("datasets-by-timestamp")
+@inject(meta_store=MetaStore)
+def datasets_by_timestamp(meta_store):
+  datasets = meta_store.list_names()
+  datasets.sort(lambda a, b: -cmp(a.created_timestamp, b.created_timestamp))
+
+  return {'datasets': datasets}
+
+@ui.route("/datasets-by-tag")
+@view("datasets-by-tag")
+@inject(meta_store=MetaStore)
+def datasets_by_tag(meta_store):
   tags = collections.defaultdict(lambda: 0)
   for subj, pred, obj in meta_store.find_stmt(None, Ref("hasTag"), None):
     tags[obj] += 1
   
-  return {'datasets': meta_store.list_names(), 'tags': [dict(name=k, count=v) for k,v in tags.items()]}
+  return {'tags': [dict(name=k, count=v) for k,v in tags.items()]}
 
 @ui.route("/dataset/tagged")
 @view("dataset/tagged")

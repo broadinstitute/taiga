@@ -1,35 +1,9 @@
 {% extends "base.tpl" %}
 {% block title %}Home{% endblock %}
 {% block content %}
-  <p>
-  <a href="/upload/tabular-form">Upload tabular data</a>
-  </p>
 
-  <h1>Tags</h1>
-  <ul>
-    {% for tag in tags %}
-      <li><a href="/dataset/tagged?tag={{ tag.name }}">{{ tag.name }}</a> : {{ tag.count }}</li>
-    {% endfor %}
-  </ul>
-
-  <h1>Datasets</h1>
-  
-  <table class="table table-bordered table-striped">
-    <thead>
-      <tr>
-          <th>Name</th>
-          <th>Description</th>
-      </tr>
-    </thead>
-    
-    <tbody>
-      {% for ds in datasets %}
-      <tr>
-        <td><a href="/dataset/show/{{ds.dataset_id}}">{{ ds.name }}</a></td>
-        <td>{{ ds.description }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <h1>Taiga</h1>
+  <p>Welcome to Taiga: a light-weight repository for capturing, versioning and accessing datasets.</p>
+  <p>Click one of the options at the at the top to find a dataset or upload a new dataset.</p>
 
 {% endblock %}

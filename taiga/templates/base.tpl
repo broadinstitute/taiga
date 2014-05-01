@@ -1,3 +1,6 @@
+{% macro nav_link(link, text) -%}
+    <li><a href="{{ link }}">{{ text }}</a></li>
+{%- endmacro %}
 <!DOCTYPE html>
 <html>
   <head>
@@ -32,13 +35,25 @@
     .select2-container.input-large {
       width: 260px;
     }
+    
+    .top-of-page-margin {
+      padding-top: 20px;
+    }
     </style>
       
     {% endblock %}
   </head>
 
 <body>
+
   <div class="container">
+    <ul class="nav nav-pills top-of-page-margin">
+      {{ nav_link("/", "Taiga home") }}
+      {{ nav_link("/upload/tabular-form", "Upload tabular data") }}
+      {{ nav_link("/datasets-by-tag", "List datasets by tag") }}
+      {{ nav_link("/datasets-by-timestamp", "List datasets by timestamp") }}
+    </ul>
+
 {% block content %}{% endblock %}
   </div>
 
