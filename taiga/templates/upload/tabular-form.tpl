@@ -10,6 +10,10 @@
     {% endif %}
   </h1>
 
+  <h4>Data submissions</h4>
+  <p>The entire contents of Taiga are technically accessibly the Broad community, so keep that in mind when uploading data.  If data is unpublished, you can indicate it as such with the "Publish status" field on the form below and we rely on all users to treat the data accordingly.</p>
+  
+  <h4>Data format</h4>
   <p>
     This form can be used to create a new dataset from a tab-delimited text file.   The file is assumed to be a matrix of values with a header row and a header column that label the rows and columns respectively.  All other cells in the files must be numeric values.   The only exception to numeric values is "NA" can be used to indicate the value is missing.
   </p>
