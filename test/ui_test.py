@@ -39,7 +39,7 @@ def test_workflow():
       file=(StringIO(sample_tabular_contents), 'test.txt'),
       columns="cols",
       rows="rows",
-      name="name",
+      name="test-dataset-name",
       description="desc",
       overwrite_existing="false",
       is_published = "false",
@@ -47,6 +47,21 @@ def test_workflow():
     ))
     assert resp.status_code == 302
     dataset_id = resp.location.split("/")[-1]
+
+    resp = c.post("/dataset/update", data={"name":"tags", "value[]":"test-tag-name", "pk":dataset_id})
+    assert resp.status_code == 200
+
+    resp = c.get("/datasets-by-tag")
+    assert resp.status_code == 200
+    assert "test-tag-name" in resp.get_data()
+    
+    resp = c.get("/dataset/tagged?tag=test-tag-name")
+    assert resp.status_code == 200
+    assert "test-dataset-name" in resp.get_data()
+    
+    resp = c.get("/datasets-by-timestamp")
+    assert resp.status_code == 200
+    assert "test-dataset-name" in resp.get_data()
 
     resp = c.get("/dataset/show/"+dataset_id)
     assert resp.status_code == 200
