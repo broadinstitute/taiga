@@ -7,7 +7,7 @@ import flask
 import os
 import logging
 from sqlmeta import MetaStore, Hdf5Store
-from convert import ConvertService
+from convert import ConvertService,CacheService
 import flask_injector
 import ui
 import rest
@@ -26,8 +26,10 @@ def create_test_app(base_dir):
 def setup_app(app):
   def configure_injector(binder):
     data_dir = app.config['DATA_DIR']
+    temp_dir = data_dir+"/temp"
     meta_store = MetaStore(data_dir+"/metadata.sqlite3")
     hdf5_store = Hdf5Store(data_dir)
+    binder.bind(CacheService, to=CacheService(temp_dir))
     binder.bind(MetaStore, to=meta_store)
     binder.bind(Hdf5Store, to=hdf5_store)
 

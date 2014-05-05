@@ -4,6 +4,9 @@ from injector import inject
 import numpy as np
 import h5py
 import math
+import json
+import hashlib
+import os
 
 def to_string_with_nan_mask(x):
   if math.isnan(x):
@@ -90,6 +93,45 @@ class ConvertService(object):
 
     return (dataset_id, hdf5_path)
 
+class CacheFileHandle(object):
+  """ Handle to a cached file.  Only self.name and self.done should be accessed """
+  def __init__(self, filename, final_filename, needs_content):
+    self.partial_filename = filename
+    self.final_filename = final_filename
+    self.needs_content = needs_content
+    if self.needs_content:
+      self.name = self.partial_filename
+    else:
+      self.name = self.final_filename
+    
+  def done(self):
+    os.rename(self.partial_filename, self.final_filename)
+    self.name = self.final_filename
 
-
-  
+class CacheService(object):
+  """ Trivial caching service.  Relies on the filesystem and hashes of parameters.  Likely prone to race conditions which may not be important in low throughput situations """
+  def __init__(self, temp_dir):
+    self.temp_dir = temp_dir
+    if not os.path.exists(temp_dir):
+      os.makedirs(temp_dir)
+    
+  def create_file_for(self, parameters):
+    parameter_str = json.dumps(parameters, sort_keys=True)
+    digest = hashlib.md5(parameter_str).hexdigest()
+    
+    metadata_file = "%s/temp-%s.json" % (self.temp_dir, digest)
+    partial_file = "%s/part-%s.data" % (self.temp_dir, digest)
+    final_file = "%s/final-%s.data" % (self.temp_dir, digest)
+    
+    if os.path.exists(metadata_file):
+      with open(metadata_file) as fd:
+        metadata_body = fd.read()
+      assert metadata_body == parameter_str
+    else:
+      with open(metadata_file, "w") as fd:
+        fd.write(parameter_str)
+    
+    if os.path.exists(final_file):
+      return CacheFileHandle(None, final_file, False)
+    else:
+      return CacheFileHandle(partial_file, final_file, True)
