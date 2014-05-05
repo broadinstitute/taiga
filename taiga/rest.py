@@ -69,24 +69,26 @@ def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_i
 
   file_handle = cache_service.create_file_for(dict(dataset_id = dataset_id, parameters = request.values))
   
+  hdf5_path = meta_store.get_dataset_by_id(dataset_id).hdf5_path
+  if format == "tabular_csv":
+    import_fn = lambda: import_service.hdf5_to_tabular_csv(hdf5_path, file_handle.name, delimiter=",")
+    suffix = "csv"
+  elif format == "tabular_tsv":
+    import_fn = lambda: import_service.hdf5_to_tabular_csv(hdf5_path, file_handle.name, delimiter="\t")
+    suffix = "tsv"
+  elif format == "tsv":
+    import_fn = lambda: import_service.hdf5_to_csv(hdf5_path, file_handle.name, delimiter="\t")
+    suffix = "tsv"
+  elif format == "csv":
+    import_fn = lambda: import_service.hdf5_to_csv(hdf5_path, file_handle.name, delimiter=",")
+    suffix = "csv"
+  elif format == "hdf5":
+    return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, "hdf5"))
+  else:
+    abort("unknown format: %s" % format)
+  
   if file_handle.needs_content:
-    hdf5_path = meta_store.get_dataset_by_id(dataset_id).hdf5_path
-    if format == "tabular_csv":
-      import_service.hdf5_to_tabular_csv(hdf5_path, file_handle.name, delimiter=",")
-      suffix = "csv"
-    elif format == "tabular_tsv":
-      import_service.hdf5_to_tabular_csv(hdf5_path, file_handle.name, delimiter="\t")
-      suffix = "tsv"
-    elif format == "tsv":
-      import_service.hdf5_to_csv(hdf5_path, file_handle.name, delimiter="\t")
-      suffix = "tsv"
-    elif format == "csv":
-      import_service.hdf5_to_csv(hdf5_path, file_handle.name, delimiter=",")
-      suffix = "csv"
-    elif format == "hdf5":
-      return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, "hdf5"))
-    else:
-      abort("unknown format: %s" % format)
+    import_fn()
     file_handle.done()
 
   return flask.send_file(file_handle.name, as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, suffix))

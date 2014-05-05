@@ -111,7 +111,7 @@ class CacheFileHandle(object):
 class CacheService(object):
   """ Trivial caching service.  Relies on the filesystem and hashes of parameters.  Likely prone to race conditions which may not be important in low throughput situations """
   def __init__(self, temp_dir):
-    self.temp_dir = temp_dir
+    self.temp_dir = os.path.abspath(temp_dir)
     if not os.path.exists(temp_dir):
       os.makedirs(temp_dir)
     
