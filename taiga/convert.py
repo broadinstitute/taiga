@@ -18,6 +18,72 @@ class ConvertService(object):
   @inject(hdf5fs=sqlmeta.Hdf5Store)
   def __init__(self, hdf5fs):
     self.hdf5fs = hdf5fs
+    self.str_dt = h5py.special_dtype(vlen=bytes)
+  
+  def hdf5_to_gct(self, hdf5_path, destination_file):
+    with self.hdf5fs.hdf5_open(hdf5_path) as f:
+      with open(destination_file, "w") as fd_out:
+        w = csv.writer(fd_out, delimiter="\t")
+
+        data = f['data']
+
+        row_header = f['dim_0']
+        col_header = list(f['dim_1'])
+        if 'gct_description' in f:
+          descriptions = f['gct_description']
+        else:
+          descriptions = row_header
+
+        w.writerow(["#1.2"])
+        w.writerow([str(len(row_header)), str(len(col_header))])
+        w.writerow(["Name", "Description"]+col_header)
+
+        row_count = row_header.shape[0]
+        for i in xrange(row_count):
+          row = data[i,:]
+          w.writerow([row_header[i], descriptions[i]] + [to_string_with_nan_mask(x) for x in row])
+
+  def gct_to_hdf5(self, input_path, dataset_id, hdf5_path, col_axis, row_axis):
+    # TODO: Reduce memory footprint of this conversion
+    with open(input_path) as fd:
+      version = fd.readline()
+      assert version.strip() == "#1.2"
+      r = csv.reader(fd, delimiter="\t")
+      
+      header_count_row = r.next()
+      row_count = int(header_count_row[0])
+      col_count = int(header_count_row[1])
+      
+      gct_header = r.next()
+      
+      col_header = gct_header[2:]
+      names = []
+      descriptions = []
+      
+      data_rows = []
+      for row in r:
+        names.append(row[0])
+        descriptions.append(row[1])
+        data_rows.append(row[2:])
+    
+      assert len(data_rows) == row_count
+      assert len(data_rows[0]) == col_count
+      
+    data = np.empty((row_count, col_count),'d')
+    data[:] = np.nan
+    for row_i, row in enumerate(data_rows):
+      for col_i, value in enumerate(row):
+        if value == "NA" or value == '':
+          parsed_value = np.nan
+        else:
+          parsed_value = float(value)
+        data[row_i, col_i] = parsed_value
+
+    with self.hdf5fs.hdf5_open(hdf5_path, mode="w") as f:
+      self.write_hdf5_matrix(f, dataset_id, data, row_axis, names, col_axis, col_header)
+      
+      gct_description = f.create_dataset("gct_description", (len(descriptions),), dtype=self.str_dt)
+      gct_description[:] = descriptions
   
   def hdf5_to_csv(self, hdf5_path, destination_file, delimiter=","):
     with self.hdf5fs.hdf5_open(hdf5_path) as f:
@@ -55,11 +121,9 @@ class ConvertService(object):
         w.writerow([row_header[i]] + [to_string_with_nan_mask(x) for x in row])
       fd_out.close()
 
-  def convert_2d_csv_to_hdf5(self, input_file, col_axis, row_axis):
-    dataset_id, hdf5_path = self.hdf5fs.create_new_dataset_id()
-    
+  def tcsv_to_hdf5(self, input_path, dataset_id, hdf5_path, col_axis, row_axis):
     # TODO: Reduce memory footprint of this conversion
-    with open(input_file) as fd:
+    with open(input_path) as fd:
       r = csv.reader(fd)
       col_header = r.next()
       row_header = []
@@ -67,6 +131,11 @@ class ConvertService(object):
       for row in r:
         row_header.append(row[0])
         rows.append(row[1:])
+    
+    # check to see, does the header line up with the number of columns in the row, or do we need to shift it by one?
+    if col_header[0] == '':
+      col_header=col_header[1:]
+    
     data = np.empty((len(rows), len(rows[0])),'d')
     data[:] = np.nan
     for row_i, row in enumerate(rows):
@@ -78,20 +147,24 @@ class ConvertService(object):
         data[row_i, col_i] = parsed_value
 
     with self.hdf5fs.hdf5_open(hdf5_path, mode="w") as f:
-      str_dt = h5py.special_dtype(vlen=bytes)
+      self.write_hdf5_matrix(f, dataset_id, data, row_axis, row_header, col_axis, col_header)
 
-      f['data'] = data
-      f['data'].attrs['id'] = dataset_id
-  
-      dim_0 = f.create_dataset("dim_0", (len(row_header),), dtype=str_dt)
-      dim_0[:] = row_header
-      dim_0.attrs['name'] = row_axis
-
-      dim_1 = f.create_dataset("dim_1", (len(col_header),), dtype=str_dt)
-      dim_1[:] = col_header
-      dim_1.attrs['name'] = col_axis
-
+  def convert_2d_csv_to_hdf5(self, input_file, col_axis, row_axis):
+    dataset_id, hdf5_path = self.hdf5fs.create_new_dataset_id()
+    self.tcsv_to_hdf5(input_file, dataset_id, hdf5_path, col_axis, row_axis)
     return (dataset_id, hdf5_path)
+
+  def write_hdf5_matrix(self, f, dataset_id, data, row_axis, row_header, col_axis, col_header):
+    f['data'] = data
+    f['data'].attrs['id'] = dataset_id
+
+    dim_0 = f.create_dataset("dim_0", (len(row_header),), dtype=self.str_dt)
+    dim_0[:] = row_header
+    dim_0.attrs['name'] = row_axis
+
+    dim_1 = f.create_dataset("dim_1", (len(col_header),), dtype=self.str_dt)
+    dim_1[:] = col_header
+    dim_1.attrs['name'] = col_axis
 
 class CacheFileHandle(object):
   """ Handle to a cached file.  Only self.name and self.done should be accessed """
