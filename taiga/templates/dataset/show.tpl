@@ -30,6 +30,7 @@
   </p>
   <p> Download as 
     {{ download_link('hdf5') }} | 
+    {{ download_link('gct') }} | 
     {{ download_link('tabular_csv') }} | 
     {{ download_link('tabular_tsv') }} | 
     {{ download_link('csv') }} | 

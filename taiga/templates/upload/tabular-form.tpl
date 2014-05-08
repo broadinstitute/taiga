@@ -2,7 +2,7 @@
 {% block title %}Upload Tabular File{% endblock %}
 {% block content %}
 
-  <h1>Upload CSV as a new
+  <h1>Upload tab delimited data as a new
     {% if new_version %} 
       Version of an existing Dataset
     {% else %}
@@ -15,7 +15,9 @@
   
   <h4>Data format</h4>
   <p>
-    This form can be used to create a new dataset from a tab-delimited text file.   The file is assumed to be a matrix of values with a header row and a header column that label the rows and columns respectively.  All other cells in the files must be numeric values.   The only exception to numeric values is "NA" can be used to indicate the value is missing.
+    This form can be used to create a new dataset from a tab-delimited text file.   The file can either be a GCT file or a flat text file.
+    
+    If the GCT format is not selected in the form below, the file is assumed to be a matrix of values with a header row and a header column that label the rows and columns respectively.  All other cells in the files must be numeric values.   The only exception to numeric values is "NA" can be used to indicate the value is missing.
   </p>
 
   <form class="form-horizontal" role="form" method="post" action="/upload/tabular" enctype="multipart/form-data">
@@ -32,6 +34,16 @@
         {% else %}
           <input type="text" class="form-control" id="inputName" placeholder="Name" name="name">
         {% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="format" class="col-sm-2 control-label">File format</label>
+      <div class="col-sm-2">
+        <select class="form-control" id="format" name="format">
+          <option selected value="tsv">Tab delimited</option>
+          <option value="gct">GCT</option>
+        </select>
       </div>
     </div>
     

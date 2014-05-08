@@ -149,11 +149,6 @@ class ConvertService(object):
     with self.hdf5fs.hdf5_open(hdf5_path, mode="w") as f:
       self.write_hdf5_matrix(f, dataset_id, data, row_axis, row_header, col_axis, col_header)
 
-  def convert_2d_csv_to_hdf5(self, input_file, col_axis, row_axis):
-    dataset_id, hdf5_path = self.hdf5fs.create_new_dataset_id()
-    self.tcsv_to_hdf5(input_file, dataset_id, hdf5_path, col_axis, row_axis)
-    return (dataset_id, hdf5_path)
-
   def write_hdf5_matrix(self, f, dataset_id, data, row_axis, row_header, col_axis, col_header):
     f['data'] = data
     f['data'].attrs['id'] = dataset_id

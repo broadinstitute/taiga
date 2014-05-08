@@ -76,6 +76,9 @@ def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_i
   elif format == "tabular_tsv":
     import_fn = lambda: import_service.hdf5_to_tabular_csv(hdf5_path, file_handle.name, delimiter="\t")
     suffix = "tsv"
+  elif format == "gct":
+    import_fn = lambda: import_service.hdf5_to_gct(hdf5_path, file_handle.name)
+    suffix = "gct"
   elif format == "tsv":
     import_fn = lambda: import_service.hdf5_to_csv(hdf5_path, file_handle.name, delimiter="\t")
     suffix = "tsv"

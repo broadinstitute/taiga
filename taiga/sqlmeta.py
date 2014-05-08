@@ -98,6 +98,11 @@ class MetaStore(object):
     if new_db:
       metadata.create_all(self.engine)
 
+  def create_new_dataset_id(self):
+    dataset_id = str(uuid.uuid4())
+    # TODO: make staggered dirs
+    return (dataset_id, dataset_id+".hdf5")
+
   def get_dataset_versions(self, dataset_name):
     with self.engine.begin() as db:
       result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id where n.name = ? order by v.version", (dataset_name,))
@@ -244,11 +249,6 @@ Dimension = namedtuple("Dimension", ["name", "values"])
 class Hdf5Store(object):
   def __init__(self, hdf5_root):
     self.hdf5_root = hdf5_root
-
-  def create_new_dataset_id(self):
-    dataset_id = str(uuid.uuid4())
-    # TODO: make staggered dirs
-    return (dataset_id, dataset_id+".hdf5")
 
   def get_dimensions(self, hdf5_path):
     with self.hdf5_open(hdf5_path) as f:

@@ -43,7 +43,8 @@ def test_workflow():
       description="desc",
       overwrite_existing="false",
       is_published = "false",
-      data_type = "data"      
+      data_type = "data", 
+      format="tsv"
     ))
     assert resp.status_code == 302
     dataset_id = resp.location.split("/")[-1]
@@ -92,7 +93,8 @@ def test_rest_endpoints():
       description="desc",
       overwrite_existing="false",
       is_published = "false",
-      data_type = "data"      
+      data_type = "data",
+      format="tsv"
     ))
     assert resp.status_code == 302
     dataset_id = resp.location.split("/")[-1]
