@@ -68,10 +68,11 @@
 
   <h3>Retrieving this dataset within R</h3>
   <p>
-    You can fetch this dataset by executing: 
-    <div class="well">
-      dataset &lt;- read.table("{{root_url}}/rest/v0/datasets/{{meta.dataset_id}}?format=tabular_tsv");
-    </div>
+    You can fetch this dataset by its ID, and load it into your R session with code below: 
+    <pre>dataset &lt;- read.table("{{root_url}}/rest/v0/datasets/{{meta.dataset_id}}?format=tabular_tsv",check.names=F);</pre>
+
+    Fetching the data by it's ID will guarentee you get the same data each and every time this is executed.  Alternatively, you can fetch this data by its name, in in which case, you'll receive the latest version of the data.  Code for fetching by name, is as follows:
+    <pre>dataset &lt;- read.table("{{root_url}}/rest/v0/namedDataset?fetch=content&format=tabular_tsv&name={{meta.name|urlencode}}",check.names=F);</pre>
   </p>
 
 {% endblock %}
