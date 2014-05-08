@@ -231,7 +231,7 @@ class MetaStore(object):
   
   def find_all_data_types(self):
     with self.engine.begin() as db:
-      result = db.execute("select distinct data_type from data_version")
+      result = db.execute("select distinct data_type from data_version where data_type is not null")
       return [x[0] for x in result.fetchall()]
   
   def close(self):
