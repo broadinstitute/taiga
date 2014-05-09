@@ -162,7 +162,7 @@ def upload(import_service, meta_store):
   name = forms['name']
   description = forms['description']
   created_by_user_id = meta_store.get_user_details(session['openid'])[0]
-  is_published = bool(forms['is_published'])
+  is_published = (forms['is_published'] == "True")
   data_type = forms['data_type']
   format = forms['format']
   is_new_version = 'overwrite_existing' in forms and (forms['overwrite_existing'] == "true")
