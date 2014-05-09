@@ -244,7 +244,7 @@ def open_hdf5_ctx_mgr(hdf5_path, mode="r"):
   yield f
   f.close()
 
-Dimension = namedtuple("Dimension", ["name", "values"])
+Dimension = namedtuple("Dimension", ["name", "value_count"])
 
 class Hdf5Store(object):
   def __init__(self, hdf5_root):
@@ -258,7 +258,7 @@ class Hdf5Store(object):
       dims=[]
       for i in range(len(shape)):
         dim_vector = f['dim_%d' % i]
-        dims.append( Dimension( name = dim_vector.attrs["name"], values = tuple(dim_vector)))
+        dims.append( Dimension( name = dim_vector.attrs["name"], value_count = dim_vector.shape[0]))
     
     return dims
   

@@ -60,7 +60,7 @@
         <tr>
           <td>{{ loop.index }}</td>
           <td>{{ dim.name }}</td>
-          <td>{{ dim.values|length }}</td>
+          <td>{{ dim.value_count }}</td>
         </tr>
       {% endfor %}
     </tbody>
