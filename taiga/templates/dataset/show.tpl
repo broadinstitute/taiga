@@ -43,6 +43,7 @@
   <p> Download as 
     {{ download_link('hdf5') }} | 
     {{ download_link('gct') }} | 
+    {{ download_link('rdata') }} |
     {{ download_link('tabular_csv') }} | 
     {{ download_link('tabular_tsv') }} | 
     {{ download_link('csv') }} | 
@@ -84,11 +85,11 @@
 
   <h3>Retrieving this dataset within R</h3>
   <p>
-    You can fetch this dataset by its ID, and load it into your R session with code below: 
-    <pre>dataset &lt;- read.table("{{root_url}}/rest/v0/datasets/{{meta.dataset_id}}?format=tabular_tsv",check.names=F);</pre>
+    You can fetch this dataset by its ID, and load it into your R session with code below.  Executing the following will load the matrix into your workspace with the name "data": 
+    <pre>load(url("{{root_url}}/rest/v0/datasets/{{meta.dataset_id}}?format=rdata"));</pre>
 
     Fetching the data by it's ID will guarentee you get the same data each and every time this is executed.  Alternatively, you can fetch this data by its name, in in which case, you'll receive the latest version of the data.  Code for fetching by name, is as follows:
-    <pre>dataset &lt;- read.table("{{root_url}}/rest/v0/namedDataset?fetch=content&format=tabular_tsv&name={{meta.name|urlencode}}",check.names=F);</pre>
+    <pre>load(url("{{root_url}}/rest/v0/namedDataset?fetch=content&format=rdata&name={{meta.name|urlencode}}"));</pre>
   </p>
 
 {% endblock %}

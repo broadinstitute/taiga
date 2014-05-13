@@ -85,6 +85,9 @@ def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_i
   elif format == "csv":
     import_fn = lambda: import_service.hdf5_to_csv(hdf5_path, file_handle.name, delimiter=",")
     suffix = "csv"
+  elif format == "rdata":
+    import_fn = lambda: import_service.hdf5_to_Rdata(hdf5_path, file_handle.name)
+    suffix = "Rdata"
   elif format == "hdf5":
     return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, "hdf5"))
   else:
