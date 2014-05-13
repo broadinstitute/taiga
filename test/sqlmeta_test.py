@@ -71,15 +71,26 @@ def test_multiple_versions():
   meta.close()
   
 @with_setup(find_temp_file, cleanup_temp_file)
-def test_update_description():
+def test_update_dataset():
   meta = sqlmeta.MetaStore(temp_filename)
 
   meta.register_dataset("name1", "dsid1", True, "data", "description1", None, "path1")
-  meta.update_description("dsid1", "description updated")
+  meta.update_dataset_field("dsid1", "description", "description updated")
   ds = meta.get_dataset_by_id("dsid1")
-  
+
+  assert ds.is_published  
   assert ds.description == "description updated"
 
+  meta.update_dataset_field("dsid1", "data_type", "data_type updated")
+  ds = meta.get_dataset_by_id("dsid1")
+  
+  assert ds.data_type == "data_type updated"
+
+  meta.update_dataset_field("dsid1", "is_published",False)
+  ds = meta.get_dataset_by_id("dsid1")
+  
+  assert not ds.is_published
+  
   meta.close()
 
 @with_setup(find_temp_file, cleanup_temp_file)

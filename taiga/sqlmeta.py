@@ -123,10 +123,11 @@ class MetaStore(object):
   
   def get_dataset_tags(self, dataset_id):
     return set([o for s, p, o in self.find_stmt(Ref(dataset_id), Ref("hasTag"), None)])
-  
-  def update_description(self, dataset_id, description):
+
+  def update_dataset_field(self, dataset_id, field_name, value):
+    assert field_name in ("description", "data_type", "is_published")
     with self.engine.begin() as db:
-      updated = db.execute("update data_version set description = ? where dataset_id = ?", (description, dataset_id))
+      updated = db.execute("update data_version set "+field_name+" = ? where dataset_id = ?", (value, dataset_id))
     
   def get_dataset_by_id(self, dataset_id):
     with self.engine.begin() as db:

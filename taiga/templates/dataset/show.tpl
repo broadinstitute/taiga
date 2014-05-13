@@ -15,6 +15,18 @@
     {% else %}
       <span class="badge alert-danger">Unpublished</span>
     {% endif %}
+    </a>
+      <form method="POST" action="/dataset/update">
+        <input type="hidden" name="pk" value="{{ meta.dataset_id }}">
+        <input type="hidden" name="name" value="is_published">
+        {% if not meta.is_published %}
+          <input type="hidden" name="value" value="True">
+          <input type="submit" class="btn" value="Change to 'Published'">
+        {% else %}
+          <input type="hidden" name="value" value="False">
+          <input type="submit" class="btn" value="Change to 'Unpublished'">
+        {% endif %}
+      </form>
   </p>
   <p>
     Created by {{ meta.created_by }} on {{ meta.created_timestamp }} 
@@ -37,11 +49,15 @@
     {{ download_link('tsv') }}</p>
     
   <p> <a href="/upload/tabular-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
-  <p> Tags: <a href="#" id="tags" data-name="tags" data-type="select2" data-pk="{{meta.dataset_id}}" data-url="/dataset/update" data-title="Enter tags">{{ dataset_tags|join(', ') }}</a></p>
-  <p> Data type: {{ meta.data_type }}</p>
+  <p> Tags: <a href="#" id="tags" data-name="tags" data-type="select2" data-pk="{{meta.dataset_id}}" 
+               data-url="/dataset/update" data-title="Enter tags">{{ dataset_tags|join(', ') }}</a></p>
+  <p> Data type: <a href="#" id="data_type" data-name="data_type" data-type="select2" 
+                  data-pk="{{ meta.dataset_id }}" data-url="/dataset/update" 
+                  data-title="Enter data type" data-value="{{ meta.data_type }}">{{ meta.data_type }}</a></p>
   <p> Description: </p>
   <p>
-    <a href="#" class="x-editable-class" data-name="description" data-type="textarea" data-pk="{{ meta.dataset_id }}" data-url="/dataset/update" data-title="Enter description">{{ meta.description }}</a>
+    <a href="#" id="description" data-name="description" data-type="textarea" data-pk="{{ meta.dataset_id }}" 
+    data-url="/dataset/update" data-title="Enter description">{{ meta.description }}</a>
   </p>
   
   <h2>Dimensions</h2>
@@ -81,15 +97,56 @@
 <script>
   $.fn.editable.defaults.mode = 'inline';
   $(document).ready(function() {
-      $('.x-editable-class').editable();
-      
-      $('#tags').editable({
-              inputclass: 'input-large',
-              select2: {
-                  tags: {{ all_tags_as_json }},
-                  tokenSeparators: [",", " "]
-              }
-      });      
+    
+    $('.x-editable-class').editable();
+
+    $('#description').editable({
+      inputclass: 'input-large',
+    });
+    
+    $('#tags').editable({
+      inputclass: 'input-large',
+      select2: {
+          tags: {{ all_tags_as_json }},
+          tokenSeparators: [",", " "]
+      }
+    });
+    
+    var autocomplete_if_in_list = function(values) { 
+      return function (query){
+        var data = {results: []};
+
+        $.each(values, function(){
+            if(query.term.length == 0 || this.toUpperCase().indexOf(query.term.toUpperCase()) >= 0 ){
+                data.results.push({id: this, text: this });
+            }
+        });
+
+        if(data.results.length == 0) {
+          data.results.push({id: query.term, text: query.term})
+        }
+
+        query.callback(data);
+      };
+    }
+
+    var existing_data_types = {{ existing_data_types }}
+    $('#data_type').editable({
+      select2: {
+        width: 200,
+        inputclass: 'input-large',
+        query: autocomplete_if_in_list(existing_data_types)
+      },
+      display: function (value)
+      {
+          if (!value) {
+              $(this).empty();
+              return;
+          }
+          $(this).text(value);
+      },
+    });
+    
   });
 </script>
 {% endblock %}

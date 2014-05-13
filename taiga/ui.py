@@ -107,8 +107,12 @@ def dataset_show(meta_store, hdf5_store, dataset_id):
   all_tags = meta_store.get_all_tags()
   dataset_tags = meta_store.get_dataset_tags(dataset_id)
   root_url = flask.current_app.config["ROOT_URL"]
+
+  existing_data_types = json.dumps(meta_store.find_all_data_types())
   
-  return {"root_url": root_url, "meta": meta, "dims":dims, "versions": versions, "all_tags_as_json": json.dumps(list(all_tags)), "dataset_tags": dataset_tags}
+  return {"root_url": root_url, "meta": meta, "dims":dims, "versions": versions, 
+    "all_tags_as_json": json.dumps(list(all_tags)), "dataset_tags": dataset_tags,
+    "existing_data_types": existing_data_types}
 
 @ui.route("/dataset/update", methods=["POST"])
 @inject(meta_store=MetaStore)
@@ -120,8 +124,21 @@ def dataset_update(meta_store):
     values = j.getlist("value[]")
     meta_store.update_tags(id, values)
   else:
-    assert name == "description"
-    meta_store.update_description(id, j['value'])
+    value = j['value']
+    if name == "is_published":
+      value = (value == "True")
+      meta_store.update_dataset_field(id, name, value)
+    elif name in ("description", "data_type", "is_published"):
+      meta_store.update_dataset_field(id, name, value)
+    else:
+      raise Exception("Invalid field: %s" % name)
+
+  # if this was invoked by a browser that wants to display something meaningful to the user
+  if 'Accept' in request.headers:
+    accept_types = request.headers['Accept'].split(",")
+    if "text/html" in accept_types:
+      return redirect("/dataset/show/%s" % id)
+    
   return ""
 
 @ui.route("/upload/tabular-form")
