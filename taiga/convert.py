@@ -114,7 +114,7 @@ class ConvertService(object):
       row_header = f['dim_0']
       col_header = f['dim_1']
     
-      w.writerow(col_header)
+      w.writerow([""]+list(col_header))
       row_count = row_header.shape[0]
       for i in xrange(row_count):
         row = data[i,:]

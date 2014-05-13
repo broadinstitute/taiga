@@ -11,7 +11,7 @@ from taiga import sqlmeta
 
 # 2x2 matrix
 sample_tabular_contents = "a,b\nx,0,1\ny,2,3\n"
-sample_after_processing = 'a,b\r\nx,0.0,1.0\r\ny,2.0,3.0\r\n'
+sample_after_processing = ',a,b\r\nx,0.0,1.0\r\ny,2.0,3.0\r\n'
 
 def create_fake_user(tempdir, openid):
   meta_store =sqlmeta.MetaStore(tempdir+"/metadata.sqlite3")

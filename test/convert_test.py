@@ -89,7 +89,7 @@ def test_import_gct_export_tcsv():
   final_file = tempdir+"/final"
   cs.gct_to_hdf5(write_tmp(GCT_CONTENTS), "dsid", hdf5_path, "col", "row")
   cs.hdf5_to_tabular_csv(hdf5_path, final_file, delimiter=",")
-  verify_file(final_file, RSTYLE_TCSV_CONTENTS)
+  verify_file(final_file, TCSV_CONTENTS)
 
 @with_setup(setup, cleanup_temp_file)
 def test_import_tcsv_export_tcsv():
@@ -97,7 +97,7 @@ def test_import_tcsv_export_tcsv():
   final_file = tempdir+"/final"
   cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row")
   cs.hdf5_to_tabular_csv(hdf5_path, final_file, delimiter=",")
-  verify_file(final_file, RSTYLE_TCSV_CONTENTS)
+  verify_file(final_file, TCSV_CONTENTS)
 
 @with_setup(setup, cleanup_temp_file)
 def test_import_rstyle_tcsv_export_tcsv():
@@ -105,7 +105,7 @@ def test_import_rstyle_tcsv_export_tcsv():
   final_file = tempdir+"/final"
   cs.tcsv_to_hdf5(write_tmp(RSTYLE_TCSV_CONTENTS), "dsid", hdf5_path, "col", "row")
   cs.hdf5_to_tabular_csv(hdf5_path, final_file, delimiter=",")
-  verify_file(final_file, RSTYLE_TCSV_CONTENTS)
+  verify_file(final_file, TCSV_CONTENTS)
 
 @with_setup(setup, cleanup_temp_file)
 def test_import_tcsv_export_csv():
