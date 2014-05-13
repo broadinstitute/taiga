@@ -7,6 +7,8 @@ import math
 import json
 import hashlib
 import os
+import subprocess
+import tempfile
 
 def to_string_with_nan_mask(x):
   if math.isnan(x):
@@ -14,11 +16,37 @@ def to_string_with_nan_mask(x):
   else:
     return str(x)
 
+r_escape_str = lambda x: '"'+x.replace("\"", "\\\"")+'"'
+
 class ConvertService(object):
   @inject(hdf5fs=sqlmeta.Hdf5Store)
   def __init__(self, hdf5fs):
     self.hdf5fs = hdf5fs
     self.str_dt = h5py.special_dtype(vlen=bytes)
+  
+  def hdf5_to_Rdata(self, hdf5_path, destination_file):
+    # two step conversion: First convert to csv, then use R to load CSV and write Rdata file
+    # a better strategy would be to use R's require(rhdf5) package to write without the intermediary file
+    with tempfile.NamedTemporaryFile() as t:
+      temp_path = t.name
+
+      self.hdf5_to_tabular_csv(hdf5_path, temp_path)
+      handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      stdout, stderr = handle.communicate("data <- read.table(%s,sep=',',head=T,row.names=1); save(data, file=%s)" % (r_escape_str(temp_path), r_escape_str(destination_file)))
+      if handle.returncode != 0:
+        raise Exception("R process failed: %s\n%s" % (stdout, stderr))
+  
+  def Rdata_to_hdf5(self, input_path, dataset_id, hdf5_path, col_axis, row_axis):
+    # two step conversion: First use R to convert to csv, then convert to HDF5
+    with tempfile.NamedTemporaryFile() as t:
+      temp_path = t.name
+
+      handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      stdout, stderr = handle.communicate("local.env <- new.env(); load(file=%s, local.env); write.table(local.env$data, file=%s, sep=',')" % (r_escape_str(input_path), r_escape_str(temp_path)))
+      if handle.returncode != 0:
+        raise Exception("R process failed: %s\n%s" % (stdout, stderr))
+
+      self.tcsv_to_hdf5(temp_path, dataset_id, hdf5_path, col_axis, row_axis)
   
   def hdf5_to_gct(self, hdf5_path, destination_file):
     with self.hdf5fs.hdf5_open(hdf5_path) as f:

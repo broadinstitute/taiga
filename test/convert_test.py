@@ -114,3 +114,16 @@ def test_import_tcsv_export_csv():
   cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row")
   cs.hdf5_to_csv(hdf5_path, final_file, delimiter=",")
   verify_file(final_file, CSV_CONTENTS)
+
+@with_setup(setup, cleanup_temp_file)
+def test_to_Rdata_and_back():
+  # this is a little round about but it exercised both directions to make sure the process is invertable
+  hdf5_path = tempdir+"/hdf5"
+  hdf5_path2 = tempdir+"/hdf52"
+  rdata_file = tempdir+"/rdata"
+  final_file = tempdir+"/final"
+  cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row")
+  cs.hdf5_to_Rdata(hdf5_path, rdata_file)
+  cs.Rdata_to_hdf5(rdata_file, "dsid", hdf5_path2, "cols", "rows")
+  cs.hdf5_to_csv(hdf5_path2, final_file, delimiter=",")
+  verify_file(final_file, CSV_CONTENTS)
