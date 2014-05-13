@@ -49,7 +49,7 @@ def get_metadata(meta_store, dataset_id):
   if meta == None:
     abort(404)
   
-  return jsonify(name=meta.name)
+  return jsonify(name=meta.name, created_timestamp=meta.created_timestamp, description=meta.description, created_by=meta.created_by, version=meta.version, is_published=meta.is_published, data_type=meta.data_type)
 
 def generate_dataset_filename(meta_store, dataset_id, extension):
   ds = meta_store.get_dataset_by_id(dataset_id)
