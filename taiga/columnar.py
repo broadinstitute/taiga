@@ -3,6 +3,7 @@ import struct
 import zlib
 import array
 import sniff
+import csv
 from collections import namedtuple
 
 ColumnDef = namedtuple("ColumnDef", ["name", "index", "persister"])
@@ -67,6 +68,14 @@ class AndPred(object):
   def get_columns(self):
     all = [p.get_columns() for p in self.preds]
     return set().union(*all)
+
+class AlwaysSatisfied(object):
+  def create_evaluator(self, cursorMap):
+    return lambda: True
+
+  def get_columns(self):
+    return []
+  
 
 class ColumnCursor(object):
   def __init__(self, values, col_type):
@@ -177,6 +186,7 @@ def persist_block(fd, column_persisters, values):
   write_block_header(fd, len(values), [0] * len(column_persisters))
   
   column_offsets = []
+#  print "persisting row: %s, %s" % (repr(values), column_persisters)
   for i, cp in enumerate(column_persisters):
     column_offsets.append(fd.tell())
     column_values = [row[i] for row in values]
@@ -287,6 +297,8 @@ class TableInfo:
     self.by_name = dict([(c.name, c) for c in columns])
     
   def __getitem__(self, key):
+    if not (key in self.by_name):
+      raise Exception("No column named %s (columns: %s)" % (repr(key), self.by_name.keys()))
     return self.by_name[key]
   
   def __len__(self):
@@ -300,107 +312,123 @@ def read_column_definitions(fd):
     name = read_str(fd)
     type_name = read_str(fd)
     if type_name == 'str':
-      columns.append( ColumnDef(name, str, i, StringSerializer()) )
+      columns.append( ColumnDef(name, i, StringSerializer()) )
     elif type_name == 'float':
-      columns.append( ColumnDef(name, float, i, DoubleSerializer()) )
+      columns.append( ColumnDef(name, i, DoubleSerializer()) )
     elif type_name == 'int':
-      columns.append( ColumnDef(name, int, i, IntSerializer()) )
+      columns.append( ColumnDef(name, i, IntSerializer()) )
     else:
-      raise Exception("unknown type")
+      raise Exception("unknown type: %s" % repr(type_name))
   return TableInfo(columns)
 
+class DatasetWriter(object):
+  def __init__(self, filename, columns, rows_per_block=100000):
+    self.filename = filename
+    self.output = open(filename, "w")
+    self.columns = columns
 
-import csv
-import os
-
-def import_index_file(dirname, filename, output):
-  file_count = 0
-  datafile_columns = None
-  with open(filename, "r") as fd:
-    r = csv.reader(fd, delimiter="\t")
-    header = r.next()
-    columns = header[1:]
+    persisters = []
+    for c in columns:
+      if c.type == str:
+        persisters.append(StringSerializer())
+      elif c.type == float:
+        persisters.append(DoubleSerializer())
+      elif c.type == int:
+        persisters.append(IntSerializer())
+      else:
+        raise Exception("unknown type: %s" % repr(c))
     
-    for row in r:
-      datafile = row[0]
-      values = row[1:]
-
-      print "reading %s" % datafile
-      file_count += 1
-      datafile_full_path = "%s/%s" % (dirname, datafile)
-#      if datafile_columns == None:
-      hasRowNames, datafile_columns = sniff.sniff(datafile_full_path, rows_to_check=1000000)
-        
-      with open(datafile_full_path, "r") as datafd:
-        datar = csv.reader(datafd, delimiter="\t")
-        datafile_header = datar.next()
-
-        persisters = [StringSerializer() for i in xrange(len(columns))]
-        for c in datafile_columns:
-          if c.type == str:
-            persisters.append(StringSerializer())
-          elif c.type == float:
-            persisters.append(DoubleSerializer())
-          elif c.type == int:
-            persisters.append(IntSerializer())
-          else:
-            raise Exception("unknown")
-        #print columns
-        #print datafile_header
-        #print persisters
-        #print datafile_columns
-        import_file(columns, datafile_header, values, datar, output, file_count == 1, persisters)
-
-def import_file(const_columns, var_columns, const_values, reader, output, include_col_defs, persisters):
-  header = const_columns + var_columns
-
-  if include_col_defs:
-    write_column_definitions(output, [(header[i], persisters[i]) for i in xrange(len(header))])
+    self.persisters = persisters
+#    print "a.persist:", self.persisters, columns
+    self.row_block = []
+    self.rows_per_block = rows_per_block
     
-  rows = []
-  for row in reader:
-    rows.append(const_values + row)
-  print header, len(rows)
+    write_column_definitions(self.output, [(columns[i].name, persisters[i]) for i in xrange(len(columns))])
 
-  persist_block(output, persisters, rows)
+  def append(self, row):
+    self.row_block.append(row)
+    if len(self.row_block) >= self.rows_per_block:
+      self.flush_block()
+  
+  def flush_block(self):
+#    print "persist:", self.persisters
+    persist_block(self.output, self.persisters, self.row_block)
+    self.row_block = []
+  
+  def close(self):
+    self.flush_block()
+    self.output.close()
 
-with open("dump","w") as fd:
-  import_index_file("/Users/pmontgom/data/ccle_rna_unpublished", "/Users/pmontgom/data/ccle_rna_unpublished/index.txt", fd)
+def convert_csv_to_tabular(input_file, output_file, delimiter):
+  hasRowNames, datafile_columns = sniff.sniff(input_file, delimiter=delimiter)
 
-print "transformed"
+  with open(input_file) as fd:
+    reader = csv.reader(fd, delimiter=delimiter)
 
-op_name_to_factory = {}
-for op_name in ["gt", "gte", "in", "lt", "lte", "ne", "nin"]:
-  op_name_to_factory["$"+op_name] = globals()[op_name[0].upper()+op_name[1:]+"Pred"]
+    w = DatasetWriter(output_file, datafile_columns)
 
-def convert_op_to_predicate(column_name, condition):
-  p = None
-  for op_name, factory in op_name_to_factory.items():
-    if op_name in condition:
-      p = factory(column_name, condition[op_name])
-      break
+    # throw out the header row
+    reader.next()
 
-  if p == None:
-    raise Exception("unknown %s" % condition)
+    for row in reader:
+      w.append(row)
+    w.close()
 
-  return p
-
-def convert_criteria_to_predicate(criteria):
-  and_clauses = []
-  for column_name, condition in criteria.items():
-    if type(condition) == dict:
-      and_clauses.append(convert_op_to_predicate(column_name, condition))
-    else:
-      and_clauses.append(EqPred(column_name, condition))
-  return AndPred(and_clauses)
-
-fd = open("dump")
-import sys
-w = csv.writer(sys.stdout)
-
-criteria = {"Entrez_Gene_Id": {"$gt": 653635}}
-for row in execute_query(fd, ["Hugo_Symbol","Start_position","End_position"], convert_criteria_to_predicate(criteria)):
-  w.writerow(row)
-fd.close()
-
+def convert_tabular_to_csv(input_file, output_file, delimiter, select_names=None, predicate=None):
+  with open(input_file) as fd:
+    
+    if predicate == None:
+      predicate = AlwaysSatisfied()
+    
+    if select_names == None:
+      column_definitions = read_column_definitions(fd)
+#      print "col defs", column_definitions
+      select_names = [x.name for x in column_definitions.columns]
+      fd.seek(0)
+    
+    with open(output_file, "w") as output:
+      w = csv.writer(output, delimiter=delimiter)
+      w.writerow(select_names)
+      for row in execute_query(fd, select_names, predicate):
+        w.writerow(row)
+    
+# with open("dump","w") as fd:
+#   import_index_file("/Users/pmontgom/data/ccle_rna_unpublished", "/Users/pmontgom/data/ccle_rna_unpublished/index.txt", fd)
+# 
+# print "transformed"
+# 
+# op_name_to_factory = {}
+# for op_name in ["gt", "gte", "in", "lt", "lte", "ne", "nin"]:
+#   op_name_to_factory["$"+op_name] = globals()[op_name[0].upper()+op_name[1:]+"Pred"]
+# 
+# def convert_op_to_predicate(column_name, condition):
+#   p = None
+#   for op_name, factory in op_name_to_factory.items():
+#     if op_name in condition:
+#       p = factory(column_name, condition[op_name])
+#       break
+# 
+#   if p == None:
+#     raise Exception("unknown %s" % condition)
+# 
+#   return p
+# 
+# def convert_criteria_to_predicate(criteria):
+#   and_clauses = []
+#   for column_name, condition in criteria.items():
+#     if type(condition) == dict:
+#       and_clauses.append(convert_op_to_predicate(column_name, condition))
+#     else:
+#       and_clauses.append(EqPred(column_name, condition))
+#   return AndPred(and_clauses)
+# 
+# fd = open("dump")
+# import sys
+# w = csv.writer(sys.stdout)
+# 
+# criteria = {"Entrez_Gene_Id": {"$gt": 653635}}
+# for row in execute_query(fd, ["Hugo_Symbol","Start_position","End_position"], convert_criteria_to_predicate(criteria)):
+#   w.writerow(row)
+# fd.close()
+# 
 

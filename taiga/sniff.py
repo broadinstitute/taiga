@@ -3,9 +3,9 @@ from collections import namedtuple
 
 Column = namedtuple("Column", ["name", "type"])
 
-def sniff(filename, rows_to_check=100):
+def sniff(filename, rows_to_check=None, delimiter="\t"):
   with open(filename) as fd:
-    r = csv.reader(fd, delimiter="\t")
+    r = csv.reader(fd, delimiter=delimiter)
     col_header = r.next()
     row = r.next()
     if len(col_header) == len(row):
@@ -16,12 +16,14 @@ def sniff(filename, rows_to_check=100):
       raise Exception("First and second rows have different numbers of columns")
     
     columnValues = [[] for x in row]
-    for row_count in xrange(rows_to_check):
+    row_count = 0
+    while rows_to_check is None or row_count < rows_to_check:
       for i, x in enumerate(row):
         columnValues[i].append(x)
 
       try:
         row = r.next()
+        row_count += 1
       except StopIteration:
         break
 
