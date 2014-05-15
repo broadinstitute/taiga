@@ -85,7 +85,7 @@ def test_tabular_workflow():
       overwrite_existing="false",
       is_published = "false",
       data_type = "data", 
-      format="tsv"
+      format="csv"
     ))
     assert resp.status_code == 302
     dataset_id = resp.location.split("/")[-1]
@@ -135,7 +135,7 @@ def test_rest_endpoints():
       overwrite_existing="false",
       is_published = "false",
       data_type = "data",
-      format="tsv"
+      format="csv"
     ))
     assert resp.status_code == 302
     dataset_id = resp.location.split("/")[-1]

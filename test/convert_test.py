@@ -87,7 +87,7 @@ def test_import_gct_export_gct():
 def test_import_tcsv_export_gct():
   hdf5_path = tempdir+"/hdf5"
   final_file = tempdir+"/final"
-  cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row")
+  cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row", ",")
   cs.hdf5_to_gct(hdf5_path, final_file)
   verify_file(final_file, GCT_NO_DESC_CONTENTS)
 
@@ -103,7 +103,7 @@ def test_import_gct_export_tcsv():
 def test_import_tcsv_export_tcsv():
   hdf5_path = tempdir+"/hdf5"
   final_file = tempdir+"/final"
-  cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row")
+  cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row", ",")
   cs.hdf5_to_tabular_csv(hdf5_path, final_file, delimiter=",")
   verify_file(final_file, TCSV_CONTENTS)
 
@@ -111,7 +111,7 @@ def test_import_tcsv_export_tcsv():
 def test_import_rstyle_tcsv_export_tcsv():
   hdf5_path = tempdir+"/hdf5"
   final_file = tempdir+"/final"
-  cs.tcsv_to_hdf5(write_tmp(RSTYLE_TCSV_CONTENTS), "dsid", hdf5_path, "col", "row")
+  cs.tcsv_to_hdf5(write_tmp(RSTYLE_TCSV_CONTENTS), "dsid", hdf5_path, "col", "row", ",")
   cs.hdf5_to_tabular_csv(hdf5_path, final_file, delimiter=",")
   verify_file(final_file, TCSV_CONTENTS)
 
@@ -119,7 +119,7 @@ def test_import_rstyle_tcsv_export_tcsv():
 def test_import_tcsv_export_csv():
   hdf5_path = tempdir+"/hdf5"
   final_file = tempdir+"/final"
-  cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row")
+  cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row", ",")
   cs.hdf5_to_csv(hdf5_path, final_file, delimiter=",")
   verify_file(final_file, CSV_CONTENTS)
 
@@ -130,7 +130,7 @@ def test_hdf5_to_Rdata_and_back():
   hdf5_path2 = tempdir+"/hdf52"
   rdata_file = tempdir+"/rdata"
   final_file = tempdir+"/final"
-  cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row")
+  cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row", ",")
   cs.hdf5_to_Rdata(hdf5_path, rdata_file)
   cs.Rdata_to_hdf5(rdata_file, "dsid", hdf5_path2, "cols", "rows")
   cs.hdf5_to_csv(hdf5_path2, final_file, delimiter=",")

@@ -241,7 +241,13 @@ def upload_tabular(import_service, meta_store):
     if format == "gct":
       import_service.gct_to_hdf5(temp_file, dataset_id, hdf5_path, columns, rows)
     else:
-      import_service.tcsv_to_hdf5(temp_file, dataset_id, hdf5_path, columns, rows)
+      if format == "csv":
+        delimiter = ","
+      elif format == "tsv":
+        delimiter = "\t"
+      else:
+        raise Exception("Invalid format: %s" % format)
+      import_service.tcsv_to_hdf5(temp_file, dataset_id, hdf5_path, columns, rows, delimiter)
 
     meta_store.register_dataset(name, dataset_id, is_published, 
       data_type,

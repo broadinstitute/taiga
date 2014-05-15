@@ -42,6 +42,7 @@
       <div class="col-sm-2">
         <select class="form-control" id="format" name="format">
           <option selected value="tsv">Tab delimited</option>
+          <option value="csv">Comma delimited</option>
           <option value="gct">GCT</option>
         </select>
       </div>

@@ -47,7 +47,7 @@ class ConvertService(object):
       if handle.returncode != 0:
         raise Exception("R process failed: %s\n%s" % (stdout, stderr))
 
-      self.tcsv_to_hdf5(temp_path, dataset_id, hdf5_path, col_axis, row_axis)
+      self.tcsv_to_hdf5(temp_path, dataset_id, hdf5_path, col_axis, row_axis, ",")
   
   def hdf5_to_gct(self, hdf5_path, destination_file):
     with self.hdf5fs.hdf5_open(hdf5_path) as f:
@@ -143,6 +143,7 @@ class ConvertService(object):
       row_header = f['dim_0']
       col_header = f['dim_1']
     
+      print col_header
       w.writerow([""]+list(col_header))
       row_count = row_header.shape[0]
       for i in xrange(row_count):
@@ -150,20 +151,30 @@ class ConvertService(object):
         w.writerow([row_header[i]] + [to_string_with_nan_mask(x) for x in row])
       fd_out.close()
 
-  def tcsv_to_hdf5(self, input_path, dataset_id, hdf5_path, col_axis, row_axis):
+  def tcsv_to_hdf5(self, input_path, dataset_id, hdf5_path, col_axis, row_axis, delimiter):
     # TODO: Reduce memory footprint of this conversion
-    with open(input_path) as fd:
-      r = csv.reader(fd)
+    with open(input_path, "rU") as fd:
+      r = csv.reader(fd, delimiter=delimiter)
       col_header = r.next()
+
+      # check to see, does the header line up with the number of columns in the row, or do we need to shift it by one?
+      first_column = 1 if col_header[0] == '' else 0
+      col_header=col_header[first_column:]
+
+      # validate to make sure no other column headers are blank.  We should communicate this to the submitted, but
+      # doing it as a hard assertion for the time being.
+      for x in col_header:
+        assert x != ''
+
       row_header = []
       rows = []
+      line = 0
       for row in r:
+        line += 1
         row_header.append(row[0])
-        rows.append(row[1:])
-    
-    # check to see, does the header line up with the number of columns in the row, or do we need to shift it by one?
-    if col_header[0] == '':
-      col_header=col_header[1:]
+        data_row = row[1:]
+        assert len(data_row) == len(col_header), "line %d, %d != %d" % (line, len(data_row), len(col_header))
+        rows.append(data_row)
     
     data = np.empty((len(rows), len(rows[0])),'d')
     data[:] = np.nan
