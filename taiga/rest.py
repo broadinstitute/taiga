@@ -93,7 +93,7 @@ def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_i
     elif format == "hdf5":
       return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, "hdf5"))
     else:
-      abort("unknown format for tabular data: %s" % format)
+      return abort("unknown format for tabular data: %s" % format)
   else:
     columnar_path = metadata.columnar_path
     if format == "tsv":
@@ -102,8 +102,11 @@ def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_i
     elif format == "csv":
       import_fn = lambda: import_service.columnar_to_tcsv(columnar_path, file_handle.name, delimiter=",")
       suffix = "csv"
+    elif format == "rdata":
+      import_fn = lambda: import_service.columnar_to_Rdata(columnar_path, file_handle.name)
+      suffix = "Rdata"
     else:
-      abort("unknown format for columnar data: %s" % format)
+      return abort("unknown format for columnar data: %s" % format)
   
   if file_handle.needs_content:
     import_fn()

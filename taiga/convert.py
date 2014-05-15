@@ -196,6 +196,18 @@ class ConvertService(object):
   def columnar_to_tcsv(self, input_file, output_file, delimiter):
     taiga.columnar.convert_tabular_to_csv(input_file, output_file, delimiter)
 
+  def columnar_to_Rdata(self, input_file, destination_file):
+    # two step conversion: First convert to csv, then use R to load CSV and write Rdata file.  Not clear that we can do better 
+    # at the moment
+    with tempfile.NamedTemporaryFile() as t:
+      temp_path = t.name
+
+      self.columnar_to_tcsv(input_file, temp_path, ",")
+      handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      stdout, stderr = handle.communicate("data <- read.table(%s, sep=',', head=T, as.is=T); save(data, file=%s)" % (r_escape_str(temp_path), r_escape_str(destination_file)))
+      if handle.returncode != 0:
+        raise Exception("R process failed: %s\n%s" % (stdout, stderr))
+
 class CacheFileHandle(object):
   """ Handle to a cached file.  Only self.name and self.done should be accessed """
   def __init__(self, filename, final_filename, needs_content):

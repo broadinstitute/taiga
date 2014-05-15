@@ -110,7 +110,7 @@ def dataset_show(meta_store, hdf5_store, dataset_id):
     formats = ['hdf5','gct','rdata','tabular_csv','tabular_tsv','csv','tsv']
     dims = hdf5_store.get_dimensions(meta.hdf5_path)
   else:
-    formats = ['csv','tsv']
+    formats = ['csv','tsv','rdata']
     dims = []
   existing_data_types = json.dumps(meta_store.find_all_data_types())
   
