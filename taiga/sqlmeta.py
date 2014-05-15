@@ -191,7 +191,7 @@ class MetaStore(object):
         data_type=data_type,
         is_published=is_published))
 
-    self._update_next_version(db, next_version, named_data_id)
+      self._update_next_version(db, next_version, named_data_id)
 
   def register_columnar_dataset(self, name, dataset_id, is_published, description, created_by_user_id, columnar_path, name_exists):
     with self.engine.begin() as db:
@@ -206,7 +206,7 @@ class MetaStore(object):
         columnar_path=columnar_path,
         is_published=is_published))
 
-    self._update_next_version(db, next_version, named_data_id)
+      self._update_next_version(db, next_version, named_data_id)
 
   def insert_stmt(self, subject, predicate, object):
     object_type, object_str = prefix_object(object)

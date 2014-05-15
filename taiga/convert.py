@@ -169,7 +169,7 @@ class ConvertService(object):
     data[:] = np.nan
     for row_i, row in enumerate(rows):
       for col_i, value in enumerate(row):
-        if value == "NA":
+        if value == "NA" or value == "":
           parsed_value = np.nan
         else:
           parsed_value = float(value)

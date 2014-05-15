@@ -11,14 +11,55 @@ from taiga import sqlmeta
 
 # 2x2 matrix
 sample_tabular_contents = "a,b\nx,0,1\ny,2,3\n"
-sample_after_processing = ',a,b\r\nx,0.0,1.0\r\ny,2.0,3.0\r\n'
+tabular_after_processing = ',a,b\r\nx,0.0,1.0\r\ny,2.0,3.0\r\n'
+
+sample_columnar_contents = "a\tb\tc\nx\t0\t1\ny\t2\t3.0\n"
+columnar_after_processing = 'a,b,c\r\nx,0,1.0\r\ny,2,3.0\r\n'
 
 def create_fake_user(tempdir, openid):
   meta_store =sqlmeta.MetaStore(tempdir+"/metadata.sqlite3")
   meta_store.persist_user_details(openid, email='mock-email', name='mock-name')
   meta_store.close()
 
-def test_workflow():
+def test_columnar_workflow():
+  tempdir = tempfile.mkdtemp("ui-test")
+  
+  app = taiga.app.create_test_app(tempdir)
+  create_fake_user(tempdir, "mockopenid")
+
+  with app.test_client() as c:
+    with c.session_transaction() as sess:
+      sess['openid'] = 'mockopenid'
+
+    resp = c.get("/")
+    assert resp.status_code == 200
+
+    # make sure the form page renders
+    resp = c.get("/upload/columnar-form")
+    assert resp.status_code == 200
+
+    resp = c.post("/upload/columnar", data=dict(
+      file=(StringIO(sample_columnar_contents), 'test.txt'),
+      name="test-dataset-name",
+      description="desc",
+      overwrite_existing="false",
+      is_published = "false"
+    ))
+    assert resp.status_code == 302
+    dataset_id = resp.location.split("/")[-1]
+
+    resp = c.get("/dataset/show/"+dataset_id)
+    assert resp.status_code == 200
+
+    resp = c.get("/rest/v0/datasets/"+dataset_id, query_string=dict(format="csv"))
+    assert resp.status_code == 200
+    print "resp.data %s" % repr(resp.data)
+    print "rcolumnar_after_processing %s" % repr(columnar_after_processing)
+    assert resp.data == columnar_after_processing
+
+  shutil.rmtree(tempdir)
+
+def test_tabular_workflow():
   tempdir = tempfile.mkdtemp("ui-test")
   
   app = taiga.app.create_test_app(tempdir)
@@ -107,7 +148,7 @@ def test_rest_endpoints():
 
     resp = c.get("/rest/v0/namedDataset", query_string=dict(fetch="content", name="name", format="tabular_csv"))
     assert resp.status_code == 200
-    assert resp.data == sample_after_processing
+    assert resp.data == tabular_after_processing
   
     resp = c.get("/rest/v0/namedDataset", query_string=dict(fetch="id", name="name", format="tabular_csv"))
     assert resp.status_code == 200
@@ -115,7 +156,7 @@ def test_rest_endpoints():
 
     resp = c.get("/rest/v0/datasets/"+dataset_id, query_string=dict(format="tabular_csv"))
     assert resp.status_code == 200
-    assert resp.data == sample_after_processing
+    assert resp.data == tabular_after_processing
 
     resp = c.post("/rest/v0/triples/find", data=json.dumps({"query":[[{"var":"dataset"}, {"id":"hasTag"}, {"var":"tag"}]]}))
     assert resp.status_code == 200
