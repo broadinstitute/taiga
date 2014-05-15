@@ -41,15 +41,20 @@
     {% endfor %}
   </p>
   <p> Download as 
-    {{ download_link('hdf5') }} | 
-    {{ download_link('gct') }} | 
-    {{ download_link('rdata') }} |
-    {{ download_link('tabular_csv') }} | 
-    {{ download_link('tabular_tsv') }} | 
-    {{ download_link('csv') }} | 
-    {{ download_link('tsv') }}</p>
-    
-  <p> <a href="/upload/tabular-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
+    {% for format in formats %}
+      {% if not loop.first %}
+        |
+      {% endif %}
+      {{ download_link(format) }}
+    {% endfor %}
+  </p>
+  
+  {% if meta.hdf5_path %}  
+    <p> <a href="/upload/tabular-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
+  {% else %}
+    <p> <a href="/upload/columnar-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
+  {% endif %}
+  
   <p> Tags: <a href="#" id="tags" data-name="tags" data-type="select2" data-pk="{{meta.dataset_id}}" 
                data-url="/dataset/update" data-title="Enter tags">{{ dataset_tags|join(', ') }}</a></p>
   <p> Data type: <a href="#" id="data_type" data-name="data_type" data-type="select2" 
@@ -61,36 +66,40 @@
     data-url="/dataset/update" data-title="Enter description">{{ meta.description }}</a>
   </p>
   
-  <h2>Dimensions</h2>
+  {% if dims %}
+    <h2>Dimensions</h2>
   
-  <table class="table table-bordered table-striped">
-    <thead>
-      <tr>
-          <th></th>
-          <th>Description</th>
-          <th>Values</th>
-      </tr>
-    </thead>
-    
-    <tbody>
-      {% for dim in dims %}
+    <table class="table table-bordered table-striped">
+      <thead>
         <tr>
-          <td>{{ loop.index }}</td>
-          <td>{{ dim.name }}</td>
-          <td>{{ dim.value_count }}</td>
+            <th></th>
+            <th>Description</th>
+            <th>Values</th>
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+    
+      <tbody>
+        {% for dim in dims %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ dim.name }}</td>
+            <td>{{ dim.value_count }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
 
-  <h3>Retrieving this dataset within R</h3>
-  <p>
-    You can fetch this dataset by its ID, and load it into your R session with code below.  Executing the following will load the matrix into your workspace with the name "data": 
-    <pre>load(url("{{root_url}}/rest/v0/datasets/{{meta.dataset_id}}?format=rdata"));</pre>
+  {% if "rdata" in formats %}
+    <h3>Retrieving this dataset within R</h3>
+    <p>
+      You can fetch this dataset by its ID, and load it into your R session with code below.  Executing the following will load the matrix into your workspace with the name "data": 
+      <pre>load(url("{{root_url}}/rest/v0/datasets/{{meta.dataset_id}}?format=rdata"));</pre>
 
-    Fetching the data by it's ID will guarentee you get the same data each and every time this is executed.  Alternatively, you can fetch this data by its name, in in which case, you'll receive the latest version of the data.  Code for fetching by name, is as follows:
-    <pre>load(url("{{root_url}}/rest/v0/namedDataset?fetch=content&format=rdata&name={{meta.name|urlencode}}"));</pre>
-  </p>
+      Fetching the data by it's ID will guarentee you get the same data each and every time this is executed.  Alternatively, you can fetch this data by its name, in in which case, you'll receive the latest version of the data.  Code for fetching by name, is as follows:
+      <pre>load(url("{{root_url}}/rest/v0/namedDataset?fetch=content&format=rdata&name={{meta.name|urlencode}}"));</pre>
+    </p>
+  {% endif %}
 
 {% endblock %}
 

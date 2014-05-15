@@ -103,16 +103,21 @@ def dataset_show(meta_store, hdf5_store, dataset_id):
     abort(404)
     
   versions = meta_store.get_dataset_versions(meta.name)
-  dims = hdf5_store.get_dimensions(meta.hdf5_path)
   all_tags = meta_store.get_all_tags()
   dataset_tags = meta_store.get_dataset_tags(dataset_id)
   root_url = flask.current_app.config["ROOT_URL"]
-
+  if meta.hdf5_path != None:
+    formats = ['hdf5','gct','rdata','tabular_csv','tabular_tsv','csv','tsv']
+    dims = hdf5_store.get_dimensions(meta.hdf5_path)
+  else:
+    formats = ['csv','tsv']
+    dims = []
   existing_data_types = json.dumps(meta_store.find_all_data_types())
   
   return {"root_url": root_url, "meta": meta, "dims":dims, "versions": versions, 
     "all_tags_as_json": json.dumps(list(all_tags)), "dataset_tags": dataset_tags,
-    "existing_data_types": existing_data_types}
+    "existing_data_types": existing_data_types,
+    "formats": formats}
 
 @ui.route("/dataset/update", methods=["POST"])
 @inject(meta_store=MetaStore)
@@ -141,9 +146,10 @@ def dataset_update(meta_store):
     
   return ""
 
-@ui.route("/upload/tabular-form")
-@inject(meta_store=MetaStore)
-def upload_tabular_form(meta_store):
+def redirect_with_success(msg, url):
+  return flask.redirect(url)
+
+def _render_upload_form(meta_store, template):
   # make sure we're logged in before showing this form
   if not ('openid' in session):
     return redirect("/login?"+urllib.urlencode( (("next","/upload/tabular-form"),) ))
@@ -159,14 +165,53 @@ def upload_tabular_form(meta_store):
     params["name"] = ds.name
     params["description"] = ds.description
   
-  return render_template("upload/tabular-form.tpl", **params)
+  return render_template(template, **params)
 
-def redirect_with_success(msg, url):
-  return flask.redirect(url)
+@ui.route("/upload/tabular-form")
+@inject(meta_store=MetaStore)
+def upload_tabular_form(meta_store):
+  return _render_upload_form(meta_store, "/upload/tabular-form.tpl")
+
+@ui.route("/upload/columnar", methods=["POST"])
+@inject(meta_store=MetaStore, import_service=ConvertService)
+def upload_columnar(import_service, meta_store):
+  if not ('openid' in session):
+    # permission denied if not logged in
+    abort(403)
+
+  forms = request.form
+
+  uploaded_file = request.files['file']
+  name = forms['name']
+  description = forms['description']
+  created_by_user_id = meta_store.get_user_details(session['openid'])[0]
+  is_published = (forms['is_published'] == "True")
+  is_new_version = 'overwrite_existing' in forms and (forms['overwrite_existing'] == "true")
+
+  # TODO: check that name doesn't exist and matches is_new_version flag
+  # if error, redirect to "/upload/csv-form"
+
+  with NamedTemporaryFile() as temp_fd:
+    temp_file = temp_fd.name
+    uploaded_file.save(temp_file)
+    
+    # convert file
+    dataset_id, columnar_path = meta_store.create_new_dataset_id()
+    import_service.tcsv_to_columnar(temp_file, columnar_path, "\t")
+
+    meta_store.register_columnar_dataset(name, dataset_id, is_published, 
+      description, created_by_user_id, columnar_path, is_new_version)
+    
+  return redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
+
+@ui.route("/upload/columnar-form")
+@inject(meta_store=MetaStore)
+def upload_columnar_form(meta_store):
+  return _render_upload_form(meta_store, "/upload/columnar-form.tpl")
 
 @ui.route("/upload/tabular", methods=["POST"])
 @inject(meta_store=MetaStore, import_service=ConvertService)
-def upload(import_service, meta_store):
+def upload_tabular(import_service, meta_store):
   if not ('openid' in session):
     # permission denied if not logged in
     abort(403)

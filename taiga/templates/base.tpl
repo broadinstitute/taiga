@@ -50,6 +50,7 @@
     <ul class="nav nav-pills top-of-page-margin">
       {{ nav_link("/", "Taiga home") }}
       {{ nav_link("/upload/tabular-form", "Upload tabular data") }}
+      {{ nav_link("/upload/columnar-form", "Upload columnar data") }}
       {{ nav_link("/datasets-by-tag", "List datasets by tag") }}
       {{ nav_link("/datasets-by-timestamp", "List datasets by timestamp") }}
     </ul>

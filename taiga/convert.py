@@ -9,6 +9,7 @@ import hashlib
 import os
 import subprocess
 import tempfile
+import taiga.columnar
 
 def to_string_with_nan_mask(x):
   if math.isnan(x):
@@ -188,6 +189,12 @@ class ConvertService(object):
     dim_1 = f.create_dataset("dim_1", (len(col_header),), dtype=self.str_dt)
     dim_1[:] = col_header
     dim_1.attrs['name'] = col_axis
+    
+  def tcsv_to_columnar(self, input_file, output_file, delimiter):
+    taiga.columnar.convert_csv_to_tabular(input_file, output_file, delimiter)
+
+  def columnar_to_tcsv(self, input_file, output_file, delimiter):
+    taiga.columnar.convert_tabular_to_csv(input_file, output_file, delimiter)
 
 class CacheFileHandle(object):
   """ Handle to a cached file.  Only self.name and self.done should be accessed """

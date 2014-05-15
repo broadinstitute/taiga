@@ -362,7 +362,7 @@ class DatasetWriter(object):
 def convert_csv_to_tabular(input_file, output_file, delimiter):
   hasRowNames, datafile_columns = sniff.sniff(input_file, delimiter=delimiter)
 
-  with open(input_file) as fd:
+  with open(input_file, 'rU') as fd:
     reader = csv.reader(fd, delimiter=delimiter)
 
     w = DatasetWriter(output_file, datafile_columns)

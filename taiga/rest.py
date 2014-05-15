@@ -68,30 +68,42 @@ def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_i
   format = request.values['format']
 
   file_handle = cache_service.create_file_for(dict(dataset_id = dataset_id, parameters = request.values))
-  
-  hdf5_path = meta_store.get_dataset_by_id(dataset_id).hdf5_path
-  if format == "tabular_csv":
-    import_fn = lambda: import_service.hdf5_to_tabular_csv(hdf5_path, file_handle.name, delimiter=",")
-    suffix = "csv"
-  elif format == "tabular_tsv":
-    import_fn = lambda: import_service.hdf5_to_tabular_csv(hdf5_path, file_handle.name, delimiter="\t")
-    suffix = "tsv"
-  elif format == "gct":
-    import_fn = lambda: import_service.hdf5_to_gct(hdf5_path, file_handle.name)
-    suffix = "gct"
-  elif format == "tsv":
-    import_fn = lambda: import_service.hdf5_to_csv(hdf5_path, file_handle.name, delimiter="\t")
-    suffix = "tsv"
-  elif format == "csv":
-    import_fn = lambda: import_service.hdf5_to_csv(hdf5_path, file_handle.name, delimiter=",")
-    suffix = "csv"
-  elif format == "rdata":
-    import_fn = lambda: import_service.hdf5_to_Rdata(hdf5_path, file_handle.name)
-    suffix = "Rdata"
-  elif format == "hdf5":
-    return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, "hdf5"))
+
+  metadata = meta_store.get_dataset_by_id(dataset_id)
+  hdf5_path = metadata.hdf5_path
+  if hdf5_path != None:
+    if format == "tabular_csv":
+      import_fn = lambda: import_service.hdf5_to_tabular_csv(hdf5_path, file_handle.name, delimiter=",")
+      suffix = "csv"
+    elif format == "tabular_tsv":
+      import_fn = lambda: import_service.hdf5_to_tabular_csv(hdf5_path, file_handle.name, delimiter="\t")
+      suffix = "tsv"
+    elif format == "gct":
+      import_fn = lambda: import_service.hdf5_to_gct(hdf5_path, file_handle.name)
+      suffix = "gct"
+    elif format == "tsv":
+      import_fn = lambda: import_service.hdf5_to_csv(hdf5_path, file_handle.name, delimiter="\t")
+      suffix = "tsv"
+    elif format == "csv":
+      import_fn = lambda: import_service.hdf5_to_csv(hdf5_path, file_handle.name, delimiter=",")
+      suffix = "csv"
+    elif format == "rdata":
+      import_fn = lambda: import_service.hdf5_to_Rdata(hdf5_path, file_handle.name)
+      suffix = "Rdata"
+    elif format == "hdf5":
+      return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, "hdf5"))
+    else:
+      abort("unknown format for tabular data: %s" % format)
   else:
-    abort("unknown format: %s" % format)
+    columnar_path = metadata.columnar_path
+    if format == "tsv":
+      import_fn = lambda: import_service.columnar_to_tcsv(columnar_path, file_handle.name, delimiter="\t")
+      suffix = "tsv"
+    elif format == "csv":
+      import_fn = lambda: import_service.columnar_to_tcsv(columnar_path, file_handle.name, delimiter=",")
+      suffix = "csv"
+    else:
+      abort("unknown format for columnar data: %s" % format)
   
   if file_handle.needs_content:
     import_fn()
