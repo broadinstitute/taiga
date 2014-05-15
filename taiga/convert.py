@@ -235,7 +235,7 @@ class CacheService(object):
     digest = hashlib.md5(parameter_str).hexdigest()
     
     metadata_file = "%s/temp-%s.json" % (self.temp_dir, digest)
-    partial_file = "%s/part-%s.data" % (self.temp_dir, digest)
+    partial_file = tempfile.NamedTemporaryFile(dir=self.temp_dir, prefix="part-", delete=False).name
     final_file = "%s/final-%s.data" % (self.temp_dir, digest)
     
     if os.path.exists(metadata_file):
