@@ -33,7 +33,7 @@ class ConvertService(object):
 
       self.hdf5_to_tabular_csv(hdf5_path, temp_path)
       handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      stdout, stderr = handle.communicate("data <- read.table(%s,sep=',',head=T,row.names=1); save(data, file=%s)" % (r_escape_str(temp_path), r_escape_str(destination_file)))
+      stdout, stderr = handle.communicate("data <- read.table(%s,sep=',',head=T,row.names=1, check.names=F); save(data, file=%s)" % (r_escape_str(temp_path), r_escape_str(destination_file)))
       if handle.returncode != 0:
         raise Exception("R process failed: %s\n%s" % (stdout, stderr))
   
@@ -215,7 +215,7 @@ class ConvertService(object):
 
       self.columnar_to_tcsv(input_file, temp_path, ",")
       handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      stdout, stderr = handle.communicate("data <- read.table(%s, sep=',', head=T, as.is=T); save(data, file=%s)" % (r_escape_str(temp_path), r_escape_str(destination_file)))
+      stdout, stderr = handle.communicate("data <- read.table(%s, sep=',', head=T, as.is=T, check.names=F); save(data, file=%s)" % (r_escape_str(temp_path), r_escape_str(destination_file)))
       if handle.returncode != 0:
         raise Exception("R process failed: %s\n%s" % (stdout, stderr))
 

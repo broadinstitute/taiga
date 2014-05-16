@@ -37,7 +37,6 @@ GCT_NO_DESC_CONTENTS = "\r\n".join([
   "d\td\t3.0\t4.0",
   ""])
 
-
 TCSV_CONTENTS = "\r\n".join([
   ",a,b",
   "c,1.0,2.0",
@@ -130,12 +129,20 @@ def test_hdf5_to_Rdata_and_back():
   hdf5_path2 = tempdir+"/hdf52"
   rdata_file = tempdir+"/rdata"
   final_file = tempdir+"/final"
-  cs.tcsv_to_hdf5(write_tmp(TCSV_CONTENTS), "dsid", hdf5_path, "col", "row", ",")
+  
+  # make sure the names don't get mangled
+  contents = "\r\n".join([
+    ",a,2b",
+    "c,1.0,2.0",
+    "d,3.0,4.0",
+    ""])
+  
+  cs.tcsv_to_hdf5(write_tmp(contents), "dsid", hdf5_path, "col", "row", ",")
   cs.hdf5_to_Rdata(hdf5_path, rdata_file)
   cs.Rdata_to_hdf5(rdata_file, "dsid", hdf5_path2, "cols", "rows")
-  cs.hdf5_to_csv(hdf5_path2, final_file, delimiter=",")
-  verify_file(final_file, CSV_CONTENTS)
-
+  cs.hdf5_to_tabular_csv(hdf5_path2, final_file, delimiter=",")
+  verify_file(final_file, contents)
+  
 @with_setup(setup, cleanup_temp_file)
 def test_columnar_to_Rdata_and_back():
   columnar_path = tempdir+"/columnar"
