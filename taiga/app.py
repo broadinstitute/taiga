@@ -12,6 +12,11 @@ import flask_injector
 import ui
 import rest
 
+def handle_invalid_parameters(error):
+    response = flask.jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
+
 def create_test_app(base_dir):
   app = Flask(__name__)
 
@@ -39,6 +44,7 @@ def setup_app(app):
     file_handler.setLevel(logging.WARNING)
     app.logger.addHandler(file_handler)
   
+  app.errorhandler(rest.InvalidParameters)(handle_invalid_parameters)
   injector = Injector(configure_injector)
   flask_injector.init_app(app=app, injector=injector)
   ui.oid.init_app(app)

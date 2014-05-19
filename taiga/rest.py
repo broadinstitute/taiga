@@ -9,6 +9,15 @@ from convert import ConvertService, CacheService
 
 rest = Blueprint('rest', __name__, template_folder='templates')
 
+class InvalidParameters(Exception):
+  status_code = 400
+  
+  def __init__(self, message):
+    self.message = message
+  
+  def to_dict(self):
+    return dict(message = self.message)
+
 @rest.route("/rest/v0/datasets")
 @inject(meta_store=MetaStore)
 def list_datasets(meta_store):
@@ -17,7 +26,7 @@ def list_datasets(meta_store):
   # Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next", <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
   # X-Total-Count
   """ Returns a json result with properties name, description, latest_date, version_count"""
-  return jsonify(datasets=meta_store.list_names())
+  return jsonify(datasets=[x._asdict() for x in meta_store.list_names()])
 
 @rest.route("/rest/v0/namedDataset")
 @inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store, cache_service=CacheService)
@@ -33,7 +42,7 @@ def get_dataset_by_name(meta_store, import_service, hdf5_store, cache_service):
   elif fetch == "id":
     return dataset_id
   else:
-      abort(400, "Invalid value for fetch: %s" % fetch)
+    raise InvalidParameters("Invalid value for fetch: %s" % fetch)
 
 @rest.route("/rest/v0/triples/find", methods=["POST"])
 @inject(meta_store=MetaStore)
@@ -93,7 +102,7 @@ def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_i
     elif format == "hdf5":
       return flask.send_file(os.path.abspath(os.path.join(hdf5_store.hdf5_root, hdf5_path)), as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, "hdf5"))
     else:
-      return abort("unknown format for tabular data: %s" % format)
+      raise InvalidParameters("unknown format for tabular data: %s" % format)
   else:
     columnar_path = metadata.columnar_path
     if format == "tsv":
@@ -106,7 +115,7 @@ def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_i
       import_fn = lambda: import_service.columnar_to_Rdata(columnar_path, file_handle.name)
       suffix = "Rdata"
     else:
-      return abort("unknown format for columnar data: %s" % format)
+      raise InvalidParameters("unknown format for columnar data: %s" % format)
   
   if file_handle.needs_content:
     import_fn()
