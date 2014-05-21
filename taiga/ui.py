@@ -107,7 +107,7 @@ def dataset_show(meta_store, hdf5_store, dataset_id):
   dataset_tags = meta_store.get_dataset_tags(dataset_id)
   root_url = flask.current_app.config["ROOT_URL"]
   if meta.hdf5_path != None:
-    formats = ['hdf5','gct','rdata','tabular_csv','tabular_tsv','csv','tsv']
+    formats = ['hdf5','gct','rdata','tabular_csv','tabular_tsv']
     dims = hdf5_store.get_dimensions(meta.hdf5_path)
   else:
     formats = ['csv','tsv','rdata']
