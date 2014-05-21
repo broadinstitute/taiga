@@ -31,7 +31,7 @@ class ConvertService(object):
     with tempfile.NamedTemporaryFile() as t:
       temp_path = t.name
 
-      self.hdf5_to_tabular_csv(hdf5_path, temp_path)
+      self.hdf5_to_tabular_csv(hdf5_path, temp_path, dedup_headers=True)
       handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
       stdout, stderr = handle.communicate("data <- read.table(%s,sep=',',head=T,row.names=1,quote='\"',check.names=F); save(data, file=%s)" % (r_escape_str(temp_path), r_escape_str(destination_file)))
       if handle.returncode != 0:
@@ -133,19 +133,33 @@ class ConvertService(object):
             w.writerow([row_header[row_i], col_header[col_i], element])
       fd_out.close()
     
-  def hdf5_to_tabular_csv(self, hdf5_path, destination_file, delimiter=","):
+  def hdf5_to_tabular_csv(self, hdf5_path, destination_file, delimiter=",", dedup_headers=False):
     with self.hdf5fs.hdf5_open(hdf5_path) as f:
       fd_out = open(destination_file, "w")
       w = csv.writer(fd_out, delimiter=delimiter)
 
       data = f['data']
 
-      row_header = f['dim_0']
-      col_header = f['dim_1']
+      row_header = list(f['dim_0'])
+      col_header = list(f['dim_1'])
+    
+      if dedup_headers:
+        def dedup(l):
+          value_count = {}
+          for i in xrange(len(l)):
+            v = l[i]
+            if v in value_count:
+              l[i] = "%s.%d" % (l[i], value_count[v])
+              value_count[v] += 1
+            else:
+              value_count[v] = 1
+              
+        dedup(row_header)
+        dedup(col_header)
     
       print col_header
-      w.writerow([""]+list(col_header))
-      row_count = row_header.shape[0]
+      w.writerow([""]+col_header)
+      row_count = len(row_header)
       for i in xrange(row_count):
         row = data[i,:]
         w.writerow([row_header[i]] + [to_string_with_nan_mask(x) for x in row])

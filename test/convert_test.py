@@ -130,7 +130,7 @@ def test_hdf5_to_Rdata_and_back():
   rdata_file = tempdir+"/rdata"
   final_file = tempdir+"/final"
   
-  # make sure the names don't get mangled
+  # make sure the names starting with a number don't get mangled
   contents = "\r\n".join([
     ",a,2b",
     "c,1.0,2.0",
@@ -142,7 +142,30 @@ def test_hdf5_to_Rdata_and_back():
   cs.Rdata_to_hdf5(rdata_file, "dsid", hdf5_path2, "cols", "rows")
   cs.hdf5_to_tabular_csv(hdf5_path2, final_file, delimiter=",")
   verify_file(final_file, contents)
-  
+
+@with_setup(setup, cleanup_temp_file)
+def test_hdf5_to_Rdata_with_dups_in_header():
+  hdf5_path = tempdir+"/hdf5"
+  rdata_file = tempdir+"/rdata"
+  final_file = tempdir+"/final"
+
+  contents = "\r\n".join([
+    ",a,b",
+    "c,1.0,2.0",
+    "c,3.0,4.0",
+    ""])
+    
+  cs.tcsv_to_hdf5(write_tmp(contents), "dsid", hdf5_path, "col", "row", ",")
+  cs.hdf5_to_Rdata(hdf5_path, rdata_file)
+
+  handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  stdout, stderr = handle.communicate("load(%s); write.table(data, file=%s, row.names=T)" % (r_escape_str(rdata_file), r_escape_str(final_file)))
+  print stdout
+  print stderr
+  assert handle.returncode == 0
+
+  verify_file(final_file, '"a" "b"\n"c" 1 2\n"c.1" 3 4\n')
+
 @with_setup(setup, cleanup_temp_file)
 def test_columnar_to_Rdata_and_back():
   columnar_path = tempdir+"/columnar"
