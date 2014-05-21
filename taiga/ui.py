@@ -80,11 +80,9 @@ def datasets_by_timestamp(meta_store):
 @view("datasets-by-tag")
 @inject(meta_store=MetaStore)
 def datasets_by_tag(meta_store):
-  tags = collections.defaultdict(lambda: 0)
-  for subj, pred, obj in meta_store.find_stmt(None, Ref("hasTag"), None):
-    tags[obj] += 1
+  tags_and_counts = meta_store.get_all_tags()
   
-  return {'tags': [dict(name=k, count=v) for k,v in tags.items()]}
+  return {'tags': [dict(name=k, count=v) for k,v in tags_and_counts]}
 
 @ui.route("/dataset/tagged")
 @view("dataset/tagged")
@@ -103,7 +101,7 @@ def dataset_show(meta_store, hdf5_store, dataset_id):
     abort(404)
     
   versions = meta_store.get_dataset_versions(meta.name)
-  all_tags = meta_store.get_all_tags()
+  all_tags = [tag for tag, count in meta_store.get_all_tags()]
   dataset_tags = meta_store.get_dataset_tags(dataset_id)
   root_url = flask.current_app.config["ROOT_URL"]
   if meta.hdf5_path != None:

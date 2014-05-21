@@ -26,7 +26,11 @@ def list_datasets(meta_store):
   # Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next", <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
   # X-Total-Count
   """ Returns a json result with properties name, description, latest_date, version_count"""
-  return jsonify(datasets=[x._asdict() for x in meta_store.list_names()])
+  if 'tag' in request.values:
+    datasets = meta_store.get_by_tag(request.values["tag"])
+  else:
+    datasets = meta_store.list_names()
+  return jsonify(datasets=[x._asdict() for x in datasets])
 
 @rest.route("/rest/v0/namedDataset")
 @inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store, cache_service=CacheService)

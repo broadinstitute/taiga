@@ -158,8 +158,9 @@ def test_rest_endpoints():
     assert resp.status_code == 200
     assert resp.data == tabular_after_processing
 
-    resp = c.post("/rest/v0/triples/find", data=json.dumps({"query":[[{"var":"dataset"}, {"id":"hasTag"}, {"var":"tag"}]]}))
+    resp = c.get("/rest/v0/datasets", query_string=dict(tag="tag1"))
     assert resp.status_code == 200
     json_resp = json.loads(resp.data)
-    assert json_resp["results"] == [{"dataset": {"id":dataset_id}, "tag": "tag1"}]
+    print "results:",json_resp
+    assert len(json_resp["datasets"]) == 1
   

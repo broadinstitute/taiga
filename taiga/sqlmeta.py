@@ -73,6 +73,12 @@ statement = Table("statement", metadata,
         Column('object', String, nullable=False)
 )
 
+named_data_tag = Table('named_data_tag', metadata,
+       Column('named_data_tag_id', Integer, primary_key=True),
+       Column('named_data_id', Integer, ForeignKey('named_data.named_data_id'), nullable=False),
+       Column('tag', String, nullable=False), sqlite_autoincrement=True
+       )
+
 
 Ref = namedtuple("Ref", ["id"])
 
@@ -111,20 +117,27 @@ class MetaStore(object):
       return [self.get_dataset_by_id(x[0]) for x in result.fetchall()]
 
   def update_tags(self, dataset_id, tags):
-    for s, p, o in self.find_stmt(Ref(dataset_id), Ref("hasTag"), None):
-      self.delete_stmt(s, p, o)
-    for tag in tags:
-      self.insert_stmt(Ref(dataset_id), Ref("hasTag"), tag)
+    with self.engine.begin() as db:
+      named_data_id = db.execute("select named_data_id from data_version where dataset_id = ?", [dataset_id]).fetchone()[0]
+      db.execute("delete from named_data_tag where named_data_id = ?", [named_data_id])
+      for tag in tags:
+        db.execute(named_data_tag.insert().values(named_data_id=named_data_id,
+          tag=tag))
   
   def get_all_tags(self):
-    return set([o for s, p, o in self.find_stmt(None, Ref("hasTag"), None)])
+    with self.engine.begin() as db:
+      rows = db.execute("select tag, count(1) from named_data_tag group by tag").fetchall()
+      return rows
   
   def get_by_tag(self, tag):
-    dataset_ids = set([s for s, p, o in self.find_stmt(None, Ref("hasTag"), tag)])
-    return [self.get_dataset_by_id(dsid) for dsid in dataset_ids]
-  
+    with self.engine.begin() as db:
+      rows = db.execute("select dv.dataset_id from named_data_tag ndt join named_data nd on nd.named_data_id = ndt.named_data_id join data_version dv on (dv.named_data_id = ndt.named_data_id and dv.version = nd.latest_version) where tag = ?", [tag]).fetchall()
+      return [self.get_dataset_by_id(x[0]) for x in rows]
+
   def get_dataset_tags(self, dataset_id):
-    return set([o for s, p, o in self.find_stmt(Ref(dataset_id), Ref("hasTag"), None)])
+    with self.engine.begin() as db:
+      rows = db.execute("select ndt.tag from named_data_tag ndt join data_version dv on dv.named_data_id = ndt.named_data_id where dv.dataset_id = ?", [dataset_id]).fetchall()
+      return [x[0] for x in rows]
 
   def update_dataset_field(self, dataset_id, field_name, value):
     assert field_name in ("description", "data_type", "is_published")
