@@ -229,7 +229,7 @@ class ConvertService(object):
 
       self.columnar_to_tcsv(input_file, temp_path, ",")
       handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      stdout, stderr = handle.communicate("data <- read.table(%s, sep=',', head=T, as.is=T, check.names=F, quote='\"'); save(data, file=%s)" % (r_escape_str(temp_path), r_escape_str(destination_file)))
+      stdout, stderr = handle.communicate("data <- read.table(%s, sep=',', head=T, as.is=T, check.names=F, quote='\"', comment.char=''); save(data, file=%s)" % (r_escape_str(temp_path), r_escape_str(destination_file)))
       if handle.returncode != 0:
         raise Exception("R process failed: %s\n%s" % (stdout, stderr))
 
