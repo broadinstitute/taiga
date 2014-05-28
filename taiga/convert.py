@@ -216,10 +216,12 @@ class ConvertService(object):
     dim_1.attrs['name'] = col_axis
     
   def tcsv_to_columnar(self, input_file, output_file, delimiter):
-    taiga.columnar.convert_csv_to_tabular(input_file, output_file, delimiter)
+    columnar_path = os.path.join(self.hdf5fs.hdf5_root, output_file)
+    taiga.columnar.convert_csv_to_tabular(input_file, columnar_path, delimiter)
 
   def columnar_to_tcsv(self, input_file, output_file, delimiter):
-    taiga.columnar.convert_tabular_to_csv(input_file, output_file, delimiter)
+    columnar_path = os.path.join(self.hdf5fs.hdf5_root, input_file)
+    taiga.columnar.convert_tabular_to_csv(columnar_path, output_file, delimiter)
 
   def columnar_to_Rdata(self, input_file, destination_file):
     # two step conversion: First convert to csv, then use R to load CSV and write Rdata file.  Not clear that we can do better 

@@ -106,10 +106,10 @@ class MetaStore(object):
     if new_db:
       metadata.create_all(self.engine)
 
-  def create_new_dataset_id(self):
+  def create_new_dataset_id(self, suffix):
     dataset_id = str(uuid.uuid4())
     # TODO: make staggered dirs
-    return (dataset_id, dataset_id+".hdf5")
+    return (dataset_id, dataset_id+suffix)
 
   def get_dataset_versions(self, dataset_name):
     with self.engine.begin() as db:

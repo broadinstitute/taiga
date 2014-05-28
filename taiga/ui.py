@@ -194,7 +194,7 @@ def upload_columnar(import_service, meta_store):
     uploaded_file.save(temp_file)
     
     # convert file
-    dataset_id, columnar_path = meta_store.create_new_dataset_id()
+    dataset_id, columnar_path = meta_store.create_new_dataset_id(".columnar")
     import_service.tcsv_to_columnar(temp_file, columnar_path, "\t")
 
     meta_store.register_columnar_dataset(name, dataset_id, is_published, 
@@ -235,7 +235,7 @@ def upload_tabular(import_service, meta_store):
     uploaded_file.save(temp_file)
     
     # convert file
-    dataset_id, hdf5_path = meta_store.create_new_dataset_id()
+    dataset_id, hdf5_path = meta_store.create_new_dataset_id(".hdf5")
     if format == "gct":
       import_service.gct_to_hdf5(temp_file, dataset_id, hdf5_path, columns, rows)
     else:
