@@ -26,17 +26,13 @@ class ConvertService(object):
     self.str_dt = h5py.special_dtype(vlen=bytes)
   
   def hdf5_to_Rdata(self, hdf5_path, destination_file):
-    # two step conversion: First convert to csv, then use R to load CSV and write Rdata file
-    # a better strategy would be to use R's require(rhdf5) package to write without the intermediary file
-    with tempfile.NamedTemporaryFile() as t:
-      temp_path = t.name
+    full_hdf5_path = os.path.join(self.hdf5fs.hdf5_root, hdf5_path)
+    
+    handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = handle.communicate("require(rhdf5); fn <- %s; data <- t(h5read(fn,'/data')); dim.0 <- h5read(fn, '/dim_0'); dim.1 <- h5read(fn, '/dim_1'); dimnames(data) <- list(make.unique(dim.0), make.unique(dim.1)); save(data, file=%s)" % (r_escape_str(full_hdf5_path), r_escape_str(destination_file)))
+    if handle.returncode != 0:
+      raise Exception("R process failed: %s\n%s" % (stdout, stderr))
 
-      self.hdf5_to_tabular_csv(hdf5_path, temp_path, dedup_headers=True)
-      handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      stdout, stderr = handle.communicate("data <- read.table(%s,sep=',',head=T,row.names=1,quote='\"',check.names=F); save(data, file=%s)" % (r_escape_str(temp_path), r_escape_str(destination_file)))
-      if handle.returncode != 0:
-        raise Exception("R process failed: %s\n%s" % (stdout, stderr))
-  
   def Rdata_to_hdf5(self, input_path, dataset_id, hdf5_path, col_axis, row_axis):
     # two step conversion: First use R to convert to csv, then convert to HDF5
     with tempfile.NamedTemporaryFile() as t:
