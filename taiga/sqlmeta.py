@@ -17,7 +17,7 @@ import datetime
 import time
 
 from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, DateTime, Boolean
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, DateTime, Boolean, UniqueConstraint
 
 DatasetSummary = namedtuple("DatasetSummary", [
   "id", 
