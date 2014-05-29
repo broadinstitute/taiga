@@ -2,11 +2,11 @@
 {% block title %}Upload Data (organized in columns){% endblock %}
 {% block content %}
 
-  <h1>Upload tab delimited data as a new
+  <h1>Upload a table as a new
     {% if new_version %} 
-      Version of an existing Dataset
+      version of an existing dataset
     {% else %}
-      Dataset
+      dataset
     {% endif %}
   </h1>
 

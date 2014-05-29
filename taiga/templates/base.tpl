@@ -1,5 +1,9 @@
-{% macro nav_link(link, text) -%}
-    <li><a href="{{ link }}">{{ text }}</a></li>
+{% macro nav_link(link, text, tooltip=None) -%}
+  {%if tooltop != None %}
+    <li><a class="has-tooltip" href="{{ link }}" data-toggle="tooltip" data-placement="bottom" title="{{ tooltip }}">{{ text }}</a></li>
+  {% else %}
+    <li><a href="{{ link }}" title="{{ tooltip }}">{{ text }}</a></li>
+  {% endif %}
 {%- endmacro %}
 <!DOCTYPE html>
 <html>
@@ -49,8 +53,8 @@
   <div class="container">
     <ul class="nav nav-pills top-of-page-margin">
       {{ nav_link("/", "Taiga home") }}
-      {{ nav_link("/upload/tabular-form", "Upload tabular data") }}
-      {{ nav_link("/upload/columnar-form", "Upload columnar data") }}
+      {{ nav_link("/upload/tabular-form", "Upload numerical matrix") }}
+      {{ nav_link("/upload/columnar-form", "Upload table") }}
       {{ nav_link("/datasets-by-tag", "List datasets by tag") }}
       {{ nav_link("/datasets-by-timestamp", "List datasets by timestamp") }}
     </ul>
@@ -68,6 +72,13 @@
   <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.1/bootstrap3-editable/js/bootstrap-editable.min.js"></script>
   <script src="/static/select2-3.4.5/select2.js"></script>
+
+<script>
+  $(document).ready(function() {
+    $('.has-tooltip').tooltip(options)
+  });
+</script>
+
 {% block scripts %}
 {% endblock %}
 

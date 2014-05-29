@@ -2,11 +2,11 @@
 {% block title %}Upload Tabular File{% endblock %}
 {% block content %}
 
-  <h1>Upload tab delimited data as a new
+  <h1>Upload numeric matrix as a new
     {% if new_version %} 
-      Version of an existing Dataset
+      version of an existing dataset
     {% else %}
-      Dataset
+      dataset
     {% endif %}
   </h1>
 
@@ -15,7 +15,7 @@
   
   <h4>Data format</h4>
   <p>
-    This form can be used to create a new dataset from a tab-delimited text file.   The file can either be a GCT file or a flat text file.
+    This form can be used to create a new dataset from a flat text (tab-delimited or comma-seperated-values) or GCT file.
     
     If the GCT format is not selected in the form below, the file is assumed to be a matrix of values with a header row and a header column that label the rows and columns respectively.  All other cells in the files must be numeric values.   The only exception to numeric values is "NA" can be used to indicate the value is missing.
   </p>
