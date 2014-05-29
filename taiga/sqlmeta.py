@@ -117,9 +117,12 @@ class MetaStore(object):
       result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id where n.name = ? order by v.version", (dataset_name,))
       return [self.get_dataset_by_id(x[0]) for x in result.fetchall()]
 
+  def get_named_data_id(self, db, dataset_id):
+    return db.execute("select named_data_id from data_version where dataset_id = ?", [dataset_id]).fetchone()[0]
+
   def update_tags(self, dataset_id, tags):
     with self.engine.begin() as db:
-      named_data_id = db.execute("select named_data_id from data_version where dataset_id = ?", [dataset_id]).fetchone()[0]
+      named_data_id = self.get_named_data_id(db, dataset_id)
       db.execute("delete from named_data_tag where named_data_id = ?", [named_data_id])
       for tag in tags:
         db.execute(named_data_tag.insert().values(named_data_id=named_data_id,
@@ -139,6 +142,11 @@ class MetaStore(object):
     with self.engine.begin() as db:
       rows = db.execute("select ndt.tag from named_data_tag ndt join data_version dv on dv.named_data_id = ndt.named_data_id where dv.dataset_id = ?", [dataset_id]).fetchall()
       return [x[0] for x in rows]
+
+  def update_dataset_name(self, dataset_id, name):
+    with self.engine.begin() as db:
+      named_data_id = self.get_named_data_id(db, dataset_id)
+      db.execute("update named_data set name = ? where named_data_id = ?", [name, named_data_id])
 
   def update_dataset_field(self, dataset_id, field_name, value):
     assert field_name in ("description", "data_type", "is_published")

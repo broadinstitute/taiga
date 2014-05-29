@@ -7,31 +7,35 @@
 {% block title %}Dataset{% endblock %}
 {% block content %}
   <h1>
-    Name: {{ meta.name }}
+    Name: 
+    <a href="#" id="name" data-name="name" data-type="text" data-pk="{{ meta.dataset_id }}" 
+    data-url="/dataset/update" data-title="Enter name">{{ meta.name }}</a>
   </h1>
   <p> 
-    {% if meta.is_published %}
-      <span class="badge alert-info">Published</span>
-    {% else %}
-      <span class="badge alert-danger">Unpublished</span>
-    {% endif %}
-    </a>
-      <form method="POST" action="/dataset/update">
-        <input type="hidden" name="pk" value="{{ meta.dataset_id }}">
-        <input type="hidden" name="name" value="is_published">
-        {% if not meta.is_published %}
-          <input type="hidden" name="value" value="True">
-          <input type="submit" class="btn" value="Change to 'Published'">
-        {% else %}
-          <input type="hidden" name="value" value="False">
-          <input type="submit" class="btn" value="Change to 'Unpublished'">
-        {% endif %}
-      </form>
+    {% with %}
+      {% if meta.is_published %}
+        {% set publish_text = "Published" %}
+        {% set publish_class = "alert-info" %}
+        {% set is_published_boolean = "True" %}
+      {% else %}
+        {% set publish_text = "Unpublished" %}
+        {% set publish_class = "alert-danger" %}
+        {% set is_published_boolean = "False" %}
+      {% endif %}
+      <span class="badge {{ publish_class }}"><a href="#" id="is_published" data-name="is_published" data-type="select" data-pk="{{ meta.dataset_id }}" 
+    data-url="/dataset/update" data-title="Choose" data-value="{{is_published_boolean}}">{{ publish_text }}</a></span>
+    {% endwith %}
+
+Data type: <a href="#" id="data_type" data-name="data_type" data-type="select2" 
+                  data-pk="{{ meta.dataset_id }}" data-url="/dataset/update" 
+                  data-title="Enter data type" data-value="{{ meta.data_type }}">{{ meta.data_type }}</a>    
+    Tags: <a href="#" id="tags" data-name="tags" data-type="select2" data-pk="{{meta.dataset_id}}" 
+                   data-url="/dataset/update" data-title="Enter tags">{{ dataset_tags|join(', ') }}</a>
   </p>
-  <p>
-    Created by {{ meta.created_by }} on {{ meta.created_timestamp }} 
-  </p> 
-  <p> Versions: 
+  <p> 
+    Uploaded by {{ meta.created_by }} on {{ meta.created_timestamp }}, 
+    
+    Versions: 
     {% for version in versions %} 
       {% if version.version == meta.version %}
         <strong>v{{meta.version}}</strong>
@@ -39,8 +43,19 @@
         <a href="/dataset/show/{{ version.dataset_id }}">v{{ version.version }}</a>
       {% endif %}
     {% endfor %}
+    
+    
   </p>
-  <p> Download as 
+  <p>
+  </p> 
+  {% if meta.hdf5_path %}  
+    <p> <a href="/upload/tabular-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
+  {% else %}
+    <p> <a href="/upload/columnar-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
+  {% endif %}
+
+  <h3>Download</h3>
+  <p> You can use the following links to download this dataset as the following formats:
     {% for format in formats %}
       {% if not loop.first %}
         |
@@ -49,25 +64,11 @@
     {% endfor %}
   </p>
   
-  {% if meta.hdf5_path %}  
-    <p> <a href="/upload/tabular-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
-  {% else %}
-    <p> <a href="/upload/columnar-form?dataset_id={{meta.dataset_id}}">Upload a new version</a> </p>
-  {% endif %}
-  
-  <p> Tags: <a href="#" id="tags" data-name="tags" data-type="select2" data-pk="{{meta.dataset_id}}" 
-               data-url="/dataset/update" data-title="Enter tags">{{ dataset_tags|join(', ') }}</a></p>
-  <p> Data type: <a href="#" id="data_type" data-name="data_type" data-type="select2" 
-                  data-pk="{{ meta.dataset_id }}" data-url="/dataset/update" 
-                  data-title="Enter data type" data-value="{{ meta.data_type }}">{{ meta.data_type }}</a></p>
-  <p> Description: </p>
-  <p>
-    <a href="#" id="description" data-name="description" data-type="textarea" data-pk="{{ meta.dataset_id }}" 
-    data-url="/dataset/update" data-title="Enter description">{{ meta.description }}</a>
-  </p>
+  <h3>Description:</h3>
+  <div class="well"><a href="#" id="description" data-name="description" data-type="textarea" data-pk="{{ meta.dataset_id }}" data-url="/dataset/update" data-title="Enter description">{{ meta.description }}</a></div>
   
   {% if dims %}
-    <h2>Dimensions</h2>
+    <h3>Dimensions</h3>
   
     <table class="table table-bordered table-striped">
       <thead>
@@ -109,6 +110,8 @@
   $(document).ready(function() {
     
     $('.x-editable-class').editable();
+
+    $('#name').editable();
 
     $('#description').editable({
       inputclass: 'input-large',
@@ -156,6 +159,24 @@
           $(this).text(value);
       },
     });
+    
+    $('#is_published').editable({
+      source: [
+        {value: "True", text: 'Published'},
+        {value: "False", text: 'Unpublished'}
+    ],
+    /*
+            display: function(value, sourceData) {
+                 var colors = {"": "gray", 1: "green", 2: "blue"},
+                     elem = $.grep(sourceData, function(o){return o.value == value;});
+                 
+                 if(elem.length) {    
+                     $(this).text(elem[0].text).css("color", colors[value]); 
+                 } else {
+                     $(this).empty(); 
+                 }
+            }   */
+        });    
     
   });
 </script>
