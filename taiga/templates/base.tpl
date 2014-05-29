@@ -1,8 +1,8 @@
-{% macro nav_link(link, text, tooltip=None) -%}
-  {%if tooltop != None %}
+{% macro nav_link(link, text, tooltip) -%}
+  {%if tooltop != "" %}
     <li><a class="has-tooltip" href="{{ link }}" data-toggle="tooltip" data-placement="bottom" title="{{ tooltip }}">{{ text }}</a></li>
   {% else %}
-    <li><a href="{{ link }}" title="{{ tooltip }}">{{ text }}</a></li>
+    <li><a href="{{ link }}">{{ text }}</a></li>
   {% endif %}
 {%- endmacro %}
 <!DOCTYPE html>
@@ -52,11 +52,11 @@
 
   <div class="container">
     <ul class="nav nav-pills top-of-page-margin">
-      {{ nav_link("/", "Taiga home") }}
-      {{ nav_link("/upload/tabular-form", "Upload numerical matrix") }}
-      {{ nav_link("/upload/columnar-form", "Upload table") }}
-      {{ nav_link("/datasets-by-tag", "List datasets by tag") }}
-      {{ nav_link("/datasets-by-timestamp", "List datasets by timestamp") }}
+      {{ nav_link("/", "Taiga home", "") }}
+      {{ nav_link("/upload/tabular-form", "Upload numerical matrix", "Uploading of a matrix comprising of numerical values with row and column labels") }}
+      {{ nav_link("/upload/columnar-form", "Upload table", "Upload a table where some columns can contain non-numeric values") }}
+      {{ nav_link("/datasets-by-tag", "List datasets by tag", "") }}
+      {{ nav_link("/datasets-by-timestamp", "List datasets by timestamp", "") }}
     </ul>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -75,7 +75,7 @@
 
 <script>
   $(document).ready(function() {
-    $('.has-tooltip').tooltip(options)
+    $('.has-tooltip').tooltip({})
   });
 </script>
 
