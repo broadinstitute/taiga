@@ -55,6 +55,12 @@
       {{ nav_link("/datasets-by-timestamp", "List datasets by timestamp") }}
     </ul>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
 {% block content %}{% endblock %}
   </div>
 
