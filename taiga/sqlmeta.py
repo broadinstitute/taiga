@@ -43,6 +43,7 @@ named_data = Table('named_data', metadata,
      Column('named_data_id', Integer, primary_key=True),
      Column('name', String),
      Column('latest_version', Integer),
+     UniqueConstraint('name', name='uk_named_data_name')
 )
 
 data_version = Table('data_version', metadata,
