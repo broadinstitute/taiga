@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, make_response, session, flash, redirect
 from flask import Blueprint, abort
 import flask
-
+import markdown
 import urllib
 
 from collections import namedtuple
@@ -65,7 +65,17 @@ def create_or_login(resp, meta_store):
 @view("index")
 @inject(meta_store=MetaStore)
 def index(meta_store):
-  return {}
+  changelog_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "static/changelog.md")
+  with open(changelog_path) as f:
+    content = f.read()
+  
+  latest_datasets = meta_store.list_names()
+  latest_datasets.sort(lambda a, b: -cmp(a.created_timestamp, b.created_timestamp))
+  if len(latest_datasets) > 10:
+    latest_datasets[:10]
+  
+  changelog = flask.Markup(markdown.markdown(content))
+  return dict(changelog=changelog, latest_datasets=latest_datasets)
 
 @ui.route("/datasets-by-timestamp")
 @view("datasets-by-timestamp")
