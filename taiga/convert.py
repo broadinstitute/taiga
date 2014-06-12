@@ -29,7 +29,7 @@ class ConvertService(object):
     full_hdf5_path = os.path.join(self.hdf5fs.hdf5_root, hdf5_path)
     
     handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = handle.communicate("require(rhdf5); fn <- %s; data <- t(h5read(fn,'/data')); dim.0 <- h5read(fn, '/dim_0'); dim.1 <- h5read(fn, '/dim_1'); dimnames(data) <- list(make.unique(dim.0), make.unique(dim.1)); save(data, file=%s)" % (r_escape_str(full_hdf5_path), r_escape_str(destination_file)))
+    stdout, stderr = handle.communicate("require(rhdf5); fn <- %s; data <- t(h5read(fn,'/data')); dim.0 <- h5read(fn, '/dim_0'); dim.1 <- h5read(fn, '/dim_1'); dimnames(data) <- list(make.unique(dim.0), make.unique(dim.1)); data[is.nan(data)] <- NA ; save(data, file=%s)" % (r_escape_str(full_hdf5_path), r_escape_str(destination_file)))
     if handle.returncode != 0:
       raise Exception("R process failed: %s\n%s" % (stdout, stderr))
 
