@@ -133,7 +133,7 @@ def test_hdf5_to_Rdata_and_back():
   # make sure the names starting with a number don't get mangled
   contents = "\r\n".join([
     ",a,2b",
-    "c,1.0,2.0",
+    "c,1.0,NA",
     "d,3.0,4.0",
     ""])
   
