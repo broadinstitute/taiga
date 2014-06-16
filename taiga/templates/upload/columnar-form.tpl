@@ -46,6 +46,16 @@
     </div>
 
     <div class="form-group">
+      <label for="publicState" class="col-sm-2 control-label">Visiblity</label>
+      <div class="col-sm-2">
+        <select class="form-control" id="publicState" name="is_public">
+          <option value="False">Hidden</option>
+          <option selected value="True">Visible</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
       <label for="inputDescription" class="col-sm-2 control-label">Description</label>
       <div class="col-sm-10">
         <textarea id="inputDescription" class="form-control" rows="3" name="description">{{description}}</textarea>

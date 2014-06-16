@@ -48,6 +48,11 @@ def login():
     openid = "https://crowd.broadinstitute.org:8443/openidserver/op"
     return oid.try_login(openid, ask_for=['email', 'fullname'])
 
+@ui.route("/logout")
+def logout():
+  session.pop("openid", None)
+  return redirect_with_success("You were logged out", "/")
+
 @inject(meta_store=MetaStore)
 def create_or_login(resp, meta_store):
     """This is called when login with OpenID succeeded and it's not
@@ -61,6 +66,10 @@ def create_or_login(resp, meta_store):
     flash(u'Successfully signed in')
     return redirect(oid.get_next_url())
 
+@ui.context_processor
+def inject_is_logged_in():
+  return dict(is_logged_in=('openid' in session))
+
 @ui.route("/")
 @view("index")
 @inject(meta_store=MetaStore)
@@ -69,7 +78,7 @@ def index(meta_store):
   with open(changelog_path) as f:
     content = f.read()
   
-  latest_datasets = meta_store.list_names()
+  latest_datasets = meta_store.list_names(get_user_id(meta_store))
   latest_datasets.sort(lambda a, b: -cmp(a.created_timestamp, b.created_timestamp))
   if len(latest_datasets) > 10:
     latest_datasets[:10]
@@ -81,7 +90,7 @@ def index(meta_store):
 @view("datasets-by-timestamp")
 @inject(meta_store=MetaStore)
 def datasets_by_timestamp(meta_store):
-  datasets = meta_store.list_names()
+  datasets = meta_store.list_names(get_user_id(meta_store))
   datasets.sort(lambda a, b: -cmp(a.created_timestamp, b.created_timestamp))
 
   return {'datasets': datasets}
@@ -94,12 +103,18 @@ def datasets_by_tag(meta_store):
   
   return {'tags': [dict(name=k, count=v) for k,v in tags_and_counts]}
 
+def get_user_id(meta_store):
+  user_id = None
+  if ('openid' in session):
+    user_id = meta_store.get_user_details(session['openid'])[0]
+  return user_id
+  
 @ui.route("/dataset/tagged")
 @view("dataset/tagged")
 @inject(meta_store=MetaStore)
 def dataset_tagged(meta_store):
   tag = request.values["tag"]
-  datasets = meta_store.get_by_tag(tag)
+  datasets = meta_store.get_by_tag(tag, get_user_id(meta_store))
   return {'tag': tag, 'datasets': datasets}
 
 @ui.route("/dataset/show/<dataset_id>")

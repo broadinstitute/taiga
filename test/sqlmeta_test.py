@@ -22,7 +22,7 @@ def cleanup_temp_file():
 @with_setup(find_temp_file, cleanup_temp_file)
 def test_basic_usages():
   meta = sqlmeta.MetaStore(temp_filename)
-  names = meta.list_names()
+  names = meta.list_names(None)
 
   assert len(names) == 0
 
@@ -30,7 +30,7 @@ def test_basic_usages():
   meta.close()
 
   meta = sqlmeta.MetaStore(temp_filename)
-  names = meta.list_names()
+  names = meta.list_names(None)
   assert len(names) == 1
 
   ds = meta.get_dataset_by_id("dsid1")
@@ -47,7 +47,7 @@ def test_multiple_names():
 
   meta.register_dataset("name1", "dsid1", True, "data", "description1", None, "path1", True)
   meta.register_dataset("name2", "dsid2", True, "data", "description2", None, "path2", True)
-  names = meta.list_names()
+  names = meta.list_names(None)
   assert len(names) == 2
 
   meta.close()

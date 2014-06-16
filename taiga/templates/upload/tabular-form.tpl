@@ -59,6 +59,16 @@
     </div>
 
     <div class="form-group">
+      <label for="publicState" class="col-sm-2 control-label">Visiblity</label>
+      <div class="col-sm-2">
+        <select class="form-control" id="publicState" name="is_public">
+          <option value="False">Hidden</option>
+          <option selected value="True">Visible</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
       <label for="inputDataType" class="col-sm-2 control-label">Data type</label>
       <div class="controls col-sm-2">
         <input type="hidden" class="form-control select2" id="inputDataType" name="data_type"/>

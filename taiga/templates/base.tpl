@@ -57,6 +57,11 @@
       {{ nav_link("/upload/columnar-form", "Upload table", "Upload a table where some columns can contain non-numeric values") }}
       {{ nav_link("/datasets-by-tag", "List datasets by tag", "") }}
       {{ nav_link("/datasets-by-timestamp", "List datasets by timestamp", "") }}
+      {% if is_logged_in %}
+        {{ nav_link("/logout", "Logout", "") }}
+      {% else %}
+        {{ nav_link("/login", "Login", "") }}
+      {% endif %}
     </ul>
 
     {% with messages = get_flashed_messages(with_categories=true) %}

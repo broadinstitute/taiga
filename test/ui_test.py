@@ -55,6 +55,16 @@ def test_non_public_datasets():
     resp = c.post("/dataset/update", data={"name":"tags", "value[]":"test-tag-name", "pk":dataset_id})
     assert resp.status_code == 200
 
+    resp = c.get("/dataset/tagged?tag=test-tag-name")
+    assert resp.status_code == 200
+    assert ("test-dataset-name" in resp.get_data())
+    
+    resp = c.get("/datasets-by-timestamp")
+    assert resp.status_code == 200
+    assert ("test-dataset-name" in resp.get_data())
+
+  # now try with a client that is not logged in
+  with app.test_client() as c:
     #No privacy on tag names, only the data linked to those tags.  Some tags will look like they're unusued when applied
     #to private datasets.
     #resp = c.get("/datasets-by-tag")

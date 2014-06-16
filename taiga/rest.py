@@ -27,9 +27,9 @@ def list_datasets(meta_store):
   # X-Total-Count
   """ Returns a json result with properties name, description, latest_date, version_count"""
   if 'tag' in request.values:
-    datasets = meta_store.get_by_tag(request.values["tag"])
+    datasets = meta_store.get_by_tag(request.values["tag"], None)
   else:
-    datasets = meta_store.list_names()
+    datasets = meta_store.list_names(None)
   return jsonify(datasets=[x._asdict() for x in datasets])
 
 @rest.route("/rest/v0/namedDataset")

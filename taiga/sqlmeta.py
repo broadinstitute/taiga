@@ -158,9 +158,9 @@ class MetaStore(object):
       rows = db.execute("select tag, count(1) from named_data_tag group by tag").fetchall()
       return rows
   
-  def get_by_tag(self, tag):
+  def get_by_tag(self, tag, user_id):
     with self.engine.begin() as db:
-      rows = db.execute("select dv.dataset_id from named_data_tag ndt join named_data nd on nd.named_data_id = ndt.named_data_id join data_version dv on (dv.named_data_id = ndt.named_data_id and dv.version = nd.latest_version) where tag = ? and nd.is_public = ?", [tag, True]).fetchall()
+      rows = db.execute("select dv.dataset_id from named_data_tag ndt join named_data nd on nd.named_data_id = ndt.named_data_id join data_version dv on (dv.named_data_id = ndt.named_data_id and dv.version = nd.latest_version) where tag = ? and (nd.is_public = ? or exists (select 1 from named_data_user ndu where ndu.named_data_id = nd.named_data_id and user_id = ?))", [tag, True, user_id]).fetchall()
       return [self.get_dataset_by_id(x[0]) for x in rows]
 
   def get_dataset_tags(self, dataset_id):
@@ -204,9 +204,9 @@ class MetaStore(object):
       else:
         return row[0]
 
-  def list_names(self):
+  def list_names(self, user_id):
     with self.engine.begin() as db:
-      result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id AND n.latest_version = v.version and n.is_public = ?", [True])
+      result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id AND n.latest_version = v.version and (n.is_public = ? or exists (select 1 from named_data_user ndu where ndu.named_data_id = n.named_data_id and user_id = ?))", [True, user_id])
       return [self.get_dataset_by_id(x[0]) for x in result.fetchall()]
 
   def _find_next_version(self, db, name_exists, name, is_public, owner_id):
