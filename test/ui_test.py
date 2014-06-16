@@ -8,6 +8,7 @@ import json
 import taiga.app
 from taiga import ui
 from taiga import sqlmeta
+from nose import with_setup
 
 # 2x2 matrix
 sample_tabular_contents = "a,b\nx,0,1\ny,2,3\n"
@@ -21,9 +22,55 @@ def create_fake_user(tempdir, openid):
   meta_store.persist_user_details(openid, email='mock-email', name='mock-name')
   meta_store.close()
 
-def test_columnar_workflow():
+
+tempdir = None
+
+def get_temp_dir():
+  global tempdir
   tempdir = tempfile.mkdtemp("ui-test")
   
+def cleanup_temp_dir():
+  shutil.rmtree(tempdir)
+
+@with_setup(get_temp_dir, cleanup_temp_dir)
+def test_non_public_datasets():
+  app = taiga.app.create_test_app(tempdir)
+  create_fake_user(tempdir, "mockopenid")
+
+  with app.test_client() as c:
+    with c.session_transaction() as sess:
+      sess['openid'] = 'mockopenid'
+
+    resp = c.post("/upload/columnar", data=dict(
+      file=(StringIO(sample_columnar_contents), 'test.txt'),
+      name="test-dataset-name",
+      description="desc",
+      overwrite_existing="false",
+      is_published = "false",
+      is_public="false"
+    ))
+    assert resp.status_code == 302
+    dataset_id = resp.location.split("/")[-1]
+
+    resp = c.post("/dataset/update", data={"name":"tags", "value[]":"test-tag-name", "pk":dataset_id})
+    assert resp.status_code == 200
+
+    #No privacy on tag names, only the data linked to those tags.  Some tags will look like they're unusued when applied
+    #to private datasets.
+    #resp = c.get("/datasets-by-tag")
+    #assert resp.status_code == 200
+    #assert not ("test-tag-name" in resp.get_data())
+    
+    resp = c.get("/dataset/tagged?tag=test-tag-name")
+    assert resp.status_code == 200
+    assert not ("test-dataset-name" in resp.get_data())
+    
+    resp = c.get("/datasets-by-timestamp")
+    assert resp.status_code == 200
+    assert not ("test-dataset-name" in resp.get_data())
+
+@with_setup(get_temp_dir, cleanup_temp_dir)
+def test_columnar_workflow():
   app = taiga.app.create_test_app(tempdir)
   create_fake_user(tempdir, "mockopenid")
 
@@ -43,7 +90,8 @@ def test_columnar_workflow():
       name="test-dataset-name",
       description="desc",
       overwrite_existing="false",
-      is_published = "false"
+      is_published = "false",
+      is_public="True"
     ))
     assert resp.status_code == 302
     dataset_id = resp.location.split("/")[-1]
@@ -57,11 +105,9 @@ def test_columnar_workflow():
     print "rcolumnar_after_processing %s" % repr(columnar_after_processing)
     assert resp.data == columnar_after_processing
 
-  shutil.rmtree(tempdir)
 
-def test_tabular_workflow():
-  tempdir = tempfile.mkdtemp("ui-test")
-  
+@with_setup(get_temp_dir, cleanup_temp_dir)
+def test_tabular_workflow():  
   app = taiga.app.create_test_app(tempdir)
   create_fake_user(tempdir, "mockopenid")
 
@@ -85,6 +131,7 @@ def test_tabular_workflow():
       overwrite_existing="false",
       is_published = "false",
       data_type = "data", 
+      is_public="True",
       format="csv"
     ))
     assert resp.status_code == 302
@@ -114,11 +161,9 @@ def test_tabular_workflow():
       value="new_desc"))
     assert resp.status_code == 200
 
-  shutil.rmtree(tempdir)
 
-
+@with_setup(get_temp_dir, cleanup_temp_dir)
 def test_rest_endpoints():
-  tempdir = tempfile.mkdtemp("ui-test")
   app = taiga.app.create_test_app(tempdir)
   create_fake_user(tempdir, "mockopenid")
 
@@ -134,6 +179,7 @@ def test_rest_endpoints():
       description="desc",
       overwrite_existing="false",
       is_published = "false",
+      is_public="True",
       data_type = "data",
       format="csv"
     ))

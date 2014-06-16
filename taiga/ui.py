@@ -195,6 +195,7 @@ def upload_columnar(import_service, meta_store):
   description = forms['description']
   created_by_user_id = meta_store.get_user_details(session['openid'])[0]
   is_published = (forms['is_published'] == "True")
+  is_public = (forms['is_public'] == "True")
   is_new_version_of_existing = 'overwrite_existing' in forms and (forms['overwrite_existing'] == "true")
 
   # check that name doesn't exist and matches is_new_version flag
@@ -211,7 +212,7 @@ def upload_columnar(import_service, meta_store):
     import_service.tcsv_to_columnar(temp_file, columnar_path, "\t")
 
     meta_store.register_columnar_dataset(name, dataset_id, is_published, 
-      description, created_by_user_id, columnar_path, is_new_version_of_existing)
+      description, created_by_user_id, columnar_path, is_public, is_new_version_of_existing)
     
   return redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
 
@@ -236,6 +237,7 @@ def upload_tabular(import_service, meta_store):
   description = forms['description']
   created_by_user_id = meta_store.get_user_details(session['openid'])[0]
   is_published = (forms['is_published'] == "True")
+  is_public = (forms['is_public'] == "True")
   data_type = forms['data_type']
   format = forms['format']
   is_new_version_of_existing = 'overwrite_existing' in forms and (forms['overwrite_existing'] == "true")
@@ -265,7 +267,7 @@ def upload_tabular(import_service, meta_store):
 
     meta_store.register_dataset(name, dataset_id, is_published, 
       data_type,
-      description, created_by_user_id, hdf5_path, is_new_version_of_existing)
+      description, created_by_user_id, hdf5_path, is_public, is_new_version_of_existing)
     
   return redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
 

@@ -15,9 +15,11 @@ from contextlib import contextmanager
 import math
 import datetime
 import time
+import re
 
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, DateTime, Boolean, UniqueConstraint
+import sqlalchemy as sa
 
 DatasetSummary = namedtuple("DatasetSummary", [
   "id", 
@@ -40,10 +42,20 @@ DatasetSummary = namedtuple("DatasetSummary", [
 metadata = MetaData()
 
 named_data = Table('named_data', metadata,
-     Column('named_data_id', Integer, primary_key=True),
-     Column('name', String),
-     Column('latest_version', Integer),
-     UniqueConstraint('name', name='uk_named_data_name')
+     sa.Column('named_data_id', sa.Integer, primary_key=True),
+     sa.Column('name', sa.String),
+     sa.Column('permaname', sa.String),
+     sa.Column('latest_version', sa.Integer),
+     sa.Column('is_public', sa.Boolean),
+     sa.UniqueConstraint('name', name='uk_named_data_name'),
+     sa.UniqueConstraint('permaname', name='uk_perma_named_name')
+)
+
+named_data_user = Table('named_data_user', metadata,
+     sa.Column('id', sa.Integer, primary_key=True),
+     sa.Column('named_data_id', sa.Integer, sa.ForeignKey('named_data.named_data_id')),
+     sa.Column('user_id', sa.Integer, sa.ForeignKey('user.user_id')),
+     sa.UniqueConstraint('named_data_id', "user_id", name='uk_named_data_user'),
 )
 
 data_version = Table('data_version', metadata,
@@ -99,6 +111,19 @@ def unprefix_object(object_str, object_type):
     return object_str
   else:
     raise Exception("invalid type %d" % object_type)
+    
+def create_permaname(name, permaname_exists_callback):
+  permaname = re.sub("['\"]+", "", name.lower())
+  permaname = re.sub("[^A-Za-z0-9]+", "-", permaname)
+  if permaname_exists_callback(permaname):
+    suffix = 1
+    while True:
+      suffixed = "%s-%s" % (permaname, suffix)
+      if not permaname_exists_callback(suffixed):
+        break
+      suffix += 1
+    permaname = suffixed
+  return permaname
 
 class MetaStore(object):
   def __init__(self, filename):
@@ -135,7 +160,7 @@ class MetaStore(object):
   
   def get_by_tag(self, tag):
     with self.engine.begin() as db:
-      rows = db.execute("select dv.dataset_id from named_data_tag ndt join named_data nd on nd.named_data_id = ndt.named_data_id join data_version dv on (dv.named_data_id = ndt.named_data_id and dv.version = nd.latest_version) where tag = ?", [tag]).fetchall()
+      rows = db.execute("select dv.dataset_id from named_data_tag ndt join named_data nd on nd.named_data_id = ndt.named_data_id join data_version dv on (dv.named_data_id = ndt.named_data_id and dv.version = nd.latest_version) where tag = ? and nd.is_public = ?", [tag, True]).fetchall()
       return [self.get_dataset_by_id(x[0]) for x in rows]
 
   def get_dataset_tags(self, dataset_id):
@@ -181,13 +206,21 @@ class MetaStore(object):
 
   def list_names(self):
     with self.engine.begin() as db:
-      result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id AND n.latest_version = v.version")
+      result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id AND n.latest_version = v.version and n.is_public = ?", [True])
       return [self.get_dataset_by_id(x[0]) for x in result.fetchall()]
 
-  def _find_next_version(self, db, name_exists, name):
+  def _find_next_version(self, db, name_exists, name, is_public, owner_id):
     if not name_exists:
       next_version = 1
-      named_data_id = db.execute(named_data.insert().values(name=name, latest_version=next_version)).inserted_primary_key[0]
+
+      def _permaname_exists(name):
+        exists = len(db.execute("select named_data_id from named_data where permaname = ?", [name]).fetchall()) > 0
+        return exists
+
+      permaname = create_permaname(name, _permaname_exists)
+      named_data_id = db.execute(named_data.insert().values(name=name, permaname=permaname, latest_version=next_version, is_public=is_public)).inserted_primary_key[0]
+      if not is_public:
+        db.execute(named_data_user.insert().values(named_data_id=named_data_id, user_id=owner_id))
     else:
       named_data_id = db.execute("select named_data_id from named_data where name = ?", [name]).first()[0]
       max_version = db.execute("select max(version) from data_version where named_data_id = ?", [named_data_id]).first()[0]
@@ -198,10 +231,10 @@ class MetaStore(object):
     if next_version != 1: 
       db.execute("update named_data set latest_version = ? where named_data_id = ?", [next_version, named_data_id])
 
-  def register_dataset(self, name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path, name_exists=False):
+  def register_dataset(self, name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path, is_public, name_exists=False):
     print "register ", name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path
     with self.engine.begin() as db:
-      next_version, named_data_id = self._find_next_version(db, name_exists, name)
+      next_version, named_data_id = self._find_next_version(db, name_exists, name, is_public, created_by_user_id)
       
       db.execute(data_version.insert().values(dataset_id=dataset_id,
         named_data_id=named_data_id, 
@@ -215,9 +248,9 @@ class MetaStore(object):
 
       self._update_next_version(db, next_version, named_data_id)
 
-  def register_columnar_dataset(self, name, dataset_id, is_published, description, created_by_user_id, columnar_path, name_exists):
+  def register_columnar_dataset(self, name, dataset_id, is_published, description, created_by_user_id, columnar_path, is_public, name_exists):
     with self.engine.begin() as db:
-      next_version, named_data_id = self._find_next_version(db, name_exists, name)
+      next_version, named_data_id = self._find_next_version(db, name_exists, name, is_public, created_by_user_id)
       
       db.execute(data_version.insert().values(dataset_id=dataset_id,
         named_data_id=named_data_id, 
