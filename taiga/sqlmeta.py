@@ -30,7 +30,7 @@ DatasetSummary = namedtuple("DatasetSummary", [
   "created_by", 
   "hdf5_path",
   "columnar_path", 
-  "version", "is_published", "data_type"])
+  "version", "is_published", "data_type", "permaname"])
 
 # named_data(named_data_id, name, latest_version)
 # data_version(data_id, named_data_id, version_id, description, created_date, created_by_user_id)
@@ -139,8 +139,13 @@ class MetaStore(object):
 
   def get_dataset_versions(self, dataset_name):
     with self.engine.begin() as db:
-      result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id where n.name = ? order by v.version", (dataset_name,))
-      return [self.get_dataset_by_id(x[0]) for x in result.fetchall()]
+      def fetch(condition):
+         return db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id where "+condition+" order by v.version", (dataset_name,)).fetchall()
+      # first try permaname.  If that fails, fall back to the legacy behavior of searching by name
+      result = fetch("n.permaname = ?")
+      if len(result) == 0:
+        result = fetch("n.name = ?")
+      return [self.get_dataset_by_id(x[0]) for x in result]
 
   def get_named_data_id(self, db, dataset_id):
     return db.execute("select named_data_id from data_version where dataset_id = ?", [dataset_id]).fetchone()[0]
@@ -180,7 +185,7 @@ class MetaStore(object):
     
   def get_dataset_by_id(self, dataset_id):
     with self.engine.begin() as db:
-      row = db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path, v.columnar_path, v.version, v.is_published, v.data_type from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id where v.dataset_id = ?", [dataset_id]).first()
+      row = db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path, v.columnar_path, v.version, v.is_published, v.data_type, n.permaname from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id where v.dataset_id = ?", [dataset_id]).first()
       if row == None:
         return None
       # convert created_timestamp to a string
@@ -190,15 +195,21 @@ class MetaStore(object):
   
   def get_dataset_id_by_name(self, dataset_name, version=None):
     with self.engine.begin() as db:
-      query = "select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id WHERE n.name = ? "
-      params = [dataset_name]
-      if version == None or version == '':
-        query += "AND n.latest_version = v.version"
-      else:
-        query += "AND v.version = ?"
-        params.append(version)
+      def fetch(condition):
+        query = "select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id WHERE "+condition
+        params = [dataset_name]
+        if version == None or version == '':
+          query += "AND n.latest_version = v.version"
+        else:
+          query += "AND v.version = ?"
+          params.append(version)
+        return db.execute(query, params).first()
       
-      row = db.execute(query, params).first()
+      # first try permaname, and fall back to searching name if nothing found
+      row = fetch("n.permaname = ?")
+      if row == None:
+        row = fetch("n.name = ?")
+        
       if row == None:
         return None
       else:

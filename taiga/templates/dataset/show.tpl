@@ -98,7 +98,7 @@ Data type: <a href="#" id="data_type" data-name="data_type" data-type="select2"
       <pre>load(url("{{root_url}}/rest/v0/datasets/{{meta.dataset_id}}?format=rdata"));</pre>
 
       Fetching the data by it's ID will guarentee you get the same data each and every time this is executed.  Alternatively, you can fetch this data by its name, in in which case, you'll receive the latest version of the data.  Code for fetching by name, is as follows:
-      <pre>load(url("{{root_url}}/rest/v0/namedDataset?fetch=content&format=rdata&name={{meta.name|urlencode}}"));</pre>
+      <pre>load(url("{{root_url}}/rest/v0/namedDataset?fetch=content&format=rdata&name={{meta.permaname|urlencode}}"));</pre>
     </p>
   {% endif %}
 
