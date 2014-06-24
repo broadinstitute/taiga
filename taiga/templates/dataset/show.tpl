@@ -11,7 +11,7 @@
     <a href="#" id="name" data-name="name" data-type="text" data-pk="{{ meta.dataset_id }}" 
     data-url="/dataset/update" data-title="Enter name">{{ meta.name }}</a>
   </h1>
-  <p> 
+  <p>
     {% with %}
       {% if meta.is_published %}
         {% set publish_text = "Published" %}
@@ -26,9 +26,16 @@
     data-url="/dataset/update" data-title="Choose" data-value="{{is_published_boolean}}">{{ publish_text }}</a></span>
     {% endwith %}
 
-Data type: <a href="#" id="data_type" data-name="data_type" data-type="select2" 
+    Visibility:
+      {% if meta.is_visible %}
+          <span class="badge alert-info">Publicly Visible</span>
+      {% else %}
+          <span class="badge alert-info">Hidden</span>
+      {% endif %}
+
+    Data type: <a href="#" id="data_type" data-name="data_type" data-type="select2"
                   data-pk="{{ meta.dataset_id }}" data-url="/dataset/update" 
-                  data-title="Enter data type" data-value="{{ meta.data_type }}">{{ meta.data_type }}</a>    
+                  data-title="Enter data type" data-value="{{ meta.data_type }}">{{ meta.data_type }}</a>
     Tags: <a href="#" id="tags" data-name="tags" data-type="select2" data-pk="{{meta.dataset_id}}" 
                    data-url="/dataset/update" data-title="Enter tags">{{ dataset_tags|join(', ') }}</a>
   </p>
@@ -114,7 +121,7 @@ Data type: <a href="#" id="data_type" data-name="data_type" data-type="select2"
     $('#name').editable();
 
     $('#description').editable({
-      inputclass: 'input-large',
+      inputclass: 'input-large'
     });
     
     $('#tags').editable({
@@ -157,14 +164,14 @@ Data type: <a href="#" id="data_type" data-name="data_type" data-type="select2"
               return;
           }
           $(this).text(value);
-      },
+      }
     });
     
     $('#is_published').editable({
       source: [
         {value: "True", text: 'Published'},
         {value: "False", text: 'Unpublished'}
-    ],
+    ]
     /*
             display: function(value, sourceData) {
                  var colors = {"": "gray", 1: "green", 2: "blue"},
