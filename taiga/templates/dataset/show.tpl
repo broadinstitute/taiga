@@ -27,7 +27,7 @@
     {% endwith %}
 
     Visibility:
-      {% if meta.is_visible %}
+      {% if meta.is_public %}
           <span class="badge alert-info">Publicly Visible</span>
       {% else %}
           <span class="badge alert-info">Hidden</span>
