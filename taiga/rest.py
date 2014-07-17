@@ -42,7 +42,14 @@ def get_dataset_by_name(meta_store, import_service, hdf5_store, cache_service):
     version = request.values['version']
   dataset_id = meta_store.get_dataset_id_by_name(name, version)
   if fetch == "content":
-    return get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_id)
+        # drop parameters that have nothing to do with formatting the dataset result
+        # perhaps there's a better way to do this.  Only copy the attributes that matter?
+        parameters = dict(request.values)
+        del parameters['name']
+        del parameters['fetch']
+        if 'version' in parameters:
+            del parameters['version']
+        return get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_id, parameters)
   elif fetch == "id":
     return dataset_id
   else:
@@ -69,18 +76,17 @@ def generate_dataset_filename(meta_store, dataset_id, extension):
   filename = "".join([ x if x.isalnum() else "_" for x in ds.name ])
   return "%s_v%s.%s" % (filename, ds.version, extension)
 
-@rest.route("/rest/v0/datasets/<dataset_id>")
-@inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store, cache_service=CacheService)
-def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_id):
-  """ Write dataset in the response.  Options: 
+# called by get_dataset.  The key difference here is that no parameters are directly pulled out of the request
+def _get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_id, parameters):
+  """ Write dataset in the response.  Options:
     format=tabular_csv|tabular_tsv|csv|tsv|hdf5
-    
+
     matrix_csv and matrix_tsv:
        will fail if dims != 2
   """
-  format = request.values['format']
+  format = parameters['format']
 
-  file_handle = cache_service.create_file_for(dict(dataset_id = dataset_id, parameters = request.values))
+  file_handle = cache_service.create_file_for(dict(dataset_id = dataset_id, parameters = parameters))
 
   metadata = meta_store.get_dataset_by_id(dataset_id)
   hdf5_path = metadata.hdf5_path
@@ -120,9 +126,15 @@ def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_i
       suffix = "Rdata"
     else:
       raise InvalidParameters("unknown format for columnar data: %s" % format)
-  
+
   if file_handle.needs_content:
     import_fn()
     file_handle.done()
 
   return flask.send_file(file_handle.name, as_attachment=True, attachment_filename=generate_dataset_filename(meta_store, dataset_id, suffix))
+
+
+@rest.route("/rest/v0/datasets/<dataset_id>")
+@inject(meta_store=MetaStore, import_service=ConvertService, hdf5_store=Hdf5Store, cache_service=CacheService)
+def get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_id):
+    return _get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_id, request.values)
