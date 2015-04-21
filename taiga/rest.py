@@ -51,7 +51,7 @@ def get_dataset_by_name(meta_store, import_service, hdf5_store, cache_service):
           del parameters['fetch']
         if 'version' in parameters:
             del parameters['version']
-        return get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_id, parameters)
+        return _get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_id, parameters)
   elif fetch == "id":
     return dataset_id
   else:
