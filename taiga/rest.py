@@ -45,8 +45,10 @@ def get_dataset_by_name(meta_store, import_service, hdf5_store, cache_service):
         # drop parameters that have nothing to do with formatting the dataset result
         # perhaps there's a better way to do this.  Only copy the attributes that matter?
         parameters = dict(request.values)
-        del parameters['name']
-        del parameters['fetch']
+        if "name" in parameters:
+          del parameters['name']
+        if "fetch" in parameters:
+          del parameters['fetch']
         if 'version' in parameters:
             del parameters['version']
         return get_dataset(meta_store, import_service, hdf5_store, cache_service, dataset_id, parameters)
