@@ -44,7 +44,7 @@ def get_dataset_by_name(meta_store, import_service, hdf5_store, cache_service):
   if fetch == "content":
         # drop parameters that have nothing to do with formatting the dataset result
         # perhaps there's a better way to do this.  Only copy the attributes that matter?
-        parameters = dict(request.values)
+        parameters = dict(request.values.items())
         if "name" in parameters:
           del parameters['name']
         if "fetch" in parameters:
