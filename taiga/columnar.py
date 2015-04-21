@@ -172,7 +172,9 @@ def read_block_header(fd):
     return None
   #print "row count %d" % row_count
   column_count = read_int(fd)
-  assert column_count < 1000
+  # if we have more than 100k columns, something isn't right.  The file is most likely corrupt or we have a bug in parsing.
+  # Or we should re-think storing this in a column store...
+  assert column_count < 100000
   #print "reading %d columns" % column_count
   column_lengths = []
   for i in xrange(column_count):
@@ -369,8 +371,14 @@ def convert_csv_to_tabular(input_file, output_file, delimiter):
 
     # throw out the header row
     reader.next()
+    line_number = 1
 
     for row in reader:
+      line_number += 1
+
+      if len(datafile_columns) != len(row):
+        raise Exception("line %d column count mismatches: cols (%r) mismatches (%r)" % (line_number, datafile_columns, row))
+
       w.append(row)
     w.close()
 
