@@ -135,7 +135,7 @@ class MetaStore(object):
 
   def _log_metadata_op(self, message, *args):
     with open(self.metadata_log_filename, "a") as fd:
-      msg_with_args = message+": "+ (" ".join([repr(x) for x in args]))
+      msg_with_args = message+": "+ (" ".join([repr(x) for x in args])) + "\n"
       fd.write(msg_with_args)
 
   def get_dataset_versions(self, dataset_name):
