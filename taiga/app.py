@@ -24,6 +24,7 @@ def create_test_app(base_dir):
   app.config['TESTING'] = True
   app.config['DATA_DIR'] = base_dir
   app.config['ROOT_URL'] = "http://localhost"
+  app.config['METADATA_PATH'] = base_dir+"/metadata.sqlite3"
   setup_app(app)
 
   return app
@@ -31,8 +32,9 @@ def create_test_app(base_dir):
 def setup_app(app):
   def configure_injector(binder):
     data_dir = app.config['DATA_DIR']
+    metadata_path = app.config['METADATA_PATH']
     temp_dir = data_dir+"/temp"
-    meta_store = MetaStore(data_dir+"/metadata.sqlite3")
+    meta_store = MetaStore(metadata_path, data_dir+"/metadata.log")
     hdf5_store = Hdf5Store(data_dir)
     binder.bind(CacheService, to=CacheService(temp_dir))
     binder.bind(MetaStore, to=meta_store)

@@ -103,7 +103,8 @@ class ConvertService(object):
         else:
           parsed_value = float(value)
         data[row_i, col_i] = parsed_value
-
+    print data.shape, (len(names), len(col_header))
+    assert data.shape == (len(names), len(col_header)), "Mismatch between data and dim names %r != %r" % (data.shape, (len(names), len(col_header)))
     with self.hdf5fs.hdf5_open(hdf5_path, mode="w") as f:
       self.write_hdf5_matrix(f, dataset_id, data, row_axis, names, col_axis, col_header)
       

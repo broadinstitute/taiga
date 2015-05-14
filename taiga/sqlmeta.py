@@ -4,17 +4,12 @@
 # ref -> subject
 # ref -> predicate
 
-import sqlite3
 import os
 from collections import namedtuple
 import uuid
-import numpy as np
 import h5py
-import time
 from contextlib import contextmanager
-import math
 import datetime
-import time
 import re
 
 from sqlalchemy import create_engine
@@ -126,16 +121,22 @@ def create_permaname(name, permaname_exists_callback):
   return permaname
 
 class MetaStore(object):
-  def __init__(self, filename):
+  def __init__(self, filename, metadata_log_filename):
     new_db = not os.path.exists(filename)
     self.engine = create_engine('sqlite:///%s' % filename, echo=True)
     if new_db:
       metadata.create_all(self.engine)
+    self.metadata_log_filename = metadata_log_filename
 
   def create_new_dataset_id(self, suffix):
     dataset_id = str(uuid.uuid4())
     # TODO: make staggered dirs
     return (dataset_id, dataset_id+suffix)
+
+  def _log_metadata_op(self, message, *args):
+    with open(self.metadata_log_filename, "a") as fd:
+      msg_with_args = message+": "+ (" ".join([repr(x) for x in args]))
+      fd.write(msg_with_args)
 
   def get_dataset_versions(self, dataset_name):
     with self.engine.begin() as db:
@@ -157,6 +158,7 @@ class MetaStore(object):
       for tag in tags:
         db.execute(named_data_tag.insert().values(named_data_id=named_data_id,
           tag=tag))
+      self._log_metadata_op("update_tags", dataset_id, tags)
   
   def get_all_tags(self):
     with self.engine.begin() as db:
@@ -177,12 +179,14 @@ class MetaStore(object):
     with self.engine.begin() as db:
       named_data_id = self.get_named_data_id(db, dataset_id)
       db.execute("update named_data set name = ? where named_data_id = ?", [name, named_data_id])
+      self._log_metadata_op("update_dataset_name", dataset_id, name)
 
   def update_dataset_field(self, dataset_id, field_name, value):
     assert field_name in ("description", "data_type", "is_published")
     with self.engine.begin() as db:
       updated = db.execute("update data_version set "+field_name+" = ? where dataset_id = ?", (value, dataset_id))
-    
+      self._log_metadata_op("update_dataset_field", dataset_id, field_name, value)
+
   def get_dataset_by_id(self, dataset_id):
     with self.engine.begin() as db:
       row = db.execute("select v.dataset_id, n.name, v.created_timestamp, v.description, v.dataset_id, u.name, v.hdf5_path, v.columnar_path, v.version, v.is_published, v.data_type, n.permaname, n.is_public from named_data n join data_version v on n.named_data_id = v.named_data_id left join user u on u.user_id = v.created_by_user_id where v.dataset_id = ?", [dataset_id]).first()
@@ -258,6 +262,7 @@ class MetaStore(object):
         is_published=is_published))
 
       self._update_next_version(db, next_version, named_data_id)
+      self._log_metadata_op("register_dataset", name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path, is_published, name_exists)
 
   def register_columnar_dataset(self, name, dataset_id, is_published, description, created_by_user_id, columnar_path, is_public, name_exists):
     with self.engine.begin() as db:
@@ -273,6 +278,7 @@ class MetaStore(object):
         is_published=is_published))
 
       self._update_next_version(db, next_version, named_data_id)
+      self._log_metadata_op("register_columnar_dataset", name, dataset_id, is_published, description, created_by_user_id, columnar_path, is_public, name_exists)
 
   def insert_stmt(self, subject, predicate, object):
     object_type, object_str = prefix_object(object)
@@ -319,7 +325,8 @@ class MetaStore(object):
       user_id = result.fetchone()
       if user_id == None:
         user_id = db.execute(user.insert().values(name=name, email=email, openid=openid)).inserted_primary_key[0]
-  
+      self._log_metadata_op("persist_user_details", openid, email, name)
+
   def find_all_data_types(self):
     with self.engine.begin() as db:
       result = db.execute("select distinct data_type from data_version where data_type is not null")

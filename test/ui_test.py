@@ -18,7 +18,7 @@ sample_columnar_contents = "a\tb\tc\nx\t0\t1\ny\t2\t3.0\n"
 columnar_after_processing = 'a,b,c\r\nx,0,1.0\r\ny,2,3.0\r\n'
 
 def create_fake_user(tempdir, openid):
-  meta_store =sqlmeta.MetaStore(tempdir+"/metadata.sqlite3")
+  meta_store =sqlmeta.MetaStore(tempdir+"/metadata.sqlite3", tempdir+"/metadata.log")
   meta_store.persist_user_details(openid, email='mock-email', name='mock-name')
   meta_store.close()
 
