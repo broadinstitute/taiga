@@ -182,10 +182,15 @@ class MetaStore(object):
             self._log_metadata_op("update_dataset_name", dataset_id, name)
 
     def update_dataset_field(self, dataset_id, field_name, value):
-        assert field_name in ("description", "data_type", "is_published")
-        with self.engine.begin() as db:
-            updated = db.execute("update data_version set "+field_name+" = ? where dataset_id = ?", (value, dataset_id))
-            self._log_metadata_op("update_dataset_field", dataset_id, field_name, value)
+        if field_name == "is_public":
+            with self.engine.begin() as db:
+                updated = db.execute("update named_data set "+field_name+" = ? where named_data_id = (select named_data_id from data_version where dataset_id = ?)", (value, dataset_id))
+                self._log_metadata_op("update_dataset_field", dataset_id, field_name, value)
+        else:
+            assert field_name in ("description", "data_type", "is_published")
+            with self.engine.begin() as db:
+                updated = db.execute("update data_version set "+field_name+" = ? where dataset_id = ?", (value, dataset_id))
+                self._log_metadata_op("update_dataset_field", dataset_id, field_name, value)
 
     def get_dataset_by_id(self, dataset_id):
         with self.engine.begin() as db:
@@ -338,7 +343,10 @@ class MetaStore(object):
 
 @contextmanager
 def open_hdf5_ctx_mgr(hdf5_path, mode="r"):
-    f = h5py.File(hdf5_path, mode)
+    try:
+        f = h5py.File(hdf5_path, mode)
+    except IOError, e:
+        raise IOError("Could not open %s" % hdf5_path, e)
     yield f
     f.close()
 
@@ -362,7 +370,6 @@ class Hdf5Store(object):
 
     def hdf5_open(self, hdf5_path, mode="r"):
         hdf5_path = os.path.join(self.hdf5_root, hdf5_path)
-        print "opening %s" % hdf5_path
         return open_hdf5_ctx_mgr(hdf5_path, mode)
 
 def exec_sub_stmt_query(query, find_stmt, bindings):

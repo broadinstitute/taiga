@@ -11,7 +11,11 @@
       <h2>Latest datasets uploaded</h2>
       <p>The following are datasets which have had a new version uploaded</a>
       {% for ds in latest_datasets %}
-        <p>{{ ds.created_timestamp[:10] }} <a href="/dataset/show/{{ds.dataset_id}}">{{ ds.name }}</a></p>
+        <p>{{ ds.created_timestamp[:10] }}
+        {% if not ds.is_public %}
+               <span class="badge alert-info">Hidden</span>
+        {% endif %}
+         <a href="/dataset/show/{{ds.dataset_id}}">{{ ds.name }}</a></p>
       {% endfor %}
     </div>
 

@@ -156,6 +156,9 @@ def dataset_update(meta_store):
     if name == "is_published":
       value = (value == "True")
       meta_store.update_dataset_field(id, name, value)
+    elif name == "is_public":
+      value = (value == "True")
+      meta_store.update_dataset_field(id, name, value)
     elif name == "name":
       meta_store.update_dataset_name(id, value)
     elif name in ("description", "data_type", "is_published"):

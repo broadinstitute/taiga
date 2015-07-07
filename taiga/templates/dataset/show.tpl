@@ -28,10 +28,15 @@
 
     Visibility:
       {% if meta.is_public %}
-          <span class="badge alert-info">Publicly Visible</span>
+        {% set is_public_text = "Publicly Visible" %}
+        {% set is_public_boolean = "True" %}
       {% else %}
-          <span class="badge alert-info">Hidden</span>
+        {% set is_public_text = "Hidden" %}
+        {% set is_public_boolean = "False" %}
       {% endif %}
+
+      <span class="badge alert-info"><a href="#" id="is_public" data-name="is_public" data-type="select" data-pk="{{ meta.dataset_id }}"
+        data-url="/dataset/update" data-title="Choose" data-value="{{ is_public_boolean }}">{{ is_public_text }}</a></span>
 
     Data type: <a href="#" id="data_type" data-name="data_type" data-type="select2"
                   data-pk="{{ meta.dataset_id }}" data-url="/dataset/update" 
@@ -171,20 +176,16 @@
       source: [
         {value: "True", text: 'Published'},
         {value: "False", text: 'Unpublished'}
-    ]
-    /*
-            display: function(value, sourceData) {
-                 var colors = {"": "gray", 1: "green", 2: "blue"},
-                     elem = $.grep(sourceData, function(o){return o.value == value;});
-                 
-                 if(elem.length) {    
-                     $(this).text(elem[0].text).css("color", colors[value]); 
-                 } else {
-                     $(this).empty(); 
-                 }
-            }   */
-        });    
-    
+        ]
+        });
+
+    $('#is_public').editable({
+      source: [
+        {value: "True", text: 'Publicly Visible'},
+        {value: "False", text: 'Hidden'}
+        ]
+        });
+
   });
 </script>
 {% endblock %}
