@@ -281,8 +281,11 @@ def upload_tabular(import_service, meta_store):
         delimiter = "\t"
       else:
         raise Exception("Invalid format: %s" % format)
-      import_service.tcsv_to_hdf5(temp_file, dataset_id, hdf5_path, columns, rows, delimiter)
-
+      try:
+        import_service.tcsv_to_hdf5(temp_file, dataset_id, hdf5_path, columns, rows, delimiter)
+      except convert.UserException as e:
+        return redirect_with_error("/upload/tabular-form", str(e))
+        
     meta_store.register_dataset(name, dataset_id, is_published, 
       data_type,
       description, created_by_user_id, hdf5_path, is_public, is_new_version_of_existing)

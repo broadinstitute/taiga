@@ -19,6 +19,9 @@ def to_string_with_nan_mask(x):
 
 r_escape_str = lambda x: '"'+x.replace("\"", "\\\"")+'"'
 
+class UserException(Exception):
+  pass
+
 class ConvertService(object):
   @inject(hdf5fs=sqlmeta.Hdf5Store)
   def __init__(self, hdf5fs):
@@ -72,7 +75,8 @@ class ConvertService(object):
     # TODO: Reduce memory footprint of this conversion
     with open(input_path) as fd:
       version = fd.readline()
-      assert version.strip() == "#1.2"
+      if version.strip() != "#1.2":
+        raise UserException("Expected #1.2 as the first line on GCT file")
       r = csv.reader(fd, delimiter="\t")
       
       header_count_row = r.next()
@@ -174,17 +178,24 @@ class ConvertService(object):
 
       # validate to make sure no other column headers are blank.  We should communicate this to the submitted, but
       # doing it as a hard assertion for the time being.
-      for x in col_header:
-        assert x != ''
+      for i, x in enumerate(col_header):
+        if x == '':
+          raise UserException("Column name for column %d was blank" % ( i+1, ) )
 
       row_header = []
       rows = []
-      line = 0
+      line = 1
       for row in r:
         line += 1
         row_header.append(row[0])
         data_row = row[1:]
-        assert len(data_row) == len(col_header), "line %d, %d != %d" % (line, len(data_row), len(col_header))
+        if len(data_row) == 0:
+          raise UserException("On line %d: found no data, only row header label %s.  Did you choose the right delimiter for this file? (Currently using %s)" % (line, repr(row[0]), repr(delimiter) ))
+        if len(data_row) != len(col_header):
+          msg = "On line %d: Expected %d columns, but found %d columns." % (line, len(col_header), len(data_row))
+          if line == 2 and (len(col_header)-1) == len(data_row):
+            msg += "  This looks like you may be missing R-style row and column headers from your file."
+          raise UserException(msg)
         rows.append(data_row)
     
     data = np.empty((len(rows), len(rows[0])),'d')
