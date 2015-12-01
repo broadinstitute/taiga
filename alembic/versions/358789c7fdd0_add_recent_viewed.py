@@ -1,14 +1,14 @@
 """add recent_viewed
 
 Revision ID: 358789c7fdd0
-Revises: 3cf245f2fcab
+Revises: 26c52ebb3d05
 Create Date: 2015-10-08 15:05:55.341877
 
 """
 
 # revision identifiers, used by Alembic.
 revision = '358789c7fdd0'
-down_revision = '3cf245f2fcab'
+down_revision = '26c52ebb3d05'
 
 from alembic import op
 import sqlalchemy as sa
