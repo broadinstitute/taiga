@@ -124,7 +124,11 @@ def dataset_show(meta_store, hdf5_store, dataset_id):
   meta = meta_store.get_dataset_by_id(dataset_id)
   if meta == None:
     abort(404)
-    
+
+  user_id = get_user_id(meta_store)
+  if user_id != None:
+      meta_store.record_view(user_id, dataset_id)    
+
   versions = meta_store.get_dataset_versions(meta.name)
   all_tags = [tag for tag, count in meta_store.get_all_tags()]
   dataset_tags = meta_store.get_dataset_tags(dataset_id)
@@ -135,8 +139,8 @@ def dataset_show(meta_store, hdf5_store, dataset_id):
   else:
     formats = ['csv','tsv','rdata']
     dims = []
-  existing_data_types = json.dumps(meta_store.find_all_data_types())
-  
+  existing_data_types = json.dumps(meta_store.find_all_data_types())  
+
   return {"root_url": root_url, "meta": meta, "dims":dims, "versions": versions, 
     "all_tags_as_json": json.dumps(list(all_tags)), "dataset_tags": dataset_tags,
     "existing_data_types": existing_data_types,

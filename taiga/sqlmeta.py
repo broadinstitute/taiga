@@ -15,6 +15,8 @@ import re
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, DateTime, Boolean, UniqueConstraint
 import sqlalchemy as sa
+import sqlite3
+
 
 DatasetSummary = namedtuple("DatasetSummary", [
     "id",
@@ -35,6 +37,16 @@ DatasetSummary = namedtuple("DatasetSummary", [
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///build/v2.sqlite3'
 
 metadata = MetaData()
+
+view_history = Table('view_history', metadata,
+    Column('view_history_id', sa.Integer, primary_key=True),
+    Column('user_id', sa.Integer, sa.ForeignKey('user.user_id')),
+    Column('dataset_id', String),
+    Column('latest_view', DateTime),
+    Column('view_count', sa.Integer),
+    sa.UniqueConstraint('user_id', 'dataset_id', name='uk_view_history'),
+    sqlite_autoincrement=True
+)
 
 named_data = Table('named_data', metadata,
     sa.Column('named_data_id', sa.Integer, primary_key=True),
@@ -119,6 +131,22 @@ def create_permaname(name, permaname_exists_callback):
             suffix += 1
         permaname = suffixed
     return permaname
+
+def exec_insert_update_uk(db, insert_stmt, update_stmt=None):
+    try:
+        db.execute(insert_stmt)
+    except sqlite3.IntegrityError:
+        if update_stmt is not None:
+            db.execute(update_stmt)
+    except sa.exc.IntegrityError:
+        if update_stmt is not None:
+            db.execute(update_stmt)
+    except:
+        import sys
+        type, value, traceback = sys.exc_info()
+        print "type=%s %s" % (type, repr(type))
+        print "typefile=%s" % (type.__file__, )
+        raise
 
 class MetaStore(object):
     def __init__(self, filename, metadata_log_filename):
@@ -284,6 +312,24 @@ class MetaStore(object):
 
             self._update_next_version(db, next_version, named_data_id)
             self._log_metadata_op("register_columnar_dataset", name, dataset_id, is_published, description, created_by_user_id, columnar_path, is_public, name_exists)
+
+    def record_view(self, user_id, dataset_id):
+        print "record_view"
+        with self.engine.begin() as db:
+            now = datetime.datetime.now()
+            named_data_id = db.execute(sa.select([data_version.c.named_data_id]).where(data_version.c.dataset_id == dataset_id)).first()[0]
+            print "params", named_data_id, user_id
+            exec_insert_update_uk(db, named_data_user.insert().values(named_data_id=named_data_id, user_id=user_id))
+            rs = db.execute(view_history.update()
+                            .where(view_history.c.dataset_id == dataset_id and view_history.c.user_id == user_id)
+                            .values(view_count=view_history.c.view_count+1, latest_view=now))
+            if rs.rowcount == 0:
+                db.execute(view_history.insert().values(user_id=user_id, dataset_id=dataset_id, latest_view=now, view_count=1))
+
+    def list_recent_views(self, user_id):
+        with self.engine.begin() as db:
+            dataset_ids = db.execute(sa.select([view_history.c.dataset_id]).where(view_history.c.user_id == user_id).order_by(view_history.c.latest_view.desc())).fetchall()
+            return [x[0] for x in dataset_ids]
 
     def insert_stmt(self, subject, predicate, object):
         object_type, object_str = prefix_object(object)
