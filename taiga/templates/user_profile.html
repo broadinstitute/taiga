@@ -1,0 +1,12 @@
+{% extends "base.tpl" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+
+    <h1>Bearer token</h1>
+    <pre>{{token}}</pre>
+
+    <p>
+        <a class="btn btn-default" href="/reset_user_token">Reset Token</a>
+    </p>
+
+{% endblock %}

@@ -11,6 +11,8 @@ import h5py
 from contextlib import contextmanager
 import datetime
 import re
+import random
+import base64
 
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, DateTime, Boolean, UniqueConstraint
@@ -82,7 +84,8 @@ user = Table('user', metadata,
     Column('user_id', Integer, primary_key=True),
     Column('name', String),
     Column('email', String),
-    Column('openid', String)
+    Column('openid', String),
+    Column('token', String)
 )
 
 statement = Table("statement", metadata,
@@ -365,10 +368,23 @@ class MetaStore(object):
         """
         return exec_sub_stmt_query(query, self.find_stmt, {})
 
-    def get_user_details(self, openid):
+    def get_user_id_by_token(self, token):
         with self.engine.begin() as db:
-            result = db.execute("select user_id, name, email from user where openid = ?", [openid])
+            result = db.execute(sa.select([user.c.user_id]).where(user.c.token == token))
             return result.fetchone()
+
+    def get_user_details(self, openid=None, user_id=None):
+        with self.engine.begin() as db:
+            if openid != None:
+                result = db.execute("select user_id, name, email, token from user where openid = ?", [openid])
+            else:
+                result = db.execute("select user_id, name, email, token from user where user_id = ?", [user_id])
+            return result.fetchone()
+
+    def reset_user_token(self, user_id):
+        with self.engine.begin() as db:
+            new_token = base64.b64encode(bytes([random.randint(0,255) for x in range(100)]))[:32]
+            db.execute(user.update().values(token=new_token).where(user.c.user_id == user_id))
 
     def persist_user_details(self, openid, email='', name=''):
         with self.engine.begin() as db:

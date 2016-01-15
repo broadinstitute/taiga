@@ -70,6 +70,18 @@ def create_or_login(resp, meta_store):
 def inject_is_logged_in():
   return dict(is_logged_in=('openid' in session))
 
+@ui.route("/reset_user_token")
+@inject(meta_store=MetaStore)
+def reset_user_token(meta_store):
+  meta_store.reset_user_token(get_user_id(meta_store))
+  return flask.redirect("/user_profile")
+
+@ui.route("/user_profile")
+@inject(meta_store=MetaStore)
+def user_profile(meta_store):
+  user_id, name, email, token = meta_store.get_user_details(user_id = get_user_id(meta_store, required=True))
+  return flask.render_template("user_profile.html", token=token)
+
 @ui.route("/")
 @view("index")
 @inject(meta_store=MetaStore)
@@ -103,12 +115,21 @@ def datasets_by_tag(meta_store):
   
   return {'tags': [dict(name=k, count=v) for k,v in tags_and_counts]}
 
-def get_user_id(meta_store):
+
+def get_user_id(meta_store, required=False):
   user_id = None
   if ('openid' in session):
     user_id = meta_store.get_user_details(session['openid'])[0]
+  if required and user_id == None:
+    auth = request.headers.get("Authorization")
+    if auth != None and auth.startswith("Bearer "):
+        token = auth[len("Bearer "):]
+        user_id = meta_store.get_user_id_by_token(token)
+  if required and user_id == None:
+    return flask.redirect("/login")
   return user_id
   
+
 @ui.route("/dataset/tagged")
 @view("dataset/tagged")
 @inject(meta_store=MetaStore)
@@ -203,19 +224,17 @@ def _render_upload_form(meta_store, template):
   
   return render_template(template, **params)
 
+
 @ui.route("/upload/columnar", methods=["POST"])
 @inject(meta_store=MetaStore, import_service=ConvertService)
 def upload_columnar(import_service, meta_store):
-  if not ('openid' in session):
-    # permission denied if not logged in
-    abort(403)
+  created_by_user_id = get_user_id(meta_store)
 
   forms = request.form
 
   uploaded_file = request.files['file']
   name = forms['name']
   description = forms['description']
-  created_by_user_id = meta_store.get_user_details(session['openid'])[0]
   is_published = (forms['is_published'] == "True")
   is_public = (forms['is_public'] == "True")
   is_new_version_of_existing = 'overwrite_existing' in forms and (forms['overwrite_existing'] == "true")
@@ -246,9 +265,7 @@ def upload_columnar_form(meta_store):
 @ui.route("/upload/tabular", methods=["POST"])
 @inject(meta_store=MetaStore, import_service=ConvertService)
 def upload_tabular(import_service, meta_store):
-  if not ('openid' in session):
-    # permission denied if not logged in
-    abort(403)
+  created_by_user_id = get_user_id(meta_store)
 
   forms = request.form
 
@@ -257,7 +274,6 @@ def upload_tabular(import_service, meta_store):
   rows = forms['rows']
   name = forms['name']
   description = forms['description']
-  created_by_user_id = meta_store.get_user_details(session['openid'])[0]
   is_published = (forms['is_published'] == "True")
   is_public = (forms['is_public'] == "True")
   data_type = forms['data_type']
