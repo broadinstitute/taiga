@@ -260,7 +260,7 @@ class MetaStore(object):
             result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id AND n.latest_version = v.version and (n.is_public = ? or exists (select 1 from named_data_user ndu where ndu.named_data_id = n.named_data_id and user_id = ?))", [True, user_id])
             return [self.get_dataset_by_id(x[0]) for x in result.fetchall()]
 
-    def _find_next_version(self, db, name_exists, name, is_public, owner_id):
+    def _find_next_version(self, db, name_exists, name, is_public, owner_id, permaname):
         if not name_exists:
             next_version = 1
 
@@ -268,7 +268,8 @@ class MetaStore(object):
                 exists = len(db.execute("select named_data_id from named_data where permaname = ?", [name]).fetchall()) > 0
                 return exists
 
-            permaname = create_permaname(name, _permaname_exists)
+            if permaname is None:
+                permaname = create_permaname(name, _permaname_exists)
             named_data_id = db.execute(named_data.insert().values(name=name, permaname=permaname, latest_version=next_version, is_public=is_public)).inserted_primary_key[0]
             if not is_public:
                 db.execute(named_data_user.insert().values(named_data_id=named_data_id, user_id=owner_id))
@@ -282,10 +283,10 @@ class MetaStore(object):
         if next_version != 1:
             db.execute("update named_data set latest_version = ? where named_data_id = ?", [next_version, named_data_id])
 
-    def register_dataset(self, name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path, is_public, name_exists=False):
+    def register_dataset(self, name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path, is_public, name_exists=False, permaname=None):
         print "register ", name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path
         with self.engine.begin() as db:
-            next_version, named_data_id = self._find_next_version(db, name_exists, name, is_public, created_by_user_id)
+            next_version, named_data_id = self._find_next_version(db, name_exists, name, is_public, created_by_user_id, permaname)
 
             db.execute(data_version.insert().values(dataset_id=dataset_id,
                                                     named_data_id=named_data_id,
@@ -300,9 +301,9 @@ class MetaStore(object):
             self._update_next_version(db, next_version, named_data_id)
             self._log_metadata_op("register_dataset", name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path, is_published, name_exists)
 
-    def register_columnar_dataset(self, name, dataset_id, is_published, description, created_by_user_id, columnar_path, is_public, name_exists):
+    def register_columnar_dataset(self, name, dataset_id, is_published, description, created_by_user_id, columnar_path, is_public, name_exists, permaname=None):
         with self.engine.begin() as db:
-            next_version, named_data_id = self._find_next_version(db, name_exists, name, is_public, created_by_user_id)
+            next_version, named_data_id = self._find_next_version(db, name_exists, name, is_public, created_by_user_id, permaname)
 
             db.execute(data_version.insert().values(dataset_id=dataset_id,
                                                     named_data_id=named_data_id,

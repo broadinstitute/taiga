@@ -237,7 +237,8 @@ def upload_columnar(import_service, meta_store):
   description = forms['description']
   is_published = (forms['is_published'] == "True")
   is_public = (forms['is_public'] == "True")
-  is_new_version_of_existing = 'overwrite_existing' in forms and (forms['overwrite_existing'] == "true")
+  is_new_version_of_existing = 'overwrite_existing' in forms and (forms['overwrite_existing'].lower() == "true")
+  permaname = forms.get("permaname")
 
   # check that name doesn't exist and matches is_new_version flag
   versions_exist = len(meta_store.get_dataset_versions(name)) > 0
@@ -253,7 +254,7 @@ def upload_columnar(import_service, meta_store):
     import_service.tcsv_to_columnar(temp_file, columnar_path, "\t")
 
     meta_store.register_columnar_dataset(name, dataset_id, is_published, 
-      description, created_by_user_id, columnar_path, is_public, is_new_version_of_existing)
+      description, created_by_user_id, columnar_path, is_public, is_new_version_of_existing, permaname=permaname)
     
   return redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
 
@@ -265,6 +266,7 @@ def upload_columnar_form(meta_store):
 @ui.route("/upload/tabular", methods=["POST"])
 @inject(meta_store=MetaStore, import_service=ConvertService)
 def upload_tabular(import_service, meta_store):
+  print("a")
   created_by_user_id = get_user_id(meta_store)
 
   forms = request.form
@@ -278,15 +280,18 @@ def upload_tabular(import_service, meta_store):
   is_public = (forms['is_public'] == "True")
   data_type = forms['data_type']
   format = forms['format']
-  is_new_version_of_existing = 'overwrite_existing' in forms and (forms['overwrite_existing'] == "true")
+  permaname = forms.get("permaname")
+  is_new_version_of_existing = 'overwrite_existing' in forms and (forms['overwrite_existing'].lower() == "true")
 
   # check that name doesn't exist and matches is_new_version flag
+  print("f")
 
   versions_exist = len(meta_store.get_dataset_versions(name)) > 0
   if not is_new_version_of_existing and versions_exist:
     return redirect_with_error("/upload/tabular-form", "There already exists a dataset with the name \"%s\"" % name)
 
   with NamedTemporaryFile() as temp_fd:
+    print("f")
     temp_file = temp_fd.name
     uploaded_file.save(temp_file)
     
@@ -304,11 +309,12 @@ def upload_tabular(import_service, meta_store):
       try:
         import_service.tcsv_to_hdf5(temp_file, dataset_id, hdf5_path, columns, rows, delimiter)
       except convert.UserException as e:
+        print("error", e)
         return redirect_with_error("/upload/tabular-form", str(e))
         
     meta_store.register_dataset(name, dataset_id, is_published, 
       data_type,
-      description, created_by_user_id, hdf5_path, is_public, is_new_version_of_existing)
+      description, created_by_user_id, hdf5_path, is_public, is_new_version_of_existing, permaname=permaname)
     
   return redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
 
