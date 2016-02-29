@@ -55,11 +55,11 @@ def setup_app(app):
   app.register_blueprint(rest.rest)
   flask_injector.post_init_app(app=app, injector=injector)
 
-def create_app():
+def create_app(taiga_config="~/.taiga/taiga.cfg"):
   log = logging.getLogger(__name__)
   app = Flask(__name__)
   app.config.from_object("taiga.default_config")
-  config_override_path = os.path.expanduser("~/.taiga/taiga.cfg")
+  config_override_path = os.path.expanduser(taiga_config)
   if os.path.exists(config_override_path):
     log.info("Loading config from %s" % config_override_path)
     app.config.from_pyfile(config_override_path)

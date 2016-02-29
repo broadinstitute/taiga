@@ -8,5 +8,7 @@ setup(
         "alembic==0.6.4", "gunicorn==18.0", "h5py==2.2.1", "injector==0.8.0", "nose==1.3.0", "requests==2.2.1", "Flask-OpenID==1.2.1", "markdown==2.4.1"],
     author="Philip Montgomery",
     author_email="pmontgom@broadinstitute.org",
-    long_description="A tool for sharing tabular and matrix datasets"
+    long_description="A tool for sharing tabular and matrix datasets",
+    entry_points={'console_scripts': [
+        "taiga = taiga:main" ]}
 )
