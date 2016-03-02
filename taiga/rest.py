@@ -40,9 +40,16 @@ def get_dataset_by_name(meta_store, import_service, hdf5_store, cache_service):
   version = None
   if 'version' in request.values:
     version = request.values['version']
-  dataset_id = meta_store.get_dataset_id_by_name(name, version)
+
+  if "md5" in request.values:
+    md5 =request.values["md5"]
+    dataset_id = meta_store.find_by_md5(name, md5)
+  else:
+    dataset_id = meta_store.get_dataset_id_by_name(name, version)
+
   if dataset_id == None:
     abort(404)
+
   if fetch == "content":
         # drop parameters that have nothing to do with formatting the dataset result
         # perhaps there's a better way to do this.  Only copy the attributes that matter?

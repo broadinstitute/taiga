@@ -77,7 +77,10 @@ data_version = Table('data_version', metadata,
     Column('hdf5_path', String),
     Column('columnar_path', String),
     Column('is_published', Boolean),
-    Column('data_type', String)
+    Column('data_type', String),
+    Column('is_deprecated', Boolean),
+    Column('uploaded_md5', String),
+    Column('downloaded_count', Integer)
 )
 
 user = Table('user', metadata,
@@ -255,6 +258,15 @@ class MetaStore(object):
             else:
                 return row[0]
 
+    def find_by_md5(self, permaname, md5):
+        with self.engine.begin() as db:
+            result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id where v.uploaded_md5 = ? and n.permaname = ? order by v.version desc", [md5, permaname])
+            row = result.first()
+            if row == None:
+                return None
+            else:
+                return row[0]
+
     def list_names(self, user_id):
         with self.engine.begin() as db:
             result = db.execute("select v.dataset_id from named_data n join data_version v on n.named_data_id = v.named_data_id AND n.latest_version = v.version and (n.is_public = ? or exists (select 1 from named_data_user ndu where ndu.named_data_id = n.named_data_id and user_id = ?))", [True, user_id])
@@ -283,8 +295,7 @@ class MetaStore(object):
         if next_version != 1:
             db.execute("update named_data set latest_version = ? where named_data_id = ?", [next_version, named_data_id])
 
-    def register_dataset(self, name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path, is_public, name_exists=False, permaname=None):
-        print "register ", name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path
+    def register_dataset(self, name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path, is_public, name_exists=False, permaname=None, uploaded_md5=None):
         with self.engine.begin() as db:
             next_version, named_data_id = self._find_next_version(db, name_exists, name, is_public, created_by_user_id, permaname)
 
@@ -296,12 +307,15 @@ class MetaStore(object):
                                                     created_timestamp=datetime.datetime.now(),
                                                     hdf5_path=hdf5_path,
                                                     data_type=data_type,
-                                                    is_published=is_published))
+                                                    is_published=is_published,
+                                                    is_deprecated=False,
+                                                    downloaded_count=0,
+                                                    uploaded_md5=uploaded_md5))
 
             self._update_next_version(db, next_version, named_data_id)
             self._log_metadata_op("register_dataset", name, dataset_id, is_published, data_type, description, created_by_user_id, hdf5_path, is_published, name_exists)
 
-    def register_columnar_dataset(self, name, dataset_id, is_published, description, created_by_user_id, columnar_path, is_public, name_exists, permaname=None):
+    def register_columnar_dataset(self, name, dataset_id, is_published, description, created_by_user_id, columnar_path, is_public, name_exists, permaname=None, uploaded_md5=None):
         with self.engine.begin() as db:
             next_version, named_data_id = self._find_next_version(db, name_exists, name, is_public, created_by_user_id, permaname)
 
@@ -312,7 +326,10 @@ class MetaStore(object):
                                                     created_by_user_id=created_by_user_id,
                                                     created_timestamp=datetime.datetime.now(),
                                                     columnar_path=columnar_path,
-                                                    is_published=is_published))
+                                                    is_published=is_published,
+                                                    is_deprecated=False,
+                                                    downloaded_count=0,
+                                                    uploaded_md5=uploaded_md5))
 
             self._update_next_version(db, next_version, named_data_id)
             self._log_metadata_op("register_columnar_dataset", name, dataset_id, is_published, description, created_by_user_id, columnar_path, is_public, name_exists)

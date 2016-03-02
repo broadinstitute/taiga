@@ -4,6 +4,7 @@ import flask
 import markdown
 import urllib
 
+import hashlib
 from collections import namedtuple
 import collections
 
@@ -248,13 +249,16 @@ def upload_columnar(import_service, meta_store):
   with NamedTemporaryFile() as temp_fd:
     temp_file = temp_fd.name
     uploaded_file.save(temp_file)
-    
+
+    uploaded_md5 = compute_md5(temp_file)
+
     # convert file
     dataset_id, columnar_path = meta_store.create_new_dataset_id(".columnar")
     import_service.tcsv_to_columnar(temp_file, columnar_path, "\t")
 
     meta_store.register_columnar_dataset(name, dataset_id, is_published, 
-      description, created_by_user_id, columnar_path, is_public, is_new_version_of_existing, permaname=permaname)
+      description, created_by_user_id, columnar_path, is_public, is_new_version_of_existing, permaname=permaname,
+                                         uploaded_md5=uploaded_md5)
     
   return redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
 
@@ -263,10 +267,17 @@ def upload_columnar(import_service, meta_store):
 def upload_columnar_form(meta_store):
   return _render_upload_form(meta_store, "/upload/columnar-form.tpl")
 
+
+def compute_md5(filename):
+  hash = hashlib.md5()
+  with open(filename, "rb") as f:
+    for chunk in iter(lambda: f.read(10000), b""):
+      hash.update(chunk)
+    return hash.hexdigest()
+
 @ui.route("/upload/tabular", methods=["POST"])
 @inject(meta_store=MetaStore, import_service=ConvertService)
 def upload_tabular(import_service, meta_store):
-  print("a")
   created_by_user_id = get_user_id(meta_store)
 
   forms = request.form
@@ -294,6 +305,8 @@ def upload_tabular(import_service, meta_store):
     print("f")
     temp_file = temp_fd.name
     uploaded_file.save(temp_file)
+
+    uploaded_md5 = compute_md5(temp_file)
     
     # convert file
     dataset_id, hdf5_path = meta_store.create_new_dataset_id(".hdf5")
@@ -313,8 +326,9 @@ def upload_tabular(import_service, meta_store):
         return redirect_with_error("/upload/tabular-form", str(e))
         
     meta_store.register_dataset(name, dataset_id, is_published, 
-      data_type,
-      description, created_by_user_id, hdf5_path, is_public, is_new_version_of_existing, permaname=permaname)
+      data_type, description, created_by_user_id, hdf5_path,
+                                is_public, is_new_version_of_existing,
+                                permaname=permaname, uploaded_md5=uploaded_md5)
     
   return redirect_with_success("Successfully imported file", "/dataset/show/%s" % dataset_id)
 
