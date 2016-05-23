@@ -77,6 +77,17 @@ def find_triples(meta_store):
     return flask.jsonify(results=result)
 
 
+@rest.route("/rest/v0/provenance/create", methods=["POST"])
+@inject(meta_store=MetaStore)
+def provenance_create(meta_store):
+    print("getting json")
+    json = request.get_json(force=True)
+    print("json", json)
+    graph_permaname = meta_store.create_graph(json['name'], json['graph'])
+
+    return flask.jsonify({"permaname":graph_permaname})
+
+
 @rest.route("/rest/v0/metadata/<dataset_id>")
 @inject(meta_store=MetaStore)
 def get_metadata(meta_store, dataset_id):

@@ -139,6 +139,13 @@ def get_user_id(meta_store, required=False):
         return flask.redirect("/login")
     return user_id
 
+@ui.route("/provenance/show/<graph_permaname>")
+@inject(meta_store=MetaStore)
+def provenance_show(meta_store, graph_permaname):
+    graph = meta_store.get_graph(graph_permaname)
+
+    return flask.render_template("provenance/show.html", graph=graph)
+
 
 @ui.route("/dataset/tagged")
 @view("dataset/tagged")

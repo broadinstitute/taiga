@@ -1,0 +1,26 @@
+{
+  "name": "taiga",
+  "authors": [
+    "Philip Montgomery <pmontgom@broadinstitute.org>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "src/static/vendors",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^2.2.4",
+    "requirejs": "^2.2.0",
+    "almond": "^0.3.2",
+    "jsx-requirejs-plugin": "^0.6.2",
+    "cytoscape": "^2.6.12"
+  }
+}

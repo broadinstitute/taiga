@@ -103,6 +103,31 @@ named_data_tag = Table('named_data_tag', metadata,
                        Column('tag', String, nullable=False), sqlite_autoincrement=True
                        )
 
+prov_graph = Table("prov_graph", metadata,
+                  Column("graph_id", Integer, primary_key=True),
+                  Column("permaname", String),
+                  Column("name", String),
+                  Column('created_by_user_id', Integer, ForeignKey('user.user_id')),
+                  Column('created_timestamp', DateTime),
+                  sqlite_autoincrement=True)
+
+prov_node = Table("prov_node", metadata,
+                  Column("node_id", Integer, primary_key=True),
+                  Column("graph_id", Integer, ForeignKey('prov_graph.graph_id')),
+                  Column("dataset_id", String, ForeignKey('data_version.dataset_id')),
+                  Column("label", String),
+                  Column("type", String),
+                  sqlite_autoincrement=True)
+
+prov_edge = Table("prov_edge", metadata,
+                  Column("edge_id", Integer, primary_key=True),
+                  Column("graph_id", Integer, ForeignKey('prov_graph.graph_id')),
+                  Column("from_node_id", Integer, ForeignKey('prov_node.node_id')),
+                  Column("to_node_id", Integer, ForeignKey('prov_node.node_id')),
+                  Column("label", String),
+                  sqlite_autoincrement=True)
+
+
 Ref = namedtuple("Ref", ["id"])
 
 LITERAL_TYPE = 1
@@ -218,6 +243,44 @@ class MetaStore(object):
                 "select ndt.tag from named_data_tag ndt join data_version dv on dv.named_data_id = ndt.named_data_id where dv.dataset_id = ?",
                 [dataset_id]).fetchall()
             return [x[0] for x in rows]
+
+    def get_graph(self, permaname):
+        with self.engine.begin() as db:
+            nodes = []
+            rows = db.execute("select n.node_id, n.dataset_id, n.label, n.type from prov_node n join prov_graph g on g.graph_id = n.graph_id where g.permaname = ?", [permaname]).fetchall()
+            for id, dataset_id, label, type in rows:
+                nodes.append( dict(id=id, label=label, type=type, dataset_id=dataset_id))
+
+            edges = []
+            rows = db.execute("select e.edge_id, e.from_node_id, e.to_node_id, e.label from prov_edge e join prov_graph g on g.graph_id = e.graph_id where g.permaname = ?", [permaname]).fetchall()
+            for id, from_id, to_id, label in rows:
+                e = dict(id=id, from_id = from_id, to_id = to_id, label = label)
+                edges.append( e )
+
+            return dict(nodes=nodes, edges=edges)
+
+    def create_graph(self, name, graph):
+        edges = graph['edges']
+        nodes = graph['nodes']
+        with self.engine.begin() as db:
+            permaname = str(uuid.uuid4())
+            graph_id = db.execute(prov_graph.insert().values(name=name, permaname=permaname)).inserted_primary_key[0]
+
+            id_map = {}
+            for node in nodes:
+                node_id = db.execute(prov_node.insert().values(dataset_id=node.get('dataset_id'),
+                                                               label=node['label'],
+                                                               type=node['type'],
+                                                               graph_id=graph_id)).inserted_primary_key[0]
+                id_map[node['id']] = node_id
+
+            for edge in edges:
+                db.execute(prov_edge.insert().values(graph_id=graph_id,
+                                                     from_node_id=id_map[edge['from_id']],
+                                                     to_node_id=id_map[edge['to_id']],
+                                                     label=edge.get('label')))
+
+            return permaname
 
     def update_dataset_name(self, dataset_id, name):
         with self.engine.begin() as db:

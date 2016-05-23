@@ -2,6 +2,7 @@ from injector import inject, Injector
 from flask import Flask, render_template, request, make_response, session, flash, redirect
 from flask import Blueprint, abort
 from flask import Config
+from flask.ext.assets import Bundle, Environment
 import flask
 import os
 import logging
@@ -20,6 +21,11 @@ def handle_invalid_parameters(error):
 
 def create_test_app(base_dir):
     app = Flask(__name__)
+    assets = Environment(app)
+
+    app.config["REQUIREJS_BIN"] = os.path.dirname(__file__) + "/../node_modules/requirejs/bin/r.js"
+    app.config["REQUIREJS_CONFIG"] = "build.js"
+    app.config["REQUIREJS_RUN_IN_DEBUG"] = False
 
     app.config['SECRET_KEY'] = 'secret'
     app.config['TESTING'] = True
