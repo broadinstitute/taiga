@@ -268,6 +268,7 @@ class MetaStore(object):
 
             id_map = {}
             for node in nodes:
+                assert node['type'] in ('external', 'dataset', 'process')
                 node_id = db.execute(prov_node.insert().values(dataset_id=node.get('dataset_id'),
                                                                label=node['label'],
                                                                type=node['type'],

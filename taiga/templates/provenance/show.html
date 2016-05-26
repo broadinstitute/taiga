@@ -1,6 +1,12 @@
 {% extends "base.tpl" %}
 
 {% block title %}Dataset{% endblock %}
+{% block head %}
+    {{ super() }}
+    <script src="{{ url_for("static", filename="vendors/cytoscape/dist/cytoscape.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="dagre.js") }}"></script>
+    <script src="{{ url_for("static", filename="vendors/cytoscape-dagre/cytoscape-dagre.js") }}"></script>
+{% endblock %}
 
 {% block content %}
     <div id="cy" style="width: 1000px; height: 500px; border: solid black;"></div>
@@ -8,7 +14,8 @@
 
 {% block scripts %}
     <script> dep_graph = {{ graph|tojson }};</script>
-  <script src="{{ url_for("static", filename="vendors/requirejs/require.js") }}"></script>
-  <script src="{{ url_for("static", filename="config.js") }}"></script>
-  <script src="{{ url_for("static", filename="app.js") }}"></script>
+{#  <script src="{{ url_for("static", filename="vendors/requirejs/require.js") }}"></script>#}
+{#  <script src="{{ url_for("static", filename="config.js") }}"></script>#}
+{#  <script src="{{ url_for("static", filename="app.js") }}"></script>#}
+    <script src="{{ url_for("static", filename="app.js") }}"></script>
 {% endblock %}
