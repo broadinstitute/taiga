@@ -1,0 +1,232 @@
+---
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "Taiga"
+basePath: "/api"
+schemes:
+- "http"
+- "https"
+consumes:
+- "application/json"
+- "text/xml"
+produces:
+- "application/json"
+- "text/html"
+paths:
+  /datasets/create:
+    post:
+      tags:
+      - "default_controller"
+      description: "Create a dataset from a set of already uploaded objects"
+      operationId: "controllers.default_controller.datasets_create_post"
+      parameters:
+      - in: "body"
+        name: "dataset"
+        required: false
+        schema:
+          $ref: "#/definitions/dataset"
+      responses:
+        200:
+          description: "The info about the newly created dataset"
+          schema:
+            $ref: "#/definitions/DatasetUploadInfo"
+  /folder/{folderId}:
+    get:
+      tags:
+      - "default_controller"
+      description: "Fetch the details and content of a folder by id"
+      operationId: "controllers.default_controller.folder_folder_id_get"
+      parameters:
+      - name: "folderId"
+        in: "path"
+        description: "Folder ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Properties of requested folder"
+          schema:
+            $ref: "#/definitions/Folder"
+  /folders/create:
+    post:
+      tags:
+      - "default_controller"
+      description: "Create a new folder"
+      operationId: "controllers.default_controller.folders_create_post"
+      parameters:
+      - in: "body"
+        name: "metadata"
+        required: false
+        schema:
+          $ref: "#/definitions/metadata"
+      responses:
+        200:
+          description: "The id of the newly created folder"
+          schema:
+            $ref: "#/definitions/inline_response_200"
+  /folders/update:
+    post:
+      tags:
+      - "default_controller"
+      description: "Perform multiple updates to folders within a single transaction.\
+        \  Can be used for moves (a remove and add somewhere else), copies (and add)\
+        \ and deletes (a remove and add to trash)"
+      operationId: "controllers.default_controller.folders_update_post"
+      parameters:
+      - in: "body"
+        name: "operations"
+        required: false
+        schema:
+          $ref: "#/definitions/operations"
+      responses:
+        200:
+          description: "Successful execution of update"
+        400:
+          description: "Attempted to do something bad (move trash or home, or modify\
+            \ non-existant entry)"
+  /uploadurl:
+    get:
+      tags:
+      - "default_controller"
+      description: "Get url used to upload data"
+      operationId: "controllers.default_controller.uploadurl_get"
+      parameters: []
+      responses:
+        200:
+          description: "Url and id to use to refer to upload location"
+          schema:
+            $ref: "#/definitions/FileUploadInfo"
+  /user:
+    get:
+      tags:
+      - "default_controller"
+      description: "Fetch properties about the currently authenticated user"
+      operationId: "controllers.default_controller.user_get"
+      parameters: []
+      responses:
+        200:
+          description: "Properties of current user"
+          schema:
+            $ref: "#/definitions/User"
+definitions:
+  namedid:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      id:
+        type: "string"
+  datasetscreate_entries:
+    properties:
+      name:
+        type: "string"
+      type:
+        type: "string"
+      description:
+        type: "string"
+      id:
+        type: "string"
+        description: "The object ID returned from the /uploadurl request"
+  dataset:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      description:
+        type: "string"
+      parent:
+        type: "string"
+      entries:
+        type: "array"
+        items:
+          $ref: "#/definitions/datasetscreate_entries"
+  DatasetUploadInfo:
+    properties:
+      id:
+        type: "string"
+  Folder_entries:
+    properties:
+      type:
+        type: "string"
+        enum:
+        - "folder"
+        - "dataset"
+        - "datasetVersion"
+      id:
+        type: "string"
+      name:
+        type: "string"
+  Folder:
+    properties:
+      id:
+        type: "string"
+      name:
+        type: "string"
+      type:
+        type: "string"
+        enum:
+        - "folder"
+        - "trash"
+        - "home"
+      parents:
+        type: "array"
+        items:
+          $ref: "#/definitions/namedid"
+      entries:
+        type: "array"
+        items:
+          $ref: "#/definitions/Folder_entries"
+  metadata:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+        description: "New folder name"
+      parent:
+        type: "string"
+        description: "Parent folder ID to initially insert this folder under"
+  inline_response_200:
+    properties:
+      id:
+        type: "string"
+      name:
+        type: "string"
+  foldersupdate_operations:
+    properties:
+      parent:
+        type: "string"
+      opType:
+        type: "string"
+        enum:
+        - "add"
+        - "remove"
+      idType:
+        type: "string"
+        enum:
+        - "folder"
+        - "dataset"
+        - "datasetVersion"
+  operations:
+    type: "object"
+    properties:
+      operations:
+        type: "array"
+        items:
+          $ref: "#/definitions/foldersupdate_operations"
+  FileUploadInfo:
+    properties:
+      id:
+        type: "string"
+      url:
+        type: "string"
+  User:
+    properties:
+      id:
+        type: "string"
+      name:
+        type: "string"
+      home:
+        type: "string"
+      trash:
+        type: "string"
