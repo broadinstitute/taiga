@@ -1,6 +1,7 @@
 import os
 import uuid
 import collections
+import re
 
 from tinydb import TinyDB, Query
 
@@ -16,7 +17,7 @@ class Db:
         self.folders = db.table("folders")
         self.datafiles = db.table("datafiles")
         self.datasets = db.table("datasets")
-        self.datasetVersions = db.table("datasetVersions")
+        self.dataset_versions = db.table("dataset_versions")
         self.activity = db.table("activity")
 
     def add_user(self, name, home_folder_id, trash_folder_id):
@@ -98,14 +99,19 @@ class Db:
         d_entries = [ dict(
             name=e.name,
             description=e.description,
+            type=e.type,
             url=get_url_for(e.datafile_id)
         ) for e in entries]
 
         return d_entries
 
-    def create_dataset(self, user_id, name, description, entries):
+    def create_dataset(self, user_id, name, description, entries, permaname=None):
         dataset_id = new_id()
         dataset_version_id = new_id()
+
+        if permaname is None:
+            #FIXME: normalize 
+            permaname=name
 
         d_entries = self._convert_entries_to_dict(entries)
 
@@ -113,10 +119,11 @@ class Db:
             id=dataset_id,
             name=name,
             description=description,
-            versions=[dataset_version_id]
+            versions=[dataset_version_id],
+            permaname=permaname
             ))
 
-        self.datasetVersions.insert(dict(
+        self.dataset_versions.insert(dict(
             id=dataset_version_id,
             dataset_id=dataset_id,
             entries=d_entries
@@ -137,27 +144,33 @@ class Db:
         self.activity.insert(dict(user_id=user_id, dataset_id=dataset_id, message="Changed description"))
 
     def update_dataset_contents(self, user_id, dataset_id, entries_to_remove, entries_to_add, comments):
+        for x in entries_to_remove:
+            assert isinstance(x, str)
+        for x in entries_to_add:
+            assert isinstance(x, DatasetFile)
+
         Dataset = Query()
         dataset = self.datasets.get(Dataset.id == dataset_id)
 
         last_version_id = dataset['versions'][-1]
 
         DatasetVersion = Query()
-        prev_dataset_version = self.datasetVersions(DatasetVersion.id == last_version_id)
+        prev_dataset_versions = self.dataset_versions.search(DatasetVersion.id == last_version_id)
+        prev_dataset_version = prev_dataset_versions[0]
 
-        new_entries = [e for e in prev_dataset_version['entries'] if e[name] not in entries_to_remove]
+        new_entries = [e for e in prev_dataset_version['entries'] if e['name'] not in entries_to_remove]
         d_entries = self._convert_entries_to_dict(entries_to_add)
         new_entries.extend(d_entries)
 
         dataset_version_id = new_id()
-        self.datasetVersions.insert(dict(
+        self.dataset_versions.insert(dict(
             id=dataset_version_id,
             dataset_id=dataset_id,
             entries=d_entries
             ))
 
         def add_version(dataset):
-            dataset['version'].append(dataset_version_id)
+            dataset['versions'].append(dataset_version_id)
 
         Dataset = Query()
         self.datasets.update(add_version, Dataset.id == dataset_id)
@@ -165,6 +178,78 @@ class Db:
         self.activity.insert(dict(user_id=user_id, dataset_id=dataset_id, message="Added version: {}".format(comments)))
 
         return dataset_version_id
+
+    def get_dataset(self, dataset_id):
+        Dataset = Query()
+        return self.datasets.get(Dataset.id == dataset_id)
+    
+    def get_dataset_version(self, dataset_version_id):
+        DatasetVersion = Query()
+        return self.dataset_versions.get(DatasetVersion.id == dataset_version_id)
+
+    def resolve_to_dataset(self, name):
+        m = re.match("([^/:]+)$", name)
+        if m is None:
+            return None
+        permaname = m.group(1)
+        
+        Dataset = Query()
+        matches = self.datasets.search(Dataset.permaname == permaname)
+        if len(matches) == 0:
+            matches = self.datasets.search(Dataset.id == permaname)
+            if len(matches) == 0:
+                return None        
+        
+        dataset = matches[0]
+        return dataset['id']
+
+    def resolve_to_dataset_version(self, name):
+        m = re.match("([^/:]+)(?::([0-9]+))?$", name)
+        if m is None:
+            return None
+        permaname = m.group(1)
+        version = m.group(2)
+        
+        dataset_id = self.resolve_to_dataset(permaname)
+        if dataset_id is None:
+            if self.get_dataset_version(permaname) is not None:
+                return permaname
+            else:
+                return None
+        
+        dataset = self.get_dataset(dataset_id)
+        # now look for version
+        if version == "" or version is None:
+            version = len(dataset['versions'])-1
+        else:
+            version = int(version)-1
+        
+        if version >= len(dataset['versions']):
+            return None
+
+        dataset_version_id = dataset['versions'][version]
+        return dataset_version_id
+
+    def resolve_to_datafile(self, name):
+        m = re.match("([^/:]+(?::[0-9]+)?)(/.*)$", name)
+        if m is None:
+            return None
+        dataset_name = m.group(1)
+        path = m.group(2)
+
+        dataset_version_id = self.resolve_to_dataset_version(dataset_name)
+        if dataset_version_id is None:
+            return None
+
+        dataset_version = self.get_dataset_version(dataset_version_id)
+        if path == "":
+            path = dataset_version["entries"]["name"]
+
+        entries = [e for e in dataset_version['entries'] if e['name'] == path]
+        if len(entries) == 0:
+            return None
+        else:
+            return entries[0]
 
 def setup_user(db, name):
     home_folder_id = db.add_folder("{}'s Home".format(name), "home", "")

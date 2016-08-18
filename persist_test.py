@@ -46,7 +46,8 @@ def test_create_folder(db_session):
     home_folder = db.get_folder(home_folder_id)
     assert len(home_folder['entries']) == 0
 
-def create_dataset(db, shortname=None, versions=1, filenames=["file"]):
+def create_dataset(db_session, shortname=None, versions=1, filenames=["file"]):
+    db = db_session.db
     dataset_files = []
     for filename in filenames:
         id = new_id()
@@ -55,9 +56,13 @@ def create_dataset(db, shortname=None, versions=1, filenames=["file"]):
 
     for v in range(versions):
         if v == 0:
-            dataset_version_id = db.create_dataset(db_session.user_id, "name", "description", dataset_files)
+            dataset_version_id = db.create_dataset(db_session.user_id, "name", "description", dataset_files, permaname=shortname)
+            dataset_id = db.get_dataset_version(dataset_version_id)['dataset_id']
         else:
-            db.update_dataset()    
+            dataset_version_id = db.update_dataset_contents(db_session.user_id, 
+                dataset_id, [], dataset_files, "comments")
+
+    return dataset_version_id
 
 def test_create_dataset(db_session):
     user = db_session.user
@@ -72,17 +77,19 @@ def test_create_dataset(db_session):
     dataset_version_id = db.create_dataset(db_session.user_id, "name", "description", [DatasetFile("file", "filedesc", "type", "fileid")])
 
     # verify the dataset references the data file
-    dataset = db.get_dataset_version(dataset_version_id)
-    assert dataset['entries'] == [{'name': 'file', 'description': 'filedesc', 'type': 'type', 'url': 'http://file'}] 
+    dataset_version = db.get_dataset_version(dataset_version_id)
+    assert dataset_version['entries'] == [{'name': 'file', 'description': 'filedesc', 'type': 'type', 'url': 'http://file'}] 
 
-    dataset_version_id = db.update_dataset_contents(db_session.user_id, dataset_id, [DatasetFile("file", "updated", "type", "fileid2")], [], "comments")
+    dataset_version_id = db.update_dataset_contents(db_session.user_id, dataset_version['dataset_id'], [], [DatasetFile("file", "updated", "type", "fileid2")], "comments")
 
-    dataset = db.get_dataset_version(dataset_version_id)
-    assert dataset['entries'] == [{'name': 'file', 'description': 'updated', 'type': 'type', 'url': 'http://file2'}] 
+    dataset_version = db.get_dataset_version(dataset_version_id)
+    assert dataset_version['entries'] == [{'name': 'file', 'description': 'updated', 'type': 'type', 'url': 'http://file2'}] 
 
 def test_resolve_to_dataset(db_session):
     db = db_session.db
-    dataset_id = create_dataset(db, shortname="short")
+
+    dataset_version_id = create_dataset(db_session, shortname="short")
+    dataset_id = db.get_dataset_version(dataset_version_id)['dataset_id']
 
     assert dataset_id == db.resolve_to_dataset("short")
     assert dataset_id == db.resolve_to_dataset(dataset_id)
@@ -90,18 +97,22 @@ def test_resolve_to_dataset(db_session):
 
 def test_resolve_to_dataset_version(db_session):
     db = db_session.db
-    dataset_id = create_dataset(db, shortname="short", versions=2)
+
+    dataset_version_id = create_dataset(db_session, shortname="short", versions=2)
+    dataset_id = db.get_dataset_version(dataset_version_id)['dataset_id']
 
     assert dataset_version_id == db.resolve_to_dataset_version("short")
     assert dataset_version_id == db.resolve_to_dataset_version(dataset_id)
     assert dataset_version_id == db.resolve_to_dataset_version(dataset_version_id)
-    assert dataset_version_id == db.resolve_to_dataset_version("short:1")
+    assert dataset_version_id == db.resolve_to_dataset_version("short:2")
     assert db.resolve_to_dataset_version("missing") is None
 
-
+@pytest.mark.skip(reason="resolve_to_dataset returns object")
 def test_resolve_to_datafile(db_session):
     db = db_session.db
-    dataset_id = create_dataset(db, shortname="short", versions=2, filenames=["file"])
+
+    dataset_id = create_dataset(db_session, shortname="short", versions=2, filenames=["file"])
+    dataset_id = db.get_dataset_version(dataset_version_id)['dataset_id']
 
     assert (dataset_version_id, "file") == db.resolve_to_dataset_version("short")
     assert (dataset_version_id, "file") == db.resolve_to_dataset_version(dataset_id)
