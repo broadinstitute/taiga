@@ -1,5 +1,26 @@
 import json
 
+def datafile_get(name) -> str:
+    return 'do some magic!'
+
+def dataset_dataset_id_activity_get(datasetId) -> str:
+    return 'do some magic!'
+
+def dataset_dataset_id_description_post(datasetId) -> str:
+    return 'do some magic!'
+
+def dataset_dataset_id_name_post(datasetId) -> str:
+    return 'do some magic!'
+
+def dataset_version_dataset_version_id_get(datasetVersionId) -> str:
+    return 'do some magic!'
+
+def dataset_version_dataset_version_id_status_get(datasetVersionId) -> str:
+    return 'do some magic!'
+
+def dataset_version_dataset_version_id_update_post(datasetVersionId, modifications = None) -> str:
+    return 'do some magic!'
+
 def datasets_create_post(dataset = None) -> str:
     return 'do some magic!'
 

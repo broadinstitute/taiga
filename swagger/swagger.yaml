@@ -14,6 +14,130 @@ produces:
 - "application/json"
 - "text/html"
 paths:
+  /datafile:
+    get:
+      tags:
+      - "default_controller"
+      description: "Get data file contents"
+      operationId: "controllers.default_controller.datafile_get"
+      parameters:
+      - name: "name"
+        in: "query"
+        description: "dataset_id or dataset_version_id with optional version number\
+          \ and filename"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "The contents of the data file"
+  /dataset/{datasetId}/activity:
+    get:
+      tags:
+      - "default_controller"
+      description: "Fetch activity history for this dataset"
+      operationId: "controllers.default_controller.dataset_dataset_id_activity_get"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        description: "Dataset ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Successfully updated"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/inline_response_200"
+  /dataset/{datasetId}/description:
+    post:
+      tags:
+      - "default_controller"
+      description: "Update dataset name"
+      operationId: "controllers.default_controller.dataset_dataset_id_description_post"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        description: "Dataset ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Successfully updated"
+  /dataset/{datasetId}/name:
+    post:
+      tags:
+      - "default_controller"
+      description: "Update dataset name"
+      operationId: "controllers.default_controller.dataset_dataset_id_name_post"
+      parameters:
+      - name: "datasetId"
+        in: "path"
+        description: "Dataset ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Successfully updated"
+  /datasetVersion/{datasetVersionId}:
+    get:
+      tags:
+      - "default_controller"
+      description: "Fetch the contents of a version of specific dataset"
+      operationId: "controllers.default_controller.dataset_version_dataset_version_id_get"
+      parameters:
+      - name: "datasetVersionId"
+        in: "path"
+        description: "Dataset Version ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Status of import, and any error which may have occurred"
+          schema:
+            type: "object"
+            properties: {}
+  /datasetVersion/{datasetVersionId}/status:
+    get:
+      tags:
+      - "default_controller"
+      description: "Fetch the status of a dataset which was imported.  This is used\
+        \ for periodic polling until the import completes."
+      operationId: "controllers.default_controller.dataset_version_dataset_version_id_status_get"
+      parameters:
+      - name: "datasetVersionId"
+        in: "path"
+        description: "Dataset Version ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Status of import, and any error which may have occurred"
+          schema:
+            $ref: "#/definitions/ImportStatus"
+  /datasetVersion/{datasetVersionId}/update:
+    post:
+      tags:
+      - "default_controller"
+      description: "Update an existing dataset by adding/removing data files and creating\
+        \ a new datasetVersion in the process."
+      operationId: "controllers.default_controller.dataset_version_dataset_version_id_update_post"
+      parameters:
+      - name: "datasetVersionId"
+        in: "path"
+        description: "f"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "modifications"
+        required: false
+        schema:
+          $ref: "#/definitions/modifications"
+      responses:
+        200:
+          description: "The info about the newly created dataset version"
+          schema:
+            $ref: "#/definitions/ImportStatus"
   /datasets/create:
     post:
       tags:
@@ -30,7 +154,7 @@ paths:
         200:
           description: "The info about the newly created dataset"
           schema:
-            $ref: "#/definitions/DatasetUploadInfo"
+            $ref: "#/definitions/ImportStatus"
   /folder/{folderId}:
     get:
       tags:
@@ -64,7 +188,7 @@ paths:
         200:
           description: "The id of the newly created folder"
           schema:
-            $ref: "#/definitions/inline_response_200"
+            $ref: "#/definitions/inline_response_200_1"
   /folders/update:
     post:
       tags:
@@ -110,6 +234,27 @@ paths:
           schema:
             $ref: "#/definitions/User"
 definitions:
+  ImportStatus:
+    type: "object"
+    properties:
+      datasetVersionId:
+        type: "string"
+        description: "The id of the datasetVersion that is being created.  Additionally,\
+          \ this id can be used in polling when a dataset import is not yet complete."
+      status:
+        type: "string"
+        description: "One of \"pending\", \"running\", \"completed\" or \"failed\"\
+          .  If completed, there will exist a new datasetVersion with id specified\
+          \ in this response.  Failures should have the reason included in the status\
+          \ message."
+        enum:
+        - "pending"
+        - "running"
+        - "complete"
+        - "failed"
+      message:
+        type: "string"
+        description: "Human readable summary of the progress of the import"
   namedid:
     type: "object"
     properties:
@@ -117,34 +262,56 @@ definitions:
         type: "string"
       id:
         type: "string"
-  datasetscreate_entries:
+  inline_response_200:
+    properties:
+      timestamp:
+        type: "string"
+      message:
+        type: "string"
+      user:
+        $ref: "#/definitions/namedid"
+  datasetVersiondatasetVersionIdupdate_filesToAdd:
     properties:
       name:
         type: "string"
-      type:
+      mimeType:
         type: "string"
       description:
         type: "string"
-      id:
+      objectId:
         type: "string"
         description: "The object ID returned from the /uploadurl request"
+  modifications:
+    type: "object"
+    properties:
+      filesToRemove:
+        type: "array"
+        description: "The names of data files to remove when creating the new dataset"
+        items:
+          type: "string"
+      filesToAdd:
+        type: "array"
+        description: "The list of data files that comprise the dataset"
+        items:
+          $ref: "#/definitions/datasetVersiondatasetVersionIdupdate_filesToAdd"
   dataset:
     type: "object"
     properties:
       name:
         type: "string"
+        description: "The name to use for the new dataset"
       description:
         type: "string"
-      parent:
+        description: "The long-form description of the new dataset"
+      parentFolderId:
         type: "string"
+        description: "The id of the folder this dataset should be initially created\
+          \ under"
       entries:
         type: "array"
+        description: "The list of data files that comprise the dataset"
         items:
-          $ref: "#/definitions/datasetscreate_entries"
-  DatasetUploadInfo:
-    properties:
-      id:
-        type: "string"
+          $ref: "#/definitions/datasetVersiondatasetVersionIdupdate_filesToAdd"
   Folder_entries:
     properties:
       type:
@@ -157,6 +324,13 @@ definitions:
         type: "string"
       name:
         type: "string"
+      size:
+        type: "integer"
+      owner:
+        $ref: "#/definitions/namedid"
+      mtime:
+        type: "string"
+        description: "Modification time"
   Folder:
     properties:
       id:
@@ -186,7 +360,7 @@ definitions:
       parent:
         type: "string"
         description: "Parent folder ID to initially insert this folder under"
-  inline_response_200:
+  inline_response_200_1:
     properties:
       id:
         type: "string"
@@ -216,10 +390,13 @@ definitions:
           $ref: "#/definitions/foldersupdate_operations"
   FileUploadInfo:
     properties:
-      id:
+      objectId:
         type: "string"
-      url:
+        description: "The ID to use when creating a dataset which references this\
+          \ datafile."
+      uploadUrl:
         type: "string"
+        description: "The url to post the data file to when uploading."
   User:
     properties:
       id:

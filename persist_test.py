@@ -137,6 +137,5 @@ def test_resolve_to_datafile(db_session):
 # (add to api) get_activity(dataset_id)
 # (add to api) get dataset file url(permaname|dataset_version_id|dataset_id)
 # resolve_to_datafile(name) -> dataset_version_id, filename | error
-# resolve_to_dataset_version(name) -> dataset_version_id | error
 # create dataset should return an import id and status.  Add additional operation for polling new status
 
