@@ -38,7 +38,7 @@ class Db:
         Folder = Query()
         self.folders.update(dict(name=name), Folder.id == folder_id)        
 
-    def update_folder_description(self, folder_id, name):
+    def update_folder_description(self, folder_id, description):
         Folder = Query()
         self.folders.update(dict(description=description), Folder.id == folder_id)        
 
@@ -59,23 +59,38 @@ class Db:
         return self.folders.get(Folder.id == id)
 
     def add_folder_entry(self, folder_id, id, type):
+        update_count = [0]
         def add_entry(f):
             for entry in f['entries']:
                 if entry['id'] == id and entry['type'] == type:
                     return f
             f['entries'].append(dict(id=id, type=type))
+            update_count[0] += 1
             return f
 
         Folder = Query()
         self.folders.update(add_entry, Folder.id == folder_id)
+        if update_count[0] == 1:
+            return True
+        else:
+            return False
 
     def remove_folder_entry(self, folder_id, id, type):
+        update_count = [0]
         def remove_entry(f):
+            before = len(f['entries'])
             f['entries'] = [entry for entry in f['entries'] if entry['id'] != id or entry['type'] != type]
+            after = len(f['entries'])
+            if before > after:
+                update_count[0] += 1
             return f
 
         Folder = Query()
         self.folders.update(remove_entry, Folder.id == folder_id)
+        if update_count[0] == 1:
+            return True
+        else:
+            return False
     
     def get_parent_folders(self, folder_id):
         def is_parent(entries):
@@ -158,17 +173,18 @@ class Db:
         prev_dataset_versions = self.dataset_versions.search(DatasetVersion.id == last_version_id)
         prev_dataset_version = prev_dataset_versions[0]
 
-        new_entries = [e for e in prev_dataset_version['entries'] if e['name'] not in entries_to_remove]
+        new_entries = dict([ (e['name'], e) for e in prev_dataset_version['entries'] if e['name'] not in entries_to_remove])
         d_entries = self._convert_entries_to_dict(entries_to_add)
-        new_entries.extend(d_entries)
+        for e in d_entries:
+            new_entries[e['name']] = e
 
         dataset_version_id = new_id()
         self.dataset_versions.insert(dict(
             id=dataset_version_id,
             dataset_id=dataset_id,
-            entries=d_entries
+            entries=list(new_entries.values())
             ))
-
+        
         def add_version(dataset):
             dataset['versions'].append(dataset_version_id)
 

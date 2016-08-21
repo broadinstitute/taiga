@@ -1,4 +1,5 @@
 import json
+from flask import current_app
 
 def datafile_get(name) -> str:
     return 'do some magic!'
