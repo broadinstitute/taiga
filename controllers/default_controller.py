@@ -2,31 +2,8 @@ import json
 from flask import current_app
 import flask
 
-def datafile_get(name) -> str:
-    return 'do some magic!'
 
-def dataset_dataset_id_activity_get(datasetId) -> str:
-    return 'do some magic!'
-
-def dataset_dataset_id_description_post(datasetId) -> str:
-    return 'do some magic!'
-
-def dataset_dataset_id_name_post(datasetId) -> str:
-    return 'do some magic!'
-
-def dataset_version_dataset_version_id_get(datasetVersionId) -> str:
-    return 'do some magic!'
-
-def dataset_version_dataset_version_id_status_get(datasetVersionId) -> str:
-    return 'do some magic!'
-
-def dataset_version_dataset_version_id_update_post(datasetVersionId, modifications = None) -> str:
-    return 'do some magic!'
-
-def datasets_create_post(dataset = None) -> str:
-    return 'do some magic!'
-
-def folder_folder_id_get(folderId):
+def get_folder(folderId):
     db = current_app.db
 
     folder = db.get_folder(folderId)
@@ -52,20 +29,34 @@ def folder_folder_id_get(folderId):
 
     return flask.jsonify(response)
 
-def folders_create_post(metadata = None) -> str:
-    return 'do some magic!'
-
-def folders_update_post(operations = None) -> str:
-    return 'do some magic!'
-
-def uploadurl_get() -> str:
-    return 'do some magic!'
-
 ADMIN_USER_ID = "admin"
 def _get_user_id():
     return ADMIN_USER_ID
 
-def user_get():
+def get_user():
     user = current_app.db.get_user(_get_user_id())
-    return flask.jsonify(dict(x="adfadf")) 
+    return flask.jsonify(user) 
 
+def create_folder():
+    pass
+
+def update_folders():
+    pass
+def get_upload_url():
+    pass
+
+def create_dataset():
+    pass
+
+def get_dataset_activity():
+    pass
+def get_datafile():
+    pass
+def update_dataset_name():
+    pass
+def update_dataset_description():
+    pass
+def get_dataset_version():
+    pass
+def get_dataset_version_status():    
+    pass

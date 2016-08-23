@@ -1,409 +1,346 @@
----
-swagger: "2.0"
+swagger: '2.0'
 info:
-  version: "1.0.0"
-  title: "Taiga"
-basePath: "/api"
+  version: 1.0.0
+  title: Taiga
+basePath: /api
 schemes:
-- "http"
-- "https"
+  - http
+  - https
 consumes:
-- "application/json"
-- "text/xml"
+  - application/json
+  - text/xml
 produces:
-- "application/json"
-- "text/html"
+  - application/json
+  - text/html
 paths:
-  /datafile:
-    get:
-      tags:
-      - "default_controller"
-      description: "Get data file contents"
-      operationId: "controllers.default_controller.datafile_get"
-      parameters:
-      - name: "name"
-        in: "query"
-        description: "dataset_id or dataset_version_id with optional version number\
-          \ and filename"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "The contents of the data file"
-  /dataset/{datasetId}/activity:
-    get:
-      tags:
-      - "default_controller"
-      description: "Fetch activity history for this dataset"
-      operationId: "controllers.default_controller.dataset_dataset_id_activity_get"
-      parameters:
-      - name: "datasetId"
-        in: "path"
-        description: "Dataset ID"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "Successfully updated"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/inline_response_200"
-  /dataset/{datasetId}/description:
-    post:
-      tags:
-      - "default_controller"
-      description: "Update dataset name"
-      operationId: "controllers.default_controller.dataset_dataset_id_description_post"
-      parameters:
-      - name: "datasetId"
-        in: "path"
-        description: "Dataset ID"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "Successfully updated"
-  /dataset/{datasetId}/name:
-    post:
-      tags:
-      - "default_controller"
-      description: "Update dataset name"
-      operationId: "controllers.default_controller.dataset_dataset_id_name_post"
-      parameters:
-      - name: "datasetId"
-        in: "path"
-        description: "Dataset ID"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "Successfully updated"
-  /datasetVersion/{datasetVersionId}:
-    get:
-      tags:
-      - "default_controller"
-      description: "Fetch the contents of a version of specific dataset"
-      operationId: "controllers.default_controller.dataset_version_dataset_version_id_get"
-      parameters:
-      - name: "datasetVersionId"
-        in: "path"
-        description: "Dataset Version ID"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "Status of import, and any error which may have occurred"
-          schema:
-            type: "object"
-            properties: {}
-  /datasetVersion/{datasetVersionId}/status:
-    get:
-      tags:
-      - "default_controller"
-      description: "Fetch the status of a dataset which was imported.  This is used\
-        \ for periodic polling until the import completes."
-      operationId: "controllers.default_controller.dataset_version_dataset_version_id_status_get"
-      parameters:
-      - name: "datasetVersionId"
-        in: "path"
-        description: "Dataset Version ID"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "Status of import, and any error which may have occurred"
-          schema:
-            $ref: "#/definitions/ImportStatus"
-  /datasetVersion/{datasetVersionId}/update:
-    post:
-      tags:
-      - "default_controller"
-      description: "Update an existing dataset by adding/removing data files and creating\
-        \ a new datasetVersion in the process."
-      operationId: "controllers.default_controller.dataset_version_dataset_version_id_update_post"
-      parameters:
-      - name: "datasetVersionId"
-        in: "path"
-        description: "f"
-        required: true
-        type: "string"
-      - in: "body"
-        name: "modifications"
-        required: false
-        schema:
-          $ref: "#/definitions/modifications"
-      responses:
-        200:
-          description: "The info about the newly created dataset version"
-          schema:
-            $ref: "#/definitions/ImportStatus"
-  /datasets/create:
-    post:
-      tags:
-      - "default_controller"
-      description: "Create a dataset from a set of already uploaded objects"
-      operationId: "controllers.default_controller.datasets_create_post"
-      parameters:
-      - in: "body"
-        name: "dataset"
-        required: false
-        schema:
-          $ref: "#/definitions/dataset"
-      responses:
-        200:
-          description: "The info about the newly created dataset"
-          schema:
-            $ref: "#/definitions/ImportStatus"
   /folder/{folderId}:
     get:
-      tags:
-      - "default_controller"
-      description: "Fetch the details and content of a folder by id"
-      operationId: "controllers.default_controller.folder_folder_id_get"
+      x-swagger-router-controller: controllers.default_controller
+      operationId: get_folder
+      description: Fetch the details and content of a folder by id
       parameters:
-      - name: "folderId"
-        in: "path"
-        description: "Folder ID"
-        required: true
-        type: "string"
+        - name: folderId
+          in: path
+          type: string
+          description: Folder ID
+          required: true
       responses:
         200:
-          description: "Properties of requested folder"
+          description:  Properties of requested folder
           schema:
-            $ref: "#/definitions/Folder"
+            title: Folder
+            type: object
+            required: 
+              - id
+              - name
+              - type
+              - parents
+              - entries
+            properties:
+              id: 
+                type: string
+              name: 
+                type: string
+              type:
+                type: string
+                enum:
+                  - folder
+                  - trash
+                  - home
+              parents: 
+                type: array
+                items: 
+                  "$ref": "#/definitions/namedid"
+              entries:
+                type: array
+                items: 
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - folder
+                        - dataset
+                        - datasetVersion
+                    id:
+                      type: string
+                    name:
+                      type: string
+
   /folders/create:
     post:
-      tags:
-      - "default_controller"
-      description: "Create a new folder"
-      operationId: "controllers.default_controller.folders_create_post"
+      x-swagger-router-controller: controllers.default_controller
+      operationId: create_folder
+      description: Create a new folder
       parameters:
-      - in: "body"
-        name: "metadata"
-        required: false
-        schema:
-          $ref: "#/definitions/metadata"
+        - in: body
+          name: metadata
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: New folder name
+              parent:
+                type: string
+                description: Parent folder ID to initially insert this folder under
       responses:
         200:
-          description: "The id of the newly created folder"
+          description: The id of the newly created folder
           schema:
-            $ref: "#/definitions/inline_response_200_1"
+            type: object
+            required: 
+              - id
+              - name
+            properties:
+              id: 
+                type: string
+              name: 
+                type: string
+
+
   /folders/update:
     post:
-      tags:
-      - "default_controller"
-      description: "Perform multiple updates to folders within a single transaction.\
-        \  Can be used for moves (a remove and add somewhere else), copies (and add)\
-        \ and deletes (a remove and add to trash)"
-      operationId: "controllers.default_controller.folders_update_post"
+      x-swagger-router-controller: controllers.default_controller
+      operationId: update_folders
+      description: Perform multiple updates to folders within a single transaction.  Can be used for moves (a remove and add somewhere else), copies (and add) and deletes (a remove and add to trash)
       parameters:
-      - in: "body"
-        name: "operations"
-        required: false
-        schema:
-          $ref: "#/definitions/operations"
-      responses:
-        200:
-          description: "Successful execution of update"
-        400:
-          description: "Attempted to do something bad (move trash or home, or modify\
-            \ non-existant entry)"
-  /uploadurl:
-    get:
-      tags:
-      - "default_controller"
-      description: "Get url used to upload data"
-      operationId: "controllers.default_controller.uploadurl_get"
-      parameters: []
-      responses:
-        200:
-          description: "Url and id to use to refer to upload location"
+        - in: body
+          name: operations
           schema:
-            $ref: "#/definitions/FileUploadInfo"
+            type: object
+            properties:
+              operations:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    parent: 
+                      type: string
+                    opType:
+                      type: string
+                      enum: 
+                        - add
+                        - remove
+                    idType:
+                      type: string
+                      enum:
+                        - folder
+                        - dataset
+                        - datasetVersion
+      responses:
+        200:
+          description: Successful execution of update
+        400:
+          description: Attempted to do something bad (move trash or home, or modify non-existant entry)
+
+          
   /user:
     get:
-      tags:
-      - "default_controller"
-      description: "Fetch properties about the currently authenticated user"
-      operationId: "controllers.default_controller.user_get"
-      parameters: []
+      x-swagger-router-controller: controllers.default_controller
+      operationId: get_user
+      description: Fetch properties about the currently authenticated user
       responses:
         200:
-          description: "Properties of current user"
+          description: Properties of current user
           schema:
-            $ref: "#/definitions/User"
+            title: User
+            type: object
+            required:
+              - id
+              - name
+              - home_folder_id
+              - trash_folder_id
+            properties:
+              id: 
+                type: string
+              name:
+                type: string
+              home:
+                type: string
+              trash:
+                type: string
+
+  /uploadurl:
+    get:
+      x-swagger-router-controller: controllers.default_controller
+      operationId: get_upload_url
+      description: Get url used to upload data
+      responses:
+        200:
+          description: Url and id to use to refer to upload location
+          schema:
+            title: FileUploadInfo
+            type: object
+            required: 
+              - id
+              - url
+            properties:
+              id:
+                type: string
+              url:
+                type: string
+
+  /datasets/create:
+    post:
+      x-swagger-router-controller: controllers.default_controller
+      operationId: create_dataset
+      description: Create a dataset from a set of already uploaded objects
+      parameters:
+        - in: body
+          name: dataset
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              parent:
+                type: string
+              entries:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    type:
+                      type: string
+                    description:
+                      type: string
+                    id:
+                      type: string
+                      description: The object ID returned from the /uploadurl request
+      responses:
+        200:
+          description: The info about the newly created dataset
+          schema:
+            "$ref": "#/definitions/ImportStatus"
+
+  /dataset/{datasetId}/activity:
+    get:
+      x-swagger-router-controller: controllers.default_controller
+      operationId: get_dataset_activity
+      description: Fetch activity history for this dataset
+      parameters:
+        - name: datasetId
+          in: path
+          type: string
+          description: Dataset ID
+          required: true
+      responses:
+        200:
+          description: Successfully updated
+
+  /datafile:
+    get:
+      x-swagger-router-controller: controllers.default_controller
+      operationId: get_datafile
+      # do we need to support conversion?
+      description: Get datafile contents
+      parameters:
+        - name: name
+          in: query
+          type: string
+          description: dataset_id or dataset_version_id with optional version number and filename
+          required: true
+      responses:
+        200:
+          description: Successfully updated
+
+  /dataset/{datasetId}/name:
+    post:
+      x-swagger-router-controller: controllers.default_controller
+      operationId: update_dataset_name
+      description: Update dataset name
+      parameters:
+        - name: datasetId
+          in: path
+          type: string
+          description: Dataset ID
+          required: true
+      responses:
+        200:
+          description: Successfully updated
+
+  /dataset/{datasetId}/description:
+    post:
+      x-swagger-router-controller: controllers.default_controller
+      operationId: update_dataset_description
+      description: Update dataset name
+      parameters:
+        - name: datasetId
+          in: path
+          type: string
+          description: Dataset ID
+          required: true
+      responses:
+        200:
+          description: Successfully updated
+
+  /datasetVersion/{datasetVersionId}:
+    get:
+      x-swagger-router-controller: controllers.default_controller
+      operationId: get_dataset_version
+      description: Fetch the contents of a version of specific dataset
+      parameters:
+        - name: datasetVersionId
+          in: path
+          type: string
+          description: Dataset Version ID
+          required: true
+      responses:
+        200:
+          description: Status of import, and any error which may have occurred
+          schema:
+            "$ref": "#/definitions/ImportStatus"
+            
+  /datasetVersion/{datasetVersionId}/status:
+    get:
+      x-swagger-router-controller: controllers.default_controller
+      operationId: get_dataset_version_status
+      description: Fetch the status of a dataset being imported
+      parameters:
+        - name: datasetVersionId
+          in: path
+          type: string
+          description: Dataset Version ID
+          required: true
+      responses:
+        200:
+          description: Status of import, and any error which may have occurred
+          schema:
+            "$ref": "#/definitions/ImportStatus"
+
 definitions:
   ImportStatus:
-    type: "object"
+    type: object
+    required:
+      - id
+      - status
+      - message
     properties:
-      datasetVersionId:
-        type: "string"
-        description: "The id of the datasetVersion that is being created.  Additionally,\
-          \ this id can be used in polling when a dataset import is not yet complete."
+      id:
+        type: string
       status:
-        type: "string"
-        description: "One of \"pending\", \"running\", \"completed\" or \"failed\"\
-          .  If completed, there will exist a new datasetVersion with id specified\
-          \ in this response.  Failures should have the reason included in the status\
-          \ message."
+        type: string
         enum:
-        - "pending"
-        - "running"
-        - "complete"
-        - "failed"
+          - pending
+          - running
+          - complete
+          - failed
       message:
-        type: "string"
-        description: "Human readable summary of the progress of the import"
+        type: string
+
   namedid:
-    type: "object"
+    type: object
+    required:
+      - name 
+      - id
     properties:
       name:
-        type: "string"
+        type: string
       id:
-        type: "string"
-  inline_response_200:
-    properties:
-      timestamp:
-        type: "string"
-      message:
-        type: "string"
-      user:
-        $ref: "#/definitions/namedid"
-  datasetVersiondatasetVersionIdupdate_filesToAdd:
-    properties:
-      name:
-        type: "string"
-      mimeType:
-        type: "string"
-      description:
-        type: "string"
-      objectId:
-        type: "string"
-        description: "The object ID returned from the /uploadurl request"
-  modifications:
-    type: "object"
-    properties:
-      filesToRemove:
-        type: "array"
-        description: "The names of data files to remove when creating the new dataset"
-        items:
-          type: "string"
-      filesToAdd:
-        type: "array"
-        description: "The list of data files that comprise the dataset"
-        items:
-          $ref: "#/definitions/datasetVersiondatasetVersionIdupdate_filesToAdd"
-  dataset:
-    type: "object"
-    properties:
-      name:
-        type: "string"
-        description: "The name to use for the new dataset"
-      description:
-        type: "string"
-        description: "The long-form description of the new dataset"
-      parentFolderId:
-        type: "string"
-        description: "The id of the folder this dataset should be initially created\
-          \ under"
-      entries:
-        type: "array"
-        description: "The list of data files that comprise the dataset"
-        items:
-          $ref: "#/definitions/datasetVersiondatasetVersionIdupdate_filesToAdd"
-  Folder_entries:
-    properties:
-      type:
-        type: "string"
-        enum:
-        - "folder"
-        - "dataset"
-        - "datasetVersion"
-      id:
-        type: "string"
-      name:
-        type: "string"
-      size:
-        type: "integer"
-      owner:
-        $ref: "#/definitions/namedid"
-      mtime:
-        type: "string"
-        description: "Modification time"
-  Folder:
-    properties:
-      id:
-        type: "string"
-      name:
-        type: "string"
-      type:
-        type: "string"
-        enum:
-        - "folder"
-        - "trash"
-        - "home"
-      parents:
-        type: "array"
-        items:
-          $ref: "#/definitions/namedid"
-      entries:
-        type: "array"
-        items:
-          $ref: "#/definitions/Folder_entries"
-  metadata:
-    type: "object"
-    properties:
-      name:
-        type: "string"
-        description: "New folder name"
-      parent:
-        type: "string"
-        description: "Parent folder ID to initially insert this folder under"
-  inline_response_200_1:
-    properties:
-      id:
-        type: "string"
-      name:
-        type: "string"
-  foldersupdate_operations:
-    properties:
-      parent:
-        type: "string"
-      opType:
-        type: "string"
-        enum:
-        - "add"
-        - "remove"
-      idType:
-        type: "string"
-        enum:
-        - "folder"
-        - "dataset"
-        - "datasetVersion"
-  operations:
-    type: "object"
-    properties:
-      operations:
-        type: "array"
-        items:
-          $ref: "#/definitions/foldersupdate_operations"
-  FileUploadInfo:
-    properties:
-      objectId:
-        type: "string"
-        description: "The ID to use when creating a dataset which references this\
-          \ datafile."
-      uploadUrl:
-        type: "string"
-        description: "The url to post the data file to when uploading."
-  User:
-    properties:
-      id:
-        type: "string"
-      name:
-        type: "string"
-      home:
-        type: "string"
-      trash:
-        type: "string"
+        type: string
+        
