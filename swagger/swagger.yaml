@@ -81,6 +81,9 @@ paths:
               name:
                 type: string
                 description: New folder name
+              description:
+                type: string
+                description: Long description
               parent:
                 type: string
                 description: Parent folder ID to initially insert this folder under
