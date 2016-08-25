@@ -131,8 +131,8 @@ paths:
                         - folder
                         - dataset
                         - datasetVersion
-                      id:
-                        type: string
+                    id:
+                      type: string
       responses:
         200:
           description: Successful execution of update
@@ -161,9 +161,9 @@ paths:
                 type: string
               name:
                 type: string
-              home:
+              home_folder_id:
                 type: string
-              trash:
+              trash_folder_id:
                 type: string
 
   /uploadurl:
@@ -219,6 +219,11 @@ paths:
       operationId: update_dataset
       description: Create a new dataset version by updating the data files associated with dataset.
       parameters:
+        - name: datasetId
+          in: path
+          type: string
+          description: Folder ID
+          required: true
         - in: body
           name: dataset
           schema:
@@ -400,11 +405,11 @@ definitions:
   ImportStatus:
     type: object
     required:
-      - id
+      - dataset_version_id
       - status
       - message
     properties:
-      datasetVersionId:
+      dataset_version_id:
         type: string
         description: The id of the datasetVersion that is being created.  Additionally, this id can be used in polling when a dataset import is not yet complete.
       status:
