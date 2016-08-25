@@ -131,6 +131,8 @@ paths:
                         - folder
                         - dataset
                         - datasetVersion
+                      id:
+                        type: string
       responses:
         200:
           description: Successful execution of update
@@ -204,22 +206,38 @@ paths:
               entries:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    type:
-                      type: string
-                    description:
-                      type: string
-                    id:
-                      type: string
-                      description: The object ID returned from the /uploadurl request
+                  "$ref": "#/definitions/DataFileSubmission"
       responses:
         200:
           description: The info about the newly created dataset
           schema:
             "$ref": "#/definitions/ImportStatus"
+
+  /dataset/{datasetId}/update:
+    post:
+      x-swagger-router-controller: controllers.default_controller
+      operationId: update_dataset
+      description: Create a new dataset version by updating the data files associated with dataset.
+      parameters:
+        - in: body
+          name: dataset
+          schema:
+            type: object
+            properties:
+              old_entries:
+                description: The names of data files to remove.
+              new_entries:
+                description: Data files to add as part of the new version.
+                type: array
+                items:
+                  "$ref": "#/definitions/DataFileSubmission"
+      responses:
+        200:
+          description: The info about the newly created dataset
+          schema:
+            "$ref": "#/definitions/ImportStatus"
+
+
 
   /dataset/{datasetId}/activity:
     get:
@@ -231,22 +249,6 @@ paths:
           in: path
           type: string
           description: Dataset ID
-          required: true
-      responses:
-        200:
-          description: Successfully updated
-
-  /datafile:
-    get:
-      x-swagger-router-controller: controllers.default_controller
-      operationId: get_datafile
-      # do we need to support conversion?
-      description: Get datafile contents
-      parameters:
-        - name: name
-          in: query
-          type: string
-          description: dataset_id or dataset_version_id with optional version number and filename
           required: true
       responses:
         200:
@@ -316,7 +318,36 @@ paths:
           schema:
             "$ref": "#/definitions/ImportStatus"
 
+  /datafile:
+    get:
+      x-swagger-router-controller: controllers.default_controller
+      operationId: get_datafile
+      # do we need to support conversion?
+      description: Get datafile contents
+      parameters:
+        - name: name
+          in: query
+          type: string
+          description: dataset_id or dataset_version_id with optional version number and filename
+          required: true
+      responses:
+        200:
+          description: Successfully updated
+
 definitions:
+  DataFileSubmission:
+    type: object
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+        description: The object ID returned from the /uploadurl request
+  
   ImportStatus:
     type: object
     required:
