@@ -334,6 +334,55 @@ paths:
         200:
           description: Successfully updated
 
+  /provenance:
+    delete:
+      description: Remove a batch of provenance entries
+      # parameters: provenance batch id from the POST.  Doesn't allow for small corrections.
+      # What is the UI going to allow?
+      responses:
+        200:
+          description: OK
+    
+    get:
+      description: Query provenance 
+      #parameters:
+      # query by dataset or datafile, give max depth in ancestors and decendants
+      responses:
+        200:
+          description: Successful registrating of provenance
+          schema:
+            type: object
+            properties:
+              provenance:
+                type: array
+                items:
+                  "$ref": "#/definitions/ProvenanceStmt"
+    post:
+      description: Register the provenance of one or more datasets.   Done in a batch to allow for easily deleting a bulk update and resubmitting if a mistake was made.
+        # is batch uploads really a good idea?  The name of the batch is never used/seen anywhere presently.
+      parameters:
+        - in: body
+          name: modifications
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              provenance:
+                type: array
+                items:
+                  "$ref": "#/definitions/ProvenanceStmt"
+      responses:
+        200:
+          description: Successful registrating of provenance
+          schema:
+            type: object
+            properties:
+              id: 
+                type: string
+
+#missing provenance
+
 definitions:
   DataFileSubmission:
     type: object
@@ -355,9 +404,11 @@ definitions:
       - status
       - message
     properties:
-      id:
+      datasetVersionId:
         type: string
+        description: The id of the datasetVersion that is being created.  Additionally, this id can be used in polling when a dataset import is not yet complete.
       status:
+        description: 'One of "pending", "running", "completed" or "failed".  If completed, there will exist a new datasetVersion with id specified in this response.  Failures should have the reason included in the status message.'
         type: string
         enum:
           - pending
@@ -365,16 +416,52 @@ definitions:
           - complete
           - failed
       message:
+        description: Human readable summary of the progress of the import
         type: string
 
   namedid:
     type: object
-    required:
-      - name 
-      - id
     properties:
       name:
         type: string
       id:
         type: string
-        
+
+  ProvenanceStmt:
+    type: object
+    properties:
+      inputs: 
+        type: array
+        items:
+          type: object
+          properties:
+            label: 
+              description: A short label describing how the file was used.   Should be thought of as a parameter name for the method.
+              type: string
+            url:
+              description: Can specify an external reference for any files which are not registered within the system.  Either url or fileId should be populated, but not both.
+              type: string
+            fileId:
+              description: a file id that was used as input to the method
+              type: string
+      outputs:
+        type: array
+        items:
+          type: object
+          properties:
+            dataset_id:
+              description: The dataset(s) that were derived from the input files
+              type: string
+      method:
+        type: object
+        properties:
+          name:
+            description: Short name describing the process that was executed
+            type: string
+          description:
+            description: Long form description of the process that was executed
+            type: string
+          properties:
+            description: Any parameters other than input files that should be recorded
+            type: object
+  
