@@ -9,7 +9,8 @@
     },
     "files": [
         "./typings/index.d.ts",
-        "./src/components/Hello.tsx",
+        "./src/components/FolderView.tsx",
+        "./src/models/Folder.ts",
         "./src/index.tsx"
     ]
 }

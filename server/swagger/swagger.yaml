@@ -50,11 +50,17 @@ paths:
               parents: 
                 type: array
                 items: 
-                  "$ref": "#/definitions/namedid"
+                  "$ref": "#/definitions/NamedId"
               entries:
                 type: array
                 items: 
                   type: object
+                  required:
+                    - type
+                    - id
+                    - name
+                    - creation_date
+                    - creator
                   properties:
                     type:
                       type: string
@@ -66,6 +72,10 @@ paths:
                       type: string
                     name:
                       type: string
+                    creation_date:
+                      type: string
+                    creator:
+                      "$ref": "#/definitions/NamedId"
 
   /folders/create:
     post:
@@ -77,6 +87,9 @@ paths:
           name: metadata
           schema:
             type: object
+            required:
+              - name
+              - parent
             properties:
               name:
                 type: string
@@ -91,6 +104,7 @@ paths:
         200:
           description: The id of the newly created folder
           schema:
+            title: CreateFolderResponse
             type: object
             required: 
               - id
@@ -117,6 +131,11 @@ paths:
                 type: array
                 items:
                   type: object
+                  required:
+                    - parent
+                    - opType
+                    - idType
+                    - id
                   properties:
                     parent: 
                       type: string
@@ -193,9 +212,13 @@ paths:
       description: Create a dataset from a set of already uploaded objects
       parameters:
         - in: body
-          name: dataset
+          name: DatasetDefinition
           schema:
             type: object
+            required:
+              - name
+              - parent
+              - entries
             properties:
               name:
                 type: string
@@ -356,6 +379,7 @@ paths:
         200:
           description: Successful registrating of provenance
           schema:
+#            name: ProvenanceStmts
             type: object
             properties:
               provenance:
@@ -370,6 +394,9 @@ paths:
           name: modifications
           schema:
             type: object
+            required:
+              - name
+              - provenance
             properties:
               name:
                 type: string
@@ -391,10 +418,13 @@ paths:
 definitions:
   DataFileSubmission:
     type: object
+    required:
+      - name
+      - id
     properties:
       name:
         type: string
-      type:
+      mime_type:
         type: string
       description:
         type: string
@@ -424,7 +454,7 @@ definitions:
         description: Human readable summary of the progress of the import
         type: string
 
-  namedid:
+  NamedId:
     type: object
     properties:
       name:
