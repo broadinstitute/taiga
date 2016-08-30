@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "outDir": "./taiga2/static/",
+        "sourceMap": true,
+        "noImplicitAny": true,
+        "module": "commonjs",
+        "target": "es5",
+        "jsx": "react"
+    },
+    "files": [
+        "./frontend/typings/index.d.ts",
+        "./frontend/src/components/FolderView.tsx",
+        "./frontend/src/models/Folder.ts",
+        "./frontend/src/index.tsx"
+    ]
+}

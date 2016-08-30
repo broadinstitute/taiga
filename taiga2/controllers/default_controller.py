@@ -2,6 +2,8 @@ import json
 from flask import current_app
 import flask
 
+def update_dataset():
+    pass
 
 def get_folder(folderId):
     db = current_app.db

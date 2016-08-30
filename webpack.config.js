@@ -1,7 +1,7 @@
 module.exports = {
-    entry: "./src/index.tsx",
+    entry: "./frontend/src/index.tsx",
     output: {
-        filename: "./dist/bundle.js",
+        filename: "./taiga2/static/frontend.js",
     },
 
     // Enable sourcemaps for debugging webpack's output.
