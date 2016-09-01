@@ -9,25 +9,51 @@ def get_folder(folderId):
     db = current_app.db
 
     folder = db.get_folder(folderId)
-    parents = [dict(name=f.name, id=f.id) for f in db.get_parent_folders(folderId)]
+    if folder is None:
+        flask.abort(404)
+
+    parents = [dict(name=f['name'], id=f['id']) for f in db.get_parent_folders(folderId)]
     entries = []
     for e in folder['entries']:
         if e['type'] == "folder":
-            name = db.get_folder(e['id'])['name']
+            f = db.get_folder(e['id'])
+            name = f['name']
+            creator_id = f['creator_id']
+            creation_date = f['creation_date']
         elif e['type'] == "dataset":
-            name = db.get_dataset(e['id'])['name']
-        elif e['type'] == "datasetVersion":
-            name = db.get_dataset_version(e['id'])['name']
+            d = db.get_dataset(e['id'])
+            name = d['name']
+            creator_id = d['creator_id']
+            creation_date = d['creation_date']
+        elif e['type'] == "dataset_version":
+            dv = db.get_dataset_version(e['id'])
+            print("dv=",dv)
+            d = db.get_dataset(dv['dataset_id'])
+            name = d['name']
+            creator_id = dv['creator_id']
+            creation_date = dv['creation_date']
         else:
-            raise Exception("Unknown entry type: {}".format(e.type))
+            raise Exception("Unknown entry type: {}".format(e['type']))
 
-        entries.append(dict(id=e['id'], type=e['type'], name=name))
+        creator = db.get_user(creator_id)
+        creator_name = creator['name']
+        entries.append(dict(
+            id=e['id'], 
+            type=e['type'], 
+            name=name,
+            creation_date=creation_date,
+            creator=dict(id=creator_id, name=creator_name)))
+
+    creator_id = folder['creator_id']
+    creator = db.get_user(creator_id)
 
     response = dict(id = folder['id'],
         name=folder['name'],
         type=folder['type'],
         parents=parents,
-        entries=entries)
+        entries=entries,
+        creator=dict(id=creator_id, name=creator['name']),
+        creation_date=folder['creation_date'])
 
     return flask.jsonify(response)
 
@@ -64,7 +90,23 @@ def update_dataset_name():
     pass
 def update_dataset_description():
     pass
-def get_dataset_version():
-    pass
+
+def get_dataset_version(datasetVersionId):
+    db = current_app.db
+
+    dv = db.get_dataset_version(datasetVersionId)
+    if folder is None:
+        flask.abort(404)
+
+    response = dict(id = dv['id'],
+        name=d['name'],
+        dataset_id=dv['dataset_id'],
+        folders=folders,
+        entries=entries,
+        creator=dict(id=creator_id, name=creator['name']),
+        creation_date=dv['creation_date'])
+
+    return flask.jsonify(response)
+
 def get_dataset_version_status():    
     pass

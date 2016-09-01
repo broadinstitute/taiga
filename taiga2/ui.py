@@ -3,6 +3,8 @@ from flask import Flask
 import flask
 app = flask.Flask(__name__)
 
+import os
+
 INDEX = "static/index.html"
 
 @app.route("/")
@@ -19,5 +21,5 @@ def sendindex2(filename):
 
 @app.route("/js/<path:filename>")
 def static_f(filename):
-    return flask.send_from_directory("node_modules", filename)
+    return flask.send_from_directory(os.path.abspath("node_modules"), filename)
 

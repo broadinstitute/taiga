@@ -11,7 +11,7 @@ home = [
 
 def add_entry(db, user_id, parent_id, proto):
     if 'children' in proto:
-        folder_id = db.add_folder(proto['name'], 'folder', proto.get("description", ""))
+        folder_id = db.add_folder(user_id, proto['name'], 'folder', proto.get("description", ""))
         assert db.add_folder_entry(parent_id, folder_id, 'folder')
         for c in proto['children']:
             add_entry(db, user_id, folder_id, c)

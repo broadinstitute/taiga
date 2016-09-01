@@ -2,13 +2,16 @@ import os
 import uuid
 import collections
 import re
-
+import datetime
 from tinydb import TinyDB, Query
 
 DatasetFile = collections.namedtuple("DatasetFile", "name description type datafile_id")
 
 def new_id():
     return uuid.uuid4().hex
+
+def now():
+    return datetime.datetime.now().isoformat()
 
 class Db:
     def __init__(self, db):
@@ -42,7 +45,7 @@ class Db:
         Folder = Query()
         self.folders.update(dict(description=description), Folder.id == folder_id)        
 
-    def add_folder(self, name, type, description):
+    def add_folder(self, creator_id, name, type, description):
         assert type in ['home', 'trash', 'folder']
 
         id = new_id()
@@ -51,7 +54,9 @@ class Db:
                 name=name,
                 type=type,
                 description=description,
-                entries=[]))
+                entries=[],
+                creator_id=creator_id,
+                creation_date=now()))
         return id
 
     def get_folder(self, id):
@@ -59,6 +64,7 @@ class Db:
         return self.folders.get(Folder.id == id)
 
     def add_folder_entry(self, folder_id, id, type):
+        assert type in ['folder', 'dataset', 'dataset_version']
         update_count = [0]
         def add_entry(f):
             for entry in f['entries']:
@@ -141,7 +147,9 @@ class Db:
         self.dataset_versions.insert(dict(
             id=dataset_version_id,
             dataset_id=dataset_id,
-            entries=d_entries
+            entries=d_entries,
+            creator_id=user_id,
+            creation_date=now()
             ))
 
         self.activity.insert(dict(user_id=user_id, dataset_id=dataset_id, message="Created"))
@@ -268,8 +276,8 @@ class Db:
             return entries[0]
 
 def setup_user(db, name):
-    home_folder_id = db.add_folder("{}'s Home".format(name), "home", "")
-    trash_folder_id = db.add_folder("{}'s Trash".format(name), "trash", "")
+    home_folder_id = db.add_folder("admin", "{}'s Home".format(name), "home", "")
+    trash_folder_id = db.add_folder("admin", "{}'s Trash".format(name), "trash", "")
     user_id = db.add_user(name, home_folder_id, trash_folder_id)
     return user_id
 
