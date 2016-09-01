@@ -1,3 +1,5 @@
+var webpack = require('webpack');
+
 module.exports = {
     entry: "./frontend/src/index.tsx",
     output: {
@@ -32,4 +34,9 @@ module.exports = {
         "react": "React",
         "react-dom": "ReactDOM"
     },
+
+    plugins: [
+        new webpack.ProvidePlugin({'fetch': 'imports?this=>global!exports?global.fetch!whatwg-fetch'})
+    ]
+
 };

@@ -4,7 +4,7 @@ import { LeftNav } from "./LeftNav"
 
 import { Link } from 'react-router';
 
-import * as Folder from "../models/Folder"
+import * as Folder from "../models/models"
 
 export interface FolderViewProps {
     params : any

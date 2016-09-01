@@ -33,3 +33,10 @@ export class NamedId {
     'name': string;
     'id': string;
 }
+
+export interface User {
+    "id": string;
+    "name": string;
+    "home_folder_id": string;
+    "trash_folder_id": string;
+}

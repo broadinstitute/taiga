@@ -5,6 +5,7 @@ import { Router, Route, Link, IndexRoute, browserHistory } from 'react-router';
 
 import { FolderView } from "./components/FolderView"
 import { LeftNav } from "./components/LeftNav"
+import { TaigaApi } from "./models/api.ts"
 
 const App = React.createClass({
     render() {
@@ -152,6 +153,15 @@ const NoMatch = React.createClass({
         </div>
         )
     }
+})
+
+const tapi = new TaigaApi("/api")
+
+tapi.get_user().then(user => {
+    console.log("User:", user);
+    return tapi.get_folder(user.home_folder_id)
+}).then(folder => {
+    console.log("Folder:", folder);
 })
 
 ReactDOM.render((

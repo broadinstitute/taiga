@@ -5,6 +5,9 @@ import flask
 def update_dataset():
     pass
 
+def get_dataset(datasetId):
+    pass
+
 def get_folder(folderId):
     db = current_app.db
 
