@@ -1,6 +1,7 @@
 import json
 from flask import current_app
 import flask
+import time
 
 def update_dataset():
     pass
@@ -9,6 +10,7 @@ def get_dataset(datasetId):
     pass
 
 def get_folder(folderId):
+    print("get_folder start", time.asctime())
     db = current_app.db
 
     folder = db.get_folder(folderId)
@@ -58,6 +60,7 @@ def get_folder(folderId):
         creator=dict(id=creator_id, name=creator['name']),
         creation_date=folder['creation_date'])
 
+    print("get_folder stop", time.asctime())
     return flask.jsonify(response)
 
 ADMIN_USER_ID = "admin"
@@ -65,7 +68,9 @@ def _get_user_id():
     return ADMIN_USER_ID
 
 def get_user():
+    print("get_user start", time.asctime())
     user = current_app.db.get_user(_get_user_id())
+    print("get_user end", time.asctime())
     return flask.jsonify(user) 
 
 def create_folder(metadata):

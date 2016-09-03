@@ -5,9 +5,14 @@ import { LeftNav } from "./LeftNav"
 import { Link } from 'react-router';
 
 import * as Folder from "../models/models"
+import { TaigaApi } from "../models/api.ts"
 
 export interface FolderViewProps {
     params : any
+}
+
+export interface FolderViewState {
+    folder? : Folder.Folder
 }
 
 const static_folder : Folder.Folder = {
@@ -36,18 +41,49 @@ const static_folder : Folder.Folder = {
          ]    
 };
 
-export class FolderView extends React.Component<FolderViewProps, {}> {
-    render() {
-        var folder = static_folder;
+export class FolderView extends React.Component<FolderViewProps, FolderViewState> {
+    static contextTypes = {
+        tapi: React.PropTypes.object
+    };
 
-        var parent_links = folder.parents.map(p => {
+    componentDidUpdate (prevProps : FolderViewProps) {
+        // respond to parameter change in scenario 3
+        let oldId = prevProps.params.folderId
+        let newId = this.props.params.folderId
+        if (newId !== oldId)
+            this.doFetch();
+    }
+
+    componentDidMount() {
+        this.doFetch();
+    }
+
+    doFetch() {
+        let tapi : TaigaApi = (this.context as any).tapi;
+        
+        console.log("componentDidMount");
+        tapi.get_folder(this.props.params.folderId).then(folder => {
+            this.setState({folder: folder})
+            console.log("complete");
+            }
+        );
+    }
+
+    render() {
+        console.log("folderId in render", this.props.params.folderId);
+        if(! this.state) {
+            return <div>Loading...</div>
+        }
+        var folder : Folder.Folder = this.state.folder;
+
+        var parent_links = folder.parents.map( (p : Folder.NamedId) => {
             return <Link to={"/app/folder/"+p.id}>{p.name}</Link>
         });
 
         var subfolders : Folder.FolderEntries[] = [];
         var others :Folder.FolderEntries[] = [];
 
-        folder.entries.forEach(e => {
+        folder.entries.forEach( (e : Folder.FolderEntries) => {
             if(e.type == Folder.FolderEntries.TypeEnum.Folder) {
                 subfolders.push(e);
             } else {
@@ -119,3 +155,5 @@ export class FolderView extends React.Component<FolderViewProps, {}> {
             )
         }
     }
+
+

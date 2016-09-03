@@ -7,25 +7,58 @@ import { FolderView } from "./components/FolderView"
 import { LeftNav } from "./components/LeftNav"
 import { TaigaApi } from "./models/api.ts"
 
+const tapi = new TaigaApi("/api");
+
 const App = React.createClass({
+    getChildContext() {
+        return {tapi: tapi};
+    },
+    
     render() {
         return <div>{this.props.children}</div>
     }
 });
+App.childContextTypes = {
+    tapi: React.PropTypes.object
+};
 
 const Home = React.createClass({
+    getInitialState() {
+        console.log("getInitialState");
+        console.log("getInitialState2");
+        return {
+            user: null
+        };
+    },
+
+    componentDidMount() {
+        let tapi : TaigaApi = this.context.tapi;
+        
+        console.log("get_user");
+        tapi.get_user().then(user => {
+            this.setState({user: user})
+            console.log("complete");
+            }
+        );
+    },
+
     render() {
-    return (
-        <div>
-        <p>
-        <Link to="/app/folder/1">folder</Link>
-        </p><p>
-        <Link to="/app/dataset/2">dataset</Link>
-        </p>
-        </div>
-        )
+        if(this.state.user == null) {
+            return <div>Loading</div>
+        } else {
+            return (
+                <div>
+                    <p>
+                        <Link to={"/app/folder/"+this.state.user.home_folder_id}>Home</Link>
+                    </p>
+                </div>
+            );
+        }
     }
 });
+Home.contextTypes = {
+    tapi: React.PropTypes.object
+};
 
 const DatasetView = React.createClass({
     render() {
@@ -155,25 +188,24 @@ const NoMatch = React.createClass({
     }
 })
 
-const tapi = new TaigaApi("/api")
 
-tapi.get_user().then(user => {
-    console.log("User:", user);
-    return tapi.get_folder(user.home_folder_id)
-}).then(folder => {
-    console.log("Folder:", folder);
-})
+// tapi.get_user().then(user => {
+//     console.log("User:", user);
+//     return tapi.get_folder(user.home_folder_id)
+// }).then(folder => {
+//     console.log("Folder:", folder);
+// })
 
 ReactDOM.render((
   <Router history={browserHistory}>
     <Route path="/app" component={App}>
-        <IndexRoute component={Home}/>
+        <IndexRoute component={Home} />
         <Route path="dataset/:datasetId" component={DatasetView}>
             <IndexRoute component={DatasetDetails}/>
             <Route path="activity" component={ActivityView}/>
             <Route path="provenance" component={ProvenanceView}/>
         </Route>
-        <Route path="folder/:folderId" component={FolderView}/>
+        <Route path="folder/:folderId" component={FolderView as any}/>
     </Route>
     <Route path="*" component={NoMatch}/>
   </Router>
