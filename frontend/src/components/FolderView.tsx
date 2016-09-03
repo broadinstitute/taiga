@@ -15,32 +15,6 @@ export interface FolderViewState {
     folder? : Folder.Folder
 }
 
-const static_folder : Folder.Folder = {
-    id: "x",
-    name: "Child Dir",
-    type: Folder.Folder.TypeEnum.Folder,
-    parents: [ {id: "home-id", name: "Home"} ],
-    entries: [ 
-        {id: "a-id", 
-        name: "A Folder", 
-        type: Folder.FolderEntries.TypeEnum.Folder,
-        creationDate: "2009",
-        creator: {name: "joe", id: "joe-id"} },
-
-        {id: "B-id", 
-        name: "B Dataset", 
-        type: Folder.FolderEntries.TypeEnum.Dataset,
-        creationDate: "2011",
-        creator: {name: "joe", id: "joe-id"} },
-
-        {id: "C-id", 
-        name: "C Dataset Version", 
-        type: Folder.FolderEntries.TypeEnum.DatasetVersion,
-        creationDate: "2012",
-        creator: {name: "joe", id: "joe-id"} },
-         ]    
-};
-
 export class FolderView extends React.Component<FolderViewProps, FolderViewState> {
     static contextTypes = {
         tapi: React.PropTypes.object

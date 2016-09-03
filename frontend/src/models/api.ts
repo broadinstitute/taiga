@@ -1,6 +1,6 @@
 //import * as Fetch from 'whatwg-fetch';
 
-import { User, Folder } from './models';
+import { User, Folder, Dataset, DatasetVersion } from './models';
 
 export class TaigaApi {
     baseUrl : string;
@@ -27,6 +27,14 @@ export class TaigaApi {
 
     get_folder(folderId : string) : Promise<Folder> {
         return this._fetch<Folder>("/folder/"+folderId)
+    }
+
+    get_dataset(dataset_id : string) : Promise<Dataset> {
+        return this._fetch<Dataset>("/dataset/"+dataset_id)
+    }
+    
+    get_dataset_version(dataset_version_id: string) : Promise<DatasetVersion> {
+        return this._fetch<DatasetVersion>("/datasetVersion/"+dataset_version_id)
     }
 }
 

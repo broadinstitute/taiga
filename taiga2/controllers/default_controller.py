@@ -7,8 +7,26 @@ def update_dataset():
     pass
 
 def get_dataset(datasetId):
-    pass
+    db = current_app.db
 
+    ds = db.get_dataset(datasetId)
+    if ds is None:
+        flask.abort(404)
+
+    versions = []
+    for v in ds['versions']:
+        dv = db.get_dataset_version(v)
+        versions.append(dict(name=dv['version'], id=v, status="valid")) # =dv['status']))
+
+    response = dict(id=ds['id'],
+        name=ds['name'],
+        description=ds['description'],
+        permanames=[],
+        versions=versions
+    )
+
+    return flask.jsonify(response)
+    
 def get_folder(folderId):
     print("get_folder start", time.asctime())
     db = current_app.db
@@ -103,14 +121,33 @@ def get_dataset_version(datasetVersionId):
     db = current_app.db
 
     dv = db.get_dataset_version(datasetVersionId)
-    if folder is None:
+    if dv is None:
         flask.abort(404)
 
+    ds = db.get_dataset(dv['dataset_id'])
+
+    folder_objs = (db.get_folders_containing("dataset_version", datasetVersionId) + 
+        db.get_folders_containing("dataset", dv['dataset_id']))
+    folders = [dict(name=folder['name'], id=folder['id']) for folder in folder_objs]
+
+    datafiles = []
+    for e in dv['entries']:
+        datafiles.append(dict(
+            name=e['name'],
+            url=e['url'],
+            mime_type=e['type'],
+            description=e['description']
+        ))
+
+    creator_id = dv['creator_id']
+    creator = db.get_user(creator_id)
+
     response = dict(id = dv['id'],
-        name=d['name'],
-        dataset_id=dv['dataset_id'],
         folders=folders,
-        entries=entries,
+        name=ds['name'],
+        dataset_id=dv['dataset_id'],
+        version=dv['version'],
+        datafiles=datafiles,
         creator=dict(id=creator_id, name=creator['name']),
         creation_date=dv['creation_date'])
 

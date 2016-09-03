@@ -4,6 +4,7 @@ import * as ReactDOM from "react-dom";
 import { Router, Route, Link, IndexRoute, browserHistory } from 'react-router';
 
 import { FolderView } from "./components/FolderView"
+import { DatasetView } from "./components/DatasetView"
 import { LeftNav } from "./components/LeftNav"
 import { TaigaApi } from "./models/api.ts"
 
@@ -60,36 +61,6 @@ Home.contextTypes = {
     tapi: React.PropTypes.object
 };
 
-const DatasetView = React.createClass({
-    render() {
-    return (
-        <div>
-            <h2>Dataset: {this.props.params.datasetId}</h2>
-            <DatasetDetails/>
-        </div>
-        )
-    }
-});
-
-
-const DataFileTable = React.createClass({
-    render() {
-        var rows : any = [];
-        return (
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Summary</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows}
-                </tbody>
-            </table>
-            )
-        }
-    });
 
 const EditButton = React.createClass({
     render() {
@@ -115,6 +86,25 @@ const DatasetDetails = React.createClass({
         )
     }
 });
+
+const DataFileTable = React.createClass({
+    render() {
+        var rows : any = [];
+        return (
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows}
+                </tbody>
+            </table>
+            )
+        }
+    });
 
 const ActivityView = React.createClass({
     render() {
@@ -200,7 +190,7 @@ ReactDOM.render((
   <Router history={browserHistory}>
     <Route path="/app" component={App}>
         <IndexRoute component={Home} />
-        <Route path="dataset/:datasetId" component={DatasetView}>
+        <Route path="dataset/:datasetVersionId" component={DatasetView as any}>
             <IndexRoute component={DatasetDetails}/>
             <Route path="activity" component={ActivityView}/>
             <Route path="provenance" component={ProvenanceView}/>

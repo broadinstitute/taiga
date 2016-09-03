@@ -97,16 +97,19 @@ class Db:
             return True
         else:
             return False
-    
-    def get_parent_folders(self, folder_id):
+
+    def get_folders_containing(self, id_type, id):
         def is_parent(entries):
             for e in entries:
-                if e['type'] == "folder" and e['id'] == folder_id:
+                if e['type'] == id_type and e['id'] == id:
                     return True
             return False
         Folder = Query()
         parent_folders = self.folders.search(Folder.entries.test(is_parent))
         return parent_folders
+
+    def get_parent_folders(self, folder_id):
+        return self.get_folders_containing("folder", folder_id)
 
     def register_datafile_id(self, id, url):
         self.datafiles.insert(dict(id=id, url=url))
@@ -149,7 +152,9 @@ class Db:
             dataset_id=dataset_id,
             entries=d_entries,
             creator_id=user_id,
-            creation_date=now()
+            creation_date=now(),
+            version="1",
+            status="valid"
             ))
 
         self.activity.insert(dict(user_id=user_id, dataset_id=dataset_id, message="Created"))
@@ -190,9 +195,13 @@ class Db:
         self.dataset_versions.insert(dict(
             id=dataset_version_id,
             dataset_id=dataset_id,
-            entries=list(new_entries.values())
+            entries=list(new_entries.values()),
+            creator_id=user_id,
+            creation_date=now(),
+            version=str(len(dataset['versions']) + 1),
+            status="valid"
             ))
-        
+
         def add_version(dataset):
             dataset['versions'].append(dataset_version_id)
 

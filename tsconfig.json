@@ -10,6 +10,7 @@
     "files": [
         "./frontend/typings/index.d.ts",
         "./frontend/src/components/FolderView.tsx",
+        "./frontend/src/components/DatasetView.tsx",
         "./frontend/src/models/models.ts",
         "./frontend/src/models/api.ts",
         "./frontend/src/index.tsx"
