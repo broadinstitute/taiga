@@ -60,6 +60,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     <td>{df.name}</td>
                     <td>{df.mimeType}</td>
                     <td>{df.description}</td>
+                    <td>2000 x 15 table</td>
+                    <td>123 kb</td>
                 </tr>
         });
 
@@ -68,9 +70,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         } )
 
         return <div>
-            <h1>{dataset.name}</h1>
+            <h1><button>Edit</button>{dataset.name}</h1>
             <p>Created by: {datasetVersion.creator.name} on {datasetVersion.creation_date}</p>
             <p>Versions: {versions} </p>
+            <h2><button>Edit</button>Description</h2>
             <p>Contained within {folders}</p>
             <table className="table">
             <thead>
@@ -78,6 +81,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     <th>Name</th>
                     <th>Mime type</th>
                     <th>Description</th>
+                    <th>Size</th>
+                    <th>Bytes</th>
                 </tr>
             </thead>
             <tbody>

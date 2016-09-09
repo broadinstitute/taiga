@@ -6,7 +6,10 @@ home = [
         dict(name="Folder B", children=[
             dict(name="Data")
             ])
-        ])
+        ]),
+        dict(name="A1 Data"),
+        dict(name="A2 Data"),
+        dict(name="A3 Data")
     ]
 
 def add_entry(db, user_id, parent_id, proto):

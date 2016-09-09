@@ -79,7 +79,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         var folder_rows = subfolders.map(e => {
             return <tr>
                 <td><input type="checkbox"/></td>
-                <td><Link to={"/app/folder/"+e.id}>{e.name}</Link></td>
+                <td><Link to={"/app/folder/"+e.id}><div className="folder-icon"/>{e.name}</Link></td>
                 <td>{e.creationDate}</td>
                 <td>{e.creator.name}</td>
             </tr>
@@ -117,39 +117,20 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     <p>Parents: {parent_links}</p>
                 </Conditional>
 
-                <Conditional show={folder_rows.length > 0}>
-                    <h2>Folders</h2>
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th>Name</th>
-                                <th>Date</th>
-                                <th>Creator</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {folder_rows}
-                        </tbody>
-                    </table>
-                </Conditional>
-
-                <Conditional show={other_rows.length > 0}>
-                    <h2>Datasets</h2>
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th>Name</th>
-                                <th>Date</th>
-                                <th>Creator</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {other_rows}
-                        </tbody>
-                    </table>
-                </Conditional>
+                <table className="table">
+                    <thead>
+                        <tr>
+                            <th className="select-column"></th>
+                            <th>Name</th>
+                            <th>Date</th>
+                            <th>Creator</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {folder_rows}
+                        {other_rows}
+                    </tbody>
+                </table>
                 </div>
                 </div>
             )
