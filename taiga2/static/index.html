@@ -1,17 +1,96 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8" />
-        <title>Hello React!</title>
-    </head>
-    <body>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Taiga2</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+
+    <link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.1/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet"/>
+
+    <!-- Latest compiled and minified JavaScript -->
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+    .top-of-page-margin {
+      padding-top: 20px;
+    }
+
+    .top-page-border, .bottom-page-border {
+        display: block;
+        background-color: #4b5b7d;
+        color: #ffffff;
+        padding-bottom: 5px;
+        padding-top: 5px;
+    }
+
+    .login-box {
+        display: inline;
+        padding-right: 15px;
+    }
+
+    .login-box a {
+        color: #ffffff;
+    }
+
+    .top-page-menu {
+        display: inline;
+        padding-left: 15px;
+    }
+
+    .bottom-page-text {
+        color: #90a5e0;
+    }
+
+    </style>
+  </head>
+
+<body>
+  <div class="top-page-border">
+      <div class="top-page-menu">
+          <img src="/static/taiga3.png" style="padding-right: 5px">Taiga
+          <a href="{{ home_url }}">Home</a>
+      </div>
+
+      <div class="login-box pull-right">
+          <a href="/logout">Logout</a>
+      </div>
+  </div>
+
+  <div class="container-fluid">
         <div id="root"></div>
+  </div>
 
-        <!-- Dependencies -->
-        <script src="/js/react/dist/react.js"></script>
-        <script src="/js/react-dom/dist/react-dom.js"></script>
+  <footer class="bottom-page-border">
+      <div class="top-page-menu bottom-page-text">
+          Broad Institute, Cancer Program Data Science 2015
+      </div>
+      <div class="login-box pull-right bottom-page-text">
+          Rev DEV
+      </div>
+  </footer>
 
-        <!-- Main -->
-        <script src="/static/frontend.js"></script>
-    </body>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+  <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+    <!-- Dependencies -->
+  <script src="/js/react/dist/react.js"></script>
+  <script src="/js/react-dom/dist/react-dom.js"></script>
+
+    <!-- Main -->
+    <script src="/static/frontend.js"></script>
+</body>
 </html>
+

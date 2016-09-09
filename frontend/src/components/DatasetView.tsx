@@ -72,7 +72,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             <p>Created by: {datasetVersion.creator.name} on {datasetVersion.creation_date}</p>
             <p>Versions: {versions} </p>
             <p>Contained within {folders}</p>
-            <table>
+            <table className="table">
             <thead>
                 <tr>
                     <th>Name</th>

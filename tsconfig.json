@@ -9,6 +9,7 @@
     },
     "files": [
         "./frontend/typings/index.d.ts",
+        "./frontend/src/components/affix.tsx",
         "./frontend/src/components/FolderView.tsx",
         "./frontend/src/components/DatasetView.tsx",
         "./frontend/src/models/models.ts",
