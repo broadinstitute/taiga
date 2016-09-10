@@ -48,7 +48,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     render() {
         if(! this.state) {
-            return <div>Loading...</div>
+           return     <div>
+                <LeftNav items={[]}/>
+                <div id="main-content"/>
+                </div>
         }
         let dataset = this.state.dataset;
         let datasetVersion = this.state.datasetVersion;
@@ -58,10 +61,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let entries = datasetVersion.datafiles.map( df => {
             return <tr>
                     <td>{df.name}</td>
-                    <td>{df.mimeType}</td>
                     <td>{df.description}</td>
-                    <td>2000 x 15 table</td>
-                    <td>123 kb</td>
+                    <td>{df.content_summary}</td>
                 </tr>
         });
 
@@ -69,26 +70,37 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             return <Link to={"/app/folder/"+f.id}>{f.name}</Link>
         } )
 
+        let navItems = [
+            {label: "Edit Name", action: function(){} },
+            {label: "Edit Description", action: function(){} },
+            {label: "Add permaname", action: function() {} },
+            {label: "Create new version", action: function(){} },
+            {label: "Delete version", action: function(){} },
+            {label: "Deprecate version", action: function(){} },
+            {label: "Show History", action: function(){} }
+        ];
+ 
         return <div>
-            <h1><button>Edit</button>{dataset.name}</h1>
-            <p>Created by: {datasetVersion.creator.name} on {datasetVersion.creation_date}</p>
-            <p>Versions: {versions} </p>
-            <h2><button>Edit</button>Description</h2>
-            <p>Contained within {folders}</p>
-            <table className="table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Mime type</th>
-                    <th>Description</th>
-                    <th>Size</th>
-                    <th>Bytes</th>
-                </tr>
-            </thead>
-            <tbody>
-                {entries}
-            </tbody>
-            </table> 
+            <LeftNav items={navItems}/>
+            <div id="main-content">
+                <h1>{dataset.name}</h1>
+                <p>Created by: {datasetVersion.creator.name} on {datasetVersion.creation_date}</p>
+                <p>Versions: {versions} </p>
+                <p>Contained within {folders}</p>
+                <h2>Description</h2>
+                <table className="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Contains</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {entries}
+                </tbody>
+                </table>
+            </div> 
             </div>
         }
     }

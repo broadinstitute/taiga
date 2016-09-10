@@ -62,50 +62,6 @@ Home.contextTypes = {
 };
 
 
-const EditButton = React.createClass({
-    render() {
-    return (
-        <div>
-            Edit
-        </div>
-        )
-    }
-});
-
-const DatasetDetails = React.createClass({
-    render() {
-    return (
-        <div>
-            <LeftNav/>
-            <h1>Name</h1><EditButton/>
-            Created by, Created time
-            Versions...
-            Description<EditButton/>
-            <DataFileTable/>
-        </div>
-        )
-    }
-});
-
-const DataFileTable = React.createClass({
-    render() {
-        var rows : any = [];
-        return (
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Summary</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows}
-                </tbody>
-            </table>
-            )
-        }
-    });
-
 const ActivityView = React.createClass({
     render() {
         var rows : any = [];
@@ -186,15 +142,16 @@ const NoMatch = React.createClass({
 //     console.log("Folder:", folder);
 // })
 
+            // <IndexRoute component={DatasetDetails}/>
+            // <Route path="activity" component={ActivityView}/>
+            // <Route path="provenance" component={ProvenanceView}/>
+
+
 ReactDOM.render((
   <Router history={browserHistory}>
     <Route path="/app" component={App}>
         <IndexRoute component={Home} />
-        <Route path="dataset/:datasetVersionId" component={DatasetView as any}>
-            <IndexRoute component={DatasetDetails}/>
-            <Route path="activity" component={ActivityView}/>
-            <Route path="provenance" component={ProvenanceView}/>
-        </Route>
+        <Route path="dataset/:datasetVersionId" component={DatasetView as any}/>
         <Route path="folder/:folderId" component={FolderView as any}/>
     </Route>
     <Route path="*" component={NoMatch}/>

@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { LeftNav } from "./LeftNav"
+import { LeftNav, MenuItem } from "./LeftNav"
 
 import { Link } from 'react-router';
 
@@ -54,10 +54,18 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         );
     }
 
+    selectRow(i : number) {
+        // let newState : FolderViewState = update(self.state, {selections: {"$set": i}});
+        // this.setState(newState);
+    }
+
     render() {
         console.log("folderId in render", this.props.params.folderId);
         if(! this.state) {
-            return <div>Loading...</div>
+            return <div>
+                <LeftNav items={[]}/>
+                <div id="main-content"/>
+                </div>
         }
         var folder : Folder.Folder = this.state.folder;
 
@@ -104,33 +112,46 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         
         console.log(this.props.params);
 
+        let navItems : MenuItem[] = [];
+        let selectionCount = 0;
+
+        if(selectionCount == 0) {
+            navItems = navItems.concat([
+                {label: "Edit name", action: () => {} },
+                {label: "Edit description", action: () => {} },
+                {label: "Create a subfolder", action: () => {} },
+                {label: "Upload dataset", action: () => {} }
+            ])
+        } else {
+            navItems.push({label: "Move to trash", action: () => {} })
+            navItems.push({label: "Move to...", action: () => {} })
+            navItems.push({label: "Copy to...", action: () => {} })
+        }
+
         return (
                 <div>
-                <LeftNav/>
-                <AffixWrapper className="left-panel" offset={30}>
-                    <div>LeftNav</div>
-                </AffixWrapper>
-                <div>
-                <h1>{folder.name}</h1>
+                <LeftNav items={navItems}/>
+                <div id="main-content">
+                    <h1>{folder.name}</h1>
 
-                <Conditional show={parent_links.length > 0}>
-                    <p>Parents: {parent_links}</p>
-                </Conditional>
+                    <Conditional show={parent_links.length > 0}>
+                        <p>Parents: {parent_links}</p>
+                    </Conditional>
 
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th className="select-column"></th>
-                            <th>Name</th>
-                            <th>Date</th>
-                            <th>Creator</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {folder_rows}
-                        {other_rows}
-                    </tbody>
-                </table>
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th className="select-column"></th>
+                                <th>Name</th>
+                                <th>Date</th>
+                                <th>Creator</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {folder_rows}
+                            {other_rows}
+                        </tbody>
+                    </table>
                 </div>
                 </div>
             )
