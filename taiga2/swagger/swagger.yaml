@@ -424,6 +424,12 @@ paths:
                 items:
                   title: DataFile
                   type: object
+                  required:
+                    - name
+                    - url
+                    - mime_type
+                    - description
+                    - content_summary
                   properties:
                     name: 
                       type: string
@@ -432,6 +438,9 @@ paths:
                     mime_type:
                       type: string
                     description:
+                      type: string
+                    content_summary:
+                      description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
                       type: string
             
   /datasetVersion/{datasetVersionId}/status:

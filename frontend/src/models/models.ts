@@ -57,10 +57,11 @@ export interface DatasetVersion {
 }
 
 export interface DatasetVersionDatafiles {
-    "name"?: string;
-    "url"?: string;
-    "mimeType"?: string;
-    "description"?: string;
+    "name": string;
+    "url": string;
+    "mimeType": string;
+    "description": string;
+    "content_summary": string;
 }
 
 export interface DatasetVersions {

@@ -167,9 +167,17 @@ class Db:
         self.activity.insert(dict(user_id=user_id, dataset_id=dataset_id, message="Changed name"))
 
     def update_dataset_description(self, user_id, dataset_id, description):
-        Dataset = Query()
-        self.datasets.update(dict(description=description), Dataset.id == dataset_id)        
+        self.datasets.update(dict(description=description), Query().id == dataset_id)        
         self.activity.insert(dict(user_id=user_id, dataset_id=dataset_id, message="Changed description"))
+
+    def update_datafile_summaries(self, dataset_version_id, datafile_name, content_summary):
+        def update_summary(d):
+            entries = d["entries"]
+            with_name = [e for e in entries if e['name'] == datafile_name]
+            for e in with_name:
+                e['content_summary'] = content_summary
+            return d
+        self.dataset_versions.update(update_summary, Query().id == dataset_version_id)        
 
     def update_dataset_contents(self, user_id, dataset_id, entries_to_remove, entries_to_add, comments):
         for x in entries_to_remove:

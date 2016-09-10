@@ -23,6 +23,7 @@ def add_entry(db, user_id, parent_id, proto):
         db.register_datafile_id(datafile_id, datafile_id)
         entries = [persist.DatasetFile("data", "data description", "raw", datafile_id)]
         dataset_version_id = db.create_dataset(user_id, proto['name'], proto.get("description", ""), entries)
+        db.update_datafile_summaries(dataset_version_id, "data", "10 x 13 table")
         db.add_folder_entry(parent_id, dataset_version_id, 'dataset_version')
 
 if __name__ == "__main__":

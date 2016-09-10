@@ -136,7 +136,8 @@ def get_dataset_version(datasetVersionId):
             name=e['name'],
             url=e['url'],
             mime_type=e['type'],
-            description=e['description']
+            description=e['description'],
+            content_summary=e["content_summary"]
         ))
 
     creator_id = dv['creator_id']
