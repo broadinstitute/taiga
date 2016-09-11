@@ -35,20 +35,20 @@ const Home = React.createClass({
     componentDidMount() {
         let tapi : TaigaApi = this.context.tapi;
         
-        console.log("get_user");
+        console.log("get_user start");
         tapi.get_user().then(user => {
             this.setState({user: user})
-            console.log("complete");
+            console.log("get_user complete, complete");
             }
         );
     },
 
     render() {
         if(this.state.user == null) {
-            return <div>Loading</div>
+            return <div id="main-content">Loading</div>
         } else {
             return (
-                <div>
+                <div id="main-content">
                     <p>
                         <Link to={"/app/folder/"+this.state.user.home_folder_id}>Home</Link>
                     </p>

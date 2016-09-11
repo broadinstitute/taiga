@@ -4,6 +4,7 @@ export class Folder {
     'type': Folder.TypeEnum;
     'parents': Array<NamedId>;
     'entries': Array<FolderEntries>;
+    acl: Acl;
 }
 
 export namespace Folder {
@@ -54,6 +55,7 @@ export interface DatasetVersion {
     "creator": NamedId;
     "datafiles": Array<DatasetVersionDatafiles>;
     folders: Array<NamedId>;
+    provenance?: Provenance;
 }
 
 export interface DatasetVersionDatafiles {
@@ -76,5 +78,34 @@ export interface Dataset {
     "permanames": Array<string>;
     "description": string;
     "versions": Array<DatasetVersions>;
+    acl: Acl;
+}
+
+interface Method {
+    description: string;
+    parameters: string;
+}
+
+interface ProvSource {
+    dataset_version_id : string;
+    name : string;
+    method_parameter : string;
+}
+
+export interface Provenance {
+    method: Method;
+    inputs: Array<ProvSource>;
+}
+
+interface Grant {
+    type: string;
+    id: string;
+    name: string;
+    permission: string;
+}
+
+interface Acl {
+    default_permissions: string;
+    grants: Array<Grant>;
 }
 

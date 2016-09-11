@@ -87,6 +87,8 @@ paths:
                       type: string
                     creator:
                       "$ref": "#/definitions/NamedId"
+              acl:
+                "$ref": "#/definitions/Acl"
 
   /folders/create:
     post:
@@ -297,6 +299,8 @@ paths:
                       type: string
                     status:
                       "$ref": "#/definitions/StatusEnum"
+              acl:
+                "$ref": "#/definitions/Acl"
 
   /dataset/{datasetId}/version:
     post:
@@ -442,6 +446,8 @@ paths:
                     content_summary:
                       description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
                       type: string
+              provenance:
+                "$ref": "#/definitions/Provenance"
             
   /datasetVersion/{datasetVersionId}/status:
     get:
@@ -480,6 +486,33 @@ paths:
 #missing provenance
 
 definitions:
+  Provenance:
+    type: object
+    properties:
+      method:
+        type: object
+        properties:
+          description:
+            type: string
+          parameters:
+            type: object
+      inputs:
+        type: array
+        items:
+          type: object
+          required:
+            - dataset_version_id
+            - name
+          properties:
+            method_parameter:
+              type: string
+              description: An optional parameter for specifying which parameter this was used as for the given method.
+            dataset_version_id:
+              type: string
+            name:
+              type: string
+              description: The name of the datafile within the dataset_version
+
   DataFileSubmission:
     type: object
     required:
@@ -517,6 +550,38 @@ definitions:
       message:
         description: Human readable summary of the progress of the import
         type: string
+
+  Acl:
+    type: object
+    properties:
+      default_permissions: 
+        type: string
+        enum:
+          - none
+          - read
+          - read-write
+          - owner
+      grants:
+        type: array
+        items:
+          type: object
+          properties:
+            type: 
+              type: string
+              enum: 
+                - group
+                - user
+            id:
+              type: string
+              description: The id of either the group or the user depending on the value of type
+            name:
+              type: string
+            permission:
+              type: string
+              enum: 
+                - read
+                - read-write
+                - owner
 
   NamedId:
     type: object

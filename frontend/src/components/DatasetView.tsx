@@ -80,6 +80,22 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             {label: "Show History", action: function(){} }
         ];
  
+        let ancestor_section :any = null;
+        if(datasetVersion.provenance) {
+            let ancestor_dataset_versions = new Set(datasetVersion.provenance.inputs.map( x => x.dataset_version_id ))
+            let ancestor_links = [...ancestor_dataset_versions].map( x => {
+                return <li>
+                    <Link to={"/app/dataset/"+x}>{x}</Link>
+                </li>
+            })
+            if(ancestor_links.length > 0) {
+                ancestor_section = <p>
+                    <p>
+                        Derived from <ul>{ancestor_links}</ul>
+                    </p>
+                </p>;
+            } 
+        }
         return <div>
             <LeftNav items={navItems}/>
             <div id="main-content">
@@ -87,6 +103,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <p>Created by: {datasetVersion.creator.name} on {datasetVersion.creation_date}</p>
                 <p>Versions: {versions} </p>
                 <p>Contained within {folders}</p>
+                {ancestor_section}
                 <h2>Description</h2>
                 <table className="table">
                 <thead>

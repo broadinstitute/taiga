@@ -22,8 +22,9 @@ def get_dataset(datasetId):
         name=ds['name'],
         description=ds['description'],
         permanames=[],
-        versions=versions
-    )
+        versions=versions,
+        acl=dict(default_permissions="owner", grants=[])
+        )
 
     return flask.jsonify(response)
     
@@ -76,8 +77,9 @@ def get_folder(folderId):
         parents=parents,
         entries=entries,
         creator=dict(id=creator_id, name=creator['name']),
-        creation_date=folder['creation_date'])
-
+        creation_date=folder['creation_date'],
+        acl=dict(default_permissions="owner", grants=[])
+        )
     print("get_folder stop", time.asctime())
     return flask.jsonify(response)
 
@@ -151,6 +153,8 @@ def get_dataset_version(datasetVersionId):
         datafiles=datafiles,
         creator=dict(id=creator_id, name=creator['name']),
         creation_date=dv['creation_date'])
+    if 'provenance' in dv:
+        response['provenance']=dv.get('provenance')
 
     return flask.jsonify(response)
 

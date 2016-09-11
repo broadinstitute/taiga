@@ -228,6 +228,9 @@ class Db:
         DatasetVersion = Query()
         return self.dataset_versions.get(DatasetVersion.id == dataset_version_id)
 
+    def update_dataset_version_provenance(self, dataset_version_id, provenance):
+        self.dataset_versions.update(dict(provenance=provenance), Query().id == dataset_version_id)
+
     def resolve_to_dataset(self, name):
         m = re.match("([^/:]+)$", name)
         if m is None:
@@ -301,7 +304,7 @@ def setup_user(db, name):
 def open_db(filename):
     new_db = not os.path.exists(filename)
 
-    db = TinyDB(filename)
+    db = TinyDB(filename, indent=2)
 
     if new_db:
         #folders = db.table("folders")

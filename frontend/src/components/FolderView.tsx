@@ -46,10 +46,10 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     doFetch() {
         let tapi : TaigaApi = (this.context as any).tapi;
         
-        console.log("componentDidMount");
+        console.log("FolderView: componentDidMount");
         tapi.get_folder(this.props.params.folderId).then(folder => {
             this.setState({folder: folder})
-            console.log("complete");
+            console.log("FolderView: complete");
             }
         );
     }
