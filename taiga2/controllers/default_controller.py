@@ -21,7 +21,7 @@ def get_dataset(datasetId):
     response = dict(id=ds['id'],
         name=ds['name'],
         description=ds['description'],
-        permanames=[],
+        permanames=ds['permanames'],
         versions=versions,
         acl=dict(default_permissions="owner", grants=[])
         )
@@ -153,8 +153,17 @@ def get_dataset_version(datasetVersionId):
         datafiles=datafiles,
         creator=dict(id=creator_id, name=creator['name']),
         creation_date=dv['creation_date'])
+
     if 'provenance' in dv:
-        response['provenance']=dv.get('provenance')
+        p = dv.get('provenance')
+        # add the dataset names to each source
+        for input in p["inputs"]:
+            dv_id = input["dataset_version_id"]
+            dv = db.get_dataset_version(dv_id)
+            ds = db.get_dataset(dv["dataset_id"])
+            name = "{} v{}".format(ds['name'], dv["version"])
+            input["dataset_version_name"] = name
+        response['provenance'] = p
 
     return flask.jsonify(response)
 

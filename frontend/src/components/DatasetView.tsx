@@ -50,7 +50,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         if(! this.state) {
            return     <div>
                 <LeftNav items={[]}/>
-                <div id="main-content"/>
+                <div id="main-content">
+                    Loading...
+                </div>
                 </div>
         }
         let dataset = this.state.dataset;
@@ -75,17 +77,21 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             {label: "Edit Description", action: function(){} },
             {label: "Add permaname", action: function() {} },
             {label: "Create new version", action: function(){} },
-            {label: "Delete version", action: function(){} },
             {label: "Deprecate version", action: function(){} },
             {label: "Show History", action: function(){} }
         ];
  
         let ancestor_section :any = null;
         if(datasetVersion.provenance) {
-            let ancestor_dataset_versions = new Set(datasetVersion.provenance.inputs.map( x => x.dataset_version_id ))
+            let ancestor_dataset_versions = new Set(datasetVersion.provenance.inputs.map( x => {
+                return {
+                    name: x.dataset_version_name,
+                    id: x.dataset_version_id 
+                    };
+                }))
             let ancestor_links = [...ancestor_dataset_versions].map( x => {
                 return <li>
-                    <Link to={"/app/dataset/"+x}>{x}</Link>
+                    <Link to={"/app/dataset/"+x.id}>{x.name}</Link>
                 </li>
             })
             if(ancestor_links.length > 0) {
@@ -99,12 +105,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         return <div>
             <LeftNav items={navItems}/>
             <div id="main-content">
-                <h1>{dataset.name}</h1>
-                <p>Created by: {datasetVersion.creator.name} on {datasetVersion.creation_date}</p>
+                <h1>{dataset.name} <small>{dataset.permanames[dataset.permanames.length-1]}</small></h1>
+                <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on {datasetVersion.creation_date}</p>
                 <p>Versions: {versions} </p>
                 <p>Contained within {folders}</p>
                 {ancestor_section}
-                <h2>Description</h2>
+                <h2>Contents</h2>
                 <table className="table">
                 <thead>
                     <tr>

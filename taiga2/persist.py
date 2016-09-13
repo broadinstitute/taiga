@@ -4,6 +4,7 @@ import collections
 import re
 import datetime
 from tinydb import TinyDB, Query
+import random
 
 DatasetFile = collections.namedtuple("DatasetFile", "name description type datafile_id")
 
@@ -12,6 +13,10 @@ def new_id():
 
 def now():
     return datetime.datetime.now().isoformat()
+
+ALPHANUMS = [chr(x) for x in range(ord('a'), ord('z')+1)] + [chr(x) for x in range(ord('0'), ord('9')+1)]
+def get_random_suffix(length):
+    return "".join([ALPHANUMS[random.randint(0, len(ALPHANUMS))] for i in range(length)])
 
 class Db:
     def __init__(self, db):
@@ -134,8 +139,16 @@ class Db:
         dataset_version_id = new_id()
 
         if permaname is None:
-            #FIXME: normalize 
-            permaname=name
+            # normalize 
+            permaname=re.sub("[^a-z0-9]+", "-", name.lower())
+            permaname=re.sub("-+", "-", permaname)
+            permaname=re.sub("-$", "", permaname)
+            permaname=re.sub("^-$", "", permaname)
+            # append a random suffix to ensure uniqueness.  being purely random is a bug.
+            # should really query and only pick a suffix which yields a permaname not already in
+            # use.  This is just a prototype so skip that for now.
+            suffix=get_random_suffix(2)
+            permaname=permaname+"-"+suffix
 
         d_entries = self._convert_entries_to_dict(entries)
 
@@ -144,7 +157,7 @@ class Db:
             name=name,
             description=description,
             versions=[dataset_version_id],
-            permaname=permaname
+            permanames=[permaname]
             ))
 
         self.dataset_versions.insert(dict(

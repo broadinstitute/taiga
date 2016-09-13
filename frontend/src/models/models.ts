@@ -18,7 +18,7 @@ export class FolderEntries {
     'type': FolderEntries.TypeEnum;
     'id': string;
     'name': string;
-    'creationDate': string;
+    'creation_date': string;
     'creator': NamedId;
 }
 
@@ -90,6 +90,7 @@ interface ProvSource {
     dataset_version_id : string;
     name : string;
     method_parameter : string;
+    dataset_version_name? : string;
 }
 
 export interface Provenance {

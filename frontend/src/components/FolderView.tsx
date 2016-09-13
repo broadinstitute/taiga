@@ -1,19 +1,25 @@
 import * as React from "react";
 
+
 import { LeftNav, MenuItem } from "./LeftNav"
 
 import { Link } from 'react-router';
 
 import * as Folder from "../models/models"
 import { TaigaApi } from "../models/api.ts"
-import { AffixWrapper } from "./affix.tsx"
+
+import * as Dialogs from "./Dialogs"
 
 export interface FolderViewProps {
     params : any
 }
 
 export interface FolderViewState {
-    folder? : Folder.Folder
+    folder? : Folder.Folder;
+    showEditName? : boolean;
+    showEditDescription? : boolean;
+    error? : string;
+    selection? : any;
 }
 
 export class Conditional extends React.Component<any, any> {
@@ -48,23 +54,45 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         
         console.log("FolderView: componentDidMount");
         tapi.get_folder(this.props.params.folderId).then(folder => {
-            this.setState({folder: folder})
+            this.setState({folder: folder, selection: {}});
             console.log("FolderView: complete");
             }
         );
     }
 
-    selectRow(i : number) {
-        // let newState : FolderViewState = update(self.state, {selections: {"$set": i}});
-        // this.setState(newState);
+    selectRow(select_key : string) {
+        var s : any = this.state.selection;
+        if(!s) {
+            s = {};
+        } else {
+            // ugh, there's got to be a better way.  Make a copy
+            // of the selection so we don't mutate the original
+            s = JSON.parse(JSON.stringify(s));            
+        }
+
+        let isSetAfterToggle = !(s[select_key]);
+        if (isSetAfterToggle) {
+            s[select_key] = true; 
+        } else {
+            delete s[select_key];
+        }
+
+        this.setState({selection: s});
     }
 
     render() {
         console.log("folderId in render", this.props.params.folderId);
         if(! this.state) {
             return <div>
-                <LeftNav items={[]}/>
-                <div id="main-content"/>
+                    <LeftNav items={[]}/>
+                    <div id="main-content"/>
+                </div>
+        } else if(this.state.error) {
+            return <div>
+                    <LeftNav items={[]}/>
+                    <div id="main-content">
+                        An error occurred: {this.state.error}
+                    </div>
                 </div>
         }
         var folder : Folder.Folder = this.state.folder;
@@ -85,10 +113,11 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         })
 
         var folder_rows = subfolders.map(e => {
+            let select_key = "folder."+e.id;
             return <tr>
-                <td><input type="checkbox"/></td>
+                <td><input type="checkbox" value={ this.state.selection[select_key] } onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td><Link to={"/app/folder/"+e.id}><div className="folder-icon"/>{e.name}</Link></td>
-                <td>{e.creationDate}</td>
+                <td>{e.creation_date}</td>
                 <td>{e.creator.name}</td>
             </tr>
         });
@@ -102,10 +131,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 link = e.name;
             }
 
+            let select_key = "dataset."+e.id;
+
             return <tr>
-                <td><input type="checkbox"/></td>
+                <td><input type="checkbox" value={ this.state.selection[select_key] } onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td>{link}</td>
-                <td>{e.creationDate}</td>
+                <td>{e.creation_date}</td>
                 <td>{e.creator.name}</td>
             </tr>
         });
@@ -113,12 +144,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         console.log(this.props.params);
 
         let navItems : MenuItem[] = [];
-        let selectionCount = 0;
+        let selectionCount = Object.keys(this.state.selection).length;
 
         if(selectionCount == 0) {
             navItems = navItems.concat([
-                {label: "Edit name", action: () => {} },
-                {label: "Edit description", action: () => {} },
+                {label: "Edit name", action: () => {this.setState({ showEditName : true })} },
+                {label: "Edit description", action: () => {this.setState({ showEditDescription : true })} },
                 {label: "Create a subfolder", action: () => {} },
                 {label: "Upload dataset", action: () => {} }
             ])
@@ -132,6 +163,14 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 <div>
                 <LeftNav items={navItems}/>
                 <div id="main-content">
+                    <Dialogs.EditName isVisible={this.state.showEditName} 
+                        cancel={ () => { this.setState({showEditName: false})} }
+                        save={ (name:string) => {
+                            console.log("Save name: "+name); 
+                            this.setState({showEditName: false})} } />
+                    <Dialogs.EditDescription isVisible={this.state.showEditDescription}
+                                            cancel={ () => { this.setState({showEditDescription: false})} }
+                        save={ (name:string) => { this.setState({showEditDescription: false})} } />
                     <h1>{folder.name}</h1>
 
                     <Conditional show={parent_links.length > 0}>

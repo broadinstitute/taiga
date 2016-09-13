@@ -43,7 +43,7 @@ def add_entry(db, user_id, parent_id, proto, prov_dataset_ids):
                         'name': 'data',
                         'method_parameter': 'input'
                     }
-                    for dv_id in prov_dataset_ids
+                    for dv_id in set(prov_dataset_ids)
                 ]
             }
             db.update_dataset_version_provenance(dataset_version_id, provenance)
