@@ -1,25 +1,31 @@
 import * as React from "react";
 
+
 import { LeftNav } from "./LeftNav"
 
 import { Link } from 'react-router';
 
 import * as Models from "../models/models"
 import { TaigaApi } from "../models/api.ts"
+import * as Dialogs from "./Dialogs"
 
 export interface DatasetViewProps {
     params : any
 }
 
 export interface DatasetViewState {
-    dataset: Models.Dataset;
-    datasetVersion: Models.DatasetVersion;
+    dataset?: Models.Dataset;
+    datasetVersion?: Models.DatasetVersion;
+    showEditName? : boolean;
+    showEditDescription? : boolean;
 }
 
 export class DatasetView extends React.Component<DatasetViewProps, DatasetViewState> {
     static contextTypes = {
         tapi: React.PropTypes.object
     };
+
+    
 
     componentDidUpdate (prevProps : DatasetViewProps) {
         // respond to parameter change in scenario 3
@@ -38,12 +44,28 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let tapi : TaigaApi = (this.context as any).tapi;
         let _datasetVersion : Models.DatasetVersion = null;
 
-        tapi.get_dataset_version(this.props.params.datasetVersionId).then(datasetVersion => {
+        return tapi.get_dataset_version(this.props.params.datasetVersionId).then(datasetVersion => {
             _datasetVersion = datasetVersion;
             return tapi.get_dataset(datasetVersion.dataset_id);
         }).then(dataset => {
             this.setState({dataset: dataset, datasetVersion: _datasetVersion})
         });
+    }
+
+    updateName(name : string) {
+        let tapi : TaigaApi = (this.context as any).tapi;
+
+        tapi.update_dataset_name(this.state.datasetVersion.dataset_id, name).then( () => {
+            return this.doFetch()
+        } )
+    }
+
+    updateDescription(description : string) {
+        let tapi : TaigaApi = (this.context as any).tapi;
+
+        tapi.update_dataset_description(this.state.datasetVersion.dataset_id, description).then( () => {
+            return this.doFetch()
+        } )        
     }
 
     render() {
@@ -73,8 +95,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         } )
 
         let navItems = [
-            {label: "Edit Name", action: function(){} },
-            {label: "Edit Description", action: function(){} },
+            {label: "Edit Name", action: () => {
+                this.setState({ showEditName : true })
+            } },
+            {label: "Edit Description", action: () => {
+                this.setState({ showEditDescription : true })
+            } },
             {label: "Add permaname", action: function() {} },
             {label: "Create new version", action: function(){} },
             {label: "Deprecate version", action: function(){} },
@@ -102,14 +128,34 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 </p>;
             } 
         }
+
         return <div>
             <LeftNav items={navItems}/>
             <div id="main-content">
+                <Dialogs.EditName isVisible={this.state.showEditName}
+                    initialValue={this.state.dataset.name} 
+                    cancel={ () => { this.setState({showEditName: false})} }
+                    save={ (name:string) => {
+                        this.setState({showEditName: false});
+                        this.updateName(name)
+                        } } />
+                <Dialogs.EditDescription isVisible={this.state.showEditDescription}
+                                        cancel={ () => { this.setState({showEditDescription: false})} }
+                    initialValue={this.state.dataset.description} 
+                    save={ (description:string) => { 
+                        this.setState({showEditDescription: false})
+                        console.log("Save description: "+description);
+                        this.updateDescription(description);
+                    } } />
+
                 <h1>{dataset.name} <small>{dataset.permanames[dataset.permanames.length-1]}</small></h1>
                 <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on {datasetVersion.creation_date}</p>
                 <p>Versions: {versions} </p>
                 <p>Contained within {folders}</p>
                 {ancestor_section}
+
+                {Dialogs.renderDescription( this.state.dataset.description )}
+
                 <h2>Contents</h2>
                 <table className="table">
                 <thead>

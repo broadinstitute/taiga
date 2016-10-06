@@ -21,6 +21,24 @@ export class TaigaApi {
             .then( (response : Response) => response.json() )
     }
 
+    _post<T>(url: string, args : any) : Promise<T> {
+        return window.fetch(this.baseUrl + url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(args)})
+            .then(function(response: Response) : Promise<Response> {
+                if (response.status >= 200 && response.status < 300) {  
+                    return Promise.resolve(response)  
+                } else {  
+                    return Promise.reject<Response>(new Error(response.statusText))  
+                }  
+            })
+            .then( (response : Response) => response.json() )
+    }
+
     get_user() : Promise<User> {
         return this._fetch<User>("/user")
     }
@@ -35,6 +53,22 @@ export class TaigaApi {
     
     get_dataset_version(dataset_version_id: string) : Promise<DatasetVersion> {
         return this._fetch<DatasetVersion>("/datasetVersion/"+dataset_version_id)
+    }
+
+    update_dataset_name(dataset_id : string, name: string) {
+        return this._post<void>("/dataset/"+dataset_id+"/name", {name: name})
+    }
+
+    update_dataset_description(dataset_id : string, description: string) {
+        return this._post<void>("/dataset/"+dataset_id+"/description", {description: description})
+    }
+
+    update_folder_name(folder_id: string, name: string) {
+        return this._post<void>("/folder/"+folder_id+"/name", {name: name})
+    }
+
+    update_folder_description(folder_id : string, description: string) {
+        return this._post<void>("/folder/"+folder_id+"/description", {description: description})
     }
 }
 

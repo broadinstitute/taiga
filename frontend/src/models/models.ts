@@ -4,6 +4,7 @@ export class Folder {
     'type': Folder.TypeEnum;
     'parents': Array<NamedId>;
     'entries': Array<FolderEntries>;
+    description: string;
     acl: Acl;
 }
 

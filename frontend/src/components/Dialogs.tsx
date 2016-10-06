@@ -1,8 +1,10 @@
 import * as React from "react";
 import * as Modal from "react-modal";
+import * as Showdown from "showdown";
 
 interface EditStringProps {
     isVisible : boolean;
+    initialValue : string;
     cancel: () => void;
     save: (name: string) => void;
 }
@@ -29,7 +31,7 @@ export class EditName extends React.Component<EditStringProps, any> {
             <div className="modal-body">
                 <div className="form-group">
                     <label for="nameInput">Name</label>
-                    <input type="text" className="form-control" id="nameInput" ref={ (c) => {this.textInput = c}  }/>
+                    <input type="text" defaultValue={this.props.initialValue} className="form-control" id="nameInput" ref={ (c) => {this.textInput = c}  }/>
                 </div>
               </div>
             <div className="modal-footer">
@@ -58,7 +60,7 @@ export class EditDescription extends React.Component<EditStringProps, any> {
             <div className="modal-body">
                 <div className="form-group">
                     <label for="descriptionInput">Description</label>
-                    <textarea rows="15" className="form-control" id="descriptionInput" ref={ (c) => {this.textArea = c}  }></textarea>
+                    <textarea rows="15"  defaultValue={this.props.initialValue} className="form-control" id="descriptionInput" ref={ (c) => {this.textArea = c}  }></textarea>
                 </div>
               </div>
             <div className="modal-footer">
@@ -70,3 +72,16 @@ export class EditDescription extends React.Component<EditStringProps, any> {
         </Modal>
         }
     }
+
+let converter = new Showdown.Converter()
+
+export function renderDescription(description :string) {
+    let description_section : any = null;
+
+    if(description) {
+        let desc_as_html = {__html: converter.makeHtml(description)};
+        description_section = <div className="well well-sm" dangerouslySetInnerHTML={desc_as_html} />
+    }
+
+    return description_section;
+}

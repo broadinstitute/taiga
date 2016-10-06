@@ -1,13 +1,16 @@
+Do I need a more compeling example set of folders for demoing?
+
 todo:
     - consistent UI for updating/complete/error
     - implement set state (delete/deprecate/valid)
     - FolderView 
         - Add access summary ("public", vs "shared", vs "private")
+        - add folder description/name update to swagger and default controller
     - DatasetView
-        - Show permnames
+        - (x) Show permnames
         - Highlight current version
         - Add support for rendering description
-        - version status
+        - version status (delete/deprecate/valid)
         - code snippets for how to fetch this dataset
     - Provenance
         - api endpoint for setProvenance(dataset_version_id, method, input_data_files)
@@ -15,9 +18,9 @@ todo:
           datasets derived from this one?
     - Modal dialogs for:
         - dest folder selection (used by "move" and "copy")
-        - edit name (Used by both dataset and folder)
-        - edit description
-        - create folder 
+        - (x) edit name (Used by both dataset and folder)
+        - (x) edit description
+        - create folder (Reuse edit name?) 
         - edit ACL
         - edit provenance
     - ACL support

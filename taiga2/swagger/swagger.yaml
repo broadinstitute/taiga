@@ -357,6 +357,15 @@ paths:
           type: string
           description: Dataset ID
           required: true
+        - in: body
+          name: NameUpdate
+          schema:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
       responses:
         200:
           description: Successfully updated
@@ -372,6 +381,15 @@ paths:
           type: string
           description: Dataset ID
           required: true
+        - in: body
+          name: DescriptionUpdate
+          schema:
+            type: object
+            required:
+              - description
+            properties:
+              name:
+                type: string
       responses:
         200:
           description: Successfully updated

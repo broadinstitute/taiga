@@ -5,6 +5,7 @@
     "react-dom": "registry:dt/react-dom#0.14.0+20160412154040",
     "react-modal": "registry:dt/react-modal#1.3.0+20160810232256",
     "react-router": "registry:dt/react-router#2.0.0+20160813233016",
+    "showdown": "registry:dt/showdown#1.4.1+20160608102004",
     "whatwg-fetch": "registry:dt/whatwg-fetch#0.0.0+20160829180742",
     "whatwg-streams": "registry:dt/whatwg-streams#0.0.0+20160829180742"
   }

@@ -114,10 +114,20 @@ def get_dataset_activity():
     pass
 def get_datafile():
     pass
-def update_dataset_name():
-    pass
-def update_dataset_description():
-    pass
+
+def update_dataset_name(datasetId, NameUpdate):
+    print("dataset_id", datasetId)
+    print("new_name", NameUpdate)
+    db = current_app.db
+    db.update_dataset_name(_get_user_id(), datasetId, NameUpdate["name"])    
+    return flask.jsonify({})
+
+def update_dataset_description(datasetId, DescriptionUpdate):
+    print("dataset_id", datasetId)
+    print("new_name", DescriptionUpdate)
+    db = current_app.db
+    db.update_dataset_description(_get_user_id(), datasetId, DescriptionUpdate["description"])    
+    return flask.jsonify({})
 
 def get_dataset_version(datasetVersionId):
     db = current_app.db

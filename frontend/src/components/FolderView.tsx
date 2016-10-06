@@ -80,6 +80,22 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         this.setState({selection: s});
     }
 
+    updateName(name : string) {
+        let tapi : TaigaApi = (this.context as any).tapi;
+
+        tapi.update_folder_name(this.state.folder.id, name).then( () => {
+            return this.doFetch()
+        } )        
+    }
+
+    updateDescription(description : string) {
+        let tapi : TaigaApi = (this.context as any).tapi;
+
+        tapi.update_folder_description(this.state.folder.id, description).then( () => {
+            return this.doFetch()
+        } )        
+    }
+
     render() {
         console.log("folderId in render", this.props.params.folderId);
         if(! this.state) {
@@ -163,19 +179,30 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 <div>
                 <LeftNav items={navItems}/>
                 <div id="main-content">
-                    <Dialogs.EditName isVisible={this.state.showEditName} 
+                    <Dialogs.EditName isVisible={this.state.showEditName}
+                        initialValue={ this.state.folder.name } 
                         cancel={ () => { this.setState({showEditName: false})} }
                         save={ (name:string) => {
                             console.log("Save name: "+name); 
-                            this.setState({showEditName: false})} } />
-                    <Dialogs.EditDescription isVisible={this.state.showEditDescription}
-                                            cancel={ () => { this.setState({showEditDescription: false})} }
-                        save={ (name:string) => { this.setState({showEditDescription: false})} } />
+                            this.setState({showEditName: false})
+                            this.updateName(name);    
+                    } } />
+                            
+                    <Dialogs.EditDescription 
+                        initialValue={ this.state.folder.description } 
+                        isVisible={this.state.showEditDescription}
+                        cancel={ () => { this.setState({showEditDescription: false})} }
+                        save={ (description:string) => { 
+                            this.setState({showEditDescription: false}) 
+                            this.updateDescription(description);
+                        }} />
                     <h1>{folder.name}</h1>
 
                     <Conditional show={parent_links.length > 0}>
                         <p>Parents: {parent_links}</p>
                     </Conditional>
+
+                    { Dialogs.renderDescription( this.state.folder.description ) }
 
                     <table className="table">
                         <thead>
