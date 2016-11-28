@@ -16,7 +16,7 @@ def now():
 
 ALPHANUMS = [chr(x) for x in range(ord('a'), ord('z')+1)] + [chr(x) for x in range(ord('0'), ord('9')+1)]
 def get_random_suffix(length):
-    return "".join([ALPHANUMS[random.randint(0, len(ALPHANUMS))] for i in range(length)])
+    return "".join([ALPHANUMS[random.randint(0, len(ALPHANUMS)-1)] for i in range(length)])
 
 class Db:
     def __init__(self, db):
