@@ -5,3 +5,6 @@ dist
 typings
 *~
 .*
+
+# PyCharm zsh terminal
+/pycharm_rc
