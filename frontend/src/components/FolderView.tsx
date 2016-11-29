@@ -164,15 +164,15 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         if(selectionCount == 0) {
             navItems = navItems.concat([
-                {label: "Edit name", action: () => {this.setState({ showEditName : true })}, id: 1 },
-                {label: "Edit description", action: () => {this.setState({ showEditDescription : true })}, id: 2 },
-                {label: "Create a subfolder", action: () => {}, id: 3 },
-                {label: "Upload dataset", action: () => {}, id: 4 }
+                {label: "Edit name", action: () => {this.setState({ showEditName : true })}},
+                {label: "Edit description", action: () => {this.setState({ showEditDescription : true })}},
+                {label: "Create a subfolder", action: () => {}},
+                {label: "Upload dataset", action: () => {}}
             ])
         } else {
-            navItems.push({label: "Move to trash", action: () => {}, id: 1 })
-            navItems.push({label: "Move to...", action: () => {}, id: 2 })
-            navItems.push({label: "Copy to...", action: () => {}, id: 3 })
+            navItems.push({label: "Move to trash", action: () => {}})
+            navItems.push({label: "Move to...", action: () => {}})
+            navItems.push({label: "Copy to...", action: () => {}})
         }
 
         return (

@@ -3,7 +3,6 @@ import * as React from "react";
 export interface MenuItem {
     label : string;
     action : () => void;
-    id: number;
 }
 
 export interface LeftNavProps { 
