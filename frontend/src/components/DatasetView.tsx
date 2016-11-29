@@ -82,29 +82,29 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
         let versions = dataset.versions.map( x => x.name+" ("+x.status+") " ).join(", ");
 
-        let entries = datasetVersion.datafiles.map( df => {
-            return <tr>
+        let entries = datasetVersion.datafiles.map( (df, index) => {
+            return <tr key={index}>
                     <td>{df.name}</td>
                     <td>{df.description}</td>
                     <td>{df.content_summary}</td>
                 </tr>
         });
 
-        let folders = datasetVersion.folders.map( f => {
-            return <Link to={"/app/folder/"+f.id}>{f.name}</Link>
+        let folders = datasetVersion.folders.map( (f, index) => {
+            return <Link key={index} to={"/app/folder/"+f.id}>{f.name}</Link>
         } )
 
         let navItems = [
             {label: "Edit Name", action: () => {
                 this.setState({ showEditName : true })
-            }, id: 1 },
+            }},
             {label: "Edit Description", action: () => {
                 this.setState({ showEditDescription : true })
-            }, id: 2 },
-            {label: "Add permaname", action: function() {}, id: 3 },
-            {label: "Create new version", action: function(){}, id: 4 },
-            {label: "Deprecate version", action: function(){}, id: 5 },
-            {label: "Show History", action: function(){}, id: 6 }
+            }},
+            {label: "Add permaname", action: function() {}},
+            {label: "Create new version", action: function(){}},
+            {label: "Deprecate version", action: function(){}},
+            {label: "Show History", action: function(){}}
         ];
  
         let ancestor_section :any = null;
@@ -115,17 +115,21 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     id: x.dataset_version_id 
                     };
                 }))
-            let ancestor_links = [...ancestor_dataset_versions].map( x => {
-                return <li>
+            let ancestor_links = [...ancestor_dataset_versions].map( (x, index) => {
+                return <li key={index}>
                     <Link to={"/app/dataset/"+x.id}>{x.name}</Link>
                 </li>
             })
             if(ancestor_links.length > 0) {
-                ancestor_section = <p>
-                    <p>
-                        Derived from <ul>{ancestor_links}</ul>
-                    </p>
-                </p>;
+                ancestor_section =
+                    <span>
+                        <p>
+                            Derived from
+                        </p>
+                        <ul>
+                            {ancestor_links}
+                        </ul>
+                    </span>;
             } 
         }
 

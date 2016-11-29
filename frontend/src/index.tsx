@@ -6,7 +6,7 @@ import { Router, Route, Link, IndexRoute, browserHistory } from 'react-router';
 import { FolderView } from "./components/FolderView"
 import { DatasetView } from "./components/DatasetView"
 import { LeftNav } from "./components/LeftNav"
-import { TaigaApi } from "./models/api.ts"
+import { TaigaApi } from "./models/api"
 
 const tapi = new TaigaApi("/api");
 

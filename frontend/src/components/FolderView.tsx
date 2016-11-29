@@ -113,8 +113,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
         var folder : Folder.Folder = this.state.folder;
 
-        var parent_links = folder.parents.map( (p : Folder.NamedId) => {
-            return <Link to={"/app/folder/"+p.id}>{p.name}</Link>
+        var parent_links = folder.parents.map( (p : Folder.NamedId, index : number) => {
+            return <Link key={index} to={"/app/folder/"+p.id}>{p.name}</Link>
         });
 
         var subfolders : Folder.FolderEntries[] = [];
@@ -128,21 +128,21 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             }
         })
 
-        var folder_rows = subfolders.map(e => {
+        var folder_rows = subfolders.map((e, index) => {
             let select_key = "folder."+e.id;
             return <tr key={e.id}>
                 <td><input type="checkbox" value={ this.state.selection[select_key] } onChange={ () => {this.selectRow(select_key)} }/></td>
-                <td><Link to={"/app/folder/"+e.id}><div className="folder-icon"/>{e.name}</Link></td>
+                <td><Link key={index} to={"/app/folder/"+e.id}><div className="folder-icon"/>{e.name}</Link></td>
                 <td>{e.creation_date}</td>
                 <td>{e.creator.name}</td>
             </tr>
         });
 
-        var other_rows = others.map(e => {
+        var other_rows = others.map((e, index) => {
             var link : any;
 
             if(e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
-                link = <Link to={"/app/dataset/"+e.id}>{e.name}</Link>
+                link = <Link key={index} to={"/app/dataset/"+e.id}>{e.name}</Link>
             } else {
                 link = e.name;
             }
