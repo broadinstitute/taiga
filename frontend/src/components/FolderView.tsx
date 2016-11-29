@@ -130,7 +130,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         var folder_rows = subfolders.map(e => {
             let select_key = "folder."+e.id;
-            return <tr>
+            return <tr key={e.id}>
                 <td><input type="checkbox" value={ this.state.selection[select_key] } onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td><Link to={"/app/folder/"+e.id}><div className="folder-icon"/>{e.name}</Link></td>
                 <td>{e.creation_date}</td>
@@ -149,7 +149,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
             let select_key = "dataset."+e.id;
 
-            return <tr>
+            return <tr key={e.id}>
                 <td><input type="checkbox" value={ this.state.selection[select_key] } onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td>{link}</td>
                 <td>{e.creation_date}</td>
@@ -164,15 +164,15 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         if(selectionCount == 0) {
             navItems = navItems.concat([
-                {label: "Edit name", action: () => {this.setState({ showEditName : true })} },
-                {label: "Edit description", action: () => {this.setState({ showEditDescription : true })} },
-                {label: "Create a subfolder", action: () => {} },
-                {label: "Upload dataset", action: () => {} }
+                {label: "Edit name", action: () => {this.setState({ showEditName : true })}, id: 1 },
+                {label: "Edit description", action: () => {this.setState({ showEditDescription : true })}, id: 2 },
+                {label: "Create a subfolder", action: () => {}, id: 3 },
+                {label: "Upload dataset", action: () => {}, id: 4 }
             ])
         } else {
-            navItems.push({label: "Move to trash", action: () => {} })
-            navItems.push({label: "Move to...", action: () => {} })
-            navItems.push({label: "Copy to...", action: () => {} })
+            navItems.push({label: "Move to trash", action: () => {}, id: 1 })
+            navItems.push({label: "Move to...", action: () => {}, id: 2 })
+            navItems.push({label: "Copy to...", action: () => {}, id: 3 })
         }
 
         return (

@@ -97,14 +97,14 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let navItems = [
             {label: "Edit Name", action: () => {
                 this.setState({ showEditName : true })
-            } },
+            }, id: 1 },
             {label: "Edit Description", action: () => {
                 this.setState({ showEditDescription : true })
-            } },
-            {label: "Add permaname", action: function() {} },
-            {label: "Create new version", action: function(){} },
-            {label: "Deprecate version", action: function(){} },
-            {label: "Show History", action: function(){} }
+            }, id: 2 },
+            {label: "Add permaname", action: function() {}, id: 3 },
+            {label: "Create new version", action: function(){}, id: 4 },
+            {label: "Deprecate version", action: function(){}, id: 5 },
+            {label: "Show History", action: function(){}, id: 6 }
         ];
  
         let ancestor_section :any = null;
