@@ -50,7 +50,7 @@ const Home = React.createClass({
             return (
                 <div id="main-content">
                     <p>
-                        <Link to={"/app/folder/"+this.state.user.home_folder_id}>Home</Link>
+                        <Link to={"/app/folder/"+this.state.user.home_folder_id}>My Data</Link>
                     </p>
                 </div>
             );
