@@ -60,7 +60,7 @@ export class EditDescription extends React.Component<EditStringProps, any> {
             <div className="modal-body">
                 <div className="form-group">
                     <label for="descriptionInput">Description</label>
-                    <textarea rows="15"  defaultValue={this.props.initialValue} className="form-control" id="descriptionInput" ref={ (c) => {this.textArea = c}  }></textarea>
+                    <textarea rows={15}  defaultValue={this.props.initialValue} className="form-control" id="descriptionInput" ref={ (c) => {this.textArea = c}  }></textarea>
                 </div>
               </div>
             <div className="modal-footer">
