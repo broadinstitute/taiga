@@ -374,7 +374,7 @@ paths:
     post:
       x-swagger-router-controller: taiga2.controllers.default_controller
       operationId: update_dataset_description
-      description: Update dataset name
+      description: Update dataset description
       parameters:
         - name: datasetId
           in: path
@@ -388,7 +388,7 @@ paths:
             required:
               - description
             properties:
-              name:
+              description:
                 type: string
       responses:
         200:
