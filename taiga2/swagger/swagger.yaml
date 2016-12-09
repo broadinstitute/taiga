@@ -13,13 +13,13 @@ produces:
   - application/json
   - text/html
 paths:
-  /folder/{folderId}:
+  /folder/{folder_id}:
     get:
       x-swagger-router-controller: taiga2.controllers.default_controller
       operationId: get_folder
       description: Fetch the details and content of a folder by id
       parameters:
-        - name: folderId
+        - name: folder_id
           in: path
           type: string
           description: Folder ID
