@@ -30,7 +30,7 @@ paths:
           schema:
             title: Folder
             type: object
-            required: 
+            required:
               - id
               - name
               - type
@@ -39,9 +39,9 @@ paths:
               - creation_date
               - creator
             properties:
-              id: 
+              id:
                 type: string
-              name: 
+              name:
                 type: string
               type:
                 type: string
@@ -49,9 +49,9 @@ paths:
                   - folder
                   - trash
                   - home
-              parents: 
+              parents:
                 type: array
-                items: 
+                items:
                   "$ref": "#/definitions/NamedId"
               creation_date:
                 type: string
@@ -61,7 +61,7 @@ paths:
                 type: string
               entries:
                 type: array
-                items: 
+                items:
                   type: object
                   required:
                     - type
@@ -119,13 +119,13 @@ paths:
           schema:
             title: CreateFolderResponse
             type: object
-            required: 
+            required:
               - id
               - name
             properties:
-              id: 
+              id:
                 type: string
-              name: 
+              name:
                 type: string
 
 
@@ -150,11 +150,11 @@ paths:
                     - idType
                     - id
                   properties:
-                    parent: 
+                    parent:
                       type: string
                     opType:
                       type: string
-                      enum: 
+                      enum:
                         - add
                         - remove
                     idType:
@@ -171,7 +171,7 @@ paths:
         400:
           description: Attempted to do something bad (move trash or home, or modify non-existant entry)
 
-          
+
   /user:
     get:
       x-swagger-router-controller: taiga2.controllers.default_controller
@@ -189,7 +189,7 @@ paths:
               - home_folder_id
               - trash_folder_id
             properties:
-              id: 
+              id:
                 type: string
               name:
                 type: string
@@ -209,7 +209,7 @@ paths:
           schema:
             title: FileUploadInfo
             type: object
-            required: 
+            required:
               - id
               - url
             properties:
@@ -217,6 +217,26 @@ paths:
                 type: string
               url:
                 type: string
+
+  /sign_s3:
+    get:
+      x-swagger-router-controller: taiga2.controllers.default_controller
+      operationId: get_sign_s3
+      description: Get signed s3 url to upload data
+      responses:
+        200:
+          description: Url and data to be authorized to upload in the bucket
+          schema:
+            title: PresignedPost
+            type: object
+            required:
+              - url
+              - fields
+            properties:
+              url:
+                type: string
+              fields:
+                "$ref": "#/definitions/SignedS3PostFields"
 
   /dataset:
     post:
@@ -248,7 +268,7 @@ paths:
           description: The info about the newly created dataset
           schema:
             "$ref": "#/definitions/ImportStatus"
-  
+
   /dataset/{datasetId}:
     get:
       x-swagger-router-controller: taiga2.controllers.default_controller
@@ -266,7 +286,7 @@ paths:
           schema:
             title: Dataset
             type: object
-            required: 
+            required:
               - id
               - name
               - description
@@ -293,7 +313,7 @@ paths:
                     - id
                     - status
                   properties:
-                    name: 
+                    name:
                       type: string
                     id:
                       type: string
@@ -411,7 +431,7 @@ paths:
           schema:
             title: DatasetVersion
             type: object
-            required: 
+            required:
               - id
               - dataset_id
               - name
@@ -453,7 +473,7 @@ paths:
                     - description
                     - content_summary
                   properties:
-                    name: 
+                    name:
                       type: string
                     url:
                       type: string
@@ -466,7 +486,7 @@ paths:
                       type: string
               provenance:
                 "$ref": "#/definitions/Provenance"
-            
+
   /datasetVersion/{datasetVersionId}/status:
     get:
       x-swagger-router-controller: taiga2.controllers.default_controller
@@ -546,7 +566,7 @@ definitions:
       id:
         type: string
         description: The object ID returned from the /uploadurl request
-  
+
   ImportStatus:
     type: object
     required:
@@ -569,10 +589,22 @@ definitions:
         description: Human readable summary of the progress of the import
         type: string
 
+  SignedS3PostFields:
+    type: object
+    properties:
+      AWSAccessKeyId:
+        type: string
+      policy:
+        type: string
+      signature:
+        type: string
+      key:
+        type: string
+
   Acl:
     type: object
     properties:
-      default_permissions: 
+      default_permissions:
         type: string
         enum:
           - none
@@ -584,9 +616,9 @@ definitions:
         items:
           type: object
           properties:
-            type: 
+            type:
               type: string
-              enum: 
+              enum:
                 - group
                 - user
             id:
@@ -596,7 +628,7 @@ definitions:
               type: string
             permission:
               type: string
-              enum: 
+              enum:
                 - read
                 - read-write
                 - owner
@@ -611,7 +643,7 @@ definitions:
 
   StatusEnum:
     type: string
-    enum: 
+    enum:
       - deprecated # Discourage use.  Warn when fetching
       - deleted    # Underlying data has been deleted
       - valid

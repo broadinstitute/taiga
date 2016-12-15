@@ -6,7 +6,7 @@ import { LeftNav } from "./LeftNav"
 import { Link } from 'react-router';
 
 import * as Models from "../models/models"
-import { TaigaApi } from "../models/api.ts"
+import { TaigaApi } from "../models/api"
 import * as Dialogs from "./Dialogs"
 
 export interface DatasetViewProps {
@@ -24,8 +24,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     static contextTypes = {
         tapi: React.PropTypes.object
     };
-
-    
 
     componentDidUpdate (prevProps : DatasetViewProps) {
         // respond to parameter change in scenario 3

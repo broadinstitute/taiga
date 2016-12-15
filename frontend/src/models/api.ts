@@ -1,6 +1,10 @@
-//import * as Fetch from 'whatwg-fetch';
+// import * as fetch from 'whatwg-fetch';
 
-import { User, Folder, Dataset, DatasetVersion } from './models';
+// import * as AWS from "aws-sdk";
+
+import 'whatwg-fetch';
+
+import { User, Folder, Dataset, DatasetVersion, SignedS3Post } from './models';
 
 export class TaigaApi {
     baseUrl : string;
@@ -9,7 +13,7 @@ export class TaigaApi {
         this.baseUrl = baseUrl;
     }
 
-    _fetch<T>(url : string) : Promise<T> {
+    _fetch<T>(url : string) : Promise<any> {
         return window.fetch(this.baseUrl + url)
             .then(function(response: Response) : Promise<Response> {
                 if (response.status >= 200 && response.status < 300) {  
@@ -21,7 +25,7 @@ export class TaigaApi {
             .then( (response : Response) => response.json() )
     }
 
-    _post<T>(url: string, args : any) : Promise<T> {
+    _post<T>(url: string, args : any) : Promise<any> {
         return window.fetch(this.baseUrl + url, {
             method: "POST",
             headers: {
@@ -35,6 +39,42 @@ export class TaigaApi {
                 } else {  
                     return Promise.reject<Response>(new Error(response.statusText))  
                 }  
+            })
+            .then( (response : Response) => response.json() )
+    }
+
+    _post_upload<T>(url: string, file: any) : Promise<any> {
+        debugger;
+        //let s3 = new AWS.S3();
+/*
+        let params = {
+            Bucket: '',
+            Key: '',
+            Body: ''
+        };
+        return s3.putObject(params).promise()
+            .then(function(response: Response) : Promise<Response> {
+                if (response.status >= 200 && response.status < 300) {
+                    return Promise.resolve(response)
+                } else {
+                    return Promise.reject<Response>(new Error(response.statusText))
+                }
+            })
+            .then( (response : Response) => response.json() )
+            */
+            return window.fetch(this.baseUrl + url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(file)})
+            .then(function(response: Response) : Promise<Response> {
+                if (response.status >= 200 && response.status < 300) {
+                    return Promise.resolve(response)
+                } else {
+                    return Promise.reject<Response>(new Error(response.statusText))
+                }
             })
             .then( (response : Response) => response.json() )
     }
@@ -53,6 +93,10 @@ export class TaigaApi {
     
     get_dataset_version(dataset_version_id: string) : Promise<DatasetVersion> {
         return this._fetch<DatasetVersion>("/datasetVersion/"+dataset_version_id)
+    }
+
+    get_signed_s3() {
+        return this._fetch<SignedS3Post>("/sign_s3")
     }
 
     update_dataset_name(dataset_id : string, name: string) {

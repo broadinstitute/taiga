@@ -34,8 +34,8 @@ const Home = React.createClass({
 
     componentDidMount() {
         let tapi : TaigaApi = this.context.tapi;
-        
-        console.log("get_user start");
+
+        console.log("get_user start in React");
         tapi.get_user().then(user => {
             this.setState({user: user})
             console.log("get_user complete, complete");
