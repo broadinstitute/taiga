@@ -59,20 +59,35 @@ def get_user():
     return flask.jsonify(user)
 
 
-def get_sign_s3():
-    # TODO: Verify aws is properly configured
+def get_s3_credentials():
+    """
+    Create an access token to a specific bucket in S3 using the ~/.aws/credentials information
+    :return: S3Credentials
+    """
     # TODO: Use config instead of hard coding
     s3_bucket = 'broadtaiga2prototype'
     key = uuid4().hex
-    expires_in = 3600
+    expires_in = 900
 
-    s3 = boto3.client('s3')
-    presigned_post = s3.generate_presigned_post(
-        Bucket=s3_bucket,
-        Key=key
+    sts = boto3.client('sts')
+
+    temporary_session_credentials = sts.get_session_token(
+        DurationSeconds=expires_in
     )
 
-    return flask.jsonify(presigned_post)
+    print("We just generated this temp session credentials:")
+
+    dict_credentials = temporary_session_credentials['Credentials']
+
+    model_frontend_credentials = {
+        'accessKeyId': dict_credentials['AccessKeyId'],
+        'expiration': dict_credentials['Expiration'],
+        'secretAccessKey': dict_credentials['SecretAccessKey'],
+        'sessionToken': dict_credentials['SessionToken']
+    }
+
+    # See frontend/models/models.ts for the S3Credentials object
+    return flask.jsonify(model_frontend_credentials)
 
 
 def create_folder(metadata):

@@ -9,7 +9,7 @@ import * as AWS from "aws-sdk";
 
 import { TaigaApi } from "../models/api";
 
-import { SignedS3Post } from "../models/models";
+import { S3Credentials } from "../models/models";
 
 interface EditStringProps {
     isVisible : boolean;
@@ -32,7 +32,7 @@ interface DropzoneProps extends DialogProps {
 
 interface DropzoneState extends DialogState {
     files?: Array<any>;
-    allowUpload?: boolean;
+    disableUpload?: boolean;
 }
 
 const modalStyles : any = {
@@ -109,7 +109,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         // How can we ensure we are not erasing/forgetting states defined in the interface?
         this.state = {
             files: new Array<any>(),
-            allowUpload: false
+            disableUpload: true
         }
     }
 
@@ -124,6 +124,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         this.setState({
             files: acceptedFiles
         });
+        this.setState({
+            disableUpload: false
+        });
     }
 
     requestUpload(){
@@ -134,25 +137,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         // creds = new AWS.Credentials("bla", "bla");
 
-        let s3 = new AWS.S3({
-            apiVersion: '2006-03-01',
-            credentials: {
-                accessKeyId: "AKIAIRDC67MDYNGUJ6PQ",
-                secretAccessKey: "YXADSEN263CYB+5DTjH6Hw6fgvHQfRV/N/nxKxzI"
-            }});
 
-        let params = {
-            Bucket: 'broadtaiga2prototype',
-            Key: 'example2.txt',
-            Body: 'Uploaded text using the promise-based method!'
-        };
-
-        var putObjectPromise = s3.putObject(params).promise();
-        putObjectPromise.then( (data: any) => {
-            console.log('Success');
-        }).catch((err: any) => {
-            console.log(err);
-        });
 
 
 /*
@@ -198,15 +183,67 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             this.doUpload(signedS3Post, this.state.files);
         });
         */
+
+        let tapi: TaigaApi = (this.context as any).tapi;
+
+        tapi.get_s3_credentials().then((credentials) => {
+            console.log("Received credentials! ");
+            console.log("- Access key id: " + credentials.accessKeyId);
+            this.doUpload(credentials, this.state.files);
+        });
     }
 
-    doUpload(signedS3Post: SignedS3Post, files: any){
+    doUpload(s3_credentials: S3Credentials, files: any){
+        /*
         let tapi : TaigaApi = (this.context as any).tapi;
+
         console.log("We are uploading!!");
         // TODO: Handle multiple files at the same time
 
         tapi._post_upload<SignedS3Post>(signedS3Post.url, this.state.files[0])
             .then(() => console.log("Finished uploading?"));
+        */
+        /*
+        let s3 = new AWS.S3({
+            apiVersion: '2006-03-01',
+            credentials: {
+                accessKeyId: s3_credentials.accessKeyId,
+                secretAccessKey: s3_credentials.secretAccessKey,
+                sessionToken: s3_credentials.sessionToken
+            }});
+
+
+        */
+
+
+        let s3 = new AWS.S3({
+            apiVersion: '2006-03-01',
+            credentials: {
+                accessKeyId: s3_credentials.accessKeyId,
+                secretAccessKey: s3_credentials.secretAccessKey,
+                sessionToken: s3_credentials.sessionToken
+            }
+        });
+
+        console.log("Uploading now: " + files[0].name);
+
+        let params = {
+            Bucket: 'broadtaiga2prototype',
+            Key: files[0].name,
+            Body: files[0]
+        };
+
+        let putObjectPromise = s3.putObject(params).promise();
+        putObjectPromise.then((data: any) => {
+            console.log('Success');
+            this.setState({
+                files: new Array<any>(),
+                disableUpload: true
+            })
+        }).catch((err: any) => {
+            console.log(err);
+        });
+
     }
 
     render() {
@@ -216,7 +253,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         if (files.length > 0){
             uploadedFiles = (
               <div>
-                  <h2>Uploading {files.length} files...</h2>
+                  <h2>Waiting to upload {files.length} files...</h2>
                   <div>{
                     files.map((file, index) => {
                       if(file.type.startsWith("image")){
@@ -252,7 +289,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
-              <button type="button" className="btn btn-primary" disabled={this.state.allowUpload} onClick={() => this.requestUpload()}>Upload</button>
+              <button type="button" className="btn btn-primary" disabled={this.state.disableUpload} onClick={() => this.requestUpload()}>Upload</button>
             </div>
           </div>
         </Modal>

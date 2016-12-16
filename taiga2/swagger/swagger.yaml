@@ -218,25 +218,32 @@ paths:
               url:
                 type: string
 
-  /sign_s3:
+  /credentials_s3:
     get:
       x-swagger-router-controller: taiga2.controllers.default_controller
-      operationId: get_sign_s3
-      description: Get signed s3 url to upload data
+      operationId: get_s3_credentials
+      description: Get temporary credentials to access to S3
       responses:
         200:
-          description: Url and data to be authorized to upload in the bucket
+          description: Temporary credentials to access to S3
           schema:
-            title: PresignedPost
+            title: Credentials
             type: object
             required:
-              - url
-              - fields
+              - accessKeyId
+              - expiration
+              - secretAccessKey
+              - sessionToken
             properties:
-              url:
+              accessKeyId:
                 type: string
-              fields:
-                "$ref": "#/definitions/SignedS3PostFields"
+              expiration:
+                type: string
+                format: date-time
+              secretAccessKey:
+                type: string
+              sessionToken:
+                type: string
 
   /dataset:
     post:
@@ -589,18 +596,6 @@ definitions:
         description: Human readable summary of the progress of the import
         type: string
 
-  SignedS3PostFields:
-    type: object
-    properties:
-      AWSAccessKeyId:
-        type: string
-      policy:
-        type: string
-      signature:
-        type: string
-      key:
-        type: string
-
   Acl:
     type: object
     properties:
@@ -647,4 +642,3 @@ definitions:
       - deprecated # Discourage use.  Warn when fetching
       - deleted    # Underlying data has been deleted
       - valid
-

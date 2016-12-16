@@ -27,6 +27,8 @@
     "whatwg-fetch": "^2.0.1"
   },
   "devDependencies": {
+    "@types/aws-sdk": "^0.0.42",
+    "@types/node": "^6.0.52",
     "typescript": "^2.1.4"
   }
 }

@@ -4,7 +4,7 @@
 
 import 'whatwg-fetch';
 
-import { User, Folder, Dataset, DatasetVersion, SignedS3Post } from './models';
+import { User, Folder, Dataset, DatasetVersion, S3Credentials } from './models';
 
 export class TaigaApi {
     baseUrl : string;
@@ -95,8 +95,8 @@ export class TaigaApi {
         return this._fetch<DatasetVersion>("/datasetVersion/"+dataset_version_id)
     }
 
-    get_signed_s3() {
-        return this._fetch<SignedS3Post>("/sign_s3")
+    get_s3_credentials() {
+        return this._fetch<S3Credentials>("/credentials_s3")
     }
 
     update_dataset_name(dataset_id : string, name: string) {

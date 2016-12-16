@@ -124,6 +124,13 @@ export interface SignedS3Post {
     fields: SignedS3PostFields;
 }
 
+export interface S3Credentials {
+    accessKeyId: string;
+    expiration: string;
+    secretAccessKey: string;
+    sessionToken: string;
+}
+
 interface SignedS3PostFields {
     AWSAccessKeyId: string;
     policy: string;
