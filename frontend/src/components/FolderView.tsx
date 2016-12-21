@@ -1,14 +1,12 @@
 import * as React from "react";
-
-
-import { LeftNav, MenuItem } from "./LeftNav"
-
 import { Link } from 'react-router';
 
-import * as Folder from "../models/models"
-import { TaigaApi } from "../models/api"
+import { LeftNav, MenuItem } from "./LeftNav";
+import * as Folder from "../models/models";
+import { TaigaApi } from "../models/api";
 
-import * as Dialogs from "./Dialogs"
+import * as Dialogs from "./Dialogs";
+import * as Upload from "./Modals/Upload";
 
 export interface FolderViewProps {
     params : any
@@ -198,7 +196,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             this.updateDescription(description);
                         }} />
 
-                    <Dialogs.UploadDataset
+                    <Upload.UploadDataset
                         isVisible={this.state.showUploadDataset}
                         cancel={ () => { this.setState({showUploadDataset: false}) } }
                     />
