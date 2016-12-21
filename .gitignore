@@ -19,3 +19,6 @@ frontend/**/*.js
 
 # Ignore the configuration file
 settings.cfg
+
+# Ignore the Redis snapshots binary
+dump.rdb
