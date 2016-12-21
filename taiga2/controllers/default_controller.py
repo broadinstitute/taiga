@@ -61,12 +61,10 @@ def get_user():
 
 def get_s3_credentials():
     """
-    Create an access token to a specific bucket in S3 using the ~/.aws/credentials information
+    Create an access token to access S3 using the ~/.aws/credentials information
     :return: S3Credentials
     """
     # TODO: Use config instead of hard coding
-    s3_bucket = 'broadtaiga2prototype'
-    key = uuid4().hex
     expires_in = 900
 
     sts = boto3.client('sts')

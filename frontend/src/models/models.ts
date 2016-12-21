@@ -111,29 +111,9 @@ interface Acl {
     grants: Array<Grant>;
 }
 
-export interface SignedS3Post {
-    // Example:
-    // {'url': 'https://broadtaiga2prototype.s3.amazonaws.com/',
-    //  'fields': {'AWSAccessKeyId': 'AKIAIRDC67MDYNGUJ6PQ',
-    //      'policy': 'eyJleHBpcmF0aW9uIjogIjIwMTYtMTItMTBUMDA6NDQ6MDdaIiwgImNvbmRpdGlvbnMiOiBbeyJidWNrZXQiOiAiYnJvYWR0YWlnYTJwcm90b3R5cGUifSwgeyJrZXkiOiAiZjY2ODA3NDdhOWQ3NDRmZjgwNjIxYzA3ZDAyYTljNWEifV19',
-    //      'signature': 'ifqmpadPwJY0IneKbIzxcfF42Wg=',
-    //      'key': 'f6680747a9d744ff80621c07d02a9c5a'}
-    // }
-
-    url: string;
-    fields: SignedS3PostFields;
-}
-
 export interface S3Credentials {
     accessKeyId: string;
     expiration: string;
     secretAccessKey: string;
     sessionToken: string;
-}
-
-interface SignedS3PostFields {
-    AWSAccessKeyId: string;
-    policy: string;
-    signature: string;
-    key: string
 }
