@@ -33,7 +33,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     constructor(props: any){
         super(props);
-        // How can we ensure we are not erasing/forgetting states defined in the interface?
+        // TODO: How can we ensure we are not erasing/forgetting states defined in the interface?
         this.state = {
             files: new Array<any>(),
             disableUpload: true
@@ -46,6 +46,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         console.log("UploadDataset: componentDidMount");
     }
 
+    // When files are put in the drop zone
     onDrop(acceptedFiles: Array<any>, rejectedFiles: Array<any>) {
         console.log('Accepted files: ', acceptedFiles);
         this.setState({
@@ -56,6 +57,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         });
     }
 
+    // Ask the credentials to be able to upload
     requestUpload(){
         console.log("We are in requestUpload!");
         console.log("Uploading through token:");
@@ -69,7 +71,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         });
     }
 
+    // Use the credentials received to upload the files dropped in the module
     doUpload(s3_credentials: S3Credentials, files: any){
+        // Configure the AWS S3 object with the received credentials
         let s3 = new AWS.S3({
             apiVersion: '2006-03-01',
             credentials: {
@@ -81,12 +85,14 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         console.log("Uploading now: " + files[0].name);
 
+        // TODO: Configure this elsewhere as a const configuration (settings.cfg?)
         let params = {
             Bucket: 'broadtaiga2prototype',
             Key: files[0].name,
             Body: files[0]
         };
 
+        // Create an upload promise via the aws sdk and launch it
         let putObjectPromise = s3.putObject(params).promise();
         putObjectPromise.then((data: any) => {
             console.log('Success');
@@ -104,6 +110,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         const files = this.state.files;
 
         var uploadedFiles: any = null;
+
+        // Show the uploaded files if we have some, otherwise say we have nothing yet
         if (files.length > 0){
             uploadedFiles = (
               <div>
@@ -127,6 +135,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             );
         }
 
+        // Modal showing a Dropzone with Cancel and Upload button
         return <Modal
             style={modalStyles}
             closeTimeoutMS={150}
