@@ -18,7 +18,7 @@ export class TaigaApi {
                     return Promise.reject<Response>(new Error(response.statusText))  
                 }  
             })
-            .then( (response : Response) => response.json() as Promise<T>)
+            .then<T>( (response : Response) => response.json())
     }
 
     _post<T>(url: string, args : any) : Promise<T> {
@@ -29,14 +29,14 @@ export class TaigaApi {
                 "Accept": "application/json"
             },
             body: JSON.stringify(args)})
-            .then(function(response: Response) : Promise<Response> {
+            .then((response: Response) => {
                 if (response.status >= 200 && response.status < 300) {  
                     return Promise.resolve(response)  
                 } else {  
                     return Promise.reject<Response>(new Error(response.statusText))  
                 }  
             })
-            .then( (response : Response) => response.json() as Promise<T> )
+            .then<T>( (response : Response) => response.json())
     }
 
     get_user() : Promise<User> {
