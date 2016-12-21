@@ -35,7 +35,8 @@ export class EditName extends React.Component<EditStringProps, any> {
           style={ modalStyles }
           closeTimeoutMS={150}
           isOpen={this.props.isVisible}
-          onRequestClose={this.props.cancel}>
+          onRequestClose={this.props.cancel}
+          contentLabel="EditName">
           <form>
           <div className="modal-content">
             <div className="modal-body">
@@ -64,7 +65,8 @@ export class EditDescription extends React.Component<EditStringProps, any> {
           style={ modalStyles }
           closeTimeoutMS={150}
           isOpen={this.props.isVisible}
-          onRequestClose={this.props.cancel}>
+          onRequestClose={this.props.cancel}
+          contentLabel="EditDescription">
         <form>
           <div className="modal-content">
             <div className="modal-body">
