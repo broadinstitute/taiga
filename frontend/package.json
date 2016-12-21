@@ -12,6 +12,7 @@
     "aws-sdk": "^2.7.17",
     "core-js": "^2.4.1",
     "react": "^15.4.1",
+    "react-bootstrap-table": "^2.7.1",
     "react-dom": "^15.4.1",
     "react-dropzone": "^3.7.3",
     "react-modal": "^1.6.1",
