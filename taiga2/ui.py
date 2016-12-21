@@ -1,9 +1,9 @@
 from flask import Blueprint
 from flask import Flask
 import flask
-app = flask.Flask(__name__)
-
 import os
+
+app = flask.Flask(__name__)
 
 INDEX = "static/index.html"
 

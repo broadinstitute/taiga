@@ -111,3 +111,9 @@ interface Acl {
     grants: Array<Grant>;
 }
 
+export interface S3Credentials {
+    accessKeyId: string;
+    expiration: string;
+    secretAccessKey: string;
+    sessionToken: string;
+}

@@ -1,14 +1,12 @@
 import * as React from "react";
-
-
-import { LeftNav, MenuItem } from "./LeftNav"
-
 import { Link } from 'react-router';
 
-import * as Folder from "../models/models"
-import { TaigaApi } from "../models/api.ts"
+import { LeftNav, MenuItem } from "./LeftNav";
+import * as Folder from "../models/models";
+import { TaigaApi } from "../models/api";
 
-import * as Dialogs from "./Dialogs"
+import * as Dialogs from "./Dialogs";
+import * as Upload from "./Modals/Upload";
 
 export interface FolderViewProps {
     params : any
@@ -18,6 +16,7 @@ export interface FolderViewState {
     folder? : Folder.Folder;
     showEditName? : boolean;
     showEditDescription? : boolean;
+    showUploadDataset?: boolean;
     error? : string;
     selection? : any;
 }
@@ -98,7 +97,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     render() {
         console.log("folderId in render", this.props.params.folderId);
-        if(! this.state) {
+        if(! this.state ) {
             return <div>
                     <LeftNav items={[]}/>
                     <div id="main-content"/>
@@ -167,7 +166,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 {label: "Edit name", action: () => {this.setState({ showEditName : true })}},
                 {label: "Edit description", action: () => {this.setState({ showEditDescription : true })}},
                 {label: "Create a subfolder", action: () => {}},
-                {label: "Upload dataset", action: () => {}}
+                {label: "Upload dataset", action: () => {this.setState({ showUploadDataset: true })}}
             ])
         } else {
             navItems.push({label: "Move to trash", action: () => {}})
@@ -196,6 +195,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             this.setState({showEditDescription: false}) 
                             this.updateDescription(description);
                         }} />
+
+                    <Upload.UploadDataset
+                        isVisible={this.state.showUploadDataset}
+                        cancel={ () => { this.setState({showUploadDataset: false}) } }
+                    />
+
                     <h1>{folder.name}</h1>
 
                     <Conditional show={parent_links.length > 0}>

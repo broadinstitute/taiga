@@ -21,7 +21,12 @@ setup(
     install_requires=[
         'attrs==16.2.0',
         'connexion>=1.0.129',
+        'boto3>=1.4.2',
         'Flask==0.11.1',
+        'celery==4.0.0',
+        'connexion>=1.0.129',
+        'Flask==0.11.1',
+        'redis==2.10.5',
         'requests==2.11.0',
         'six==1.10.0',
         'tinydb==3.2.1',

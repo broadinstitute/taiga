@@ -1,6 +1,6 @@
-//import * as Fetch from 'whatwg-fetch';
+import 'whatwg-fetch';
 
-import { User, Folder, Dataset, DatasetVersion } from './models';
+import { User, Folder, Dataset, DatasetVersion, S3Credentials } from './models';
 
 export class TaigaApi {
     baseUrl : string;
@@ -18,7 +18,7 @@ export class TaigaApi {
                     return Promise.reject<Response>(new Error(response.statusText))  
                 }  
             })
-            .then( (response : Response) => response.json() )
+            .then<T>( (response : Response) => response.json())
     }
 
     _post<T>(url: string, args : any) : Promise<T> {
@@ -29,14 +29,14 @@ export class TaigaApi {
                 "Accept": "application/json"
             },
             body: JSON.stringify(args)})
-            .then(function(response: Response) : Promise<Response> {
+            .then((response: Response) => {
                 if (response.status >= 200 && response.status < 300) {  
                     return Promise.resolve(response)  
                 } else {  
                     return Promise.reject<Response>(new Error(response.statusText))  
                 }  
             })
-            .then( (response : Response) => response.json() )
+            .then<T>( (response : Response) => response.json())
     }
 
     get_user() : Promise<User> {
@@ -53,6 +53,10 @@ export class TaigaApi {
     
     get_dataset_version(dataset_version_id: string) : Promise<DatasetVersion> {
         return this._fetch<DatasetVersion>("/datasetVersion/"+dataset_version_id)
+    }
+
+    get_s3_credentials() : Promise<S3Credentials> {
+        return this._fetch<S3Credentials>("/credentials_s3")
     }
 
     update_dataset_name(dataset_id : string, name: string) {

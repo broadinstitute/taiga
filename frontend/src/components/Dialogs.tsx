@@ -2,6 +2,7 @@ import * as React from "react";
 import * as Modal from "react-modal";
 import * as Showdown from "showdown";
 
+
 interface EditStringProps {
     isVisible : boolean;
     initialValue : string;
@@ -9,6 +10,15 @@ interface EditStringProps {
     save: (name: string) => void;
 }
 
+export interface DialogProps {
+    isVisible: boolean;
+    cancel: () => void;
+}
+
+export interface DialogState {
+}
+
+// Don't forget to modify modalStyles in Upload.tsx if you change the code of modalStyles
 const modalStyles : any = {
   content : {
     background: null,
@@ -30,7 +40,7 @@ export class EditName extends React.Component<EditStringProps, any> {
           <div className="modal-content">
             <div className="modal-body">
                 <div className="form-group">
-                    <label for="nameInput">Name</label>
+                    <label htmlFor="nameInput">Name</label>
                     <input type="text" defaultValue={this.props.initialValue} className="form-control" id="nameInput" ref={ (c) => {this.textInput = c}  }/>
                 </div>
               </div>
@@ -41,8 +51,8 @@ export class EditName extends React.Component<EditStringProps, any> {
           </div>
                 </form>
         </Modal>
-        }
     }
+}
 
 
 export class EditDescription extends React.Component<EditStringProps, any> {
@@ -59,7 +69,7 @@ export class EditDescription extends React.Component<EditStringProps, any> {
           <div className="modal-content">
             <div className="modal-body">
                 <div className="form-group">
-                    <label for="descriptionInput">Description</label>
+                    <label htmlFor="descriptionInput">Description</label>
                     <textarea rows={15}  defaultValue={this.props.initialValue} className="form-control" id="descriptionInput" ref={ (c) => {this.textArea = c}  }></textarea>
                 </div>
               </div>
@@ -70,8 +80,8 @@ export class EditDescription extends React.Component<EditStringProps, any> {
           </div>
         </form>
         </Modal>
-        }
     }
+}
 
 let converter = new Showdown.Converter()
 

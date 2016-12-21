@@ -5,6 +5,7 @@ import re
 import datetime
 from tinydb import TinyDB, Query
 import random
+import sys
 
 DatasetFile = collections.namedtuple("DatasetFile", "name description type datafile_id")
 
@@ -315,13 +316,16 @@ def setup_user(db, name):
     return user_id
 
 def open_db(filename):
-    new_db = not os.path.exists(filename)
+    try:
+        new_db = not os.path.exists(filename)
 
-    db = TinyDB(filename, indent=2)
+        db = TinyDB(filename, indent=2)
 
-    if new_db:
-        #folders = db.table("folders")
-        #setup_user(db, "admin")
-        pass
-    
+        if new_db:
+            #folders = db.table("folders")
+            #setup_user(db, "admin")
+            print("No database found. Created a new one at %s" % filename)
+    except:
+        print("Exception while opening the database: %s" % sys.exc_info()[0])
+
     return Db(db)
