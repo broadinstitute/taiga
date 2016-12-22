@@ -103,20 +103,40 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             Body: file
         };
 
-        // Create an upload promise via the aws sdk and launch it
-        let putObjectPromise = s3.putObject(params).promise();
-        putObjectPromise.then((data: any) => {
-            console.log('Success. Data received: '+data);
+        let upload = new AWS.S3.ManagedUpload({
+            params: params,
+            service: s3
+        });
 
+        // Measure progress
+        upload.on('httpUploadProgress', (evt) => {
+            console.log('Progress:', evt.loaded, '/', evt.total);
+            let updatedFilesStatus = this.state.filesStatus;
+
+            let progressPercentage = Math.floor(evt.loaded/evt.total * 100);
+            updatedFilesStatus[0].progress = progressPercentage;
+
+            this.setState({
+                filesStatus: updatedFilesStatus,
+                disableUpload: true
+            });
+        });
+
+        // Create an upload promise via the aws sdk and launch it
+        let uploadPromise = upload.promise();
+        uploadPromise.then((data: any) => {
+            console.log('Success. Data received: '+data);
             // TODO: Change this to take into account all the submitted files
             let updatedFilesStatus = this.state.filesStatus;
             updatedFilesStatus[0].progress = 100;
             this.setState({
-                filesStatus: updatedFilesStatus,
-                disableUpload: true
+                filesStatus: updatedFilesStatus
             })
         }).catch((err: any) => {
             console.log(err);
+            this.setState({
+                disableUpload: false
+            })
         });
 
     }
@@ -132,6 +152,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             filesStatus: remaining_filesStatus
         })
     }
+
+    progressFormatter(cell: any, row: any) {
+        return (
+          <span>{cell}%</span>
+        );
+    }
+
 
     render() {
         // TODO: Since the module to have the upload status grows bigger and bigger, think about refactoring it in another file or module
@@ -158,7 +185,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     <TableHeaderColumn isKey dataField='fileName'>Name</TableHeaderColumn>
                     <TableHeaderColumn dataField='fileType'>Type</TableHeaderColumn>
                     <TableHeaderColumn dataField='fileSize'>Size</TableHeaderColumn>
-                    <TableHeaderColumn dataField='progress'>Progress</TableHeaderColumn>
+                    <TableHeaderColumn dataField='progress' dataFormat={ this.progressFormatter }>Progress</TableHeaderColumn>
                 </BootstrapTable>
             </div>
         );
