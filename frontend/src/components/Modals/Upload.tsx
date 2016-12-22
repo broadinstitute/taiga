@@ -6,7 +6,7 @@ import * as Dropzone from "react-dropzone";
 import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 
 import { DialogProps, DialogState } from "../Dialogs";
-import { S3Credentials } from "../../models/models";
+import {S3Credentials, FileUploadStatus} from "../../models/models";
 import { TaigaApi } from "../../models/api";
 
 
@@ -15,7 +15,7 @@ interface DropzoneProps extends DialogProps {
 }
 
 interface DropzoneState extends DialogState {
-    files?: Array<any>;
+    filesStatus?: Array<FileUploadStatus>;
     disableUpload?: boolean;
 }
 
@@ -36,7 +36,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         super(props);
         // TODO: How can we ensure we are not erasing/forgetting states defined in the interface?
         this.state = {
-            files: new Array<File>(),
+            filesStatus: new Array<FileUploadStatus>(),
             disableUpload: true
         }
     }
@@ -50,8 +50,15 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     // When files are put in the drop zone
     onDrop(acceptedFiles: Array<File>, rejectedFiles: Array<File>) {
         console.log('Accepted files: ', acceptedFiles);
+
+        // We construct the FileStatusUpload object for each accepted files
+        let filesUploadStatus = acceptedFiles.map((file) => {
+            return new FileUploadStatus(file);
+        });
+        console.log('Files upload status: ', filesUploadStatus);
+
         this.setState({
-            files: acceptedFiles
+            filesStatus: filesUploadStatus
         });
         this.setState({
             disableUpload: false
@@ -68,12 +75,15 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         tapi.get_s3_credentials().then((credentials) => {
             console.log("Received credentials! ");
             console.log("- Access key id: " + credentials.accessKeyId);
-            this.doUpload(credentials, this.state.files);
+            this.doUpload(credentials, this.state.filesStatus);
         });
     }
 
     // Use the credentials received to upload the files dropped in the module
-    doUpload(s3_credentials: S3Credentials, files: Array<File>){
+    doUpload(s3_credentials: S3Credentials, filesStatus: Array<FileUploadStatus>){
+        // TODO: For now, we only upload the first file. But next commits will manage all of them
+        let file = filesStatus[0].file;
+
         // Configure the AWS S3 object with the received credentials
         let s3 = new AWS.S3({
             apiVersion: '2006-03-01',
@@ -84,21 +94,25 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             }
         });
 
-        console.log("Uploading now: " + files[0].name);
+        console.log("Uploading now: " + file.name);
 
         // TODO: Configure this elsewhere as a const configuration (settings.cfg?)
         let params = {
             Bucket: 'broadtaiga2prototype',
-            Key: files[0].name,
-            Body: files[0]
+            Key: file.name,
+            Body: file
         };
 
         // Create an upload promise via the aws sdk and launch it
         let putObjectPromise = s3.putObject(params).promise();
         putObjectPromise.then((data: any) => {
             console.log('Success. Data received: '+data);
+
+            // TODO: Change this to take into account all the submitted files
+            let updatedFilesStatus = this.state.filesStatus;
+            updatedFilesStatus[0].progress = 100;
             this.setState({
-                files: new Array<File>(),
+                filesStatus: updatedFilesStatus,
                 disableUpload: true
             })
         }).catch((err: any) => {
@@ -108,17 +122,20 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     }
 
     render() {
-        const files = this.state.files;
+        const filesStatus = this.state.filesStatus;
 
         var uploadedFiles: any = null;
 
         // Show the uploaded files if we have some, otherwise say we have nothing yet
+        // TODO: Use Colum Format to make a button on Remove boolean => http://allenfang.github.io/react-bootstrap-table/example.html#column-format -->
         uploadedFiles = (
             <div>
-                <BootstrapTable data={files} striped hover options={ { noDataText: 'Nothing uploaded yet' } }>
-                    <TableHeaderColumn isKey dataField='name'>Name</TableHeaderColumn>
-                    <TableHeaderColumn dataField='type'>Type</TableHeaderColumn>
-                    <TableHeaderColumn dataField='size'>Size</TableHeaderColumn>
+                <BootstrapTable data={filesStatus} striped hover options={ { noDataText: 'Nothing uploaded yet' } }>
+                    <TableHeaderColumn isKey dataField='fileName'>Name</TableHeaderColumn>
+                    <TableHeaderColumn dataField='fileType'>Type</TableHeaderColumn>
+                    <TableHeaderColumn dataField='fileSize'>Size</TableHeaderColumn>
+                    <TableHeaderColumn dataField='progress'>Progress</TableHeaderColumn>
+                    <TableHeaderColumn dataField='removed'>Remove</TableHeaderColumn>
                 </BootstrapTable>
             </div>
         );
