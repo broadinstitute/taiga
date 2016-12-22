@@ -113,23 +113,15 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         var uploadedFiles: any = null;
 
         // Show the uploaded files if we have some, otherwise say we have nothing yet
-        if (files.length > 0){
-            uploadedFiles = (
-                <div>
-                    <h2>Waiting to upload {files.length} files...</h2>
-                    <BootstrapTable data={files} striped hover>
-                        <TableHeaderColumn isKey dataField='name'>Name</TableHeaderColumn>
-                        <TableHeaderColumn dataField='type'>Type</TableHeaderColumn>
-                        <TableHeaderColumn dataField='size'>Size</TableHeaderColumn>
-                    </BootstrapTable>
-                </div>
-            );
-        }
-        else {
-            uploadedFiles = (
-                <div>Nothing uploaded yet!</div>
-            );
-        }
+        uploadedFiles = (
+            <div>
+                <BootstrapTable data={files} striped hover options={ { noDataText: 'Nothing uploaded yet' } }>
+                    <TableHeaderColumn isKey dataField='name'>Name</TableHeaderColumn>
+                    <TableHeaderColumn dataField='type'>Type</TableHeaderColumn>
+                    <TableHeaderColumn dataField='size'>Size</TableHeaderColumn>
+                </BootstrapTable>
+            </div>
+        );
 
         // Modal showing a Dropzone with Cancel and Upload button
         return <Modal
