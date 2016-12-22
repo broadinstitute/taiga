@@ -136,7 +136,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             style={modalStyles}
             closeTimeoutMS={150}
             isOpen={this.props.isVisible}
-            onRequestClose={this.props.cancel}>
+            onRequestClose={this.props.cancel}
+            contentLabel="Upload">
             <div className="modal-content">
             <div className="modal-body">
                 <Dropzone onDrop={(acceptedFiles: any, rejectedFiles: any) =>
