@@ -128,7 +128,6 @@ export class FileUploadStatus {
     fileSize: number;
 
     progress: number;
-    removed: boolean;
 
     constructor(file: File) {
         this.file = file;
@@ -138,6 +137,5 @@ export class FileUploadStatus {
         this.fileSize = this.file.size
 
         this.progress = 0;
-        this.removed = false;
     }
 }

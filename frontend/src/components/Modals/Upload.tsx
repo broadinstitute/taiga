@@ -121,21 +121,44 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     }
 
+    // Bootstrap Table functions
+    onAfterDeleteRow(rowKeys : Array<string>) {
+        const remaining_filesStatus = this.state.filesStatus.filter((fileStatus) => {
+            // We only return the fileStatus that do NOT match any of the rowKeys (file name)0
+            return rowKeys.indexOf(fileStatus.file.name) === -1
+        });
+
+        this.setState({
+            filesStatus: remaining_filesStatus
+        })
+    }
+
     render() {
+        // TODO: Since the module to have the upload status grows bigger and bigger, think about refactoring it in another file or module
+        var uploadedFiles: any = null;
+
         const filesStatus = this.state.filesStatus;
 
-        var uploadedFiles: any = null;
+        const selectRowProp = {
+            mode: 'checkbox'
+        };
+
+        const options = {
+            noDataText: 'Nothing uploaded yet',
+            afterDeleteRow: (rowKeys: Array<string>) => this.onAfterDeleteRow(rowKeys) // A hook for after droping rows.
+        };
 
         // Show the uploaded files if we have some, otherwise say we have nothing yet
         // TODO: Use Colum Format to make a button on Remove boolean => http://allenfang.github.io/react-bootstrap-table/example.html#column-format -->
         uploadedFiles = (
             <div>
-                <BootstrapTable data={filesStatus} striped hover options={ { noDataText: 'Nothing uploaded yet' } }>
+                <BootstrapTable data={filesStatus} deleteRow={ true }
+                                selectRow={ selectRowProp }
+                                striped hover options={ options }>
                     <TableHeaderColumn isKey dataField='fileName'>Name</TableHeaderColumn>
                     <TableHeaderColumn dataField='fileType'>Type</TableHeaderColumn>
                     <TableHeaderColumn dataField='fileSize'>Size</TableHeaderColumn>
                     <TableHeaderColumn dataField='progress'>Progress</TableHeaderColumn>
-                    <TableHeaderColumn dataField='removed'>Remove</TableHeaderColumn>
                 </BootstrapTable>
             </div>
         );
