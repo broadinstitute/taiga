@@ -3,6 +3,7 @@ import * as Modal from "react-modal";
 
 import * as AWS from "aws-sdk";
 import * as Dropzone from "react-dropzone";
+import * as filesize from "filesize";
 import {BootstrapTable, TableHeaderColumn, SelectRowMode} from "react-bootstrap-table";
 
 import { DialogProps, DialogState } from "../Dialogs";
@@ -159,6 +160,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         );
     }
 
+    sizeFormatter(cell: any, row: any) {
+        let cellFileSize = filesize(cell, {base: 10});
+        return (
+            <span>{cellFileSize}</span>
+        )
+    }
+
     columnClassProgressFormat(fieldValue: any, row: any, rowIdx: number, colIds: number) {
         if (row instanceof FileUploadStatus && row.progress == 100) {
             return 'progressDownloadComplete';
@@ -193,7 +201,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                                 options={ options }>
                     <TableHeaderColumn isKey dataField='fileName'>Name</TableHeaderColumn>
                     <TableHeaderColumn dataField='fileType'>Type</TableHeaderColumn>
-                    <TableHeaderColumn dataField='fileSize'>Size</TableHeaderColumn>
+                    <TableHeaderColumn dataField='fileSize'
+                                       dataFormat={ this.sizeFormatter }>Size</TableHeaderColumn>
                     <TableHeaderColumn dataField='progress'
                                        dataFormat={ this.progressFormatter }
                                        columnClassName={
