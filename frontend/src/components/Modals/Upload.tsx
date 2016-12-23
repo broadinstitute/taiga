@@ -3,7 +3,7 @@ import * as Modal from "react-modal";
 
 import * as AWS from "aws-sdk";
 import * as Dropzone from "react-dropzone";
-import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
+import {BootstrapTable, TableHeaderColumn, SelectRowMode} from "react-bootstrap-table";
 
 import { DialogProps, DialogState } from "../Dialogs";
 import {S3Credentials, FileUploadStatus} from "../../models/models";
@@ -174,8 +174,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         const filesStatus = this.state.filesStatus;
 
+        const check_mode: SelectRowMode = 'checkbox';
         const selectRowProp = {
-            mode: 'checkbox'
+            mode: check_mode
         };
 
         const options = {
@@ -195,7 +196,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     <TableHeaderColumn dataField='fileSize'>Size</TableHeaderColumn>
                     <TableHeaderColumn dataField='progress'
                                        dataFormat={ this.progressFormatter }
-                                       columnClassName={ (fieldValue, row, rowIdx, colIds) => this.columnClassProgressFormat(fieldValue, row, rowIdx, colIds) }>Progress</TableHeaderColumn>
+                                       columnClassName={
+                                           (fieldValue: any, row: any, rowIdx: any, colIds: any) =>
+                                           this.columnClassProgressFormat(fieldValue, row, rowIdx, colIds) }>Progress</TableHeaderColumn>
                 </BootstrapTable>
             </div>
         );
