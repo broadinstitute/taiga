@@ -22,7 +22,49 @@ Taiga 2 is built on the following stack:
 - Yarn
 - Node/NPM
 
-Please ensure you have installed these tools before proceeding to the next chapter.
+- Amazon S3 (to store the files)
+
+### Configuring S3
+
+Because we are using S3 to store the files, we need to correctly configure the S3 service, and its buckets.
+
+#### Create the store Bucket
+
+Please follow [this tutorial](http://docs.aws.amazon.com/AmazonS3/latest/gsg/CreatingABucket.html)
+from Amazon, on how to create a Bucket.
+
+#### Configure the Bucket
+
+We need now to be able to access to this Bucket programmatically,
+and through [CORS](https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html#how-do-i-enable-cors) (Cross Origin Resource Sharing):
+
+For our case, it is pretty simple:
+1. Select your bucket in your [amazon S3 console](https://console.aws.amazon.com/s3/home?region=eu-west-1#)
+2. Click on `Properties`
+3. Click on the `Permissions` accordion
+4. Click on `Edit CORS Configuration`
+5. Paste the following configuration into the page that should appear (CORS Configuration Editor):
+  ```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+    <CORSRule>
+        <AllowedOrigin>*</AllowedOrigin>
+        <AllowedMethod>GET</AllowedMethod>
+        <AllowedMethod>POST</AllowedMethod>
+        <AllowedMethod>PUT</AllowedMethod>
+        <ExposeHeader>ETag</ExposeHeader>
+        <AllowedHeader>*</AllowedHeader>
+    </CORSRule>
+</CORSConfiguration>
+  ```
+  
+***Warning: Be careful to not override your existing configuration!***
+
+#### Configure Taiga to use your Bucket
+
+***Coming soon***
+
+And now please ensure you have installed these tools before proceeding to the next chapter.
 
 ## Installing
 
