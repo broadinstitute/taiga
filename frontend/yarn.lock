@@ -17,13 +17,24 @@
   version "0.31.32"
   resolved "https://registry.yarnpkg.com/@types/es6-shim/-/es6-shim-0.31.32.tgz#8196c09e1e40ac977c713bf258090989f501d8ff"
 
+"@types/filesize@^3.2.15":
+  version "3.2.15"
+  resolved "https://registry.yarnpkg.com/@types/filesize/-/filesize-3.2.15.tgz#a97325f27a5ff7974c7cbd7afa244b8a7affe668"
+
 "@types/history@*":
   version "2.0.41"
   resolved "https://registry.yarnpkg.com/@types/history/-/history-2.0.41.tgz#88faa58e931d1c676daca71369cbc3767737d8d3"
 
-"@types/node@^6.0.52":
+"@types/node@*", "@types/node@^6.0.52":
   version "6.0.52"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-6.0.52.tgz#1ac3a99b42320f9e463482f25af4c2359473aaa6"
+
+"@types/react-bootstrap-table@^2.3.33":
+  version "2.3.33"
+  resolved "https://registry.yarnpkg.com/@types/react-bootstrap-table/-/react-bootstrap-table-2.3.33.tgz#3e9b9fcbea5660ce2d85be7199172376c2e536dd"
+  dependencies:
+    "@types/node" "*"
+    "@types/react" "*"
 
 "@types/react-dom@^0.14.19":
   version "0.14.19"
@@ -171,6 +182,10 @@ fbjs@^0.8.1, fbjs@^0.8.4:
     promise "^7.1.1"
     setimmediate "^1.0.5"
     ua-parser-js "^0.7.9"
+
+filesize@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/filesize/-/filesize-3.3.0.tgz#53149ea3460e3b2e024962a51648aa572cf98122"
 
 history@^2.1.2:
   version "2.1.2"

@@ -117,3 +117,25 @@ export interface S3Credentials {
     secretAccessKey: string;
     sessionToken: string;
 }
+
+// Upload
+export class FileUploadStatus {
+    file: File;
+
+    // These exist because of special needs for react-bootstrap-table. See https://github.com/AllenFang/react-bootstrap-table/issues/50
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+
+    progress: number;
+
+    constructor(file: File) {
+        this.file = file;
+
+        this.fileName = this.file.name;
+        this.fileType = this.file.type;
+        this.fileSize = this.file.size
+
+        this.progress = 0;
+    }
+}

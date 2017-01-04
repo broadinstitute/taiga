@@ -3,10 +3,11 @@ import * as Modal from "react-modal";
 
 import * as AWS from "aws-sdk";
 import * as Dropzone from "react-dropzone";
-import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
+import * as filesize from "filesize";
+import {BootstrapTable, TableHeaderColumn, SelectRowMode} from "react-bootstrap-table";
 
 import { DialogProps, DialogState } from "../Dialogs";
-import { S3Credentials } from "../../models/models";
+import {S3Credentials, FileUploadStatus} from "../../models/models";
 import { TaigaApi } from "../../models/api";
 
 
@@ -15,7 +16,7 @@ interface DropzoneProps extends DialogProps {
 }
 
 interface DropzoneState extends DialogState {
-    files?: Array<any>;
+    filesStatus?: Array<FileUploadStatus>;
     disableUpload?: boolean;
 }
 
@@ -36,7 +37,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         super(props);
         // TODO: How can we ensure we are not erasing/forgetting states defined in the interface?
         this.state = {
-            files: new Array<File>(),
+            filesStatus: new Array<FileUploadStatus>(),
             disableUpload: true
         }
     }
@@ -50,8 +51,15 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     // When files are put in the drop zone
     onDrop(acceptedFiles: Array<File>, rejectedFiles: Array<File>) {
         console.log('Accepted files: ', acceptedFiles);
+
+        // We construct the FileStatusUpload object for each accepted files
+        let filesUploadStatus = acceptedFiles.map((file) => {
+            return new FileUploadStatus(file);
+        });
+        console.log('Files upload status: ', filesUploadStatus);
+
         this.setState({
-            files: acceptedFiles
+            filesStatus: filesUploadStatus
         });
         this.setState({
             disableUpload: false
@@ -68,12 +76,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         tapi.get_s3_credentials().then((credentials) => {
             console.log("Received credentials! ");
             console.log("- Access key id: " + credentials.accessKeyId);
-            this.doUpload(credentials, this.state.files);
+            this.doUpload(credentials, this.state.filesStatus);
         });
     }
 
     // Use the credentials received to upload the files dropped in the module
-    doUpload(s3_credentials: S3Credentials, files: Array<File>){
+    doUpload(s3_credentials: S3Credentials, filesStatus: Array<FileUploadStatus>){
+        // TODO: If we change the page, we lose the download
         // Configure the AWS S3 object with the received credentials
         let s3 = new AWS.S3({
             apiVersion: '2006-03-01',
@@ -84,52 +93,135 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             }
         });
 
-        console.log("Uploading now: " + files[0].name);
+        // Looping through all the files
+        filesStatus.forEach((file: FileUploadStatus) => {
+            console.log("Uploading now: " + file.fileName);
 
-        // TODO: Configure this elsewhere as a const configuration (settings.cfg?)
-        let params = {
-            Bucket: 'broadtaiga2prototype',
-            Key: files[0].name,
-            Body: files[0]
-        };
+            // TODO: Configure this elsewhere as a const configuration (settings.cfg?)
+            let params = {
+                Bucket: 'broadtaiga2prototype',
+                Key: file.fileName,
+                Body: file.file
+            };
 
-        // Create an upload promise via the aws sdk and launch it
-        let putObjectPromise = s3.putObject(params).promise();
-        putObjectPromise.then((data: any) => {
-            console.log('Success. Data received: '+data);
-            this.setState({
-                files: new Array<File>(),
-                disableUpload: true
-            })
-        }).catch((err: any) => {
-            console.log(err);
+            let upload = new AWS.S3.ManagedUpload({
+                params: params,
+                service: s3
+            });
+
+            // Subscribe to measure progress
+            upload.on('httpUploadProgress', (evt) => {
+                // TODO: evt.key is not recognized in the DefinitelyType AWS, but it works. Raise an issue in Git
+                console.log('Progress:', evt.loaded, '/', evt.total, 'of ', evt.key);
+
+                let updatedFilesStatus = this.state.filesStatus;
+
+                // Get the file who received this progress notification
+                let updatedFileStatus = updatedFilesStatus.find((element: FileUploadStatus) => {
+                    return element.fileName == evt.key;
+                });
+
+                let progressPercentage = Math.floor(evt.loaded/evt.total * 100);
+                updatedFileStatus.progress = progressPercentage;
+
+                this.setState({
+                    filesStatus: updatedFilesStatus,
+                    disableUpload: true
+                });
+            });
+
+            // Create an upload promise via the aws sdk and launch it
+            let uploadPromise = upload.promise();
+            uploadPromise.then((data: any) => {
+                console.log('Success. Data received: '+data);
+                // TODO: Change this to take into account all the submitted files
+                let updatedFilesStatus = this.state.filesStatus;
+                updatedFilesStatus[0].progress = 100;
+                this.setState({
+                    filesStatus: updatedFilesStatus
+                })
+            }).catch((err: any) => {
+                console.log(err);
+                this.setState({
+                    disableUpload: false
+                })
+            });
         });
+
+
+
 
     }
 
-    render() {
-        const files = this.state.files;
+    // Bootstrap Table functions
+    onAfterDeleteRow(rowKeys : Array<string>) {
+        const remaining_filesStatus = this.state.filesStatus.filter((fileStatus) => {
+            // We only return the fileStatus that do NOT match any of the rowKeys (file name)0
+            return rowKeys.indexOf(fileStatus.file.name) === -1
+        });
 
-        var uploadedFiles: any = null;
+        this.setState({
+            filesStatus: remaining_filesStatus
+        })
+    }
 
-        // Show the uploaded files if we have some, otherwise say we have nothing yet
-        if (files.length > 0){
-            uploadedFiles = (
-                <div>
-                    <h2>Waiting to upload {files.length} files...</h2>
-                    <BootstrapTable data={files} striped hover>
-                        <TableHeaderColumn isKey dataField='name'>Name</TableHeaderColumn>
-                        <TableHeaderColumn dataField='type'>Type</TableHeaderColumn>
-                        <TableHeaderColumn dataField='size'>Size</TableHeaderColumn>
-                    </BootstrapTable>
-                </div>
-            );
+    progressFormatter(cell: any, row: any) {
+        return (
+          <span>{cell}%</span>
+        );
+    }
+
+    sizeFormatter(cell: any, row: any) {
+        let cellFileSize = filesize(cell, {base: 10});
+        return (
+            <span>{cellFileSize}</span>
+        )
+    }
+
+    columnClassProgressFormat(fieldValue: any, row: any, rowIdx: number, colIds: number) {
+        if (row instanceof FileUploadStatus && row.progress == 100) {
+            return 'progressDownloadComplete';
         }
         else {
-            uploadedFiles = (
-                <div>Nothing uploaded yet!</div>
-            );
+            return '';
         }
+    }
+
+    render() {
+        // TODO: Since the module to have the upload status grows bigger and bigger, think about refactoring it in another file or module
+        var uploadedFiles: any = null;
+
+        const filesStatus = this.state.filesStatus;
+
+        const check_mode: SelectRowMode = 'checkbox';
+        const selectRowProp = {
+            mode: check_mode
+        };
+
+        const options = {
+            noDataText: 'Nothing uploaded yet',
+            afterDeleteRow: (rowKeys: Array<string>) => this.onAfterDeleteRow(rowKeys) // A hook for after droping rows.
+        };
+
+        // Show the uploaded files if we have some, otherwise say we have nothing yet
+        // TODO: Use Colum Format to make a button on Remove boolean => http://allenfang.github.io/react-bootstrap-table/example.html#column-format -->
+        uploadedFiles = (
+            <div>
+                <BootstrapTable data={filesStatus} deleteRow={ true }
+                                selectRow={ selectRowProp }
+                                options={ options }>
+                    <TableHeaderColumn isKey dataField='fileName'>Name</TableHeaderColumn>
+                    <TableHeaderColumn dataField='fileType'>Type</TableHeaderColumn>
+                    <TableHeaderColumn dataField='fileSize'
+                                       dataFormat={ this.sizeFormatter }>Size</TableHeaderColumn>
+                    <TableHeaderColumn dataField='progress'
+                                       dataFormat={ this.progressFormatter }
+                                       columnClassName={
+                                           (fieldValue: any, row: any, rowIdx: any, colIds: any) =>
+                                           this.columnClassProgressFormat(fieldValue, row, rowIdx, colIds) }>Progress</TableHeaderColumn>
+                </BootstrapTable>
+            </div>
+        );
 
         // Modal showing a Dropzone with Cancel and Upload button
         return <Modal
