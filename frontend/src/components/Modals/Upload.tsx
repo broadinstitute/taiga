@@ -82,9 +82,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     // Use the credentials received to upload the files dropped in the module
     doUpload(s3_credentials: S3Credentials, filesStatus: Array<FileUploadStatus>){
-        // TODO: For now, we only upload the first file. But next commits will manage all of them
-        let file = filesStatus[0].file;
-
+        // TODO: If we change the page, we lose the download
         // Configure the AWS S3 object with the received credentials
         let s3 = new AWS.S3({
             apiVersion: '2006-03-01',
@@ -95,50 +93,63 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             }
         });
 
-        console.log("Uploading now: " + file.name);
+        // Looping through all the files
+        filesStatus.forEach((file: FileUploadStatus) => {
+            console.log("Uploading now: " + file.fileName);
 
-        // TODO: Configure this elsewhere as a const configuration (settings.cfg?)
-        let params = {
-            Bucket: 'broadtaiga2prototype',
-            Key: file.name,
-            Body: file
-        };
+            // TODO: Configure this elsewhere as a const configuration (settings.cfg?)
+            let params = {
+                Bucket: 'broadtaiga2prototype',
+                Key: file.fileName,
+                Body: file.file
+            };
 
-        let upload = new AWS.S3.ManagedUpload({
-            params: params,
-            service: s3
-        });
+            let upload = new AWS.S3.ManagedUpload({
+                params: params,
+                service: s3
+            });
 
-        // Measure progress
-        upload.on('httpUploadProgress', (evt) => {
-            console.log('Progress:', evt.loaded, '/', evt.total);
-            let updatedFilesStatus = this.state.filesStatus;
+            // Subscribe to measure progress
+            upload.on('httpUploadProgress', (evt) => {
+                // TODO: evt.key is not recognized in the DefinitelyType AWS, but it works. Raise an issue in Git
+                console.log('Progress:', evt.loaded, '/', evt.total, 'of ', evt.key);
 
-            let progressPercentage = Math.floor(evt.loaded/evt.total * 100);
-            updatedFilesStatus[0].progress = progressPercentage;
+                let updatedFilesStatus = this.state.filesStatus;
 
-            this.setState({
-                filesStatus: updatedFilesStatus,
-                disableUpload: true
+                // Get the file who received this progress notification
+                let updatedFileStatus = updatedFilesStatus.find((element: FileUploadStatus) => {
+                    return element.fileName == evt.key;
+                });
+
+                let progressPercentage = Math.floor(evt.loaded/evt.total * 100);
+                updatedFileStatus.progress = progressPercentage;
+
+                this.setState({
+                    filesStatus: updatedFilesStatus,
+                    disableUpload: true
+                });
+            });
+
+            // Create an upload promise via the aws sdk and launch it
+            let uploadPromise = upload.promise();
+            uploadPromise.then((data: any) => {
+                console.log('Success. Data received: '+data);
+                // TODO: Change this to take into account all the submitted files
+                let updatedFilesStatus = this.state.filesStatus;
+                updatedFilesStatus[0].progress = 100;
+                this.setState({
+                    filesStatus: updatedFilesStatus
+                })
+            }).catch((err: any) => {
+                console.log(err);
+                this.setState({
+                    disableUpload: false
+                })
             });
         });
 
-        // Create an upload promise via the aws sdk and launch it
-        let uploadPromise = upload.promise();
-        uploadPromise.then((data: any) => {
-            console.log('Success. Data received: '+data);
-            // TODO: Change this to take into account all the submitted files
-            let updatedFilesStatus = this.state.filesStatus;
-            updatedFilesStatus[0].progress = 100;
-            this.setState({
-                filesStatus: updatedFilesStatus
-            })
-        }).catch((err: any) => {
-            console.log(err);
-            this.setState({
-                disableUpload: false
-            })
-        });
+
+
 
     }
 
