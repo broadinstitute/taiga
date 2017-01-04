@@ -131,10 +131,6 @@ We use Git for versioning! If you don't know how to use it, we strongly recommen
 - Philip Montgomery - Initial work + advising on the current development
 - Remi Marenco - Prototype + current development
 
-## License
-
-This project is licensed under the Apache License - see the LICENSE file for details.
-
 ## Acknowledgments
 
 - Cancer Data Science
