@@ -1,4 +1,5 @@
 import enum
+import uuid
 
 from sqlalchemy import Table, Column, Integer, String, Text, ForeignKey, Enum
 from sqlalchemy.ext.declarative import declarative_base
@@ -12,6 +13,9 @@ engine = create_engine('sqlite:///taiga2.db', echo=True)
 from sqlalchemy.orm import sessionmaker
 Session = sessionmaker(bind=engine)
 session = Session()
+
+Base.metadata.drop_all(engine)
+Base.metadata.create_all(engine)
 # STOP delete
 
 
@@ -95,12 +99,20 @@ class Dataset(Entry):
 
     id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
 
+    description = Column(Text)
+
+    versions = relationship("DatasetVersion",
+                            backref="dataset")
+
+    # TODO: Use the name/key of the dataset and add behind the uuid?
+    permaname = Column(Text, default=lambda: str(uuid.uuid4()), unique=True)
+
     __mapper_args__ = {
         'polymorphic_identity': __tablename__,
     }
 
 
-class Dataset_version(Entry):
+class DatasetVersion(Entry):
     __tablename__ = 'dataset_versions'
 
     id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
