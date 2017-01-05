@@ -5,10 +5,14 @@ import sys
 from werkzeug.wsgi import pop_path_info, peek_path_info
 from werkzeug.serving import run_simple
 
+from flask_sqlalchemy import SQLAlchemy
+
 import logging
 
 from .ui import app as frontend_app
 
+frontend_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
+db = SQLAlchemy(frontend_app)
 
 class PathDispatcher(object):
     def __init__(self, api_app, frontend_app):

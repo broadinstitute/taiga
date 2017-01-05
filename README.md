@@ -11,18 +11,26 @@ See deployment for notes on how to deploy the project on a live system (Coming s
 ## Prerequisites
 Taiga 2 is built on the following stack:
 
-- TinyDB
+### Database
+- PostGre (to store the app information)
+- Psycopg2
+- SQLAlchemy
+
+- Amazon S3 (to store the files)
+
+### Backend/API
 - Flask
 - Celery/Redis
 - Swagger
+
+### FrontEnd
 - React
 - TypeScript
- 
 - Webpack
 - Yarn
 - Node/NPM
 
-- Amazon S3 (to store the files)
+
 
 ### Configuring S3
 

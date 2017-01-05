@@ -30,5 +30,6 @@ setup(
         'requests==2.11.0',
         'six==1.10.0',
         'tinydb==3.2.1',
+        'SQLAlchemy==1.1.4'
     ],
 )
