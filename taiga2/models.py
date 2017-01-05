@@ -12,11 +12,11 @@ engine = create_engine('sqlite:///taiga2.db', echo=True)
 from sqlalchemy.orm import sessionmaker
 Session = sessionmaker(bind=engine)
 session = Session()
-# STOP delere
+# STOP delete
 
 
 class User(Base):
-    __tablename__ = 'user'
+    __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True)
@@ -33,21 +33,21 @@ class User(Base):
 # As discussed in december 2016 with Philip Montgomery, we decided an entry could have multiple folders containing it
 folder_entry_association_table = Table('folder_entry_association',
                                        Base.metadata,
-                                       Column('folder_id', Integer, ForeignKey('folder.id')),
-                                       Column('entry_id', Integer, ForeignKey('entry.id'))
+                                       Column('folder_id', Integer, ForeignKey('folders.id')),
+                                       Column('entry_id', Integer, ForeignKey('entries.id'))
                                        )
 
 
 # TODO: The Entry hierarchy needs to use Single Table Inheritance, based on Philip feedback
 class Entry(Base):
-    __tablename__ = 'entry'
+    __tablename__ = 'entries'
 
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True)
     type = Column(String(50))
 
     __mapper_args__ = {
-        'polymorphic_identity': 'entry',
+        'polymorphic_identity': __tablename__,
         'polymorphic_on': type,
         'with_polymorphic': '*'
     }
@@ -62,49 +62,54 @@ class Folder(Entry):
         trash = 'trash'
         folder = 'folder'
 
-    __tablename__ = 'folder'
+    __tablename__ = 'folders'
 
     # TODO: Instead of using a string 'entry.id', can we use Entry.id?
-    id = Column(Integer, ForeignKey('entry.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
 
     folder_type = Column(Enum(FolderType))
     description = Column(Text)
 
     entries = relationship("Entry",
                            secondary=folder_entry_association_table,
-                           backref="folders")
+                           backref=__tablename__)
+
+    creator_id = Column(Integer, ForeignKey("users.id"))
+
+    creator = relationship("User",
+                           backref=__tablename__)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'folder',
+        'polymorphic_identity': __tablename__,
     }
 
 
 class Datafile(Base):
-    __tablename__ = 'datafile'
+    __tablename__ = 'datafiles'
 
     id = Column(Integer, primary_key=True)
 
 
 class Dataset(Entry):
-    __tablename__ = 'dataset'
+    __tablename__ = 'datasets'
 
-    id = Column(Integer, ForeignKey('entry.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'dataset',
+        'polymorphic_identity': __tablename__,
     }
 
 
 class Dataset_version(Entry):
-    __tablename__ = 'dataset_version'
+    __tablename__ = 'dataset_versions'
 
-    id = Column(Integer, ForeignKey('entry.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'dataset_version',
+        'polymorphic_identity': __tablename__,
     }
 
 
 class Activity(Base):
-    __tablename__ = 'activity'
+    __tablename__ = 'activities'
     id = Column(Integer, primary_key=True)
