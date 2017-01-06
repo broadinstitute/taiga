@@ -1,5 +1,6 @@
 import enum
 import uuid
+import re
 
 from sqlalchemy import Table, Column, Integer, String, Text, ForeignKey, Enum
 from sqlalchemy.ext.declarative import declarative_base
@@ -17,6 +18,21 @@ session = Session()
 Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 # STOP delete
+
+def generate_permaname(name):
+    """Generate a permaname based on uuid and the original name"""
+    permaname_prefix = name.casefold()  # str.casefold() is a more aggressive .lower()
+    permaname_prefix = permaname_prefix.replace('\\', '-')  # Replace '\' by '-'
+    # Replace all non alphanumeric by "-"
+    permaname_prefix = "".join([c if c.isalnum() else "-" for c in permaname_prefix])
+    # TODO: Could also use unicode to remove accents
+
+    # Remove all repetitions of the same non word character (most likely suite of '-')
+    permaname_prefix = re.sub(r'(\W)(?=\1)', '', permaname_prefix)
+
+    permaname = permaname_prefix + "-" + str(uuid.uuid4())[:4]
+
+    return permaname
 
 
 class User(Base):
@@ -99,13 +115,13 @@ class Dataset(Entry):
 
     id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
 
-    description = Column(Text)
+    description = Column(Text, default="No description provided")
 
     versions = relationship("DatasetVersion",
                             backref="dataset")
 
     # TODO: Use the name/key of the dataset and add behind the uuid?
-    permaname = Column(Text, default=lambda: str(uuid.uuid4()), unique=True)
+    permaname = Column(Text, unique=True)
 
     __mapper_args__ = {
         'polymorphic_identity': __tablename__,
