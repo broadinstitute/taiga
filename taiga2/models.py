@@ -66,8 +66,10 @@ class Entry(Base):
     name = Column(String(80), unique=True)
     type = Column(String(50))
 
+    print(classmethod.__class__.__name__,)
+
     __mapper_args__ = {
-        'polymorphic_identity': __tablename__,
+        'polymorphic_identity': classmethod.__class__.__name__,
         'polymorphic_on': type,
         'with_polymorphic': '*'
     }
@@ -100,7 +102,7 @@ class Folder(Entry):
                            backref=__tablename__)
 
     __mapper_args__ = {
-        'polymorphic_identity': __tablename__,
+        'polymorphic_identity': "Folder"
     }
 
 
@@ -121,10 +123,10 @@ class Dataset(Entry):
                             backref="dataset")
 
     # TODO: Use the name/key of the dataset and add behind the uuid?
-    permaname = Column(Text, unique=True)
+    permaname = Column(Text, unique=True, nullable=False)
 
     __mapper_args__ = {
-        'polymorphic_identity': __tablename__,
+        'polymorphic_identity': "Dataset"
     }
 
 
@@ -134,7 +136,7 @@ class DatasetVersion(Entry):
     id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': __tablename__,
+        'polymorphic_identity': "DatasetVersion"
     }
 
 
