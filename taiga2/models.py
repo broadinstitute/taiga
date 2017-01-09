@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import column_property
 from sqlalchemy import select, func
 
+
 Base = declarative_base()
 engine = create_engine('sqlite:///taiga2.db', echo=True)
 
@@ -20,6 +21,27 @@ session = Session()
 Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 # STOP delete
+
+
+# Associations #
+
+# Association for Many to Many relationship between dataset_version and datafile
+datasetVersion_dataFile_association_table = Table('datasetVersion_dataFile_association',
+                                                  Base.metadata,
+                                                  Column('datasetversion_id', Integer, ForeignKey('dataset_versions.id')),
+                                                  Column('datafile_id', Integer, ForeignKey('datafiles.id'))
+                                                  )
+
+
+# Association table for Many to Many relationship between folder and entries
+# As discussed in december 2016 with Philip Montgomery, we decided an entry could have multiple folders containing it
+folder_entry_association_table = Table('folder_entry_association',
+                                       Base.metadata,
+                                       Column('folder_id', Integer, ForeignKey('folders.id')),
+                                       Column('entry_id', Integer, ForeignKey('entries.id'))
+                                       )
+
+# End Associations #
 
 
 def generate_permaname(name):
@@ -52,17 +74,8 @@ class User(Base):
         return '<User %r>' % self.name
 
 
-# Association table for Many to Many relationship between folder and entries
-# As discussed in december 2016 with Philip Montgomery, we decided an entry could have multiple folders containing it
-folder_entry_association_table = Table('folder_entry_association',
-                                       Base.metadata,
-                                       Column('folder_id', Integer, ForeignKey('folders.id')),
-                                       Column('entry_id', Integer, ForeignKey('entries.id'))
-                                       )
-
-
 # TODO: The Entry hierarchy needs to use Single Table Inheritance, based on Philip feedback
-class Entry(Base):
+class Entry(Versioned, Base):
     __tablename__ = 'entries'
 
     id = Column(Integer, primary_key=True)
@@ -121,12 +134,21 @@ class Dataset(Entry):
         'polymorphic_identity': "Dataset"
     }
 
-# Association for Many to Many relationship between dataset_version and datafile
-datasetVersion_dataFile_association_table = Table('datasetVersion_dataFile_association',
-                                                  Base.metadata,
-                                                  Column('datasetversion_id', Integer, ForeignKey('dataset_versions.id')),
-                                                  Column('datafile_id', Integer, ForeignKey('datafiles.id'))
-                                                  )
+
+class DataFile(Base):
+    # TODO: Can we create a datafile without including it in a datasetVersion?
+    __tablename__ = 'datafiles'
+
+    id = Column(Integer, primary_key=True)
+
+    name = Column(String(80))
+
+    # To be able to differentiate multiple files with the same name
+    permaname = Column(Text, unique=True, nullable=False)
+
+    type = Column(String(80))
+
+    url = Column(Text, unique=True)
 
 
 class DatasetVersion(Entry):
@@ -157,22 +179,6 @@ class DatasetVersion(Entry):
     __mapper_args__ = {
         'polymorphic_identity': "DatasetVersion"
     }
-
-
-class DataFile(Base):
-    # TODO: Can we create a datafile without including it in a datasetVersion?
-    __tablename__ = 'datafiles'
-
-    id = Column(Integer, primary_key=True)
-
-    name = Column(String(80))
-
-    # To be able to differentiate multiple files with the same name
-    permaname = Column(Text, unique=True, nullable=False)
-
-    type = Column(String(80))
-
-    url = Column(Text, unique=True)
 
 
 class Activity(Base):
