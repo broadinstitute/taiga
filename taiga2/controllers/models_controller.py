@@ -39,3 +39,14 @@ def add_user(name):
     session.commit()
 
 
+def add_folder(creator=None,
+               name="Untitled Folder",
+               folder_type=Folder.FolderType.folder,
+               description="No description provided"):
+
+    new_folder = Folder(name=name,
+                        folder_type=folder_type,
+                        description=description,
+                        creator=creator)
+    session.add(new_folder)
+    session.commit()
