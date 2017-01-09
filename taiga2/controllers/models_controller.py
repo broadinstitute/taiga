@@ -37,3 +37,5 @@ def add_user(name):
 
     session.add(new_user)
     session.commit()
+
+

@@ -1,8 +1,11 @@
 import enum
 import uuid
 import re
+import datetime
 
-from sqlalchemy import Table, Column, Integer, String, Text, ForeignKey, Enum, Sequence
+from sqlalchemy import Table, Column, Integer
+from sqlalchemy import String, Text, ForeignKey, Enum
+from sqlalchemy import DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import backref
@@ -111,6 +114,8 @@ class Folder(Entry):
     creator = relationship("User",
                            foreign_keys="Folder.creator_id",
                            backref=__tablename__)
+
+    creation_date = Column(DateTime, default=datetime.datetime.utcnow)
 
     __mapper_args__ = {
         'polymorphic_identity': "Folder"
