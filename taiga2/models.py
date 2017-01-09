@@ -5,23 +5,13 @@ import re
 from sqlalchemy import Table, Column, Integer, String, Text, ForeignKey, Enum, Sequence
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref
 from sqlalchemy import create_engine
 from sqlalchemy.orm import column_property
 from sqlalchemy import select, func
 
 
 Base = declarative_base()
-engine = create_engine('sqlite:///taiga2.db', echo=True)
-
-# TODO: Delete this
-from sqlalchemy.orm import sessionmaker
-Session = sessionmaker(bind=engine)
-session = Session()
-
-Base.metadata.drop_all(engine)
-Base.metadata.create_all(engine)
-# STOP delete
-
 
 # Associations #
 
@@ -65,17 +55,23 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True)
-    # TODO: Home folder is a specific Folder object
-    # home_folder =
-    # TODO: Trash folder is a specific Folder object
-    # trash_folder =
+
+    home_folder_id = Column(Integer, ForeignKey("folders.id"))
+    home_folder = relationship("Folder",
+                               foreign_keys="User.home_folder_id",
+                               backref="home_user")
+
+    trash_folder_id = Column(Integer, ForeignKey("folders.id"))
+    trash_folder = relationship("Folder",
+                                foreign_keys="User.trash_folder_id",
+                                backref="trash_user")
 
     def __repr__(self):
         return '<User %r>' % self.name
 
 
 # TODO: The Entry hierarchy needs to use Single Table Inheritance, based on Philip feedback
-class Entry(Versioned, Base):
+class Entry(Base):
     __tablename__ = 'entries'
 
     id = Column(Integer, primary_key=True)
@@ -113,7 +109,8 @@ class Folder(Entry):
     creator_id = Column(Integer, ForeignKey("users.id"))
 
     creator = relationship("User",
-                           backref="user")
+                           foreign_keys="Folder.creator_id",
+                           backref=__tablename__)
 
     __mapper_args__ = {
         'polymorphic_identity': "Folder"
