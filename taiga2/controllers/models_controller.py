@@ -1,4 +1,5 @@
-from taiga2.models import User, Folder
+from taiga2.models import User, Folder, Entry
+
 from taiga2.models import db
 from flask import current_app
 
@@ -79,3 +80,22 @@ def update_folder_description(folder_id, new_description):
     db.session.commit()
 
     return folder
+
+
+# We don't need add_folder_entry thanks to SQLAlchemy
+# def add_folder_entry(self, folder_id, id, type):
+
+# We don't need remove_folder_entry thanks to SQLAlchemy
+# def remove_folder_entry(self, folder_id, id, type):
+
+# TODO: Populate this function
+def get_folders_containing():
+    raise NotImplementedError
+
+
+def get_parent_folders(entry_id):
+    entry = db.session.query(Entry) \
+            .filter(Entry.id == entry_id).one()
+    parent_folders = entry.folders
+
+    return parent_folders
