@@ -30,7 +30,6 @@ def add_user(name):
     new_user.home_folder = home_folder
     new_user.trash_folder = trash_folder
 
-    db.session.add(new_user)
     db.session.commit()
 
     return new_user

@@ -17,7 +17,8 @@ def app(request):
     settings_override = {
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': TEST_DATABASE_URI,
-        'SQLALCHEMY_TRACK_MODIFICATIONS': True
+        'SQLALCHEMY_TRACK_MODIFICATIONS': True,
+        'SQLALCHEMY_ECHO': False
     }
     _app = create_app(__name__, settings_override)
     print("Create app")
@@ -26,28 +27,23 @@ def app(request):
     ctx = _app.app_context()
     ctx.push()
 
-    def teardown():
-        ctx.pop()
-
-    request.addfinalizer(teardown)
-    return _app
+    # Return _app and teardown
+    yield _app
+    ctx.pop()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def db(app, request):
     """Session-wide test database."""
     if os.path.exists(TESTDB_PATH):
         os.unlink(TESTDB_PATH)
 
-    def teardown():
-        _db.drop_all()
-        os.unlink(TESTDB_PATH)
-
-    # _db.init_app(app)
     _db.create_all()
 
-    request.addfinalizer(teardown)
-    return _db
+    # Return db and teardown
+    yield _db
+    _db.drop_all()
+    os.unlink(TESTDB_PATH)
 
 
 @pytest.fixture(scope='function')
@@ -62,10 +58,8 @@ def session(db, request):
 
     db.session = _session
 
-    def teardown():
-        transaction.rollback()
-        connection.close()
-        _session.remove()
-
-    request.addfinalizer(teardown)
-    return _session
+    # Return db and teardown
+    yield _session
+    transaction.rollback()
+    connection.close()
+    _session.remove()

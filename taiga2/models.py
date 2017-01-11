@@ -3,18 +3,20 @@ import uuid
 import re
 import datetime
 
-# from sqlalchemy import Table, Column, Integer
-# from sqlalchemy import String, Text, ForeignKey, Enum
-# from sqlalchemy import DateTime
-# from sqlalchemy.ext.declarative import declarative_base
-# from sqlalchemy.orm import relationship
-# from sqlalchemy.orm import backref
-# from sqlalchemy import create_engine
-# from sqlalchemy.orm import column_property
-# from sqlalchemy import select, func
+from sqlalchemy import MetaData
+
 from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()
+convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+
+metadata = MetaData(naming_convention=convention)
+db = SQLAlchemy(metadata=metadata)
 
 # Base = declarative_base()
 
@@ -111,14 +113,14 @@ class Folder(Entry):
     description = db.Column(db.Text)
 
     entries = db.relationship("Entry",
-                           secondary=folder_entry_association_table,
-                           backref=__tablename__)
+                              secondary=folder_entry_association_table,
+                              backref=__tablename__)
 
     creator_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
     creator = db.relationship("User",
-                           foreign_keys="Folder.creator_id",
-                           backref=__tablename__)
+                              foreign_keys="Folder.creator_id",
+                              backref=__tablename__)
 
     creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
