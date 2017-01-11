@@ -1,4 +1,4 @@
-import persist
+import taiga2.persist as persist
 from tinydb import Query
 
 home = [
@@ -12,6 +12,7 @@ home = [
         dict(name="A2 Data"),
         dict(name="A3 Data")
     ]
+
 
 def add_entry(db, user_id, parent_id, proto, prov_dataset_ids):
     print("prov", prov_dataset_ids)
@@ -78,4 +79,4 @@ if __name__ == "__main__":
 
     p = []
     for c in home:
-       p.extend(add_entry(db, user_id, home_folder_id, c, p))
+        p.extend(add_entry(db, user_id, home_folder_id, c, p))
