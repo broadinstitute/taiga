@@ -3,36 +3,36 @@ import uuid
 import re
 import datetime
 
-from sqlalchemy import Table, Column, Integer
-from sqlalchemy import String, Text, ForeignKey, Enum
-from sqlalchemy import DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-from sqlalchemy.orm import backref
-from sqlalchemy import create_engine
-from sqlalchemy.orm import column_property
-from sqlalchemy import select, func
+# from sqlalchemy import Table, Column, Integer
+# from sqlalchemy import String, Text, ForeignKey, Enum
+# from sqlalchemy import DateTime
+# from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy.orm import relationship
+# from sqlalchemy.orm import backref
+# from sqlalchemy import create_engine
+# from sqlalchemy.orm import column_property
+# from sqlalchemy import select, func
+from flask_sqlalchemy import SQLAlchemy
 
+db = SQLAlchemy()
 
-Base = declarative_base()
+# Base = declarative_base()
 
 # Associations #
 
 # Association for Many to Many relationship between dataset_version and datafile
-datasetVersion_dataFile_association_table = Table('datasetVersion_dataFile_association',
-                                                  Base.metadata,
-                                                  Column('datasetversion_id', Integer, ForeignKey('dataset_versions.id')),
-                                                  Column('datafile_id', Integer, ForeignKey('datafiles.id'))
-                                                  )
-
+datasetVersion_dataFile_association_table = db.Table('datasetVersion_dataFile_association',
+                                                     db.Column('datasetversion_id', db.Integer,
+                                                               db.ForeignKey('dataset_versions.id')),
+                                                     db.Column('datafile_id', db.Integer, db.ForeignKey('datafiles.id'))
+                                                     )
 
 # Association table for Many to Many relationship between folder and entries
 # As discussed in december 2016 with Philip Montgomery, we decided an entry could have multiple folders containing it
-folder_entry_association_table = Table('folder_entry_association',
-                                       Base.metadata,
-                                       Column('folder_id', Integer, ForeignKey('folders.id')),
-                                       Column('entry_id', Integer, ForeignKey('entries.id'))
-                                       )
+folder_entry_association_table = db.Table('folder_entry_association',
+                                          db.Column('folder_id', db.Integer, db.ForeignKey('folders.id')),
+                                          db.Column('entry_id', db.Integer, db.ForeignKey('entries.id'))
+                                          )
 
 # End Associations #
 
@@ -53,39 +53,44 @@ def generate_permaname(name):
     return permaname
 
 
-class User(Base):
+class User(db.Model):
     __tablename__ = 'users'
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(80), unique=True)
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True)
 
-    home_folder_id = Column(Integer, ForeignKey("folders.id"))
-    home_folder = relationship("Folder",
-                               foreign_keys="User.home_folder_id",
-                               backref="home_user")
+    home_folder_id = db.Column(db.Integer, db.ForeignKey("folders.id"))
+    home_folder = db.relationship("Folder",
+                                  foreign_keys="User.home_folder_id",
+                                  backref="home_user")
 
-    trash_folder_id = Column(Integer, ForeignKey("folders.id"))
-    trash_folder = relationship("Folder",
-                                foreign_keys="User.trash_folder_id",
-                                backref="trash_user")
+    trash_folder_id = db.Column(db.Integer, db.ForeignKey("folders.id"))
+    trash_folder = db.relationship("Folder",
+                                   foreign_keys="User.trash_folder_id",
+                                   backref="trash_user")
 
     def __repr__(self):
-        return '<User %r>' % self.name
+        return "name: {}, home_folder: {}, trash_folder: {}".format(self.name,
+                                                                    self.home_folder.name,
+                                                                    self.trash_folder.name)
 
 
 # TODO: The Entry hierarchy needs to use Single Table Inheritance, based on Philip feedback
-class Entry(Base):
+class Entry(db.Model):
     __tablename__ = 'entries'
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(80), unique=True)
-    type = Column(String(50))
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    type = db.Column(db.String(50))
 
     __mapper_args__ = {
         'polymorphic_identity': classmethod.__class__.__name__,
         'polymorphic_on': type,
         'with_polymorphic': '*'
     }
+
+    def __repr__(self):
+        return "Entry name: {}".format(self.name)
 
 
 class Folder(Entry):
@@ -100,22 +105,22 @@ class Folder(Entry):
     __tablename__ = 'folders'
 
     # TODO: Instead of using a string 'entry.id', can we use Entry.id?
-    id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('entries.id'), primary_key=True)
 
-    folder_type = Column(Enum(FolderType))
-    description = Column(Text)
+    folder_type = db.Column(db.Enum(FolderType))
+    description = db.Column(db.Text)
 
-    entries = relationship("Entry",
+    entries = db.relationship("Entry",
                            secondary=folder_entry_association_table,
                            backref=__tablename__)
 
-    creator_id = Column(Integer, ForeignKey("users.id"))
+    creator_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
-    creator = relationship("User",
+    creator = db.relationship("User",
                            foreign_keys="Folder.creator_id",
                            backref=__tablename__)
 
-    creation_date = Column(DateTime, default=datetime.datetime.utcnow)
+    creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     __mapper_args__ = {
         'polymorphic_identity': "Folder"
@@ -125,56 +130,56 @@ class Folder(Entry):
 class Dataset(Entry):
     __tablename__ = 'datasets'
 
-    id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('entries.id'), primary_key=True)
 
-    description = Column(Text, default="No description provided")
+    description = db.Column(db.Text, default="No description provided")
 
     # TODO: Use the name/key of the dataset and add behind the uuid?
-    permaname = Column(Text, unique=True, nullable=False)
+    permaname = db.Column(db.Text, unique=True, nullable=False)
 
     __mapper_args__ = {
         'polymorphic_identity': "Dataset"
     }
 
 
-class DataFile(Base):
+class DataFile(db.Model):
     # TODO: Can we create a datafile without including it in a datasetVersion?
     __tablename__ = 'datafiles'
 
-    id = Column(Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
 
-    name = Column(String(80))
+    name = db.Column(db.String(80))
 
     # To be able to differentiate multiple files with the same name
-    permaname = Column(Text, unique=True, nullable=False)
+    permaname = db.Column(db.Text, unique=True, nullable=False)
 
-    type = Column(String(80))
+    type = db.Column(db.String(80))
 
-    url = Column(Text, unique=True)
+    url = db.Column(db.Text, unique=True)
 
 
 class DatasetVersion(Entry):
     __tablename__ = 'dataset_versions'
 
-    id = Column(Integer,
-                ForeignKey('entries.id'),
+    id = db.Column(db.Integer,
+                db.ForeignKey('entries.id'),
                 primary_key=True)
 
-    creator_id = Column(Integer, ForeignKey("users.id"))
+    creator_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
-    creator = relationship("User",
+    creator = db.relationship("User",
                            backref=__tablename__)
 
-    dataset_id = Column(Integer, ForeignKey("datasets.id"))
+    dataset_id = db.Column(db.Integer, db.ForeignKey("datasets.id"))
 
-    dataset = relationship("Dataset",
+    dataset = db.relationship("Dataset",
                            foreign_keys=[dataset_id],
                            backref=__tablename__)
 
     # Filled out by the server
-    version = Column(Integer)
+    version = db.Column(db.Integer)
 
-    datafiles = relationship("DataFile",
+    datafiles = db.relationship("DataFile",
                              secondary=datasetVersion_dataFile_association_table,
                              backref=__tablename__)
 
@@ -183,7 +188,7 @@ class DatasetVersion(Entry):
     }
 
 
-class Activity(Base):
+class Activity(db.Model):
     class ActivityType(enum.Enum):
         created = "Created"
         changed_name = "Changed name"
@@ -192,19 +197,19 @@ class Activity(Base):
 
     __tablename__ = 'activities'
 
-    id = Column(Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
 
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
-    user = relationship("User",
+    user = db.relationship("User",
                         backref=__tablename__)
 
-    dataset_id = Column(Integer, ForeignKey("datasets.id"))
+    dataset_id = db.Column(db.Integer, db.ForeignKey("datasets.id"))
 
-    dataset = relationship("Dataset",
+    dataset = db.relationship("Dataset",
                            backref=__tablename__)
 
     # We would want the type of change and the comments associated
-    type = Column(Enum(ActivityType))
+    type = db.Column(db.Enum(ActivityType))
 
-    comments = Column(Text)
+    comments = db.Column(db.Text)

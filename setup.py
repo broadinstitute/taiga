@@ -5,7 +5,7 @@ import taiga2
 #required
 #attrs (16.2.0)
 #connexion (2016.0.dev1, /Users/pmontgom/dev/connexion)
-#Flask (0.11.1)
+# Flask (0.11.1)
 #requests (2.11.0)
 #six (1.10.0)
 #tinydb (3.2.1)
@@ -30,6 +30,8 @@ setup(
         'requests==2.11.0',
         'six==1.10.0',
         'tinydb==3.2.1',
-        'SQLAlchemy==1.1.4'
+        'SQLAlchemy==1.1.4',
+        'Flask-SQLAlchemy==2.1',
+        'pytest==3.0.5'
     ],
 )

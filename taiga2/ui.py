@@ -1,9 +1,15 @@
-from flask import Blueprint
-from flask import Flask
 import flask
 import os
 
-app = flask.Flask(__name__)
+from taiga2.factory import create_app
+
+settings_override = {
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:///taiga2.db',
+    'SQLALCHEMY_ECHO': True,
+    'SQLALCHEMY_TRACK_MODIFICATIONS': True
+}
+
+app = create_app(__name__, settings_override)
 
 INDEX = "static/index.html"
 
