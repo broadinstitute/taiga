@@ -1,13 +1,10 @@
-from taiga2.models import User, Folder, Entry
+from taiga2.models import User, Folder, Entry, Dataset
 
 from taiga2.models import db
-from flask import current_app
 
 # Base.metadata.drop_all(engine)
 # Base.metadata.create_all(engine)
-# STOP delete
 
-## from taiga2.controllers.models_controller import *
 
 # ------- User -------
 def add_user(name):
@@ -83,12 +80,26 @@ def update_folder_description(folder_id, new_description):
 
 
 # We don't need add_folder_entry thanks to SQLAlchemy
-# def add_folder_entry(self, folder_id, id, type):
+def add_folder_entry(folder_id, entry_id):
+    folder = get_folder(folder_id)
+    entry = get_entry(entry_id)
+
+    folder.entries.append(entry)
+
+    return folder
+
 
 # We don't need remove_folder_entry thanks to SQLAlchemy
-# def remove_folder_entry(self, folder_id, id, type):
+def remove_folder_entry(folder_id, entry_id):
+    folder = get_folder(folder_id)
+    entry = get_entry(entry_id)
 
-# TODO: Populate this function
+    folder.entries.remove(entry)
+
+    return folder
+
+
+# TODO: Populate this function?
 def get_folders_containing():
     raise NotImplementedError
 
@@ -99,3 +110,37 @@ def get_parent_folders(entry_id):
     parent_folders = entry.folders
 
     return parent_folders
+
+
+# ------ Dataset --------
+def add_dataset(name="No name",
+                permaname=None,
+                description="No description provided"):
+    new_dataset = Dataset(name=name,
+                          permaname=permaname,
+                          description=description)
+
+    db.session.add(new_dataset)
+    db.session.commit()
+
+    return new_dataset
+
+
+# ------ Entry --------
+def get_entry(entry_id):
+    entry = db.session.query(Entry) \
+        .filter(Entry.id == entry_id) \
+        .one()
+
+    return entry
+
+
+# TODO: I don't think we need this anymore
+# def _convert_entries_to_dict(entries):
+
+
+# ------ Datafile --------
+def add_datafile():
+    # TODO: See register_datafile_id
+    raise NotImplementedError
+

@@ -71,7 +71,7 @@ class User(db.Model):
                                    foreign_keys="User.trash_folder_id",
                                    backref="trash_user")
 
-    def __repr__(self):
+    def __str__(self):
         return "name: {}, home_folder: {}, trash_folder: {}".format(self.name,
                                                                     self.home_folder.name,
                                                                     self.trash_folder.name)
@@ -91,7 +91,7 @@ class Entry(db.Model):
         'with_polymorphic': '*'
     }
 
-    def __repr__(self):
+    def __str__(self):
         return "Entry name: {}".format(self.name)
 
 
