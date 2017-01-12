@@ -155,8 +155,6 @@ class DataFile(db.Model):
     # To be able to differentiate multiple files with the same name
     permaname = db.Column(db.Text, unique=True, nullable=False)
 
-    type = db.Column(db.String(80))
-
     url = db.Column(db.Text, unique=True)
 
 
@@ -164,26 +162,30 @@ class DatasetVersion(Entry):
     __tablename__ = 'dataset_versions'
 
     id = db.Column(db.Integer,
-                db.ForeignKey('entries.id'),
-                primary_key=True)
+                   db.ForeignKey('entries.id'),
+                   primary_key=True)
 
     creator_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
     creator = db.relationship("User",
-                           backref=__tablename__)
+                              backref=__tablename__)
 
     dataset_id = db.Column(db.Integer, db.ForeignKey("datasets.id"))
 
     dataset = db.relationship("Dataset",
-                           foreign_keys=[dataset_id],
-                           backref=__tablename__)
+                              foreign_keys=[dataset_id],
+                              backref=__tablename__)
 
     # Filled out by the server
     version = db.Column(db.Integer)
 
     datafiles = db.relationship("DataFile",
-                             secondary=datasetVersion_dataFile_association_table,
-                             backref=__tablename__)
+                                secondary=datasetVersion_dataFile_association_table,
+                                backref=__tablename__)
+
+    creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    # TODO: See how to manage the status (persist.py)
 
     __mapper_args__ = {
         'polymorphic_identity': "DatasetVersion"
@@ -204,12 +206,12 @@ class Activity(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
     user = db.relationship("User",
-                        backref=__tablename__)
+                           backref=__tablename__)
 
     dataset_id = db.Column(db.Integer, db.ForeignKey("datasets.id"))
 
     dataset = db.relationship("Dataset",
-                           backref=__tablename__)
+                              backref=__tablename__)
 
     # We would want the type of change and the comments associated
     type = db.Column(db.Enum(ActivityType))

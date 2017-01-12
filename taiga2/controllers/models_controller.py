@@ -1,6 +1,8 @@
-from taiga2.models import User, Folder, Entry, Dataset
-
+from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile
+from taiga2.models import generate_permaname
 from taiga2.models import db
+
+from sqlalchemy.sql.expression import func
 
 # Base.metadata.drop_all(engine)
 # Base.metadata.create_all(engine)
@@ -79,22 +81,26 @@ def update_folder_description(folder_id, new_description):
     return folder
 
 
-# We don't need add_folder_entry thanks to SQLAlchemy
 def add_folder_entry(folder_id, entry_id):
     folder = get_folder(folder_id)
     entry = get_entry(entry_id)
 
     folder.entries.append(entry)
 
+    db.session.add(folder)
+    db.session.commit()
+
     return folder
 
 
-# We don't need remove_folder_entry thanks to SQLAlchemy
 def remove_folder_entry(folder_id, entry_id):
     folder = get_folder(folder_id)
     entry = get_entry(entry_id)
 
     folder.entries.remove(entry)
+
+    db.session.add(folder)
+    db.session.commit()
 
     return folder
 
@@ -114,8 +120,13 @@ def get_parent_folders(entry_id):
 
 # ------ Dataset --------
 def add_dataset(name="No name",
+                creator_id=None,
                 permaname=None,
-                description="No description provided"):
+                description="No description provided",
+                datafiles_ids=None):
+    if not permaname:
+        permaname = generate_permaname(name)
+
     new_dataset = Dataset(name=name,
                           permaname=permaname,
                           description=description)
@@ -123,7 +134,134 @@ def add_dataset(name="No name",
     db.session.add(new_dataset)
     db.session.commit()
 
+    if datafiles_ids:
+        # It means we would want to create a first dataset with a DatasetVersion
+        # containing DataFiles
+        creator = get_user(creator_id)
+
+        # TODO: Think about a meaningful name
+        new_dataset_version = add_dataset_version(name="No name",
+                                                  creator_id=creator.id,
+                                                  dataset_id=new_dataset.id,
+                                                  version=1,
+                                                  datafiles_ids=datafiles_ids)
+
+        db.session.add(new_dataset_version)
+        db.session.commit()
+
+    # Add the related activity
+    # TODO: Add the activity
+    # TODO: Think about an automatic way of adding/updating the activity
     return new_dataset
+
+
+def get_dataset(dataset_id):
+    dataset = db.session.query(Dataset) \
+        .filter(Dataset.id == dataset_id).one()
+
+    return dataset
+
+def update_dataset_name(dataset_id, name):
+    dataset = get_dataset(dataset_id)
+
+    dataset.name = name
+    # TODO: Update the activity
+
+    db.session.add(dataset)
+    db.session.commit()
+
+    return dataset
+
+
+def update_dataset_description(dataset_id, description):
+    dataset = get_dataset(dataset_id)
+
+    dataset.description = description
+
+    db.session.add(dataset)
+    db.session.commit()
+
+    return dataset
+
+
+# TODO: update_datafile_summaries
+#def update_datafile_summaries
+
+
+def update_dataset_contents(dataset_id,
+                            datafiles_id_to_remove=None,
+                            datafiles_id_to_add=None,
+                            comments="No comments"):
+    if not datafiles_id_to_remove:
+        datafiles_id_to_remove = []
+    if not datafiles_id_to_add:
+        datafiles_id_to_add = []
+
+    # Fetch the entries to remove
+    datafiles_to_remove = [get_datafile(datafile_id_to_remove)
+                         for datafile_id_to_remove in datafiles_id_to_remove]
+
+    dataset = get_dataset(dataset_id)
+
+    # Fetch the last version
+    # TODO: Make a function to retrieve the last version
+    # TODO: Improve this using query => OperationalError currently
+    max_version = 0
+    dataset_version_latest_version = None
+    for dataset_version in dataset.dataset_versions:
+        if dataset_version.version > max_version:
+            dataset_version_latest_version = dataset_version
+
+    # dataset_version_latest_version = dataset.dataset_versions
+    # dataset_version_latest_version = db.session.query(DatasetVersion, Dataset) \
+    #                                             .filter(Dataset.id == dataset_id) \
+    #                                             .order_by(DatasetVersion.version) \
+    #                                             .first()
+
+
+    latest_version_datafiles = dataset_version_latest_version.datafiles
+    for datafile_to_remove in datafiles_to_remove:
+        if datafile_to_remove in latest_version_datafiles:
+            latest_version_datafiles.remove(datafile_to_remove)
+
+    db.session.add(dataset_version_latest_version)
+    db.session.commit()
+
+    # Fetch entries to remove
+    # entries_to_remove = []
+    #for entry_to_remove in entries_id_to_remove:
+
+    return dataset
+
+
+# ------ DatasetVersion --------
+def add_dataset_version(name,
+                        creator_id,
+                        dataset_id,
+                        datafiles_ids=None,
+                        version=1):
+    if not datafiles_ids:
+        datafiles_ids = []
+
+    # Fetch the object from the database
+    creator = get_user(creator_id)
+
+    dataset = get_entry(dataset_id)
+
+    # TODO: User the power of Query to make only one query instead of calling get_datafile
+    datafiles = [get_datafile(datafile_id) for datafile_id in datafiles_ids]
+
+    # Create the DatasetVersion object
+    new_dataset_version = DatasetVersion(name=name,
+                                         creator=creator,
+                                         dataset=dataset,
+                                         datafiles=datafiles,
+                                         version=version)
+
+    db.session.add(new_dataset_version)
+    db.session.commit()
+
+    return new_dataset_version
 
 
 # ------ Entry --------
@@ -140,7 +278,30 @@ def get_entry(entry_id):
 
 
 # ------ Datafile --------
-def add_datafile():
+def add_datafile(name="No name",
+                 permaname=None,
+                 url=""):
     # TODO: See register_datafile_id
-    raise NotImplementedError
+    new_datafile_name = name
+    if not permaname:
+        new_datafile_permaname = generate_permaname(new_datafile_name)
+    else:
+        new_datafile_permaname = permaname
 
+    new_datafile_url = "http://google.com"
+
+    new_datafile = DataFile(name=new_datafile_name,
+                            permaname=new_datafile_permaname,
+                            url=new_datafile_url)
+
+    db.session.add(new_datafile)
+    db.session.commit()
+
+    return new_datafile
+
+
+def get_datafile(datafile_id):
+    datafile = db.session.query(DataFile) \
+        .filter(DataFile.id == datafile_id).one()
+
+    return datafile

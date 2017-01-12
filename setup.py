@@ -32,6 +32,7 @@ setup(
         'tinydb==3.2.1',
         'SQLAlchemy==1.1.4',
         'Flask-SQLAlchemy==2.1',
-        'pytest==3.0.5'
+        'pytest==3.0.5',
+        'freezegun==0.3.8'
     ],
 )

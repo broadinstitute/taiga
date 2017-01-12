@@ -1,3 +1,4 @@
+import datetime
 import os
 import pytest
 
@@ -63,3 +64,4 @@ def session(db, request):
     transaction.rollback()
     connection.close()
     _session.remove()
+
