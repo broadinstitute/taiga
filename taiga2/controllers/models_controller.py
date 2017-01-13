@@ -8,7 +8,7 @@ from sqlalchemy.sql.expression import func
 # Base.metadata.create_all(engine)
 
 
-# ------- User -------
+#<editor-fold desc="User">
 def add_user(name):
     new_user = User(name=name)
 
@@ -37,9 +37,9 @@ def add_user(name):
 
 def get_user(user_id):
     return db.session.query(User).filter(User.id == user_id).first()
+#</editor-fold>
 
-
-# ------ Folder --------
+#<editor-fold desc="Folder">
 def add_folder(creator_id=None,
                name="Untitled Folder",
                folder_type=Folder.FolderType.folder,
@@ -116,9 +116,9 @@ def get_parent_folders(entry_id):
     parent_folders = entry.folders
 
     return parent_folders
+#</editor-fold>
 
-
-# ------ Dataset --------
+#<editor-fold desc="Dataset">
 def add_dataset(name="No name",
                 creator_id=None,
                 permaname=None,
@@ -161,6 +161,27 @@ def get_dataset(dataset_id):
 
     return dataset
 
+
+def get_dataset_from_permaname(dataset_permaname):
+    dataset = db.session.query(Dataset) \
+        .filter(Dataset.permaname == dataset_permaname) \
+        .one()
+
+    return dataset
+
+
+def get_latest_dataset_version(dataset_id):
+    dataset = get_dataset(dataset_id)
+
+    max_version = 0
+    dataset_version_latest_version = None
+    for dataset_version in dataset.dataset_versions:
+        if dataset_version.version > max_version:
+            dataset_version_latest_version = dataset_version
+
+    return dataset_version_latest_version
+
+
 def update_dataset_name(dataset_id, name):
     dataset = get_dataset(dataset_id)
 
@@ -192,6 +213,7 @@ def update_dataset_contents(dataset_id,
                             datafiles_id_to_remove=None,
                             datafiles_id_to_add=None,
                             comments="No comments"):
+    # TODO: Does it make sense to have a "add datafiles?". Each datafile belongs to a dataset_version
     if not datafiles_id_to_remove:
         datafiles_id_to_remove = []
     if not datafiles_id_to_add:
@@ -199,18 +221,34 @@ def update_dataset_contents(dataset_id,
 
     # Fetch the entries to remove
     datafiles_to_remove = [get_datafile(datafile_id_to_remove)
-                         for datafile_id_to_remove in datafiles_id_to_remove]
+                           for datafile_id_to_remove in datafiles_id_to_remove]
+
+    # Fetch the entries to add
+    datafiles_to_add = [get_datafile(datafile_id_to_add)
+                        for datafile_id_to_add in datafiles_id_to_add]
 
     dataset = get_dataset(dataset_id)
 
     # Fetch the last version
     # TODO: Make a function to retrieve the last version
-    # TODO: Improve this using query => OperationalError currently
+    # TODO: Improve this using db.session.query => OperationalError currently
     max_version = 0
     dataset_version_latest_version = None
     for dataset_version in dataset.dataset_versions:
         if dataset_version.version > max_version:
             dataset_version_latest_version = dataset_version
+
+    # latest_version_datafiles = dataset_version_latest_version.datafiles
+
+    # Create the new dataset_version from the latest and update its version
+    new_updated_dataset_version = add_dataset_version(name=dataset_version_latest_version.name,
+                                                      creator_id=dataset_version_latest_version.creator.id,
+                                                      dataset_id=dataset_version_latest_version.dataset.id,
+                                                      datafiles_ids=[datafile.id
+                                                                     for datafile in dataset_version_latest_version.datafiles],
+                                                      version=dataset_version_latest_version.version+1)
+
+    new_updated_version_datafiles = new_updated_dataset_version.datafiles
 
     # dataset_version_latest_version = dataset.dataset_versions
     # dataset_version_latest_version = db.session.query(DatasetVersion, Dataset) \
@@ -218,23 +256,24 @@ def update_dataset_contents(dataset_id,
     #                                             .order_by(DatasetVersion.version) \
     #                                             .first()
 
-
-    latest_version_datafiles = dataset_version_latest_version.datafiles
+    # TODO: Inefficient, but for now it maybe does not matter because datafiles is not big
+    # Remove the datafiles
     for datafile_to_remove in datafiles_to_remove:
-        if datafile_to_remove in latest_version_datafiles:
-            latest_version_datafiles.remove(datafile_to_remove)
+        if datafile_to_remove in new_updated_version_datafiles:
+            new_updated_version_datafiles.remove(datafile_to_remove)
 
-    db.session.add(dataset_version_latest_version)
+    # Add the datafiles
+    for datafile_to_add in datafiles_to_add:
+        if datafiles_to_add not in new_updated_version_datafiles:
+            new_updated_version_datafiles.append(datafile_to_add)
+
+    db.session.add(new_updated_dataset_version)
     db.session.commit()
 
-    # Fetch entries to remove
-    # entries_to_remove = []
-    #for entry_to_remove in entries_id_to_remove:
-
     return dataset
+#</editor-fold>
 
-
-# ------ DatasetVersion --------
+#<editor-fold desc="DatasetVersion">
 def add_dataset_version(name,
                         creator_id,
                         dataset_id,
@@ -264,7 +303,21 @@ def add_dataset_version(name,
     return new_dataset_version
 
 
-# ------ Entry --------
+def get_dataset_version(dataset_version_id=0):
+    dataset_version = db.session.query(DatasetVersion) \
+        .filter(DatasetVersion.id == dataset_version_id) \
+        .one()
+
+    return dataset_version
+
+
+def get_dataset_version_provenance(dataset_version_id=0,
+                                   provenance=None):
+    # TODO: See how to manage the provenance
+    raise NotImplementedError
+#</editor-fold>
+
+#<editor-fold desc="Entry">
 def get_entry(entry_id):
     entry = db.session.query(Entry) \
         .filter(Entry.id == entry_id) \
@@ -275,9 +328,9 @@ def get_entry(entry_id):
 
 # TODO: I don't think we need this anymore
 # def _convert_entries_to_dict(entries):
+#</editor-fold>
 
-
-# ------ Datafile --------
+#<editor-fold desc="DataFile">
 def add_datafile(name="No name",
                  permaname=None,
                  url=""):
@@ -305,3 +358,4 @@ def get_datafile(datafile_id):
         .filter(DataFile.id == datafile_id).one()
 
     return datafile
+#</editor-fold>

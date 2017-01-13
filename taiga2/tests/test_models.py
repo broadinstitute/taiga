@@ -10,10 +10,12 @@ from taiga2.models import User, Folder, Dataset, Entry, DatasetVersion, DataFile
 from taiga2.models import generate_permaname
 
 
-# User
+#<editor-fold desc="User Tests">
 @pytest.fixture
 def new_user():
-    _new_user = add_user(name="Remi")
+    _new_user = get_user(1)
+    if not _new_user:
+        _new_user = add_user(name="Remi")
 
     return _new_user
 
@@ -34,9 +36,9 @@ def test_get_user(session, new_user):
     db_user = get_user(new_user.id)
 
     assert db_user == new_user
+#</editor-fold>
 
-
-# Folder
+#<editor-fold desc="Folder Tests">
 @pytest.fixture
 def new_folder(new_user):
     new_folder_name = "New folder"
@@ -141,9 +143,9 @@ def test_add_folder_entry(session: SessionBase,
 
     assert new_folder == updated_folder
     assert updated_again_folder == updated_folder
+#</editor-fold>
 
-
-# Dataset
+#<editor-fold desc="Dataset Tests">
 @pytest.fixture()
 def new_dataset():
     new_dataset_name = "New Dataset"
@@ -224,33 +226,73 @@ def test_update_dataset_description(session: SessionBase,
 
 
 def test_update_dataset_contents(session: SessionBase,
-                                 new_dataset,
                                  new_dataset_version,
                                  new_datafile):
+    _new_dataset = new_dataset_version.dataset
+    # TODO: This test showed an issue with the conftest.py with session on db fixture. Temp fix with function as scope which destroys db
     # TODO: Replace this with a fixture or a direct call to a function
+    # new_dataset = new_dataset_version.dataset
+    # Add one datafile to begin with
     new_dataset_version.datafiles.append(new_datafile)
-    session.add(new_dataset)
+    session.add(new_dataset_version)
     session.commit()
 
     entries_to_remove = [new_datafile.id]
-    updated_dataset = update_dataset_contents(new_dataset.id,
-                                              entries_to_remove)
+    updated_dataset = update_dataset_contents(_new_dataset.id,
+                                              datafiles_id_to_remove=entries_to_remove)
 
-    assert updated_dataset == new_dataset
-    assert len(updated_dataset.dataset_versions) == 1
-    assert len(updated_dataset.dataset_versions[0].datafiles) == 0
+    last_dataset_version = get_latest_dataset_version(updated_dataset.id)
+
+    assert updated_dataset == _new_dataset
+    assert last_dataset_version.version == new_dataset_version.version + 1
+    assert len(updated_dataset.dataset_versions) == 2
+    assert len(last_dataset_version.datafiles) == 0
+
+    entries_to_add = [new_datafile.id]
+    updated_added_dataset = update_dataset_contents(_new_dataset.id,
+                                                    datafiles_id_to_add=entries_to_add)
+
+    new_last_dataset_version = get_latest_dataset_version(updated_added_dataset.id)
+
+    assert updated_added_dataset == updated_dataset
+    assert len(updated_added_dataset.dataset_versions) == 3
+    assert len(new_last_dataset_version.datafiles) == 1
 
 
-# DatasetVersion
+def test_get_dataset(session: SessionBase,
+                     new_dataset):
+    fetched_dataset = get_dataset(new_dataset.id)
+
+    assert fetched_dataset == new_dataset
+    assert fetched_dataset.id == new_dataset.id
+
+
+def test_get_dataset_by_permaname(session: SessionBase,
+                                  new_dataset: Dataset):
+    fetched_dataset = get_dataset_from_permaname(new_dataset.permaname)
+
+    assert fetched_dataset == new_dataset
+    assert fetched_dataset.id == new_dataset.id
+    assert fetched_dataset.permaname == new_dataset.permaname
+
+#</editor-fold>
+
+#<editor-fold desc="DatasetVersion Tests">
 @pytest.fixture
-def new_dataset_version(new_user,
-                        new_dataset):
+def new_dataset_version():
+    # TODO: Add in the name it is an empty dataset_version
     new_dataset_version_name = "New Dataset Version"
 
-    _new_dataset_version = DatasetVersion(name="New Dataset Version",
-                                          creator=new_user,
-                                          dataset=new_dataset,
+    _new_user = new_user()
+    _new_dataset = new_dataset()
+
+    _new_dataset_version = DatasetVersion(name=new_dataset_version_name,
+                                          creator=_new_user,
+                                          dataset=_new_dataset,
                                           version=1)
+
+    db.session.add(_new_dataset_version)
+    db.session.commit()
 
     return _new_dataset_version
 
@@ -272,7 +314,15 @@ def test_add_dataset_version(session: SessionBase,
     assert new_dataset_version.creation_date.date() == datetime.datetime.now().date()
 
 
-# DataFile
+def test_get_dataset_version(session,
+                             new_dataset_version):
+    fetched_dataset_version = get_dataset_version(new_dataset_version.id)
+
+    assert fetched_dataset_version == new_dataset_version
+    assert fetched_dataset_version.id == new_dataset_version.id
+#</editor-fold>
+
+#<editor-fold desc="DataFile Tests">
 @pytest.fixture
 def new_datafile():
     new_datafile_name = "New Datafile"
@@ -285,9 +335,10 @@ def new_datafile():
                                  url=new_datafile_url)
 
     return _new_datafile
+#</editor-fold>
 
+#<editor-fold desc="Entry Tests">
 
-# Entry
 def test_get_entry(session: SessionBase,
                    new_folder):
     entry = get_entry(new_folder.id)
@@ -296,6 +347,9 @@ def test_get_entry(session: SessionBase,
     # assert type(entry) is Entry
     assert entry.id == new_folder.id
 
+#</editor-fold>
 
-# Test Utilities
+#<editor-fold desc="Test Utilities">
 # TODO: Test generate_name
+#</editor-fold>
+
