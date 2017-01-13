@@ -315,6 +315,19 @@ def get_dataset_version_provenance(dataset_version_id=0,
                                    provenance=None):
     # TODO: See how to manage the provenance
     raise NotImplementedError
+
+
+def get_dataset_version_by_permaname_and_version(permaname,
+                                                 version):
+    """From the permaname of a dataset, retrieve the specific dataset version"""
+    # dataset = get_dataset_from_permaname(permaname)
+    dataset_version = db.session.query(DatasetVersion) \
+        .filter(DatasetVersion.version == version) \
+        .filter(Dataset.permaname == permaname) \
+        .one()
+
+    return dataset_version
+
 #</editor-fold>
 
 #<editor-fold desc="Entry">

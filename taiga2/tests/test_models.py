@@ -320,6 +320,19 @@ def test_get_dataset_version(session,
 
     assert fetched_dataset_version == new_dataset_version
     assert fetched_dataset_version.id == new_dataset_version.id
+
+def test_get_dataset_version_by_permaname_and_version(session,
+                                                      new_dataset_version: DatasetVersion):
+    dataset = new_dataset_version.dataset
+    first_version_number = 1
+    first_dataset_version = get_dataset_version_by_permaname_and_version(dataset.permaname,
+                                                                              first_version_number)
+
+    check_first_dataset_version = [dataset_version
+                                   for dataset_version in dataset.dataset_versions
+                                   if dataset_version.version == 1][0]
+    assert first_dataset_version == check_first_dataset_version
+    assert first_dataset_version.version == 1
 #</editor-fold>
 
 #<editor-fold desc="DataFile Tests">
