@@ -7,7 +7,7 @@ from taiga2.models import db as _db
 from flask_sqlalchemy import SQLAlchemy
 
 
-TESTDB = 'test_taiga2.db'
+TESTDB = 'test_temp_taiga2.db'
 TESTDB_PATH = "{}".format(TESTDB)
 TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 
