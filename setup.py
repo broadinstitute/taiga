@@ -22,7 +22,7 @@ setup(
         'attrs==16.2.0',
         'connexion>=1.0.129',
         'boto3>=1.4.2',
-        'Flask==0.11.1',
+        'Flask>=0.11.1',
         'celery==4.0.0',
         'connexion>=1.0.129',
         'Flask==0.11.1',
@@ -32,6 +32,9 @@ setup(
         'tinydb==3.2.1',
         'SQLAlchemy==1.1.4',
         'Flask-SQLAlchemy==2.1',
+        'marshmallow-sqlalchemy==0.12.1',
+        'flask-marshmallow>=0.7.0',
+        'marshmallow-enum>=1.0'
         'pytest==3.0.5',
         'freezegun==0.3.8'
     ],
