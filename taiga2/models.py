@@ -159,6 +159,7 @@ class DataFile(db.Model):
 
 
 class DatasetVersion(Entry):
+    # Missing the permaname of the DatasetVersion
     __tablename__ = 'dataset_versions'
 
     id = db.Column(db.Integer,

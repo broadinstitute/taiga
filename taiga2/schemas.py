@@ -8,7 +8,8 @@ ma = Marshmallow()
 
 class UserSchema(ma.ModelSchema):
     class Meta:
-        model = User
+        fields = ('id', 'name',
+                  'home_folder_id', 'trash_folder_id')
 
 
 class UserNamedIdSchema(ma.ModelSchema):
@@ -30,7 +31,14 @@ class FolderNamedIdSchema(ma.ModelSchema):
         fields = ('id', 'name')
 
 
+class DatasetVersionSummarySchema(ma.ModelSchema):
+    # TODO: Add status later
+    class Meta:
+        fields = ('id', 'name')
+
+
 class FolderSchema(ma.ModelSchema):
+    # TODO: Add the ACL
     class Meta:
         # We just don't take the folder_type because of the Enum
         additional = ('id', 'name', 'type', 'description',
@@ -41,4 +49,14 @@ class FolderSchema(ma.ModelSchema):
     folder_type = EnumField(Folder.FolderType)
     parents = ma.Nested(FolderNamedIdSchema, many=True)
 
+
+class DatasetSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('id', 'name', 'description',
+                      'dataset_versions')
+
+    # permanames = ma.Nested(DatasetVersionSchema, many=True)
+    dataset_versions = ma.Nested(DatasetVersionSummarySchema,
+                                 many=True,
+                                 dump_to='versions')
 
