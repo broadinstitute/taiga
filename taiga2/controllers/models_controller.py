@@ -7,6 +7,10 @@ from sqlalchemy.sql.expression import func
 # Base.metadata.drop_all(engine)
 # Base.metadata.create_all(engine)
 
+# IMPORTANT:
+#   If you have this error "RuntimeError: application not registered on db instance and
+#   no application bound to current context" while trying around within command line,
+#   You need to push the context of you app => app.app_context().push() (for us frontend_app.app_context().push()
 
 #<editor-fold desc="User">
 def add_user(name):
