@@ -25,14 +25,20 @@ class EntrySchema(ma.ModelSchema):
     creator = ma.Nested(UserNamedIdSchema)
 
 
+class FolderNamedIdSchema(ma.ModelSchema):
+    class Meta:
+        fields = ('id', 'name')
+
+
 class FolderSchema(ma.ModelSchema):
     class Meta:
         # We just don't take the folder_type because of the Enum
-        fields = ('id', 'name', 'type', 'description',
-                  'entries', 'creator', 'creation_date',
-                  'folder_type')
+        additional = ('id', 'name', 'type', 'description',
+                      'entries', 'creator', 'creation_date',
+                      'folder_type', 'parents')
     entries = ma.Nested(EntrySchema, many=True)
     creator = ma.Nested(UserNamedIdSchema)
     folder_type = EnumField(Folder.FolderType)
+    parents = ma.Nested(FolderNamedIdSchema, many=True)
 
 

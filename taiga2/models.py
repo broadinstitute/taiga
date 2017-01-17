@@ -114,7 +114,7 @@ class Folder(Entry):
 
     entries = db.relationship("Entry",
                               secondary=folder_entry_association_table,
-                              backref=__tablename__)
+                              backref="parents")
 
     creator_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 

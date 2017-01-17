@@ -117,7 +117,7 @@ def get_folders_containing():
 def get_parent_folders(entry_id):
     entry = db.session.query(Entry) \
             .filter(Entry.id == entry_id).one()
-    parent_folders = entry.folders
+    parent_folders = entry.parents
 
     return parent_folders
 #</editor-fold>
