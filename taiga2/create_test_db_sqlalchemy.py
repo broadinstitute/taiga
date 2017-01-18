@@ -19,9 +19,14 @@ if __name__ == "__main__":
         admin_user = add_user(name="Admin")
         home_folder_admin = admin_user.home_folder
 
-        # Create the origin data in Home folder
+        # Create the origin data
         origin_dataset = add_dataset(name="origin",
                                      creator_id=admin_user.id)
+        # Create a dataVersion to origin
+        origin_first_datasetVersion = add_dataset_version(name="origin_v1",
+                                                          creator_id=admin_user.id,
+                                                          dataset_id=origin_dataset.id)
+        # Add the origin dataset inside the home folder
         add_folder_entry(folder_id=home_folder_admin.id,
                          entry_id=origin_dataset.id)
 

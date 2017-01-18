@@ -131,9 +131,11 @@ def add_dataset(name="No name",
     if not permaname:
         permaname = generate_permaname(name)
 
+    creator = get_user(creator_id)
     new_dataset = Dataset(name=name,
                           permaname=permaname,
-                          description=description)
+                          description=description,
+                          creator=creator)
 
     db.session.add(new_dataset)
     db.session.commit()
@@ -141,7 +143,6 @@ def add_dataset(name="No name",
     if datafiles_ids:
         # It means we would want to create a first dataset with a DatasetVersion
         # containing DataFiles
-        creator = get_user(creator_id)
 
         # TODO: Think about a meaningful name
         new_dataset_version = add_dataset_version(name="No name",
@@ -190,6 +191,7 @@ def update_dataset_name(dataset_id, name):
     dataset = get_dataset(dataset_id)
 
     dataset.name = name
+    # TODO: Update the permaname with the new name
     # TODO: Update the activity
 
     db.session.add(dataset)

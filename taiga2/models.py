@@ -84,7 +84,13 @@ class Entry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
     type = db.Column(db.String(50))
+    creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
+    creator_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+    creator = db.relationship("User",
+                              foreign_keys="Folder.creator_id",
+                              backref=__tablename__)
     __mapper_args__ = {
         'polymorphic_identity': classmethod.__class__.__name__,
         'polymorphic_on': type,
@@ -116,13 +122,7 @@ class Folder(Entry):
                               secondary=folder_entry_association_table,
                               backref="parents")
 
-    creator_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
-    creator = db.relationship("User",
-                              foreign_keys="Folder.creator_id",
-                              backref=__tablename__)
-
-    creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     __mapper_args__ = {
         'polymorphic_identity': "Folder"

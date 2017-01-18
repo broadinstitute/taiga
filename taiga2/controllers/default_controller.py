@@ -1,4 +1,9 @@
 from flask import current_app
+# TODO: Change the app containing db to api_app => current_app
+from taiga2.app import frontend_app
+import taiga2.controllers.models_controller as models_controller
+import taiga2.schemas as schemas
+
 # Handle URL upload
 from flask import render_template, request, redirect, url_for
 import os, json, boto3
@@ -8,7 +13,6 @@ from uuid import uuid4
 import flask
 import time
 
-from .. import tasks
 
 ADMIN_USER_ID = "admin"
 
@@ -16,6 +20,27 @@ ADMIN_USER_ID = "admin"
 def update_dataset():
     pass
 
+
+# def get_dataset(datasetId):
+#     db = current_app.db
+#     ds = db.get_dataset(datasetId)
+#     if ds is None:
+#         flask.abort(404)
+#
+#     versions = []
+#     for v in ds['versions']:
+#         dv = db.get_dataset_version(v)
+#         versions.append(dict(name=dv['version'], id=v, status="valid"))  # =dv['status']))
+#
+#     response = dict(id=ds['id'],
+#                     name=ds['name'],
+#                     description=ds['description'],
+#                     permanames=ds['permanames'],
+#                     versions=versions,
+#                     acl=dict(default_permissions="owner", grants=[])
+#                     )
+#
+#     return flask.jsonify(response)
 
 def get_dataset(datasetId):
     db = current_app.db
@@ -39,78 +64,104 @@ def get_dataset(datasetId):
     return flask.jsonify(response)
 
 
-def get_folder(folder_id):
-    print("get_folder start", time.asctime())
-    db = current_app.db
-
-    folder = db.get_folder(folder_id)
-    if folder is None:
-        flask.abort(404)
-
-    parents = [dict(name=f['name'], id=f['id']) for f in db.get_parent_folders(folder_id)]
-    entries = []
-    for e in folder['entries']:
-        if e['type'] == "folder":
-            f = db.get_folder(e['id'])
-            name = f['name']
-            creator_id = f['creator_id']
-            creation_date = f['creation_date']
-        elif e['type'] == "dataset":
-            d = db.get_dataset(e['id'])
-            name = d['name']
-            creator_id = d['creator_id']
-            creation_date = d['creation_date']
-        elif e['type'] == "dataset_version":
-            dv = db.get_dataset_version(e['id'])
-            print("dv=", dv)
-            d = db.get_dataset(dv['dataset_id'])
-            name = d['name']
-            creator_id = dv['creator_id']
-            creation_date = dv['creation_date']
-        else:
-            raise Exception("Unknown entry type: {}".format(e['type']))
-
-        creator = db.get_user(creator_id)
-        creator_name = creator['name']
-        entries.append(dict(
-            id=e['id'],
-            type=e['type'],
-            name=name,
-            creation_date=creation_date,
-            creator=dict(id=creator_id, name=creator_name)))
-
-    creator_id = folder['creator_id']
-    creator = db.get_user(creator_id)
-
-    response = dict(id=folder['id'],
-                    name=folder['name'],
-                    type=folder['type'],
-                    parents=parents,
-                    entries=entries,
-                    creator=dict(id=creator_id, name=creator['name']),
-                    creation_date=folder['creation_date'],
-                    acl=dict(default_permissions="owner", grants=[])
-                    )
-    print("get_folder stop", time.asctime())
-    return flask.jsonify(response)
+# def get_folder(folder_id):
+#     print("get_folder start", time.asctime())
+#     db = current_app.db
+#
+#     folder = db.get_folder(folder_id)
+#     if folder is None:
+#         flask.abort(404)
+#
+#     parents = [dict(name=f['name'], id=f['id']) for f in db.get_parent_folders(folder_id)]
+#     entries = []
+#     for e in folder['entries']:
+#         if e['type'] == "folder":
+#             f = db.get_folder(e['id'])
+#             name = f['name']
+#             creator_id = f['creator_id']
+#             creation_date = f['creation_date']
+#         elif e['type'] == "dataset":
+#             d = db.get_dataset(e['id'])
+#             name = d['name']
+#             creator_id = d['creator_id']
+#             creation_date = d['creation_date']
+#         elif e['type'] == "dataset_version":
+#             dv = db.get_dataset_version(e['id'])
+#             print("dv=", dv)
+#             d = db.get_dataset(dv['dataset_id'])
+#             name = d['name']
+#             creator_id = dv['creator_id']
+#             creation_date = dv['creation_date']
+#         else:
+#             raise Exception("Unknown entry type: {}".format(e['type']))
+#
+#         creator = db.get_user(creator_id)
+#         creator_name = creator['name']
+#         entries.append(dict(
+#             id=e['id'],
+#             type=e['type'],
+#             name=name,
+#             creation_date=creation_date,
+#             creator=dict(id=creator_id, name=creator_name)))
+#
+#     creator_id = folder['creator_id']
+#     creator = db.get_user(creator_id)
+#
+#     response = dict(id=folder['id'],
+#                     name=folder['name'],
+#                     type=folder['type'],
+#                     parents=parents,
+#                     entries=entries,
+#                     creator=dict(id=creator_id, name=creator['name']),
+#                     creation_date=folder['creation_date'],
+#                     acl=dict(default_permissions="owner", grants=[])
+#                     )
+#     print("get_folder stop", time.asctime())
+#     return flask.jsonify(response)
 
     ## Used for Celery testing
     # response = tasks.get_folder_async.delay(folder_id)
     # return flask.jsonify(response.wait())
 
 
+def get_folder(folder_id):
+    print("get_folder start", time.asctime())
+    with frontend_app.app_context():
+        folder = models_controller.get_folder(folder_id)
+        if folder is None:
+            flask.abort(404)
+
+        folder_schema = schemas.FolderSchema()
+        json_data_folder = folder_schema.dump(folder).data
+        print("get_folder stop", time.asctime())
+        return flask.jsonify(json_data_folder)
+
+
 def _get_user_id():
     return ADMIN_USER_ID
 
 
+# def get_user():
+#     print("get_user start", time.asctime())
+#     print("The user id called is: %s" % _get_user_id())
+#     print("Can we get db_sqlAlchemy here? {}".format(current_app.db_sqlAlchemy))
+#     db = current_app.db
+#     user = db.get_user(_get_user_id())
+#     print("user %s" % user)
+#     print("get_user end", time.asctime())
+#     return flask.jsonify(user)
+
+
 def get_user():
     print("get_user start", time.asctime())
-    print("The user id called is: %s" % _get_user_id())
-    db = current_app.db
-    user = db.get_user(_get_user_id())
-    print("user %s" % user)
-    print("get_user end", time.asctime())
-    return flask.jsonify(user)
+    with frontend_app.app_context():
+        user = models_controller.get_user(1)
+        print("user %s" % user.name)
+        print("get_user end", time.asctime())
+        user_schema = schemas.UserSchema()
+        json_data_user = user_schema.dump(user).data
+        print("User jsonified: {}".format(json_data_user))
+        return flask.jsonify(json_data_user)
 
 
 def get_s3_credentials():

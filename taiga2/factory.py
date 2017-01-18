@@ -17,5 +17,6 @@ def create_app(name, settings_override):
     from taiga2.schemas import ma
     ma.init_app(app)
 
+    app.db_sqlAlchemy = db
     return app
 
