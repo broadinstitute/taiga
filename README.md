@@ -31,8 +31,6 @@ Taiga 2 is built on the following stack:
 - Yarn
 - Node/NPM
 
-
-
 ### Configuring S3
 
 Because we are using S3 to store the files, we need to correctly configure the S3 service, and its buckets.
@@ -98,6 +96,10 @@ Starting the project is not yet straightforward, but will be in the near future:
 
         `cp settings.cfg.sample settings.cfg && vim settings.cfg`
 
+6. Create the database to have some data to work with:
+
+        `python taiga2/create_test_db_sqlalchemy.py`
+
 6. Open 4 terminal windows to launch Webpack, Taiga 2, Celery and Redis processes: 
 
     a. In the root folder:
@@ -121,7 +123,8 @@ Starting the project is not yet straightforward, but will be in the near future:
 
 ## Running the tests
 
-Coming soon
+1. `cd taiga2/tests`
+2. `pytest`
 
 ## Deployment
 
@@ -129,7 +132,7 @@ Coming soon
 
 ## Contributing
 
-Feel free to make a contribution and then submit a Pull Request (smile)
+Feel free to make a contribution and then submit a Pull Request!
 
 ## Versioning
 
