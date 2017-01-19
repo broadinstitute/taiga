@@ -329,6 +329,74 @@ paths:
               acl:
                 "$ref": "#/definitions/Acl"
 
+  /dataset/{dataset_id}/latest:
+    get:
+      x-swagger-router-controller: taiga2.controllers.default_controller
+      operationId: get_dataset_latest
+      description: Fetch the latest (dataset_)version of a dataset
+      parameters:
+        - name: dataset_id
+          in: path
+          type: string
+          description: Dataset ID
+          required: true
+      responses:
+        200:
+          description: The data specific to a specific dataset version
+          schema:
+            title: DatasetVersion
+            type: object
+            required:
+              - id
+              - dataset_id
+              - name
+              - creation_date
+              - creator
+              - datafiles
+              - version
+            properties:
+              id:
+                type: string
+              dataset_id:
+                type: string
+              status:
+                "$ref": "#/definitions/StatusEnum"
+              name:
+                type: string
+              version:
+                type: string
+              description:
+                type: string
+              creation_date:
+                type: string
+              creator:
+                "$ref": "#/definitions/NamedId"
+              datafiles:
+                type: array
+                items:
+                  title: DataFile
+                  type: object
+                  required:
+                    - name
+                    - url
+                    - mime_type
+                    - description
+                    - content_summary
+                  properties:
+                    name:
+                      type: string
+                    url:
+                      type: string
+                    mime_type:
+                      type: string
+                    description:
+                      type: string
+                    content_summary:
+                      description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
+                      type: string
+              provenance:
+                "$ref": "#/definitions/Provenance"
+
   /dataset/{datasetId}/version:
     post:
       x-swagger-router-controller: taiga2.controllers.default_controller

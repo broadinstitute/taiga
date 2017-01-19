@@ -111,3 +111,20 @@ class DatasetSchema(ma.ModelSchema):
                                  many=True,
                                  dump_to='versions')
 
+
+class DataFileSummarySchema(ma.ModelSchema):
+    class Meta:
+        additional = ('name', 'url')
+    # TODO: Manage the other fields in the model/db too
+    mime_type = fields.fields.Function(lambda obj: 'TODO')
+    description = fields.fields.Function(lambda obj: 'TODO')
+    content_summary = fields.fields.Function(lambda obj: 'TODO')
+
+
+class DatasetVersionSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('id', 'name', 'dataset_id',
+                      'creation_date', 'creator', 'datafiles',
+                      'version')
+    creator = ma.Nested(UserNamedIdSchema)
+    datafiles = ma.Nested(DataFileSummarySchema, many=True)

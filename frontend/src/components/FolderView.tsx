@@ -7,6 +7,7 @@ import { TaigaApi } from "../models/api";
 
 import * as Dialogs from "./Dialogs";
 import * as Upload from "./Modals/Upload";
+import {DatasetVersion} from "../models/models";
 
 export interface FolderViewProps {
     params : any
@@ -14,6 +15,7 @@ export interface FolderViewProps {
 
 export interface FolderViewState {
     folder? : Folder.Folder;
+    dataset_latestDatasetVersion? : { [dataset_id: string]: Folder.DatasetVersion }
     showEditName? : boolean;
     showEditDescription? : boolean;
     showUploadDataset?: boolean;
@@ -52,11 +54,29 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         let tapi : TaigaApi = (this.context as any).tapi;
         
         console.log("FolderView: componentDidMount");
+        // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
+        let datasets_latestdv : { [dataset_id: string]: Folder.DatasetVersion } = {};
+        let _folder = null;
         tapi.get_folder(this.props.params.folderId).then(folder => {
-            this.setState({folder: folder, selection: {}});
+            _folder = folder;
             console.log("FolderView: complete");
+            return folder.entries
             }
-        );
+        ).then((entries: Array<Folder.FolderEntries>) => {
+            let all_latest_dataset_versions: Array<Promise<DatasetVersion>> = null;
+            all_latest_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
+                if (entry.type == Folder.FolderEntries.TypeEnum.Dataset) {
+                    return tapi.get_dataset_version_latest(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
+                        datasets_latestdv[entry.id] = datasetVersion;
+                    });
+                }
+            });
+            return Promise.all(all_latest_dataset_versions);
+        }).then(() => {
+            this.setState({folder: _folder,
+                selection: {},
+                dataset_latestDatasetVersion: datasets_latestdv});
+        });
     }
 
     selectRow(select_key : string) {
@@ -142,12 +162,17 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
             if(e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
                 link = <Link key={index} to={"/app/dataset/"+e.id}>{e.name}</Link>
-            } else {
+            } else if(e.type == Folder.FolderEntries.TypeEnum.Dataset) {
+                // TODO: Be careful about this add, not sure if we should access Dataset data like this
+                // TODO: We need to get the latest datasetVersion from this dataset
+                let latest_datasetVersion = this.state.dataset_latestDatasetVersion[e.id];
+                link = <span><Link key={index} to={"/app/dataset/"+latest_datasetVersion.id}>{e.name}</Link> (latest)</span>
+            }
+            else {
                 link = e.name;
             }
 
             let select_key = "dataset."+e.id;
-
             return <tr key={e.id}>
                 <td><input type="checkbox" value={ this.state.selection[select_key] } onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td>{link}</td>

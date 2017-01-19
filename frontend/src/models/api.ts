@@ -55,6 +55,10 @@ export class TaigaApi {
         return this._fetch<DatasetVersion>("/datasetVersion/"+dataset_version_id)
     }
 
+    get_dataset_version_latest(dataset_id: string) : Promise<DatasetVersion> {
+        return this._fetch<DatasetVersion>("/dataset/"+dataset_id+"/latest")
+    }
+
     get_s3_credentials() : Promise<S3Credentials> {
         return this._fetch<S3Credentials>("/credentials_s3")
     }

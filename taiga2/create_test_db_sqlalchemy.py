@@ -22,10 +22,15 @@ if __name__ == "__main__":
         # Create the origin data
         origin_dataset = add_dataset(name="origin",
                                      creator_id=admin_user.id)
+
+        # Create a DataFile for the origin dataset
+        datafile_origin_dataset = add_datafile(name="Origin Datafile")
+
         # Create a dataVersion to origin
         origin_first_datasetVersion = add_dataset_version(name="origin_v1",
                                                           creator_id=admin_user.id,
-                                                          dataset_id=origin_dataset.id)
+                                                          dataset_id=origin_dataset.id,
+                                                          datafiles_ids=[datafile_origin_dataset.id])
         # Add the origin dataset inside the home folder
         add_folder_entry(folder_id=home_folder_admin.id,
                          entry_id=origin_dataset.id)
@@ -48,12 +53,13 @@ if __name__ == "__main__":
         data = add_dataset(name="Data",
                            creator_id=admin_user.id)
         add_folder_entry(folder_id=folderB.id,
-                         entry_id=folderB.id)
+                         entry_id=data.id)
 
         # Create A1 Data/A2 Data/A3 Data inside Folder A
         for i in range(1, 4):
-            name = "".join(['A', str(i), " Data"])
-            dataAX = add_dataset(name=name,
-                                 creator_id=admin_user.id)
+            name = "".join(['A', str(i), " DatasetVersion"])
+            dataAX = add_dataset_version(name=name,
+                                         creator_id=admin_user.id,
+                                         dataset_id=origin_dataset.id)
             add_folder_entry(folder_id=folderA.id,
                              entry_id=dataAX.id)

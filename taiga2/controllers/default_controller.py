@@ -223,6 +223,15 @@ def get_dataset_activity():
     pass
 
 
+def get_dataset_latest(dataset_id):
+    with frontend_app.app_context():
+        latest_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
+
+        dataset_version_schema = schemas.DatasetVersionSummarySchema()
+        json_data_latest_dataset_version = dataset_version_schema.dump(latest_dataset_version).data
+        return flask.jsonify(json_data_latest_dataset_version)
+
+
 def get_datafile():
     pass
 
