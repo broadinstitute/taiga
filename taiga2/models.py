@@ -184,8 +184,6 @@ class DatasetVersion(Entry):
                                 secondary=datasetVersion_dataFile_association_table,
                                 backref=__tablename__)
 
-    creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-
     # TODO: See how to manage the status (persist.py)
 
     __mapper_args__ = {

@@ -177,7 +177,6 @@ def get_dataset_from_permaname(dataset_permaname):
 
 def get_latest_dataset_version(dataset_id):
     dataset = get_dataset(dataset_id)
-
     max_version = 0
     dataset_version_latest_version = None
     for dataset_version in dataset.dataset_versions:

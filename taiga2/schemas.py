@@ -125,6 +125,8 @@ class DatasetVersionSchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'name', 'dataset_id',
                       'creation_date', 'creator', 'datafiles',
-                      'version')
+                      'version', 'parents')
     creator = ma.Nested(UserNamedIdSchema)
     datafiles = ma.Nested(DataFileSummarySchema, many=True)
+    # TODO: Consolidate the term between folders and parents
+    parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)

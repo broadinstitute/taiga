@@ -43,25 +43,14 @@ def update_dataset():
 #     return flask.jsonify(response)
 
 def get_dataset(datasetId):
-    db = current_app.db
-    ds = db.get_dataset(datasetId)
-    if ds is None:
-        flask.abort(404)
+    with frontend_app.app_context():
+        dataset = models_controller.get_dataset(datasetId)
+        if dataset is None:
+            flask.abort(404)
 
-    versions = []
-    for v in ds['versions']:
-        dv = db.get_dataset_version(v)
-        versions.append(dict(name=dv['version'], id=v, status="valid"))  # =dv['status']))
-
-    response = dict(id=ds['id'],
-                    name=ds['name'],
-                    description=ds['description'],
-                    permanames=ds['permanames'],
-                    versions=versions,
-                    acl=dict(default_permissions="owner", grants=[])
-                    )
-
-    return flask.jsonify(response)
+        dataset_schema = schemas.DatasetSchema()
+        json_dataset_data = dataset_schema.dump(dataset).data
+        return flask.jsonify(json_dataset_data)
 
 
 # def get_folder(folder_id):
@@ -254,52 +243,68 @@ def update_dataset_description(datasetId, DescriptionUpdate):
     return flask.jsonify({})
 
 
-def get_dataset_version(datasetVersionId):
-    db = current_app.db
-    dv = db.get_dataset_version(datasetVersionId)
-    if dv is None:
-        flask.abort(404)
+# def get_dataset_version(datasetVersionId):
+#     db = current_app.db
+#     dv = db.get_dataset_version(datasetVersionId)
+#     if dv is None:
+#         flask.abort(404)
+#
+#     ds = db.get_dataset(dv['dataset_id'])
+#
+#     folder_objs = (db.get_folders_containing("dataset_version", datasetVersionId) +
+#                    db.get_folders_containing("dataset", dv['dataset_id']))
+#     folders = [dict(name=folder['name'], id=folder['id']) for folder in folder_objs]
+#
+#     datafiles = []
+#     for e in dv['entries']:
+#         datafiles.append(dict(
+#             name=e['name'],
+#             url=e['url'],
+#             mime_type=e['type'],
+#             description=e['description'],
+#             content_summary=e["content_summary"]
+#         ))
+#
+#     creator_id = dv['creator_id']
+#     creator = db.get_user(creator_id)
+#
+#     response = dict(id=dv['id'],
+#                     folders=folders,
+#                     name=ds['name'],
+#                     dataset_id=dv['dataset_id'],
+#                     version=dv['version'],
+#                     datafiles=datafiles,
+#                     creator=dict(id=creator_id, name=creator['name']),
+#                     creation_date=dv['creation_date'])
+#
+#     if 'provenance' in dv:
+#         p = dv.get('provenance')
+#         # add the dataset names to each source
+#         for input in p["inputs"]:
+#             dv_id = input["dataset_version_id"]
+#             dv = db.get_dataset_version(dv_id)
+#             ds = db.get_dataset(dv["dataset_id"])
+#             name = "{} v{}".format(ds['name'], dv["version"])
+#             input["dataset_version_name"] = name
+#         response['provenance'] = p
+#
+#     return flask.jsonify(response)
 
-    ds = db.get_dataset(dv['dataset_id'])
-
-    folder_objs = (db.get_folders_containing("dataset_version", datasetVersionId) +
-                   db.get_folders_containing("dataset", dv['dataset_id']))
-    folders = [dict(name=folder['name'], id=folder['id']) for folder in folder_objs]
-
-    datafiles = []
-    for e in dv['entries']:
-        datafiles.append(dict(
-            name=e['name'],
-            url=e['url'],
-            mime_type=e['type'],
-            description=e['description'],
-            content_summary=e["content_summary"]
-        ))
-
-    creator_id = dv['creator_id']
-    creator = db.get_user(creator_id)
-
-    response = dict(id=dv['id'],
-                    folders=folders,
-                    name=ds['name'],
-                    dataset_id=dv['dataset_id'],
-                    version=dv['version'],
-                    datafiles=datafiles,
-                    creator=dict(id=creator_id, name=creator['name']),
-                    creation_date=dv['creation_date'])
-
-    if 'provenance' in dv:
-        p = dv.get('provenance')
-        # add the dataset names to each source
-        for input in p["inputs"]:
-            dv_id = input["dataset_version_id"]
-            dv = db.get_dataset_version(dv_id)
-            ds = db.get_dataset(dv["dataset_id"])
-            name = "{} v{}".format(ds['name'], dv["version"])
-            input["dataset_version_name"] = name
-        response['provenance'] = p
-
-    return flask.jsonify(response)
+def get_dataset_version(datasetVersion_id):
+    with frontend_app.app_context():
+        dv = models_controller.get_dataset_version(dataset_version_id=int(datasetVersion_id))
+        if dv is None:
+            flask.abort(404)
+        print("--- In  GET DATASET VERSION ----")
+        print("--- DV {} ----".format(dv))
+        print("--- DV PARENTS {} ----".format(dv.parents))
+        for parent in dv.parents:
+            print("--- DV Parent id {} ----".format(parent.id))
+            print("--- DV Parent Name {} ----".format(parent.name))
+        dataset_version_schema = schemas.DatasetVersionSchema()
+        json_dv_data = dataset_version_schema.dump(dv).data
+        print("--- JSON DV DATA {} ----".format(json_dv_data))
+        return flask.jsonify(json_dv_data)
 
 
 def get_dataset_version_status():

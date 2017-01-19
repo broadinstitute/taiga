@@ -52,6 +52,14 @@ if __name__ == "__main__":
         # Create Data inside Folder B
         data = add_dataset(name="Data",
                            creator_id=admin_user.id)
+
+        dataset_version_data = add_dataset_version(name="Data v1",
+                                                   creator_id=admin_user.id,
+                                                   dataset_id=data.id)
+
+        add_folder_entry(folder_id=folderB.id,
+                         entry_id=dataset_version_data.id)
+
         add_folder_entry(folder_id=folderB.id,
                          entry_id=data.id)
 

@@ -15,7 +15,7 @@ produces:
 paths:
   /folder/{folder_id}:
     get:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_folder
       description: Fetch the details and content of a folder by id
       parameters:
@@ -92,7 +92,7 @@ paths:
 
   /folders/create:
     post:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: create_folder
       description: Create a new folder
       parameters:
@@ -131,7 +131,7 @@ paths:
 
   /folders/update:
     post:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: update_folders
       description: Perform multiple updates to folders within a single transaction.  Can be used for moves (a remove and add somewhere else), copies (and add) and deletes (a remove and add to trash)
       parameters:
@@ -174,7 +174,7 @@ paths:
 
   /user:
     get:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_user
       description: Fetch properties about the currently authenticated user
       responses:
@@ -200,7 +200,7 @@ paths:
 
   /uploadurl:
     get:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_upload_url
       description: Get url used to upload data
       responses:
@@ -220,7 +220,7 @@ paths:
 
   /credentials_s3:
     get:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_s3_credentials
       description: Get temporary credentials to access to S3
       responses:
@@ -247,7 +247,7 @@ paths:
 
   /dataset:
     post:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: create_dataset
       description: Create a dataset from a set of already uploaded objects
       parameters:
@@ -278,7 +278,7 @@ paths:
 
   /dataset/{datasetId}:
     get:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_dataset
       description: Fetch the details of a dataset
       parameters:
@@ -331,7 +331,7 @@ paths:
 
   /dataset/{dataset_id}/latest:
     get:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_dataset_latest
       description: Fetch the latest (dataset_)version of a dataset
       parameters:
@@ -399,7 +399,7 @@ paths:
 
   /dataset/{datasetId}/version:
     post:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: update_dataset
       description: Create a new dataset version by updating the data files associated with dataset.
       parameters:
@@ -428,7 +428,7 @@ paths:
 
   /dataset/{datasetId}/activity:
     get:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_dataset_activity
       description: Fetch activity history for this dataset
       parameters:
@@ -443,7 +443,7 @@ paths:
 
   /dataset/{datasetId}/name:
     post:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: update_dataset_name
       description: Update dataset name
       parameters:
@@ -467,7 +467,7 @@ paths:
 
   /dataset/{datasetId}/description:
     post:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: update_dataset_description
       description: Update dataset description
       parameters:
@@ -489,13 +489,13 @@ paths:
         200:
           description: Successfully updated
 
-  /datasetVersion/{datasetVersionId}:
+  /datasetVersion/{datasetVersion_id}:
     get:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_dataset_version
       description: Fetch the contents of a version of specific dataset
       parameters:
-        - name: datasetVersionId
+        - name: datasetVersion_id
           in: path
           type: string
           description: Dataset Version ID
@@ -564,7 +564,7 @@ paths:
 
   /datasetVersion/{datasetVersionId}/status:
     get:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_dataset_version_status
       description: Fetch the status of a dataset being imported
       parameters:
@@ -581,7 +581,7 @@ paths:
 
   /datafile:
     get:
-      x-swagger-router-controller: taiga2.controllers.default_controller
+      x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_datafile
       # do we need to support conversion?
       description: Get datafile contents
