@@ -134,12 +134,15 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             let uploadPromise = upload.promise();
             uploadPromise.then((data: any) => {
                 console.log('Success. Data received: '+data);
-                // TODO: Change this to take into account all the submitted files
-                let updatedFilesStatus = this.state.filesStatus;
-                updatedFilesStatus[0].progress = 100;
-                this.setState({
-                    filesStatus: updatedFilesStatus
-                })
+                console.log('Here is the url of the file: '+data.Location);
+                console.log('Here is the Key of the file: '+data.ETag);
+                // TODO: Send the signal the upload is done on the AWS side, so you can begin the conversion on the backend
+                // POST
+                let tapi: TaigaApi = (this.context as any).tapi;
+                tapi.process_new_datafile(data.Location, data.ETag,
+                                            data.Bucket, data.Key).then(() => {
+                    console.log("The new datafile " +  data.Key + " has been sent!");
+                });
             }).catch((err: any) => {
                 console.log(err);
                 this.setState({
@@ -147,10 +150,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 })
             });
         });
-
-
-
-
     }
 
     // Bootstrap Table functions

@@ -78,5 +78,10 @@ export class TaigaApi {
     update_folder_description(folder_id : string, description: string) {
         return this._post<void>("/folder/"+folder_id+"/description", {description: description})
     }
+
+    process_new_datafile(location: string, eTag: string, bucket: string, key: string) {
+        return this._post<void>("/process_new_datafile", {location: location, eTag: eTag,
+                                                            bucket: bucket, key: key})
+    }
 }
 

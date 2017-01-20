@@ -2,7 +2,7 @@ from flask_marshmallow import Marshmallow, fields
 from marshmallow_enum import EnumField
 from marshmallow_oneofschema import OneOfSchema
 
-from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion
+from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile
 
 ma = Marshmallow()
 
@@ -119,6 +119,11 @@ class DataFileSummarySchema(ma.ModelSchema):
     mime_type = fields.fields.Function(lambda obj: 'TODO')
     description = fields.fields.Function(lambda obj: 'TODO')
     content_summary = fields.fields.Function(lambda obj: 'TODO')
+
+
+class DataFileSchema(ma.ModelSchema):
+    class Meta:
+        model = DataFile
 
 
 class DatasetVersionSchema(ma.ModelSchema):

@@ -1,4 +1,4 @@
-from flask import current_app
+from flask import current_app, json
 # TODO: Change the app containing db to api_app => current_app
 from taiga2.app import frontend_app
 import taiga2.controllers.models_controller as models_controller
@@ -309,3 +309,17 @@ def get_dataset_version(datasetVersion_id):
 
 def get_dataset_version_status():
     pass
+
+
+def process_new_datafile(S3UploadedFileMetadata):
+    datafile = S3UploadedFileMetadata
+    permaname = models_controller.generate_permaname(datafile['key'])
+    # Register the url into a datafile object
+    with frontend_app.app_context():
+        db_added_datafile = models_controller.add_datafile(name=datafile['key'],
+                                                           permaname=permaname,
+                                                           url=datafile['location'])
+    # Launch a Celery process to convert and get back to populate the db + send finish to client
+
+    return flask.jsonify({})
+

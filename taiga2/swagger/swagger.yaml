@@ -245,6 +245,23 @@ paths:
               sessionToken:
                 type: string
 
+  /process_new_datafile:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: process_new_datafile
+      description: Process a freshly S3 uploaded datafile (conversion and storage reference)
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: S3UploadedFileMetadata
+          required: true
+          schema:
+            "$ref": "#/definitions/S3UploadedFileMetadata"
+      responses:
+        200:
+          description: Received data, they are correct and conversion currently doing
+
   /dataset:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -710,3 +727,22 @@ definitions:
       - deprecated # Discourage use.  Warn when fetching
       - deleted    # Underlying data has been deleted
       - valid
+
+  # Match the S3 Data object returned by ManagedUpload
+  # https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3/ManagedUpload.html#constructor-property
+  S3UploadedFileMetadata:
+    type: object
+    required:
+      - location
+      - eTag
+      - bucket
+      - key
+    properties:
+      location:
+        type: string
+      eTag:
+        type: string
+      bucket:
+        type: string
+      key:
+        type: string

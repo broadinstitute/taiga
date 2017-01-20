@@ -359,7 +359,7 @@ def add_datafile(name="No name",
     else:
         new_datafile_permaname = permaname
 
-    new_datafile_url = "http://google.com"
+    new_datafile_url = url
 
     new_datafile = DataFile(name=new_datafile_name,
                             permaname=new_datafile_permaname,
