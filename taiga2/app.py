@@ -5,9 +5,8 @@ import sys
 from werkzeug.wsgi import pop_path_info, peek_path_info
 from werkzeug.serving import run_simple
 
-import logging
-
 from .ui import app as frontend_app
+from .backend import backend_app, api_app
 
 
 class PathDispatcher(object):
@@ -46,11 +45,11 @@ def main():
     #    l.setLevel(logging.DEBUG)
 
     # API app configuration
-    api_app = connexion.App(__name__, specification_dir='./swagger/')
+    # api_app = connexion.App(__name__, specification_dir='./swagger/')
 
     db = persist.open_db(sys.argv[1])
-    api_app.app.db = db
 
+    api_app.db = db
 
     api_app.add_api('swagger.yaml',
                     # validate_responses=debug,

@@ -7,12 +7,12 @@ import * as filesize from "filesize";
 import {BootstrapTable, TableHeaderColumn, SelectRowMode} from "react-bootstrap-table";
 
 import { DialogProps, DialogState } from "../Dialogs";
-import {S3Credentials, FileUploadStatus} from "../../models/models";
+import {S3Credentials, FileUploadStatus, TaskStatus} from "../../models/models";
 import { TaigaApi } from "../../models/api";
 
 
 interface DropzoneProps extends DialogProps {
-
+    onFileUploadedAndConverted?: any;
 }
 
 interface DropzoneState extends DialogState {
@@ -27,6 +27,8 @@ const modalStyles : any = {
     border: null
   }
 };
+
+const dropzoneStyles: any = "width: 100%; height: 200px; border-width: 2px; border-color: #666; border-style: dashed; border-radius: 5px;"
 
 export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>{
     static contextTypes = {
@@ -76,6 +78,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         tapi.get_s3_credentials().then((credentials) => {
             console.log("Received credentials! ");
             console.log("- Access key id: " + credentials.accessKeyId);
+            // Request creation of Upload session => sid
+            // doUpload with this sid
             this.doUpload(credentials, this.state.filesStatus);
         });
     }
@@ -133,16 +137,28 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             // Create an upload promise via the aws sdk and launch it
             let uploadPromise = upload.promise();
             uploadPromise.then((data: any) => {
-                console.log('Success. Data received: '+data);
+                console.log('Success uploading to S3. Data received: '+data);
                 console.log('Here is the url of the file: '+data.Location);
                 console.log('Here is the Key of the file: '+data.ETag);
                 // TODO: Send the signal the upload is done on the AWS side, so you can begin the conversion on the backend
                 // POST
                 let tapi: TaigaApi = (this.context as any).tapi;
-                tapi.process_new_datafile(data.Location, data.ETag,
-                                            data.Bucket, data.Key).then(() => {
+                return tapi.process_new_datafile(data.Location, data.ETag,
+                                            data.Bucket, data.Key
+                ).then((taskStatusId) => {
                     console.log("The new datafile " +  data.Key + " has been sent!");
-                });
+                    console.log("We now check the task until we receive success");
+                    return tapi.get_task_status(taskStatusId);
+                }).then((status) => {
+                    console.log("Received the first status: "+status.state);
+                    return this.checkOrContinue(status);
+                }).then(() => {
+                    console.log("Task finished!");
+                    // Get the file who received this progress notification
+                    let updatedFileStatus = this.retrieveFileStatus(data.Key);
+                    updatedFileStatus.conversionProgress = "Done";
+                    this.saveFileStatus(updatedFileStatus);
+                })
             }).catch((err: any) => {
                 console.log(err);
                 this.setState({
@@ -150,6 +166,77 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 })
             });
         });
+    }
+
+    retrieveFileStatus(fileName: string){
+        let updatedFilesStatus = this.state.filesStatus;
+
+        // Get the file who received this progress notification
+        let updatedFileStatus = updatedFilesStatus.find((element: FileUploadStatus) => {
+            return element.fileName == fileName;
+        });
+
+        return updatedFileStatus;
+    }
+
+    saveFileStatus(fileStatus: FileUploadStatus){
+        let updatedFilesStatus = this.state.filesStatus;
+
+        let oldFileStatus = this.retrieveFileStatus(fileStatus.fileName);
+        oldFileStatus = fileStatus;
+
+        this.setState({
+            filesStatus: updatedFilesStatus
+        });
+    }
+
+    // Async function to wait
+    delay(milliseconds: number) {
+        return new Promise<void>(resolve => {
+           setTimeout(resolve, milliseconds);
+        });
+    }
+
+    checkOrContinue(status: TaskStatus) {
+        // If status == SUCCESS, return the last check
+        // If status != SUCCESS, wait 1 sec and check again
+        // TODO: Make an enum from the task state
+        let updatedFilesStatus = this.state.filesStatus;
+
+        console.log('The name of the file we are processing is: '+status.fileName);
+
+        // Get the file who received this progress notification
+        let updatedFileStatus = updatedFilesStatus.find((element: FileUploadStatus) => {
+            return element.fileName == status.fileName;
+        });
+
+        if (updatedFileStatus) {
+            updatedFileStatus.conversionProgress = status.message;
+            console.log("We just updated "+updatedFileStatus.fileName+" with this message '"+ updatedFileStatus.conversionProgress+"'");
+            this.setState({
+                filesStatus: updatedFilesStatus,
+                disableUpload: true
+            });
+        }
+        console.log(status.message);
+
+        if(status.state == 'SUCCESS') {
+            console.log("Success of task: " + status.id);
+            return Promise.resolve(status.id)
+        }
+        else if(status.state == 'FAILURE') {
+            return Promise.reject('Failure of task ' + status.id);
+        }
+        else {
+            let tapi: TaigaApi = (this.context as any).tapi;
+            return tapi.get_task_status(status.id).then((new_status: TaskStatus) => {
+                // Wait one sec Async then check again
+                // setTimeout(() => {return this.checkOrContinue(status)}, 1000);
+                return this.delay(1000).then(() => {
+                   return this.checkOrContinue(new_status)
+                });
+            });
+        }
     }
 
     // Bootstrap Table functions
@@ -188,8 +275,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     render() {
         // TODO: Since the module to have the upload status grows bigger and bigger, think about refactoring it in another file or module
-        var uploadedFiles: any = null;
-
         const filesStatus = this.state.filesStatus;
 
         const check_mode: SelectRowMode = 'checkbox';
@@ -204,7 +289,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         // Show the uploaded files if we have some, otherwise say we have nothing yet
         // TODO: Use Colum Format to make a button on Remove boolean => http://allenfang.github.io/react-bootstrap-table/example.html#column-format -->
-        uploadedFiles = (
+        let uploadedFiles = (
             <div>
                 <BootstrapTable data={filesStatus} deleteRow={ true }
                                 selectRow={ selectRowProp }
@@ -218,6 +303,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                                        columnClassName={
                                            (fieldValue: any, row: any, rowIdx: any, colIds: any) =>
                                            this.columnClassProgressFormat(fieldValue, row, rowIdx, colIds) }>Progress</TableHeaderColumn>
+                    <TableHeaderColumn dataField='conversionProgress'>Conversion Progress</TableHeaderColumn>
                 </BootstrapTable>
             </div>
         );
@@ -232,7 +318,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             <div className="modal-content">
             <div className="modal-body">
                 <Dropzone onDrop={(acceptedFiles: any, rejectedFiles: any) =>
-                        this.onDrop(acceptedFiles, rejectedFiles)}>
+                        this.onDrop(acceptedFiles, rejectedFiles)}
+                >
                     <div>Try dropping some files here, or click to select files to upload.</div>
                 </Dropzone>
 

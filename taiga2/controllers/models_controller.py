@@ -276,6 +276,18 @@ def update_dataset_contents(dataset_id,
     db.session.commit()
 
     return dataset
+
+
+def delete_dataset(dataset_id):
+    # Remove the dataset
+    ds = get_dataset(dataset_id=dataset_id)
+
+    db.session.delete(ds)
+    db.session.commit()
+    # Clean up
+    # TODO: Shouldn't have to clean up, see Cascade and co
+
+
 #</editor-fold>
 
 #<editor-fold desc="DatasetVersion">

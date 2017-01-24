@@ -1,6 +1,5 @@
 from flask import current_app, json
 # TODO: Change the app containing db to api_app => current_app
-from taiga2.app import frontend_app
 import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 
@@ -43,14 +42,13 @@ def update_dataset():
 #     return flask.jsonify(response)
 
 def get_dataset(datasetId):
-    with frontend_app.app_context():
-        dataset = models_controller.get_dataset(datasetId)
-        if dataset is None:
-            flask.abort(404)
+    dataset = models_controller.get_dataset(datasetId)
+    if dataset is None:
+        flask.abort(404)
 
-        dataset_schema = schemas.DatasetSchema()
-        json_dataset_data = dataset_schema.dump(dataset).data
-        return flask.jsonify(json_dataset_data)
+    dataset_schema = schemas.DatasetSchema()
+    json_dataset_data = dataset_schema.dump(dataset).data
+    return flask.jsonify(json_dataset_data)
 
 
 # def get_folder(folder_id):
@@ -115,15 +113,14 @@ def get_dataset(datasetId):
 
 def get_folder(folder_id):
     print("get_folder start", time.asctime())
-    with frontend_app.app_context():
-        folder = models_controller.get_folder(folder_id)
-        if folder is None:
-            flask.abort(404)
+    folder = models_controller.get_folder(folder_id)
+    if folder is None:
+        flask.abort(404)
 
-        folder_schema = schemas.FolderSchema()
-        json_data_folder = folder_schema.dump(folder).data
-        print("get_folder stop", time.asctime())
-        return flask.jsonify(json_data_folder)
+    folder_schema = schemas.FolderSchema()
+    json_data_folder = folder_schema.dump(folder).data
+    print("get_folder stop", time.asctime())
+    return flask.jsonify(json_data_folder)
 
 
 def _get_user_id():
@@ -143,14 +140,13 @@ def _get_user_id():
 
 def get_user():
     print("get_user start", time.asctime())
-    with frontend_app.app_context():
-        user = models_controller.get_user(1)
-        print("user %s" % user.name)
-        print("get_user end", time.asctime())
-        user_schema = schemas.UserSchema()
-        json_data_user = user_schema.dump(user).data
-        print("User jsonified: {}".format(json_data_user))
-        return flask.jsonify(json_data_user)
+    user = models_controller.get_user(1)
+    print("user %s" % user.name)
+    print("get_user end", time.asctime())
+    user_schema = schemas.UserSchema()
+    json_data_user = user_schema.dump(user).data
+    print("User jsonified: {}".format(json_data_user))
+    return flask.jsonify(json_data_user)
 
 
 def get_s3_credentials():
@@ -213,12 +209,11 @@ def get_dataset_activity():
 
 
 def get_dataset_latest(dataset_id):
-    with frontend_app.app_context():
-        latest_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
+    latest_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
 
-        dataset_version_schema = schemas.DatasetVersionSummarySchema()
-        json_data_latest_dataset_version = dataset_version_schema.dump(latest_dataset_version).data
-        return flask.jsonify(json_data_latest_dataset_version)
+    dataset_version_schema = schemas.DatasetVersionSummarySchema()
+    json_data_latest_dataset_version = dataset_version_schema.dump(latest_dataset_version).data
+    return flask.jsonify(json_data_latest_dataset_version)
 
 
 def get_datafile():
@@ -291,20 +286,19 @@ def update_dataset_description(datasetId, DescriptionUpdate):
 #     return flask.jsonify(response)
 
 def get_dataset_version(datasetVersion_id):
-    with frontend_app.app_context():
-        dv = models_controller.get_dataset_version(dataset_version_id=int(datasetVersion_id))
-        if dv is None:
-            flask.abort(404)
-        print("--- In  GET DATASET VERSION ----")
-        print("--- DV {} ----".format(dv))
-        print("--- DV PARENTS {} ----".format(dv.parents))
-        for parent in dv.parents:
-            print("--- DV Parent id {} ----".format(parent.id))
-            print("--- DV Parent Name {} ----".format(parent.name))
-        dataset_version_schema = schemas.DatasetVersionSchema()
-        json_dv_data = dataset_version_schema.dump(dv).data
-        print("--- JSON DV DATA {} ----".format(json_dv_data))
-        return flask.jsonify(json_dv_data)
+    dv = models_controller.get_dataset_version(dataset_version_id=int(datasetVersion_id))
+    if dv is None:
+        flask.abort(404)
+    print("--- In  GET DATASET VERSION ----")
+    print("--- DV {} ----".format(dv))
+    print("--- DV PARENTS {} ----".format(dv.parents))
+    for parent in dv.parents:
+                         print("--- DV Parent id {} ----".format(parent.id))
+                         print("--- DV Parent Name {} ----".format(parent.name))
+    dataset_version_schema = schemas.DatasetVersionSchema()
+    json_dv_data = dataset_version_schema.dump(dv).data
+    print("--- JSON DV DATA {} ----".format(json_dv_data))
+    return flask.jsonify(json_dv_data)
 
 
 def get_dataset_version_status():
@@ -312,14 +306,56 @@ def get_dataset_version_status():
 
 
 def process_new_datafile(S3UploadedFileMetadata):
-    datafile = S3UploadedFileMetadata
-    permaname = models_controller.generate_permaname(datafile['key'])
-    # Register the url into a datafile object
-    with frontend_app.app_context():
-        db_added_datafile = models_controller.add_datafile(name=datafile['key'],
-                                                           permaname=permaname,
-                                                           url=datafile['location'])
+
     # Launch a Celery process to convert and get back to populate the db + send finish to client
+    # TODO: Do this in Celery instead
+    # TODO: We should first check the file exists before adding it in the db
+    # TODO: We could also check the type of the object
+    # TODO: We need to make a distinction between numerical or table data
+    # TODO: Add also Parquet file creation
 
-    return flask.jsonify({})
 
+    from taiga2.tasks import tcsv_to_hdf5, taskstatus
+    result = tcsv_to_hdf5.delay(S3UploadedFileMetadata)
+    # for i in range(20):
+    #     print("In process_new_datafile, sleep and look the state of the task")
+    #     status = taskstatus(result.id)
+    #     print("TASKSTATUS {}".format(status))
+    #     if status['state'] == 'SUCCESS':
+    #         print('Received a success, we release this loop')
+    #         break
+    #     time.sleep(1)
+    # # temp_hdf5_tcsv_file_path = result.get()
+    # print("STOP for testing")
+    return flask.jsonify(result.id)
+
+    #     # Upload the HDF5 to s3 with the permaname as key
+    #     with open(temp_hdf5_tcsv_file_path, 'rb') as data:
+    #         object.upload_fileobj(data)
+    #     print("Successfully uploaded the HDF5")
+    #
+    #     # Register the url into a datafile object
+    #     # Store it in the db
+    #     db_added_datafile = models_controller.add_datafile(name=datafile['key'],
+    #                                                        permaname=permaname,
+    #                                                        url=datafile['location'])
+    #     # Add it to the first dataset
+    #     # Add it to the user "Admin"
+    #     # TODO: Replace by the current user
+    #     admin = models_controller.get_user(1)
+    #     # TODO: Get the dataset we would want to link it to
+    #     db_added_dataset = models_controller.add_dataset(name=datafile['key'],
+    #                                                      permaname=permaname,
+    #                                                      creator_id=admin.id,
+    #                                                      datafiles_ids=[db_added_datafile.id])
+    #     folder_home_admin = admin.home_folder
+    #     models_controller.add_folder_entry(folder_home_admin.id,
+    #                                        db_added_dataset.id)
+    #
+    # return flask.jsonify({})
+
+
+def task_status(taskStatusId):
+    from taiga2.tasks import taskstatus
+    status = taskstatus(taskStatusId)
+    return flask.jsonify(status)

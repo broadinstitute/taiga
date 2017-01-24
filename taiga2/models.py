@@ -175,7 +175,8 @@ class DatasetVersion(Entry):
 
     dataset = db.relationship("Dataset",
                               foreign_keys=[dataset_id],
-                              backref=__tablename__)
+                              backref=db.backref(__tablename__,
+                                                 cascade="all, delete-orphan"))
 
     # Filled out by the server
     version = db.Column(db.Integer)

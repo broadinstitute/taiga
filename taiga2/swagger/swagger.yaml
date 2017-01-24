@@ -261,6 +261,9 @@ paths:
       responses:
         200:
           description: Received data, they are correct and conversion currently doing
+          schema:
+            title: TaskId
+            type: string
 
   /dataset:
     post:
@@ -611,6 +614,43 @@ paths:
       responses:
         200:
           description: Successfully updated
+
+  /task_status/{taskStatusId}:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: task_status
+      description: Get the status of a Celery task
+      parameters:
+        - name: taskStatusId
+          in: path
+          type: string
+          description: Celery task status id
+          required: true
+      responses:
+        200:
+          description: Status of the task
+          schema:
+            title: CeleryTaskStatus
+            type: object
+            required:
+              - id
+              - state
+              - message
+              - current
+              - total
+            properties:
+              id:
+                type: string
+              state:
+                type: string
+              message:
+                type: string
+              current:
+                type: string
+              total:
+                type: string
+              fileName:
+                type: string
 
 
 #missing provenance

@@ -1,6 +1,6 @@
 import 'whatwg-fetch';
 
-import { User, Folder, Dataset, DatasetVersion, S3Credentials } from './models';
+import { User, Folder, Dataset, DatasetVersion, S3Credentials, TaskStatus } from './models';
 
 export class TaigaApi {
     baseUrl : string;
@@ -80,8 +80,12 @@ export class TaigaApi {
     }
 
     process_new_datafile(location: string, eTag: string, bucket: string, key: string) {
-        return this._post<void>("/process_new_datafile", {location: location, eTag: eTag,
+        return this._post<string>("/process_new_datafile", {location: location, eTag: eTag,
                                                             bucket: bucket, key: key})
+    }
+
+    get_task_status(taskStatusId: string) {
+        return this._fetch<TaskStatus>("/task_status/"+taskStatusId)
     }
 }
 
