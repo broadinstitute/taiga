@@ -1,4 +1,4 @@
-from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile
+from taiga2.models import *
 from taiga2.models import generate_permaname
 from taiga2.models import db
 
@@ -388,4 +388,25 @@ def get_datafile(datafile_id):
         .filter(DataFile.id == datafile_id).one()
 
     return datafile
+#</editor-fold>
+
+#<editor-fold desc="Upload Session">
+def add_new_upload_session():
+    us = UploadSession()
+    db.session.add(us)
+    db.session.commit()
+    return us
+
+def get_upload_session(session_id):
+    upload_session = db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
+    return upload_session
+#</editor-fold>
+
+#<editor-fold desc="Upload Session File">
+def add_upload_session_file(session_id, filename):
+    upload_session_file = UploadSessionFile(session_id=session_id,
+                                            filename=filename)
+    db.session.add(upload_session_file)
+    db.session.commit()
+    return upload_session_file
 #</editor-fold>

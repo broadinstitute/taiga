@@ -217,3 +217,24 @@ class Activity(db.Model):
     type = db.Column(db.Enum(ActivityType))
 
     comments = db.Column(db.Text)
+
+
+class UploadSession(db.Model):
+    __tablename__ = 'upload_sessions'
+
+    id = db.Column(db.Integer,
+                   primary_key=True)
+
+
+class UploadSessionFile(db.Model):
+    __tablename__ = 'upload_session_files'
+
+    id = db.Column(db.Integer,
+                   primary_key=True)
+
+    session_id = db.Column(db.Integer, db.ForeignKey("upload_sessions.id"))
+
+    session = db.relationship("UploadSession",
+                              backref=__tablename__)
+
+    filename = db.Column(db.Text)

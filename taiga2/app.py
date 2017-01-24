@@ -28,13 +28,7 @@ class PathDispatcher(object):
         return app(environ, start_response)
 
 
-def create_db():
-    """Create the database, based on the app configuration,
-    if it does not exist already"""
-    with frontend_app.app_context():
-        from taiga2.models import db as _db
-        _db.create_all()
-        print(_db)
+
 
 
 def main():

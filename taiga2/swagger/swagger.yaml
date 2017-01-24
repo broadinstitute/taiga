@@ -245,7 +245,23 @@ paths:
               sessionToken:
                 type: string
 
-  /process_new_datafile:
+  /new_upload_session:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_new_upload_session
+      description: Ask for the creation of a new Upload Session to post new files in a dataset
+      responses:
+        200:
+          description: The unique Upload Session Id
+          schema:
+            title: UploadSessionId
+            required:
+              - sid
+            properties:
+              sid:
+                type: string
+
+  /process_new_datafile/{sid}:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: process_new_datafile
@@ -253,6 +269,11 @@ paths:
       consumes:
         - application/json
       parameters:
+        - name: sid
+          in: path
+          type: string
+          description: The Upload Session id
+          required: true
         - in: body
           name: S3UploadedFileMetadata
           required: true

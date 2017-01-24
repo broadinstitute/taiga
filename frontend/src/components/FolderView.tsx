@@ -224,6 +224,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     <Upload.UploadDataset
                         isVisible={this.state.showUploadDataset}
                         cancel={ () => { this.setState({showUploadDataset: false}) } }
+                        onFileUploadedAndConverted={ () => {
+                            this.doFetch();
+                        }}
                     />
 
                     <h1>{folder.name}</h1>

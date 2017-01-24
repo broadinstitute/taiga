@@ -1,4 +1,4 @@
-from taiga2.app import frontend_app, create_db
+from taiga2.backend import backend_app, create_db
 from taiga2.controllers.models_controller import *
 
 # Create the Admin user
@@ -9,7 +9,7 @@ from taiga2.controllers.models_controller import *
 # Create A1 Data/A2 Data/A3 Data inside Folder A
 
 if __name__ == "__main__":
-    with frontend_app.app_context():
+    with backend_app.app_context():
         print("Dropping existing DB")
         db.drop_all()
         print("Recreating it")

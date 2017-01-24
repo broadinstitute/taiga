@@ -305,7 +305,7 @@ def get_dataset_version_status():
     pass
 
 
-def process_new_datafile(S3UploadedFileMetadata):
+def process_new_datafile(S3UploadedFileMetadata, sid):
 
     # Launch a Celery process to convert and get back to populate the db + send finish to client
     # TODO: Do this in Celery instead
@@ -314,6 +314,9 @@ def process_new_datafile(S3UploadedFileMetadata):
     # TODO: We need to make a distinction between numerical or table data
     # TODO: Add also Parquet file creation
 
+    # Register this new file to the UploadSession received
+    upload_session = models_controller.get_upload_session(sid)
+    upload_session_file = models_controller.add_upload_session_file(sid, S3UploadedFileMetadata['key'])
 
     from taiga2.tasks import tcsv_to_hdf5, taskstatus
     result = tcsv_to_hdf5.delay(S3UploadedFileMetadata)
@@ -353,6 +356,12 @@ def process_new_datafile(S3UploadedFileMetadata):
     #                                        db_added_dataset.id)
     #
     # return flask.jsonify({})
+
+
+def get_new_upload_session():
+    # TODO: Add the user_id related to this new session
+    upload_session = models_controller.add_new_upload_session()
+    return flask.jsonify(upload_session.id)
 
 
 def task_status(taskStatusId):

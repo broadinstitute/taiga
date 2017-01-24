@@ -78,14 +78,19 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         tapi.get_s3_credentials().then((credentials) => {
             console.log("Received credentials! ");
             console.log("- Access key id: " + credentials.accessKeyId);
+
             // Request creation of Upload session => sid
-            // doUpload with this sid
-            this.doUpload(credentials, this.state.filesStatus);
+            let tapi: TaigaApi = (this.context as any).tapi;
+            return tapi.get_new_upload_session().then((sid: string) => {
+                console.log("New upload session received: "+sid);
+                // doUpload with this sid
+                this.doUpload(credentials, this.state.filesStatus, sid);
+            });
         });
     }
 
     // Use the credentials received to upload the files dropped in the module
-    doUpload(s3_credentials: S3Credentials, filesStatus: Array<FileUploadStatus>){
+    doUpload(s3_credentials: S3Credentials, filesStatus: Array<FileUploadStatus>, sid: string){
         // TODO: If we change the page, we lose the download
         // Configure the AWS S3 object with the received credentials
         let s3 = new AWS.S3({
@@ -144,7 +149,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 // POST
                 let tapi: TaigaApi = (this.context as any).tapi;
                 return tapi.process_new_datafile(data.Location, data.ETag,
-                                            data.Bucket, data.Key
+                                            data.Bucket, data.Key, sid
                 ).then((taskStatusId) => {
                     console.log("The new datafile " +  data.Key + " has been sent!");
                     console.log("We now check the task until we receive success");
