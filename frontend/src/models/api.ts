@@ -91,5 +91,11 @@ export class TaigaApi {
     get_task_status(taskStatusId: string) {
         return this._fetch<TaskStatus>("/task_status/"+taskStatusId)
     }
+
+    create_dataset(sid: string, datasetName: string, datasetDescription: string) {
+        return this._post<string>("/dataset", {sessionId: sid,
+                                                datasetName: datasetName,
+                                                datasetDescription: datasetDescription })
+    }
 }
 

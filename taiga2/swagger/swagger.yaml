@@ -291,31 +291,31 @@ paths:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: create_dataset
       description: Create a dataset from a set of already uploaded objects
+      consumes:
+        - application/json
       parameters:
         - in: body
-          name: DatasetDefinition
+          name: sessionDatasetInfo
+          required: true
           schema:
             type: object
             required:
-              - name
-              - parent
-              - entries
+              - sessionId
+              - datasetName
+              - datasetDescription
             properties:
-              name:
+              sessionId:
                 type: string
-              description:
+              datasetName:
                 type: string
-              parent:
+              datasetDescription:
                 type: string
-              entries:
-                type: array
-                items:
-                  "$ref": "#/definitions/DataFileSubmission"
       responses:
         200:
           description: The info about the newly created dataset
           schema:
-            "$ref": "#/definitions/ImportStatus"
+            title: DatasetId
+            type: string
 
   /dataset/{datasetId}:
     get:

@@ -364,6 +364,12 @@ def get_new_upload_session():
     return flask.jsonify(upload_session.id)
 
 
+def create_dataset(sessionDatasetInfo):
+    # TODO: Retrieve the datafiles associated with the UploadSession
+
+    return flask.jsonify("20")
+
+
 def task_status(taskStatusId):
     from taiga2.tasks import taskstatus
     status = taskstatus(taskStatusId)

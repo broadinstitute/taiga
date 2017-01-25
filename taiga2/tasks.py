@@ -168,8 +168,8 @@ def taskstatus(task_id):
             'id': task.id,
             'state': task.state,
             'message': 'Failure :/' if not task.info else task.info.get('message', 'No message'),
-            'current': task.info.get('current', 0),
-            'total': task.info.get('total', 1),
+            'current': 0 if not task.info else task.info.get('current', 0),
+            'total': -1 if not task.info else task.info.get('total', -1),
             'fileName': 'TODO' if not task.info else task.info.get('fileName', 'TODO')
         }
         if 'result' in task.info:
