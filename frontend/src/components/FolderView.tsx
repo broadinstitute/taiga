@@ -227,6 +227,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         onFileUploadedAndConverted={ () => {
                             this.doFetch();
                         }}
+                        currentFolderId={this.state.folder.id}
                     />
 
                     <h1>{folder.name}</h1>

@@ -89,7 +89,16 @@ def add_folder_entry(folder_id, entry_id):
     folder = get_folder(folder_id)
     entry = get_entry(entry_id)
 
-    folder.entries.append(entry)
+    # TODO: See if this is the right place to do that...
+    # If it is a dataset, we need to update the location of its dataset_versions
+    if type(entry) is Dataset:
+        # Add this folder to the dataset_versions
+        for dataset_version in entry.dataset_versions:
+            add_folder_entry(folder_id, dataset_version.id)
+
+    # TODO: This should be a set, not a list.
+    if entry not in folder.entries:
+        folder.entries.append(entry)
 
     db.session.add(folder)
     db.session.commit()
@@ -145,8 +154,7 @@ def add_dataset(name="No name",
         # containing DataFiles
 
         # TODO: Think about a meaningful name
-        new_dataset_version = add_dataset_version(name="No name",
-                                                  creator_id=creator.id,
+        new_dataset_version = add_dataset_version(creator_id=creator.id,
                                                   dataset_id=new_dataset.id,
                                                   version=1,
                                                   datafiles_ids=datafiles_ids)
@@ -246,8 +254,8 @@ def update_dataset_contents(dataset_id,
     # latest_version_datafiles = dataset_version_latest_version.datafiles
 
     # Create the new dataset_version from the latest and update its version
-    new_updated_dataset_version = add_dataset_version(name=dataset_version_latest_version.name,
-                                                      creator_id=dataset_version_latest_version.creator.id,
+    # TODO: Remove the increment of the version since it should be handled by add_dataset_version directly
+    new_updated_dataset_version = add_dataset_version(creator_id=dataset_version_latest_version.creator.id,
                                                       dataset_id=dataset_version_latest_version.dataset.id,
                                                       datafiles_ids=[datafile.id
                                                                      for datafile in dataset_version_latest_version.datafiles],
@@ -291,11 +299,11 @@ def delete_dataset(dataset_id):
 #</editor-fold>
 
 #<editor-fold desc="DatasetVersion">
-def add_dataset_version(name,
-                        creator_id,
+def add_dataset_version(creator_id,
                         dataset_id,
                         datafiles_ids=None,
-                        version=1):
+                        version=1,
+                        name=None):
     if not datafiles_ids:
         datafiles_ids = []
 
@@ -306,6 +314,10 @@ def add_dataset_version(name,
 
     # TODO: User the power of Query to make only one query instead of calling get_datafile
     datafiles = [get_datafile(datafile_id) for datafile_id in datafiles_ids]
+
+    # If we did not set a name for the dataset_version, we take one by default
+    if not name:
+        name = "".join([dataset.name, "_v", str(version)])
 
     # Create the DatasetVersion object
     new_dataset_version = DatasetVersion(name=name,
@@ -401,9 +413,25 @@ def add_new_upload_session():
     db.session.commit()
     return us
 
+
 def get_upload_session(session_id):
     upload_session = db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
     return upload_session
+
+
+def get_datafiles_from_session(session_id):
+    # TODO: We could also fetch the datafiles with only one query
+    upload_session = db.session.query(UploadSession) \
+        .filter(UploadSession.id == session_id).one()
+    upload_session_files = upload_session.upload_session_files
+
+    # For each upload_session_file, we retrieve its datafile
+    datafiles = []
+    for upload_session_file in upload_session_files:
+        datafiles.append(upload_session_file.datafile)
+    print("Retrieved datafiles from upload_session files {} are {}".format(upload_session_files, datafiles))
+    return datafiles
+
 #</editor-fold>
 
 #<editor-fold desc="Upload Session File">

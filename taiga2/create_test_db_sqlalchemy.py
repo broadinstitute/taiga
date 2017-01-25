@@ -32,8 +32,7 @@ if __name__ == "__main__":
                                                upload_session_file_id=upload_session_file_origin.id)
 
         # Create a dataVersion to origin
-        origin_first_datasetVersion = add_dataset_version(name="origin_v1",
-                                                          creator_id=admin_user.id,
+        origin_first_datasetVersion = add_dataset_version(creator_id=admin_user.id,
                                                           dataset_id=origin_dataset.id,
                                                           datafiles_ids=[datafile_origin_dataset.id])
         # Add the origin dataset inside the home folder
@@ -59,8 +58,7 @@ if __name__ == "__main__":
         data = add_dataset(name="Data",
                            creator_id=admin_user.id)
 
-        dataset_version_data = add_dataset_version(name="Data v1",
-                                                   creator_id=admin_user.id,
+        dataset_version_data = add_dataset_version(creator_id=admin_user.id,
                                                    dataset_id=data.id)
 
         add_folder_entry(folder_id=folderB.id,

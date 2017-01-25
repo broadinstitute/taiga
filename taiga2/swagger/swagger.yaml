@@ -303,12 +303,15 @@ paths:
               - sessionId
               - datasetName
               - datasetDescription
+              - currentFolderId
             properties:
               sessionId:
                 type: string
               datasetName:
                 type: string
               datasetDescription:
+                type: string
+              currentFolderId:
                 type: string
       responses:
         200:

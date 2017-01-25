@@ -366,8 +366,24 @@ def get_new_upload_session():
 
 def create_dataset(sessionDatasetInfo):
     # TODO: Retrieve the datafiles associated with the UploadSession
+    session_id = sessionDatasetInfo['sessionId']
+    dataset_name = sessionDatasetInfo['datasetName']
+    dataset_description = sessionDatasetInfo['datasetDescription']
+    current_folder_id = sessionDatasetInfo['currentFolderId']
 
-    return flask.jsonify("20")
+    added_datafiles = models_controller.get_datafiles_from_session(session_id)
+
+    admin = models_controller.get_user(1)
+    permaname = models_controller.generate_permaname(dataset_name)
+    added_dataset = models_controller.add_dataset(creator_id=admin.id,
+                                                  name=dataset_name,
+                                                  permaname=permaname,
+                                                  description=dataset_description,
+                                                  datafiles_ids=[datafile.id
+                                                                 for datafile in added_datafiles])
+    updated_folder = models_controller.add_folder_entry(current_folder_id,
+                                                        added_dataset.id)
+    return flask.jsonify(added_dataset.id)
 
 
 def task_status(taskStatusId):

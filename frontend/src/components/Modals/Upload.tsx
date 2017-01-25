@@ -14,6 +14,7 @@ import { TaigaApi } from "../../models/api";
 
 interface DropzoneProps extends DialogProps {
     onFileUploadedAndConverted?: any;
+    currentFolderId: string;
 }
 
 interface DropzoneState extends DialogState {
@@ -90,6 +91,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     // Ask the credentials to be able to upload
     requestUpload(){
+        // TODO: Use the form features to check the data
         console.log("We are in requestUpload!");
         console.log("Uploading through token:");
 
@@ -204,7 +206,10 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             console.log("All datafiles have been uploaded and converted successfully!");
             console.log("Asking to create a dataset from session id "+sid[0]);
             let tapi: TaigaApi = (this.context as any).tapi;
-            return tapi.create_dataset(sids[0].toString(), this.state.nameValue, this.state.descriptionValue);
+            return tapi.create_dataset(sids[0].toString(),
+                this.state.nameValue,
+                this.state.descriptionValue,
+                this.props.currentFolderId.toString());
         }).then((dataset_id) => {
             console.log("Dataset "+dataset_id+" has been created!");
         }).catch((err: any) => {
@@ -395,7 +400,10 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                                                 Name
                                             </Col>
                                             <Col sm={10}>
-                                                <FormControl type="text" placeholder="Dataset name"/>
+                                                <FormControl value={this.state.nameValue}
+                                                             onChange={(evt) => {this.handleFormNameChange(evt)}}
+                                                             type="text"
+                                                             placeholder="Dataset name"/>
                                             </Col>
                                         </FormGroup>
                                         <FormGroup controlId="formDescription">
@@ -403,7 +411,10 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                                                 Description
                                             </Col>
                                             <Col sm={10}>
-                                                <FormControl type="textarea" placeholder="Dataset description"/>
+                                                <FormControl value={this.state.descriptionValue}
+                                                             onChange={(evt) => {this.handleFormDescriptionChange(evt)}}
+                                                             type="textarea"
+                                                             placeholder="Dataset description"/>
                                             </Col>
                                         </FormGroup>
                                     </Form>

@@ -302,8 +302,7 @@ def test_add_dataset_version(session: SessionBase,
                              new_dataset):
     new_dataset_version_name = "New Dataset Version"
 
-    new_dataset_version = add_dataset_version(name="New Dataset Version",
-                                              creator_id=new_user.id,
+    new_dataset_version = add_dataset_version(creator_id=new_user.id,
                                               dataset_id=new_dataset.id,
                                               version=1)
 
