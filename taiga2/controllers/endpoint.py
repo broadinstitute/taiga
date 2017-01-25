@@ -318,8 +318,8 @@ def process_new_datafile(S3UploadedFileMetadata, sid):
     upload_session = models_controller.get_upload_session(sid)
     upload_session_file = models_controller.add_upload_session_file(sid, S3UploadedFileMetadata['key'])
 
-    from taiga2.tasks import tcsv_to_hdf5, taskstatus
-    result = tcsv_to_hdf5.delay(S3UploadedFileMetadata)
+    from taiga2.tasks import background_process_new_datafile
+    result = background_process_new_datafile.delay(S3UploadedFileMetadata, sid, upload_session_file.id)
     # for i in range(20):
     #     print("In process_new_datafile, sleep and look the state of the task")
     #     status = taskstatus(result.id)

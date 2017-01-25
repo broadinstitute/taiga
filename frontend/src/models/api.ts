@@ -63,6 +63,10 @@ export class TaigaApi {
         return this._fetch<S3Credentials>("/credentials_s3")
     }
 
+    get_new_upload_session(): Promise<string> {
+        return this._fetch<string>("/new_upload_session")
+    }
+
     update_dataset_name(dataset_id : string, name: string) {
         return this._post<void>("/dataset/"+dataset_id+"/name", {name: name})
     }
@@ -79,8 +83,8 @@ export class TaigaApi {
         return this._post<void>("/folder/"+folder_id+"/description", {description: description})
     }
 
-    process_new_datafile(location: string, eTag: string, bucket: string, key: string) {
-        return this._post<string>("/process_new_datafile", {location: location, eTag: eTag,
+    process_new_datafile(location: string, eTag: string, bucket: string, key: string, sid: string) {
+        return this._post<string>("/process_new_datafile/"+sid, {location: location, eTag: eTag,
                                                             bucket: bucket, key: key})
     }
 

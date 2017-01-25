@@ -137,7 +137,7 @@ class Dataset(Entry):
     description = db.Column(db.Text, default="No description provided")
 
     # TODO: Use the name/key of the dataset and add behind the uuid?
-    permaname = db.Column(db.Text, unique=True, nullable=False)
+    permaname = db.Column(db.Text)
 
     __mapper_args__ = {
         'polymorphic_identity': "Dataset"
@@ -155,7 +155,11 @@ class DataFile(db.Model):
     # To be able to differentiate multiple files with the same name
     permaname = db.Column(db.Text, unique=True, nullable=False)
 
-    url = db.Column(db.Text, unique=True)
+    url = db.Column(db.Text)
+
+    upload_session_file_id = db.Column(db.Integer, db.ForeignKey('upload_session_files.id'))
+    upload_session_file = db.relationship("UploadSessionFile",
+                                          backref=db.backref("datafile", uselist=False))
 
 
 class DatasetVersion(Entry):

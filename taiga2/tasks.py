@@ -5,12 +5,11 @@ import taiga2.controllers.models_controller as models_controller
 
 
 @celery.task(bind=True)
-def tcsv_to_hdf5(self, S3UploadedFileMetadata):
-    import csv
-    import numpy as np
+def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_session_file_id):
     import boto3
     import os
 
+    # TODO: Rename this as it is confusing
     datafile = S3UploadedFileMetadata
     # TODO: The permaname should not be generated here, but directly fetch from key
     file_name = datafile['key']
@@ -18,14 +17,38 @@ def tcsv_to_hdf5(self, S3UploadedFileMetadata):
 
     s3 = boto3.resource('s3')
     object = s3.Object(datafile['bucket'], datafile['key'])
-    temp_raw_tcsv_file_path = '/tmp/taiga2/'+permaname
+    temp_raw_tcsv_file_path = '/tmp/taiga2/' + permaname
     os.makedirs(os.path.dirname(temp_raw_tcsv_file_path), exist_ok=True)
+
     with open(temp_raw_tcsv_file_path, 'w+b') as data:
         message = "Downloading the file from S3"
         self.update_state(state='PROGRESS',
                           meta={'current': 0, 'total': '0',
                                 'message': message, 'fileName': file_name})
         object.download_fileobj(data)
+
+    temp_hdf5_tcsv_file_path = tcsv_to_hdf5(self, temp_raw_tcsv_file_path, file_name)
+
+    # Upload the hdf5
+    message = "Uploading the HDF5 to S3"
+    self.update_state(state='PROGRESS',
+                      meta={'current': 0, 'total': '0',
+                            'message': message, 'fileName': file_name})
+
+    with open(temp_hdf5_tcsv_file_path, 'rb') as data:
+        object.upload_fileobj(data)
+
+    print("Successfully uploaded the HDF5")
+    # Create the related datafile and map it to the upload_session_file, with the url received back from S3
+    upload_session_file = models_controller.get_upload_session_file(upload_session_file_id)
+    new_datafile = models_controller.add_datafile(name=file_name,
+                                                  permaname=permaname,
+                                                  url=datafile['location'],
+                                                  upload_session_file_id=upload_session_file.id)
+
+def tcsv_to_hdf5(celery_instance, temp_raw_tcsv_file_path, file_name):
+    import csv
+    import numpy as np
 
     with open(temp_raw_tcsv_file_path, 'r') as tcsv:
         dialect = csv.Sniffer().sniff(tcsv.read(1024))
@@ -49,7 +72,7 @@ def tcsv_to_hdf5(self, S3UploadedFileMetadata):
         for row_i, row in enumerate(r):
             if row_i % 250 == 0:
                 message = "Conversion in progress, row {}".format(row_i)
-                self.update_state(state='PROGRESS',
+                celery_instance.update_state(state='PROGRESS',
                                   meta={'current': row_i, 'total': '0',
                                         'message': message, 'fileName': file_name})
             line += 1
@@ -70,7 +93,7 @@ def tcsv_to_hdf5(self, S3UploadedFileMetadata):
     data = np.empty((len(rows), len(rows[0])), 'd')
     data[:] = np.nan
     message = "Numpy object under creation and population"
-    self.update_state(state='PROGRESS',
+    celery_instance.update_state(state='PROGRESS',
                       meta={'current': row_i, 'total': '0',
                             'message': message, 'fileName': file_name})
     for row_i, row in enumerate(rows):
@@ -83,7 +106,7 @@ def tcsv_to_hdf5(self, S3UploadedFileMetadata):
     temp_hdf5_tcsv_file_path = temp_raw_tcsv_file_path + '.hdf5'
 
     message = "Writing the hdf5 matrix"
-    self.update_state(state='PROGRESS',
+    celery_instance.update_state(state='PROGRESS',
                       meta={'current': row_i, 'total': '0',
                             'message': message, 'fileName': file_name})
     succes = _write_hdf5_matrix(temp_hdf5_tcsv_file_path, data, 'row_axis', row_header, 'col_axis', col_header)
@@ -115,9 +138,9 @@ def _write_hdf5_matrix(temp_hdf5_tcsv_file_path, data, row_axis, row_header, col
     return True
 
 
-# TODO: This is only for tcsv_to_hdf5, how to get it generic for any Celery tasks?
+# TODO: This is only for background_process_new_datafile, how to get it generic for any Celery tasks?
 def taskstatus(task_id):
-    task = tcsv_to_hdf5.AsyncResult(task_id)
+    task = background_process_new_datafile.AsyncResult(task_id)
     if task.state == 'PENDING':
         # job did not start yet
         response = {
@@ -144,10 +167,10 @@ def taskstatus(task_id):
         response = {
             'id': task.id,
             'state': task.state,
-            'message': task.info.get('message', 'No message'),
+            'message': 'Failure :/' if not task.info else task.info.get('message', 'No message'),
             'current': task.info.get('current', 0),
             'total': task.info.get('total', 1),
-            'fileName': task.info.get('fileName', 'TODO')
+            'fileName': 'TODO' if not task.info else task.info.get('fileName', 'TODO')
         }
         if 'result' in task.info:
             response['result'] = task.info['result']
@@ -155,10 +178,10 @@ def taskstatus(task_id):
         response = {
             'id': task.id,
             'state': task.state,
-            'message': task.info.get('message', 'No message'),
+            'message': 'No Message' if task.info else task.info.get('message', 'No message'),
             'current': 1,
             'total': -1,
-            'fileName': task.info.get('fileName', 'TODO')
+            'fileName': 'TODO' if task.info else task.info.get('fileName', 'TODO')
         }
 
     return response

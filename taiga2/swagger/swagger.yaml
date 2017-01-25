@@ -659,6 +659,7 @@ paths:
               - message
               - current
               - total
+              - fileName
             properties:
               id:
                 type: string

@@ -278,6 +278,16 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         }
     }
 
+    columnClassProgressUploadFormat(fieldValue: any, row: any, rowIdx: number, colIds: number) {
+        console.log("row.conversionProgress == "+row.conversionProgress);
+        if (row instanceof FileUploadStatus && row.conversionProgress == "Done") {
+            return 'progressDownloadComplete';
+        }
+        else {
+            return '';
+        }
+    }
+
     render() {
         // TODO: Since the module to have the upload status grows bigger and bigger, think about refactoring it in another file or module
         const filesStatus = this.state.filesStatus;
@@ -308,7 +318,10 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                                        columnClassName={
                                            (fieldValue: any, row: any, rowIdx: any, colIds: any) =>
                                            this.columnClassProgressFormat(fieldValue, row, rowIdx, colIds) }>Progress</TableHeaderColumn>
-                    <TableHeaderColumn dataField='conversionProgress'>Conversion Progress</TableHeaderColumn>
+                    <TableHeaderColumn dataField='conversionProgress'
+                                       columnClassName={
+                                           (fieldValue: any, row: any, rowIdx: any, colIds: any) =>
+                                           this.columnClassProgressUploadFormat(fieldValue, row, rowIdx, colIds) }>Conversion Progress</TableHeaderColumn>
                 </BootstrapTable>
             </div>
         );

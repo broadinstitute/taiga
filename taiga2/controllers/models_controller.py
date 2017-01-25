@@ -363,7 +363,8 @@ def get_entry(entry_id):
 #<editor-fold desc="DataFile">
 def add_datafile(name="No name",
                  permaname=None,
-                 url=""):
+                 url="",
+                 upload_session_file_id=-1):
     # TODO: See register_datafile_id
     new_datafile_name = name
     if not permaname:
@@ -373,9 +374,12 @@ def add_datafile(name="No name",
 
     new_datafile_url = url
 
+    upload_session_file = get_upload_session_file(upload_session_file_id)
+
     new_datafile = DataFile(name=new_datafile_name,
                             permaname=new_datafile_permaname,
-                            url=new_datafile_url)
+                            url=new_datafile_url,
+                            upload_session_file=upload_session_file)
 
     db.session.add(new_datafile)
     db.session.commit()
@@ -408,5 +412,10 @@ def add_upload_session_file(session_id, filename):
                                             filename=filename)
     db.session.add(upload_session_file)
     db.session.commit()
+    return upload_session_file
+
+def get_upload_session_file(upload_session_file_id):
+    upload_session_file = db.session.query(UploadSessionFile) \
+        .filter(UploadSessionFile.id == upload_session_file_id).one()
     return upload_session_file
 #</editor-fold>

@@ -19,12 +19,17 @@ if __name__ == "__main__":
         admin_user = add_user(name="Admin")
         home_folder_admin = admin_user.home_folder
 
+        # Create a session where all this is happening
+        upload_session = add_new_upload_session()
+
         # Create the origin data
+        upload_session_file_origin = add_upload_session_file(upload_session.id, "origin")
         origin_dataset = add_dataset(name="origin",
                                      creator_id=admin_user.id)
 
         # Create a DataFile for the origin dataset
-        datafile_origin_dataset = add_datafile(name="Origin Datafile")
+        datafile_origin_dataset = add_datafile(name="Origin Datafile",
+                                               upload_session_file_id=upload_session_file_origin.id)
 
         # Create a dataVersion to origin
         origin_first_datasetVersion = add_dataset_version(name="origin_v1",
@@ -50,6 +55,7 @@ if __name__ == "__main__":
                          entry_id=folderB.id)
 
         # Create Data inside Folder B
+        upload_session_file_data = add_upload_session_file(upload_session.id, "Data")
         data = add_dataset(name="Data",
                            creator_id=admin_user.id)
 
