@@ -221,8 +221,53 @@ def get_dataset_latest(dataset_id):
         return flask.jsonify(json_data_latest_dataset_version)
 
 
-def get_datafile():
-    pass
+def get_datafile(q, format):
+    db = current_app.db
+
+    # first, resolve q to a datafile record
+
+    # now that we've got a dataset_version_id and datafile name, search for existing cache entry
+    from taiga2.models import ConversionCache
+    from sqlalchemy import and_
+
+    dataset_id = None
+    dataset_version_id = None
+    datafile_name = None
+
+    # TODO: Move to service call
+    entry = db.session.query(ConversionCache).filter(and_(ConversionCache.dataset_version_id == dataset_version_id,
+                                                  ConversionCache.format == format,
+                                                  ConversionCache.datafile_name)).first()
+    result = dict(dataset_id=dataset_id,
+                                  dataset_version_id=dataset_version_id,
+                                  datafile_name=datafile_name)
+
+    if entry is not None:
+        # report on the status of the cache entry
+        result['status'] = entry.status
+
+        # if there's urls on the cache entry, report those too after signing them
+        if entry.paths_as_json is not None and entry.paths_as_json != "":
+            urls = json.loads(entry.paths_as_json)
+            signed_urls = [sign_url(url) for url in urls]
+            result['urls'] = signed_urls
+
+    else:
+        data_file = get_datafile(dataset_version_id, datafile_name)
+
+        # Create a new cache entry
+        status = "Conversion queued"
+        result['status'] = status
+        entry = ConversionCache(dataset_version_id = dataset_version_id,
+            datafile_name = datafile_name,
+            format = format,
+            status = status)
+        entry_id = db.session.add(entry)
+        db.session.commit()
+
+        start_conversion_task(data_file.url, data_file.format, format, entry_id)
+
+    return flask.jsonify(result)
 
 
 def update_dataset_name(datasetId, NameUpdate):
