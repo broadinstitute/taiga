@@ -163,12 +163,14 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     </Link>
                 </td>
                 <td>{toLocalDateString(e.creation_date)}</td>
+                <td>Folder</td>
                 <td>{e.creator.name}</td>
             </tr>
         });
 
         var other_rows = others.map((e, index) => {
             var link: any;
+            let entryType: any;
 
             if (e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
                 link =
@@ -177,6 +179,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         <span> </span>
                         <Link key={index} to={"/app/dataset/"+e.id}>{e.name}</Link>
                     </span>
+
+                entryType = 'Dataset Version'
             } else if (e.type == Folder.FolderEntries.TypeEnum.Dataset) {
                 // TODO: Be careful about this add, not sure if we should access Dataset data like this
                 // TODO: We need to get the latest datasetVersion from this dataset
@@ -187,6 +191,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         <span> </span>
                         <Link key={index} to={"/app/dataset/"+firstDatasetVersion.id}>{e.name}</Link>
                     </span>
+
+                entryType = 'Dataset'
             }
             else {
                 link = e.name;
@@ -198,6 +204,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                            onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td>{link}</td>
                 <td>{toLocalDateString(e.creation_date)}</td>
+                <td>{entryType}</td>
                 <td>{e.creator.name}</td>
             </tr>
         });
@@ -289,6 +296,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             <th className="select-column"></th>
                             <th>Name</th>
                             <th>Date</th>
+                            <th>Type</th>
                             <th>Creator</th>
                         </tr>
                         </thead>
