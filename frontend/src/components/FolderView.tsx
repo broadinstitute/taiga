@@ -9,6 +9,8 @@ import * as Dialogs from "./Dialogs";
 import * as Upload from "./Modals/Upload";
 import {DatasetVersion} from "../models/models";
 
+import { toLocalDateString } from "../Utilities/formats";
+
 export interface FolderViewProps {
     params : any
 }
@@ -152,7 +154,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             return <tr key={e.id}>
                 <td><input type="checkbox" value={ this.state.selection[select_key] } onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td><Link key={index} to={"/app/folder/"+e.id}><div className="folder-icon"/>{e.name}</Link></td>
-                <td>{e.creation_date}</td>
+                <td>{toLocalDateString(e.creation_date)}</td>
                 <td>{e.creator.name}</td>
             </tr>
         });
@@ -176,7 +178,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             return <tr key={e.id}>
                 <td><input type="checkbox" value={ this.state.selection[select_key] } onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td>{link}</td>
-                <td>{e.creation_date}</td>
+                <td>{toLocalDateString(e.creation_date)}</td>
                 <td>{e.creator.name}</td>
             </tr>
         });

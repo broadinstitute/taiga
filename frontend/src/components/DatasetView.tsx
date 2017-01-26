@@ -9,6 +9,8 @@ import * as Models from "../models/models"
 import { TaigaApi } from "../models/api"
 import * as Dialogs from "./Dialogs"
 
+import { toLocalDateString } from "../Utilities/formats";
+
 export interface DatasetViewProps {
     params : any
 }
@@ -158,7 +160,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     } } />
 
                 <h1>{dataset.name} <small>{dataset.permanames[dataset.permanames.length-1]}</small></h1>
-                <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on {datasetVersion.creation_date}</p>
+                <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on {toLocalDateString(datasetVersion.creation_date)}</p>
                 <p>Versions: {versions} </p>
                 <p>Contained within {folders}</p>
                 {ancestor_section}
