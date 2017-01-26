@@ -39,15 +39,6 @@ def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_se
     with open(temp_hdf5_tcsv_file_path, 'rb') as data:
         object.upload_fileobj(data)
 
-    print("Successfully uploaded the HDF5")
-    # Create the related datafile and map it to the upload_session_file, with the url received back from S3
-    upload_session_file = models_controller.get_upload_session_file(upload_session_file_id)
-    new_datafile = models_controller.add_datafile(name=file_name,
-                                                  permaname=permaname,
-                                                  url=datafile['location'],
-                                                  upload_session_file_id=upload_session_file.id)
-    return new_datafile
-
 
 def tcsv_to_hdf5(celery_instance, temp_raw_tcsv_file_path, file_name):
     import csv

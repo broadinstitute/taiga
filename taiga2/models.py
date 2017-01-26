@@ -152,14 +152,7 @@ class DataFile(db.Model):
 
     name = db.Column(db.String(80))
 
-    # To be able to differentiate multiple files with the same name
-    permaname = db.Column(db.Text, unique=True, nullable=False)
-
     url = db.Column(db.Text)
-
-    upload_session_file_id = db.Column(db.Integer, db.ForeignKey('upload_session_files.id'))
-    upload_session_file = db.relationship("UploadSessionFile",
-                                          backref=db.backref("datafile", uselist=False))
 
 
 class DatasetVersion(Entry):
@@ -242,3 +235,5 @@ class UploadSessionFile(db.Model):
                               backref=__tablename__)
 
     filename = db.Column(db.Text)
+
+    url = db.Column(db.Text)

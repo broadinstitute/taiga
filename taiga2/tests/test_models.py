@@ -343,7 +343,6 @@ def new_datafile():
     new_datafile_url = "http://google.com"
 
     _new_datafile = add_datafile(name=new_datafile_name,
-                                 permaname=new_datafile_permaname,
                                  url=new_datafile_url)
 
     return _new_datafile

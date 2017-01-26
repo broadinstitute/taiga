@@ -168,6 +168,32 @@ def add_dataset(name="No name",
     return new_dataset
 
 
+def add_dataset_from_session(session_id, dataset_name, dataset_description, current_folder_id):
+    # We retrieve all the upload_session_files related to the UploadSession
+    added_files = get_upload_session_files_from_session(session_id)
+
+    # Generate the datafiles from these files
+    added_datafiles = []
+    for file in added_files:
+        new_datafile = add_datafile(name=file.filename,
+                                    url=file.url)
+        added_datafiles.append(new_datafile)
+
+    # TODO: Get the user from the session
+    admin = get_user(1)
+    dataset_permaname = generate_permaname(dataset_name)
+    added_dataset = add_dataset(creator_id=admin.id,
+                                name=dataset_name,
+                                permaname=dataset_permaname,
+                                description=dataset_description,
+                                datafiles_ids=[datafile.id
+                                               for datafile in added_datafiles])
+    updated_folder = add_folder_entry(current_folder_id,
+                                      added_dataset.id)
+
+    return added_dataset
+
+
 def get_dataset(dataset_id):
     dataset = db.session.query(Dataset) \
         .filter(Dataset.id == dataset_id).one()
@@ -384,24 +410,14 @@ def get_entry(entry_id):
 
 #<editor-fold desc="DataFile">
 def add_datafile(name="No name",
-                 permaname=None,
-                 url="",
-                 upload_session_file_id=-1):
+                 url=""):
     # TODO: See register_datafile_id
     new_datafile_name = name
-    if not permaname:
-        new_datafile_permaname = generate_permaname(new_datafile_name)
-    else:
-        new_datafile_permaname = permaname
 
     new_datafile_url = url
 
-    upload_session_file = get_upload_session_file(upload_session_file_id)
-
     new_datafile = DataFile(name=new_datafile_name,
-                            permaname=new_datafile_permaname,
-                            url=new_datafile_url,
-                            upload_session_file=upload_session_file)
+                            url=new_datafile_url)
 
     db.session.add(new_datafile)
     db.session.commit()
@@ -429,25 +445,22 @@ def get_upload_session(session_id):
     return upload_session
 
 
-def get_datafiles_from_session(session_id):
+def get_upload_session_files_from_session(session_id):
     # TODO: We could also fetch the datafiles with only one query
     upload_session = db.session.query(UploadSession) \
         .filter(UploadSession.id == session_id).one()
     upload_session_files = upload_session.upload_session_files
 
     # For each upload_session_file, we retrieve its datafile
-    datafiles = []
-    for upload_session_file in upload_session_files:
-        datafiles.append(upload_session_file.datafile)
-    print("Retrieved datafiles from upload_session files {} are {}".format(upload_session_files, datafiles))
-    return datafiles
+    return upload_session_files
 
 #</editor-fold>
 
 #<editor-fold desc="Upload Session File">
-def add_upload_session_file(session_id, filename):
+def add_upload_session_file(session_id, filename, url):
     upload_session_file = UploadSessionFile(session_id=session_id,
-                                            filename=filename)
+                                            filename=filename,
+                                            url=url)
     db.session.add(upload_session_file)
     db.session.commit()
     return upload_session_file
