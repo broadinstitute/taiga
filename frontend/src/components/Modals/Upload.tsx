@@ -174,10 +174,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     ).then((taskStatusId) => {
                         console.log("The new datafile " +  data.Key + " has been sent!");
                         console.log("We now check the task until we receive success");
-                        return tapi.get_task_status(taskStatusId);
-                    }).then((status) => {
-                        console.log("Received the first status: "+status.state);
-                        return this.checkOrContinue(status);
+
+                        return this.initRecurringCheckStatus(taskStatusId, data.Key);
                     }).then(() => {
                         console.log("Task finished!");
                         // Get the file who received this progress notification
@@ -242,17 +240,14 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         });
     }
 
-    checkOrContinue(status: TaskStatus) {
-        // If status == SUCCESS, return the last check
-        // If status != SUCCESS, wait 1 sec and check again
-        // TODO: Make an enum from the task state
+    displayStatusUpdate(status: TaskStatus, filename: string) {
         let updatedFilesStatus = this.state.filesStatus;
 
         console.log('The name of the file we are processing is: '+status.fileName);
 
         // Get the file who received this progress notification
         let updatedFileStatus = updatedFilesStatus.find((element: FileUploadStatus) => {
-            return element.fileName == status.fileName;
+            return element.fileName == filename;
         });
 
         if (updatedFileStatus) {
@@ -264,6 +259,19 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             });
         }
         console.log(status.message);
+    }
+
+    initRecurringCheckStatus(taskId: string, filename: string) {
+        return tapi.get_task_status(taskId).then((new_status: TaskStatus) => {
+            return this.checkOrContinue(new_status, filename);
+        })
+    }
+
+    checkOrContinue(status: TaskStatus, filename: string) {
+        // If status == SUCCESS, return the last check
+        // If status != SUCCESS, wait 1 sec and check again
+        // TODO: Make an enum from the task state
+        this.displayStatusUpdate(status, filename);
 
         if(status.state == 'SUCCESS') {
             console.log("Success of task: " + status.id);
@@ -277,7 +285,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 // Wait one sec Async then check again
                 // setTimeout(() => {return this.checkOrContinue(status)}, 1000);
                 return this.delay(1000).then(() => {
-                   return this.checkOrContinue(new_status)
+                    return this.checkOrContinue(new_status, filename)
                 });
             });
         }
