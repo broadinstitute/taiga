@@ -212,6 +212,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 this.props.currentFolderId.toString());
         }).then((dataset_id) => {
             console.log("Dataset "+dataset_id+" has been created!");
+            this.props.onFileUploadedAndConverted()
         }).catch((err: any) => {
            console.log(err);
         });
