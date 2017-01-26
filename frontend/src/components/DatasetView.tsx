@@ -78,7 +78,14 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let dataset = this.state.dataset;
         let datasetVersion = this.state.datasetVersion;
 
-        let versions = dataset.versions.map( x => x.name+" ("+x.status+") " ).join(", ");
+        let versions = dataset.versions.map((dataset_version, index) => {
+            return <span key={dataset_version.id} >
+                        <Link to={"/app/dataset/"+dataset_version.id}>{dataset_version.name}</Link>
+                        {dataset.versions.length != index + 1 &&
+                            <span>, </span>
+                        }
+                    </span>
+        });
 
         let entries = datasetVersion.datafiles.map( (df, index) => {
             return <tr key={index}>
