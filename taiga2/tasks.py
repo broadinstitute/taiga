@@ -2,13 +2,12 @@ import time
 
 from taiga2.celery import celery
 import taiga2.controllers.models_controller as models_controller
-
+from taiga2.aws import aws
 
 @celery.task(bind=True)
 def tcsv_to_hdf5(self, S3UploadedFileMetadata):
     import csv
     import numpy as np
-    import boto3
     import os
 
     datafile = S3UploadedFileMetadata
@@ -16,7 +15,7 @@ def tcsv_to_hdf5(self, S3UploadedFileMetadata):
     file_name = datafile['key']
     permaname = models_controller.generate_permaname(datafile['key'])
 
-    s3 = boto3.resource('s3')
+    s3 = aws.s3
     object = s3.Object(datafile['bucket'], datafile['key'])
     temp_raw_tcsv_file_path = '/tmp/taiga2/'+permaname
     os.makedirs(os.path.dirname(temp_raw_tcsv_file_path), exist_ok=True)
