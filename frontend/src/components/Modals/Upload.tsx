@@ -45,7 +45,7 @@ const rowUploadFiles: any = {
     paddingTop: '15px'
 };
 
-const dropzoneStyles: any = "width: 100%; height: 200px; border-width: 2px; border-color: #666; border-style: dashed; border-radius: 5px;"
+let tapi: TaigaApi = null;
 
 export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>{
     static contextTypes = {
@@ -65,7 +65,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     }
 
     componentDidMount() {
-        let tapi: TaigaApi = (this.context as any).tapi;
+        tapi = (this.context as any).tapi;
 
         console.log("UploadDataset: componentDidMount");
     }
@@ -95,14 +95,11 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         console.log("We are in requestUpload!");
         console.log("Uploading through token:");
 
-        let tapi: TaigaApi = (this.context as any).tapi;
-
         tapi.get_s3_credentials().then((credentials) => {
             console.log("Received credentials! ");
             console.log("- Access key id: " + credentials.accessKeyId);
 
             // Request creation of Upload session => sid
-            let tapi: TaigaApi = (this.context as any).tapi;
             return tapi.get_new_upload_session().then((sid: string) => {
                 console.log("New upload session received: "+sid);
                 // doUpload with this sid
@@ -172,7 +169,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     console.log('Here is the Key of the file: '+data.ETag);
                     // TODO: Send the signal the upload is done on the AWS side, so you can begin the conversion on the backend
                     // POST
-                    let tapi: TaigaApi = (this.context as any).tapi;
                     return tapi.process_new_datafile(data.Location, data.ETag,
                                                 data.Bucket, data.Key, sid
                     ).then((taskStatusId) => {
@@ -205,7 +201,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             // TODO: Check all sids are the same
             console.log("All datafiles have been uploaded and converted successfully!");
             console.log("Asking to create a dataset from session id "+sid[0]);
-            let tapi: TaigaApi = (this.context as any).tapi;
             return tapi.create_dataset(sids[0].toString(),
                 this.state.nameValue,
                 this.state.descriptionValue,
@@ -278,7 +273,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             return Promise.reject('Failure of task ' + status.id);
         }
         else {
-            let tapi: TaigaApi = (this.context as any).tapi;
             return tapi.get_task_status(status.id).then((new_status: TaskStatus) => {
                 // Wait one sec Async then check again
                 // setTimeout(() => {return this.checkOrContinue(status)}, 1000);
