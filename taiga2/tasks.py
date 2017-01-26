@@ -1,12 +1,66 @@
 import time
+import tempfile
 
 from taiga2.celery import celery
 import taiga2.controllers.models_controller as models_controller
 
+def get_s3_connection():
+    import boto3
+    boto3.resource('s3')
+
+def parse_url_into_bucket_key(url):
+    unimp()
+
+@celery.task(bind=True)
+def export_datafile(self, src_url, src_type, dst_format, cache_entry_id):
+    import uuid
+
+    s3 = get_s3_connection()
+    bucket, key = parse_url_into_bucket_key(src_url)
+    raw_object = s3.Object(bucket, key)
+
+    #FIXME: What are valid values for these?
+    assert src_type == "hdf5"
+    assert dst_format == "csv"
+
+    urls = []
+    with tempfile.NamedTemporaryFile() as raw_fd:
+        self.update_state(state='PROGRESS',
+                          meta={'current': 0,
+                                'total': '0',
+                                'message': "Downloading from S3"})
+
+        raw_object.download_file(raw_fd.name)
+
+        self.update_state(state='PROGRESS',
+                          meta={'current': 0,
+                                'total': '0',
+                                'message': "Converting"})
+
+        with tempfile.NamedTemporaryFile() as converted_fd:
+            tcsv_to_hdf5(self, raw_fd.name, converted_fd.name)
+
+            # TODO: Prepend prefix from config onto key
+            converted_key = "exported/"+str(uuid.uuid4().hex)
+
+            converted_object = s3.Object(bucket, converted_key)
+            self.update_state(state='PROGRESS',
+                              meta={'current': 0,
+                                    'total': '0',
+                                    'message': "Uploading converted to S3"})
+
+            converted_object.upload_file(converted_fd.name)
+
+            urls.append("s3://{}/{}".format(bucket, converted_key))
+
+        self.update_state(state='PROGRESS',
+                          meta={'current': 0,
+                                'total': '0',
+                                'message': "Updating cache"})
+        models_controller.conversion_complete(cache_entry_id, urls)
 
 @celery.task(bind=True)
 def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_session_file_id):
-    import boto3
     import os
 
     # TODO: Rename this as it is confusing
@@ -16,8 +70,10 @@ def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_se
     permaname = models_controller.generate_permaname(datafile['key'])
 
     # TODO: Think about the access of Celery to S3 directly
-    s3 = boto3.resource('s3')
+    s3 = get_s3_connection()
     object = s3.Object(datafile['bucket'], datafile['key'])
+
+    # FIXME: use tempfile.NamedTemporaryFile to ensure dest doesn't already exist and avoid hardcoded path
     temp_raw_tcsv_file_path = '/tmp/taiga2/' + permaname
     os.makedirs(os.path.dirname(temp_raw_tcsv_file_path), exist_ok=True)
 

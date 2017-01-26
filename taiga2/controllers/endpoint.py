@@ -12,9 +12,7 @@ from uuid import uuid4
 import flask
 import time
 
-
 ADMIN_USER_ID = "admin"
-
 
 def get_dataset(datasetId):
     dataset = models_controller.get_dataset(datasetId)
@@ -166,49 +164,24 @@ def task_status(taskStatusId):
 
 
 def get_datafile(q, format):
-    db = current_app.db
+    from taiga2.tasks import taskstatus
 
-    # first, resolve q to a datafile record
+    datafile = models_controller.resolve_to_datafile(q)
 
-    # now that we've got a dataset_version_id and datafile name, search for existing cache entry
-    from taiga2.models import ConversionCache
-    from sqlalchemy import and_
+    dataset_id = datafile.version.dataset.id
+    dataset_version_id = datafile.version
+    datafile_name = datafile.name
 
-    dataset_id = None
-    dataset_version_id = None
-    datafile_name = None
+    is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
 
-    # TODO: Move to service call
-    entry = db.session.query(ConversionCache).filter(and_(ConversionCache.dataset_version_id == dataset_version_id,
-                                                  ConversionCache.format == format,
-                                                  ConversionCache.datafile_name)).first()
-    result = dict(dataset_id=dataset_id,
-                                  dataset_version_id=dataset_version_id,
-                                  datafile_name=datafile_name)
-
-    if entry is not None:
-        # report on the status of the cache entry
-        result['status'] = entry.status
-
-        # if there's urls on the cache entry, report those too after signing them
-        if entry.paths_as_json is not None and entry.paths_as_json != "":
-            urls = json.loads(entry.paths_as_json)
-            signed_urls = [sign_url(url) for url in urls]
-            result['urls'] = signed_urls
-
-    else:
+    if is_new:
         data_file = get_datafile(dataset_version_id, datafile_name)
+        start_conversion_task(data_file.url, data_file.format, format, entry.id)
 
-        # Create a new cache entry
-        status = "Conversion queued"
-        result['status'] = status
-        entry = ConversionCache(dataset_version_id = dataset_version_id,
-            datafile_name = datafile_name,
-            format = format,
-            status = status)
-        entry_id = db.session.add(entry)
-        db.session.commit()
-
-        start_conversion_task(data_file.url, data_file.format, format, entry_id)
+    result = dict(dataset_id=dataset_id,
+                  dataset_version_id=dataset_version_id,
+                  datafile_name=datafile_name,
+                  urls=models_controller.get_signed_urls_from_cache_entry(entry),
+                  status=entry.status)
 
     return flask.jsonify(result)

@@ -470,3 +470,108 @@ def get_upload_session_file(upload_session_file_id):
         .filter(UploadSessionFile.id == upload_session_file_id).one()
     return upload_session_file
 #</editor-fold>
+
+#<editor-fold desc="Download datafiles">
+def resolve_to_dataset(self, name):
+    m = re.match("([^/:]+)$", name)
+    if m is None:
+        return None
+    permaname = m.group(1)
+
+    Dataset = Query()
+    matches = self.datasets.search(Dataset.permaname == permaname)
+    if len(matches) == 0:
+        matches = self.datasets.search(Dataset.id == permaname)
+        if len(matches) == 0:
+            return None
+
+    dataset = matches[0]
+    return dataset['id']
+
+def resolve_to_dataset_version(self, name):
+    m = re.match("([^/:]+)(?::([0-9]+))?$", name)
+    if m is None:
+        return None
+    permaname = m.group(1)
+    version = m.group(2)
+
+    dataset_id = self.resolve_to_dataset(permaname)
+    if dataset_id is None:
+        if self.get_dataset_version(permaname) is not None:
+            return permaname
+        else:
+            return None
+
+    dataset = self.get_dataset(dataset_id)
+    # now look for version
+    if version == "" or version is None:
+        version = len(dataset['versions'])-1
+    else:
+        version = int(version)-1
+
+    if version >= len(dataset['versions']):
+        return None
+
+    dataset_version_id = dataset['versions'][version]
+    return dataset_version_id
+
+def resolve_to_datafile(self, name):
+    m = re.match("([^/:]+(?::[0-9]+)?)(/.*)$", name)
+    if m is None:
+        return None
+    dataset_name = m.group(1)
+    path = m.group(2)
+
+    dataset_version_id = self.resolve_to_dataset_version(dataset_name)
+    if dataset_version_id is None:
+        return None
+
+    dataset_version = self.get_dataset_version(dataset_version_id)
+    if path == "":
+        path = dataset_version["entries"]["name"]
+
+    entries = [e for e in dataset_version['entries'] if e['name'] == path]
+    if len(entries) == 0:
+        return None
+    else:
+        return entries[0]
+
+def _find_cache_entry(dataset_version_id, format, datafile_name):
+    entry = db.session.query(ConversionCache).filter(and_(ConversionCache.dataset_version_id == dataset_version_id,
+                                                          ConversionCache.format == format,
+                                                          ConversionCache.datafile_name == datafile_name)).first()
+    return entry
+
+
+from sqlalchemy import and_
+from taiga2.models import ConversionCache
+import json
+
+def get_signed_urls_from_cache_entry(paths_as_json):
+    # if there's urls on the cache entry, report those too after signing them
+    if paths_as_json is None or paths_as_json == "":
+        return None
+
+    urls = json.loads(paths_as_json)
+    signed_urls = [sign_url(url) for url in urls]
+    return signed_urls
+
+def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
+    entry = _find_cache_entry(dataset_version_id, format, datafile_name)
+    if entry is not None:
+        is_new = False
+    else:
+        is_new = True
+
+        # Create a new cache entry
+        status = "Conversion queued"
+        entry = ConversionCache(dataset_version_id = dataset_version_id,
+            datafile_name = datafile_name,
+            format = format,
+            status = status)
+        entry_id = db.session.add(entry)
+        db.session.commit()
+
+    return is_new, entry
+
+#</editor-fold>
