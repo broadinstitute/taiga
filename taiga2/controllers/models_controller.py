@@ -182,6 +182,11 @@ def get_dataset_from_permaname(dataset_permaname):
 
     return dataset
 
+def get_first_dataset_version(dataset_id):
+    dataset_version_first = db.session.query(DatasetVersion) \
+        .filter(DatasetVersion.dataset_id == dataset_id, DatasetVersion.version == 1).one()
+
+    return dataset_version_first
 
 def get_latest_dataset_version(dataset_id):
     dataset = get_dataset(dataset_id)
@@ -258,8 +263,7 @@ def update_dataset_contents(dataset_id,
     new_updated_dataset_version = add_dataset_version(creator_id=dataset_version_latest_version.creator.id,
                                                       dataset_id=dataset_version_latest_version.dataset.id,
                                                       datafiles_ids=[datafile.id
-                                                                     for datafile in dataset_version_latest_version.datafiles],
-                                                      version=dataset_version_latest_version.version+1)
+                                                                     for datafile in dataset_version_latest_version.datafiles])
 
     new_updated_version_datafiles = new_updated_dataset_version.datafiles
 
@@ -314,6 +318,12 @@ def add_dataset_version(creator_id,
 
     # TODO: User the power of Query to make only one query instead of calling get_datafile
     datafiles = [get_datafile(datafile_id) for datafile_id in datafiles_ids]
+
+    latest_dataset_version = get_latest_dataset_version(dataset_id)
+    if latest_dataset_version:
+        version += latest_dataset_version.version
+    else:
+        version = 1
 
     # If we did not set a name for the dataset_version, we take one by default
     if not name:

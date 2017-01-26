@@ -208,12 +208,12 @@ def get_dataset_activity():
     pass
 
 
-def get_dataset_latest(dataset_id):
-    latest_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
+def get_dataset_first(dataset_id):
+    first_dataset_version = models_controller.get_first_dataset_version(int(dataset_id))
 
     dataset_version_schema = schemas.DatasetVersionSummarySchema()
-    json_data_latest_dataset_version = dataset_version_schema.dump(latest_dataset_version).data
-    return flask.jsonify(json_data_latest_dataset_version)
+    json_data_first_dataset_version = dataset_version_schema.dump(first_dataset_version).data
+    return flask.jsonify(json_data_first_dataset_version)
 
 
 def get_datafile():

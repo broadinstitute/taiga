@@ -373,11 +373,11 @@ paths:
               acl:
                 "$ref": "#/definitions/Acl"
 
-  /dataset/{dataset_id}/latest:
+  /dataset/{dataset_id}/first:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_dataset_latest
-      description: Fetch the latest (dataset_)version of a dataset
+      operationId: get_dataset_first
+      description: Fetch the first (dataset_)version of a dataset
       parameters:
         - name: dataset_id
           in: path
