@@ -100,7 +100,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             console.log("- Access key id: " + credentials.accessKeyId);
 
             // Request creation of Upload session => sid
-            return tapi.get_new_upload_session().then((sid: string) => {
+            return tapi.get_upload_session().then((sid: string) => {
                 console.log("New upload session received: "+sid);
                 // doUpload with this sid
                 this.doUpload(credentials, this.state.filesStatus, sid);

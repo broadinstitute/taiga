@@ -63,8 +63,8 @@ export class TaigaApi {
         return this._fetch<S3Credentials>("/credentials_s3")
     }
 
-    get_new_upload_session(): Promise<string> {
-        return this._fetch<string>("/new_upload_session")
+    get_upload_session(): Promise<string> {
+        return this._fetch<string>("/upload_session")
     }
 
     update_dataset_name(dataset_id : string, name: string) {

@@ -245,10 +245,10 @@ paths:
               sessionToken:
                 type: string
 
-  /new_upload_session:
+  /upload_session:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_new_upload_session
+      operationId: create_new_upload_session
       description: Ask for the creation of a new Upload Session to post new files in a dataset
       responses:
         200:

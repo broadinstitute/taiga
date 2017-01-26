@@ -322,14 +322,13 @@ def create_datafile(S3UploadedFileMetadata, sid):
     return flask.jsonify(result.id)
 
 
-def get_new_upload_session():
+def create_new_upload_session():
     # TODO: Add the user_id related to this new session
     upload_session = models_controller.add_new_upload_session()
     return flask.jsonify(upload_session.id)
 
 
 def create_dataset(sessionDatasetInfo):
-    # TODO: Retrieve the datafiles associated with the UploadSession
     session_id = sessionDatasetInfo['sessionId']
     dataset_name = sessionDatasetInfo['datasetName']
     dataset_description = sessionDatasetInfo['datasetDescription']
