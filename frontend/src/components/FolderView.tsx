@@ -35,6 +35,8 @@ export class Conditional extends React.Component<any, any> {
     }
 }
 
+let tapi: TaigaApi = null;
+
 export class FolderView extends React.Component<FolderViewProps, FolderViewState> {
     static contextTypes = {
         tapi: React.PropTypes.object
@@ -49,16 +51,16 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     componentDidMount() {
+        tapi = (this.context as any).tapi;
         this.doFetch();
     }
 
     doFetch() {
-        let tapi : TaigaApi = (this.context as any).tapi;
-        
+
         console.log("FolderView: componentDidMount");
         // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
         let datasetsFirstDv : { [dataset_id: string]: Folder.DatasetVersion } = {};
-        let _folder = null;
+        let _folder: Folder.Folder = null;
         tapi.get_folder(this.props.params.folderId).then(folder => {
             _folder = folder;
             console.log("FolderView: complete");
@@ -102,16 +104,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     updateName(name : string) {
-        let tapi : TaigaApi = (this.context as any).tapi;
-
         tapi.update_folder_name(this.state.folder.id, name).then( () => {
             return this.doFetch()
         } )        
     }
 
     updateDescription(description : string) {
-        let tapi : TaigaApi = (this.context as any).tapi;
-
         tapi.update_folder_description(this.state.folder.id, description).then( () => {
             return this.doFetch()
         } )        

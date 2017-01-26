@@ -261,31 +261,6 @@ paths:
               sid:
                 type: string
 
-  /process_new_datafile/{sid}:
-    post:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: process_new_datafile
-      description: Process a freshly S3 uploaded datafile (conversion and storage reference)
-      consumes:
-        - application/json
-      parameters:
-        - name: sid
-          in: path
-          type: string
-          description: The Upload Session id
-          required: true
-        - in: body
-          name: S3UploadedFileMetadata
-          required: true
-          schema:
-            "$ref": "#/definitions/S3UploadedFileMetadata"
-      responses:
-        200:
-          description: Received data, they are correct and conversion currently doing
-          schema:
-            title: TaskId
-            type: string
-
   /dataset:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -638,6 +613,31 @@ paths:
       responses:
         200:
           description: Successfully updated
+
+  /datafile/{sid}:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: create_datafile
+      description: Process a freshly S3 uploaded file (conversion and storage reference)
+      consumes:
+        - application/json
+      parameters:
+        - name: sid
+          in: path
+          type: string
+          description: The Upload Session id
+          required: true
+        - in: body
+          name: S3UploadedFileMetadata
+          required: true
+          schema:
+            "$ref": "#/definitions/S3UploadedFileMetadata"
+      responses:
+        200:
+          description: Received data, they are correct and conversion currently doing
+          schema:
+            title: TaskId
+            type: string
 
   /task_status/{taskStatusId}:
     get:

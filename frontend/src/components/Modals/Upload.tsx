@@ -169,7 +169,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     console.log('Here is the Key of the file: '+data.ETag);
                     // TODO: Send the signal the upload is done on the AWS side, so you can begin the conversion on the backend
                     // POST
-                    return tapi.process_new_datafile(data.Location, data.ETag,
+                    return tapi.create_datafile(data.Location, data.ETag,
                                                 data.Bucket, data.Key, sid
                     ).then((taskStatusId) => {
                         console.log("The new datafile " +  data.Key + " has been sent!");

@@ -83,8 +83,8 @@ export class TaigaApi {
         return this._post<void>("/folder/"+folder_id+"/description", {description: description})
     }
 
-    process_new_datafile(location: string, eTag: string, bucket: string, key: string, sid: string) {
-        return this._post<string>("/process_new_datafile/"+sid, {location: location, eTag: eTag,
+    create_datafile(location: string, eTag: string, bucket: string, key: string, sid: string) {
+        return this._post<string>("/datafile/"+sid, {location: location, eTag: eTag,
                                                             bucket: bucket, key: key})
     }
 

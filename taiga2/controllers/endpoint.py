@@ -305,57 +305,21 @@ def get_dataset_version_status():
     pass
 
 
-def process_new_datafile(S3UploadedFileMetadata, sid):
+def create_datafile(S3UploadedFileMetadata, sid):
 
-    # Launch a Celery process to convert and get back to populate the db + send finish to client
-    # TODO: Do this in Celery instead
     # TODO: We should first check the file exists before adding it in the db
     # TODO: We could also check the type of the object
     # TODO: We need to make a distinction between numerical or table data
-    # TODO: Add also Parquet file creation
+    # TODO: Add also Parquet file conversion
 
     # Register this new file to the UploadSession received
-    upload_session = models_controller.get_upload_session(sid)
     upload_session_file = models_controller.add_upload_session_file(sid, S3UploadedFileMetadata['key'])
 
+    # Launch a Celery process to convert and get back to populate the db + send finish to client
     from taiga2.tasks import background_process_new_datafile
     result = background_process_new_datafile.delay(S3UploadedFileMetadata, sid, upload_session_file.id)
-    # for i in range(20):
-    #     print("In process_new_datafile, sleep and look the state of the task")
-    #     status = taskstatus(result.id)
-    #     print("TASKSTATUS {}".format(status))
-    #     if status['state'] == 'SUCCESS':
-    #         print('Received a success, we release this loop')
-    #         break
-    #     time.sleep(1)
-    # # temp_hdf5_tcsv_file_path = result.get()
-    # print("STOP for testing")
-    return flask.jsonify(result.id)
 
-    #     # Upload the HDF5 to s3 with the permaname as key
-    #     with open(temp_hdf5_tcsv_file_path, 'rb') as data:
-    #         object.upload_fileobj(data)
-    #     print("Successfully uploaded the HDF5")
-    #
-    #     # Register the url into a datafile object
-    #     # Store it in the db
-    #     db_added_datafile = models_controller.add_datafile(name=datafile['key'],
-    #                                                        permaname=permaname,
-    #                                                        url=datafile['location'])
-    #     # Add it to the first dataset
-    #     # Add it to the user "Admin"
-    #     # TODO: Replace by the current user
-    #     admin = models_controller.get_user(1)
-    #     # TODO: Get the dataset we would want to link it to
-    #     db_added_dataset = models_controller.add_dataset(name=datafile['key'],
-    #                                                      permaname=permaname,
-    #                                                      creator_id=admin.id,
-    #                                                      datafiles_ids=[db_added_datafile.id])
-    #     folder_home_admin = admin.home_folder
-    #     models_controller.add_folder_entry(folder_home_admin.id,
-    #                                        db_added_dataset.id)
-    #
-    # return flask.jsonify({})
+    return flask.jsonify(result.id)
 
 
 def get_new_upload_session():
