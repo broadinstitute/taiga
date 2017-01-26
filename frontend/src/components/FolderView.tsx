@@ -9,13 +9,15 @@ import * as Dialogs from "./Dialogs";
 import * as Upload from "./Modals/Upload";
 import {DatasetVersion} from "../models/models";
 
+import { toLocalDateString } from "../Utilities/formats";
+
 export interface FolderViewProps {
     params : any
 }
 
 export interface FolderViewState {
     folder? : Folder.Folder;
-    dataset_latestDatasetVersion? : { [dataset_id: string]: Folder.DatasetVersion }
+    datasetFirstDatasetVersion? : { [dataset_id: string]: Folder.DatasetVersion }
     showEditName? : boolean;
     showEditDescription? : boolean;
     showUploadDataset?: boolean;
@@ -33,6 +35,8 @@ export class Conditional extends React.Component<any, any> {
     }
 }
 
+let tapi: TaigaApi = null;
+
 export class FolderView extends React.Component<FolderViewProps, FolderViewState> {
     static contextTypes = {
         tapi: React.PropTypes.object
@@ -47,35 +51,35 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     componentDidMount() {
+        tapi = (this.context as any).tapi;
         this.doFetch();
     }
 
     doFetch() {
-        let tapi : TaigaApi = (this.context as any).tapi;
-        
+
         console.log("FolderView: componentDidMount");
         // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
-        let datasets_latestdv : { [dataset_id: string]: Folder.DatasetVersion } = {};
-        let _folder = null;
+        let datasetsFirstDv : { [dataset_id: string]: Folder.DatasetVersion } = {};
+        let _folder: Folder.Folder = null;
         tapi.get_folder(this.props.params.folderId).then(folder => {
             _folder = folder;
             console.log("FolderView: complete");
             return folder.entries
             }
         ).then((entries: Array<Folder.FolderEntries>) => {
-            let all_latest_dataset_versions: Array<Promise<DatasetVersion>> = null;
-            all_latest_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
+            let all_first_dataset_versions: Array<Promise<DatasetVersion>> = null;
+            all_first_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
                 if (entry.type == Folder.FolderEntries.TypeEnum.Dataset) {
-                    return tapi.get_dataset_version_latest(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
-                        datasets_latestdv[entry.id] = datasetVersion;
+                    return tapi.get_dataset_version_first(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
+                        datasetsFirstDv[entry.id] = datasetVersion;
                     });
                 }
             });
-            return Promise.all(all_latest_dataset_versions);
+            return Promise.all(all_first_dataset_versions);
         }).then(() => {
             this.setState({folder: _folder,
                 selection: {},
-                dataset_latestDatasetVersion: datasets_latestdv});
+                datasetFirstDatasetVersion: datasetsFirstDv});
         });
     }
 
@@ -100,16 +104,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     updateName(name : string) {
-        let tapi : TaigaApi = (this.context as any).tapi;
-
         tapi.update_folder_name(this.state.folder.id, name).then( () => {
             return this.doFetch()
         } )        
     }
 
     updateDescription(description : string) {
-        let tapi : TaigaApi = (this.context as any).tapi;
-
         tapi.update_folder_description(this.state.folder.id, description).then( () => {
             return this.doFetch()
         } )        
@@ -152,7 +152,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             return <tr key={e.id}>
                 <td><input type="checkbox" value={ this.state.selection[select_key] } onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td><Link key={index} to={"/app/folder/"+e.id}><div className="folder-icon"/>{e.name}</Link></td>
-                <td>{e.creation_date}</td>
+                <td>{toLocalDateString(e.creation_date)}</td>
                 <td>{e.creator.name}</td>
             </tr>
         });
@@ -165,8 +165,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             } else if(e.type == Folder.FolderEntries.TypeEnum.Dataset) {
                 // TODO: Be careful about this add, not sure if we should access Dataset data like this
                 // TODO: We need to get the latest datasetVersion from this dataset
-                let latest_datasetVersion = this.state.dataset_latestDatasetVersion[e.id];
-                link = <span><Link key={index} to={"/app/dataset/"+latest_datasetVersion.id}>{e.name}</Link> (latest)</span>
+                let firstDatasetVersion = this.state.datasetFirstDatasetVersion[e.id];
+                link = <span><Link key={index} to={"/app/dataset/"+firstDatasetVersion.id}>{e.name}</Link> (first version)</span>
             }
             else {
                 link = e.name;
@@ -176,7 +176,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             return <tr key={e.id}>
                 <td><input type="checkbox" value={ this.state.selection[select_key] } onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td>{link}</td>
-                <td>{e.creation_date}</td>
+                <td>{toLocalDateString(e.creation_date)}</td>
                 <td>{e.creator.name}</td>
             </tr>
         });
@@ -224,6 +224,10 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     <Upload.UploadDataset
                         isVisible={this.state.showUploadDataset}
                         cancel={ () => { this.setState({showUploadDataset: false}) } }
+                        onFileUploadedAndConverted={ () => {
+                            this.doFetch();
+                        }}
+                        currentFolderId={this.state.folder.id}
                     />
 
                     <h1>{folder.name}</h1>

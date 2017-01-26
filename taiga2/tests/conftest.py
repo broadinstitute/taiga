@@ -2,12 +2,13 @@ import datetime
 import os
 import pytest
 
-from taiga2.factory import create_app
+from taiga2.backend import create_app
 from taiga2.models import db as _db
-from flask_sqlalchemy import SQLAlchemy
 
+import os
 
-TESTDB = 'test_temp_taiga2.db'
+dir_path = os.path.dirname(os.path.realpath(__file__))
+TESTDB = os.path.join(dir_path, 'test_temp_taiga2.db')
 TESTDB_PATH = "{}".format(TESTDB)
 TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 
@@ -21,7 +22,7 @@ def app(request):
         'SQLALCHEMY_TRACK_MODIFICATIONS': True,
         'SQLALCHEMY_ECHO': False
     }
-    _app = create_app(__name__, settings_override)
+    api_app, _app = create_app(__name__, settings_override)
     print("Create app")
 
     # Establish an application context before running the tests.

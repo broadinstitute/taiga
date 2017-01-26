@@ -128,6 +128,7 @@ export class FileUploadStatus {
     fileSize: number;
 
     progress: number;
+    conversionProgress: string;
 
     constructor(file: File) {
         this.file = file;
@@ -137,5 +138,15 @@ export class FileUploadStatus {
         this.fileSize = this.file.size
 
         this.progress = 0;
+        this.conversionProgress = '';
     }
+}
+
+export class TaskStatus {
+    id: string;
+    state: string;
+    message: string;
+    current: string;
+    total: string;
+    fileName: string;
 }

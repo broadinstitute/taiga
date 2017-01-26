@@ -3,13 +3,9 @@ import os
 
 from taiga2.factory import create_app
 
-settings_override = {
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:///taiga2.db',
-    'SQLALCHEMY_ECHO': True,
-    'SQLALCHEMY_TRACK_MODIFICATIONS': True
-}
 
-app = create_app(__name__, settings_override)
+# app = create_app(__name__, settings_override)
+app = flask.Flask(__name__)
 
 INDEX = "static/index.html"
 
@@ -28,4 +24,3 @@ def sendindex2(filename):
 @app.route("/js/<path:filename>")
 def static_f(filename):
     return flask.send_from_directory(os.path.abspath("node_modules"), filename)
-

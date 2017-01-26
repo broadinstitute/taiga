@@ -28,6 +28,9 @@ setup(
         'marshmallow-enum>=1.0',
         'marshmallow-oneofschema>=1.0.3',
         'pytest==3.0.5',
-        'freezegun==0.3.8'
+        'freezegun==0.3.8',
+        'python-magic>=0.4.12',
+        'h5py>=2.6.0',
+        'numpy>=1.11.3'
     ],
 )

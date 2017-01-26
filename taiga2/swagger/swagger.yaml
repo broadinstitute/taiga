@@ -245,36 +245,55 @@ paths:
               sessionToken:
                 type: string
 
+  /upload_session:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: create_new_upload_session
+      description: Ask for the creation of a new Upload Session to post new files in a dataset
+      responses:
+        200:
+          description: The unique Upload Session Id
+          schema:
+            title: UploadSessionId
+            required:
+              - sid
+            properties:
+              sid:
+                type: string
+
   /dataset:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: create_dataset
       description: Create a dataset from a set of already uploaded objects
+      consumes:
+        - application/json
       parameters:
         - in: body
-          name: DatasetDefinition
+          name: sessionDatasetInfo
+          required: true
           schema:
             type: object
             required:
-              - name
-              - parent
-              - entries
+              - sessionId
+              - datasetName
+              - datasetDescription
+              - currentFolderId
             properties:
-              name:
+              sessionId:
                 type: string
-              description:
+              datasetName:
                 type: string
-              parent:
+              datasetDescription:
                 type: string
-              entries:
-                type: array
-                items:
-                  "$ref": "#/definitions/DataFileSubmission"
+              currentFolderId:
+                type: string
       responses:
         200:
           description: The info about the newly created dataset
           schema:
-            "$ref": "#/definitions/ImportStatus"
+            title: DatasetId
+            type: string
 
   /dataset/{datasetId}:
     get:
@@ -329,11 +348,11 @@ paths:
               acl:
                 "$ref": "#/definitions/Acl"
 
-  /dataset/{dataset_id}/latest:
+  /dataset/{dataset_id}/first:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_dataset_latest
-      description: Fetch the latest (dataset_)version of a dataset
+      operationId: get_dataset_first
+      description: Fetch the first (dataset_)version of a dataset
       parameters:
         - name: dataset_id
           in: path
@@ -622,6 +641,70 @@ paths:
         500:
           description: Error encountered during conversion.
 
+  /datafile/{sid}:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: create_datafile
+      description: Process a freshly S3 uploaded file (conversion and storage reference)
+      consumes:
+        - application/json
+      parameters:
+        - name: sid
+          in: path
+          type: string
+          description: The Upload Session id
+          required: true
+        - in: body
+          name: S3UploadedFileMetadata
+          required: true
+          schema:
+            "$ref": "#/definitions/S3UploadedFileMetadata"
+      responses:
+        200:
+          description: Received data, they are correct and conversion currently doing
+          schema:
+            title: TaskId
+            type: string
+
+  /task_status/{taskStatusId}:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: task_status
+      description: Get the status of a Celery task
+      parameters:
+        - name: taskStatusId
+          in: path
+          type: string
+          description: Celery task status id
+          required: true
+      responses:
+        200:
+          description: Status of the task
+          schema:
+            title: CeleryTaskStatus
+            type: object
+            required:
+              - id
+              - state
+              - message
+              - current
+              - total
+              - fileName
+            properties:
+              id:
+                type: string
+              state:
+                type: string
+              message:
+                type: string
+              current:
+                type: string
+              total:
+                type: string
+              fileName:
+                type: string
+
+
 #missing provenance
 
 definitions:
@@ -736,3 +819,22 @@ definitions:
       - deprecated # Discourage use.  Warn when fetching
       - deleted    # Underlying data has been deleted
       - valid
+
+  # Match the S3 Data object returned by ManagedUpload
+  # https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3/ManagedUpload.html#constructor-property
+  S3UploadedFileMetadata:
+    type: object
+    required:
+      - location
+      - eTag
+      - bucket
+      - key
+    properties:
+      location:
+        type: string
+      eTag:
+        type: string
+      bucket:
+        type: string
+      key:
+        type: string

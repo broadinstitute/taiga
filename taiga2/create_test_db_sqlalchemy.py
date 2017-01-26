@@ -1,4 +1,4 @@
-from taiga2.app import frontend_app, create_db
+from taiga2.backend import backend_app, create_db
 from taiga2.controllers.models_controller import *
 
 # Create the Admin user
@@ -9,7 +9,7 @@ from taiga2.controllers.models_controller import *
 # Create A1 Data/A2 Data/A3 Data inside Folder A
 
 if __name__ == "__main__":
-    with frontend_app.app_context():
+    with backend_app.app_context():
         print("Dropping existing DB")
         db.drop_all()
         print("Recreating it")
@@ -19,21 +19,15 @@ if __name__ == "__main__":
         admin_user = add_user(name="Admin")
         home_folder_admin = admin_user.home_folder
 
+        # Create a session where all this is happening
+        upload_session_origin = add_new_upload_session()
+
         # Create the origin data
-        origin_dataset = add_dataset(name="origin",
-                                     creator_id=admin_user.id)
-
-        # Create a DataFile for the origin dataset
-        datafile_origin_dataset = add_datafile(name="Origin Datafile")
-
-        # Create a dataVersion to origin
-        origin_first_datasetVersion = add_dataset_version(name="origin_v1",
-                                                          creator_id=admin_user.id,
-                                                          dataset_id=origin_dataset.id,
-                                                          datafiles_ids=[datafile_origin_dataset.id])
-        # Add the origin dataset inside the home folder
-        add_folder_entry(folder_id=home_folder_admin.id,
-                         entry_id=origin_dataset.id)
+        upload_session_file_origin = add_upload_session_file(upload_session_origin.id, "origin", "www.origin_url.com")
+        origin_dataset = add_dataset_from_session(session_id=upload_session_origin.id,
+                                                  dataset_name="origin",
+                                                  dataset_description="No description",
+                                                  current_folder_id=home_folder_admin.id)
 
         # Create the Folder A folder
         folderA = add_folder(creator_id=admin_user.id,
@@ -50,18 +44,12 @@ if __name__ == "__main__":
                          entry_id=folderB.id)
 
         # Create Data inside Folder B
-        data = add_dataset(name="Data",
-                           creator_id=admin_user.id)
-
-        dataset_version_data = add_dataset_version(name="Data v1",
-                                                   creator_id=admin_user.id,
-                                                   dataset_id=data.id)
-
-        add_folder_entry(folder_id=folderB.id,
-                         entry_id=dataset_version_data.id)
-
-        add_folder_entry(folder_id=folderB.id,
-                         entry_id=data.id)
+        upload_session_data = add_new_upload_session()
+        upload_session_file_data = add_upload_session_file(upload_session_data.id, "Data", "www.data.com")
+        data = add_dataset_from_session(session_id=upload_session_data.id,
+                                        dataset_name="Data",
+                                        dataset_description="No description",
+                                        current_folder_id=folderB.id)
 
         # Create A1 Data/A2 Data/A3 Data inside Folder A
         for i in range(1, 4):
