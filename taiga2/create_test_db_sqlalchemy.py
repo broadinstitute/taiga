@@ -23,7 +23,10 @@ if __name__ == "__main__":
         upload_session_origin = add_new_upload_session()
 
         # Create the origin data
-        upload_session_file_origin = add_upload_session_file(upload_session_origin.id, "origin", "www.origin_url.com")
+        upload_session_file_origin = add_upload_session_file(upload_session_origin.id,
+                                                             "origin",
+                                                             DataFile.DataFileType.Raw,
+                                                             "www.origin_url.com")
         origin_dataset = add_dataset_from_session(session_id=upload_session_origin.id,
                                                   dataset_name="origin",
                                                   dataset_description="No description",
@@ -45,7 +48,11 @@ if __name__ == "__main__":
 
         # Create Data inside Folder B
         upload_session_data = add_new_upload_session()
-        upload_session_file_data = add_upload_session_file(upload_session_data.id, "Data", "www.data.com")
+        upload_session_file_data = add_upload_session_file(upload_session_data.id,
+                                                           "Data",
+                                                           DataFile.DataFileType.Raw,
+                                                           "www.data.com")
+
         data = add_dataset_from_session(session_id=upload_session_data.id,
                                         dataset_name="Data",
                                         dataset_description="No description",

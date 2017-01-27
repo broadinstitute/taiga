@@ -244,4 +244,6 @@ class UploadSessionFile(db.Model):
 
     filename = db.Column(db.Text)
 
+    filetype = db.Column(db.Enum(DataFile.DataFileType))
+
     url = db.Column(db.Text)
