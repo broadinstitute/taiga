@@ -69,7 +69,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 return folder.entries
             }
         ).then((entries: Array<Folder.FolderEntries>) => {
-            let all_first_dataset_versions: Array<Promise<DatasetVersion>> = null;
+            let all_first_dataset_versions: Array<Promise<void>> = null;
             all_first_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
                 if (entry.type == Folder.FolderEntries.TypeEnum.Dataset) {
                     return tapi.get_dataset_version_first(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
