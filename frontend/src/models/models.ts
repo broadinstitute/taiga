@@ -116,6 +116,8 @@ export interface S3Credentials {
     expiration: string;
     secretAccessKey: string;
     sessionToken: string;
+    bucket: string;
+    prefix: string;
 }
 
 // Upload

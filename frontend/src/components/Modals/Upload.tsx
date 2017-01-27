@@ -128,8 +128,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
                 // TODO: Configure this elsewhere as a const configuration (settings.cfg?)
                 let params = {
-                    Bucket: 'broadtaiga2prototype',
-                    Key: file.fileName,
+                    Bucket: s3_credentials.bucket,
+                    Key: s3_credentials.prefix + file.fileName,
                     Body: file.file
                 };
 

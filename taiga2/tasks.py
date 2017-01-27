@@ -1,8 +1,18 @@
 import taiga2.controllers.models_controller as models_controller
-from celery import shared_task
 from taiga2.aws import aws
+from celery import Celery
+from taiga2 import conversion
 
-@shared_task(bind=True)
+celery = Celery("taiga2")
+#Celery("taiga2", include=['taiga2.tasks'])
+
+@celery.task
+def print_config():
+    import flask
+    config = flask.current_app.config
+    print(config)
+
+@celery.task(bind=True)
 def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_session_file_id):
     import csv
     import numpy as np
@@ -27,7 +37,7 @@ def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_se
                                 'message': message, 'fileName': file_name})
         object.download_fileobj(data)
 
-    temp_hdf5_tcsv_file_path = tcsv_to_hdf5(self, temp_raw_tcsv_file_path, file_name)
+    temp_hdf5_tcsv_file_path = conversion.tcsv_to_hdf5(self, temp_raw_tcsv_file_path, file_name)
 
     # Upload the hdf5
     message = "Uploading the HDF5 to S3"

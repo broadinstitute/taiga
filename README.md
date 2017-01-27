@@ -91,7 +91,7 @@ Starting the project is not yet straightforward, but will be in the near future:
         `yarn install`
         `cd frontend/ && yarn install && cd ..`
 
-4. (Hopefully temporary) Replace, in frontend/@types/react-dropzone/index.d.ts the `export default Dropzone` by `export = Dropzone`
+4. (Hopefully temporary) Replace, in frontend/node_modules/@types/react-dropzone/index.d.ts the `export default Dropzone` by `export = Dropzone`
 5. Configure the application as you need (AWS credentials, hostname/port and so on), in settings.cfg:
 
         `cp settings.cfg.sample settings.cfg && vim settings.cfg`
@@ -112,9 +112,9 @@ Starting the project is not yet straightforward, but will be in the near future:
 
     c. In the taiga2 folder:
 
-        `taiga2 test.json`
-        
-        `celery -A taiga2 worker -l info -E`
+        `taiga2 settings.cfg`
+
+        `export TAIGA2_SETTINGS=settings.cfg ; celery -A taiga2 worker -l info -E`
         
 7. Congratulations! You can now access to Taiga 2 through your browser at:
 

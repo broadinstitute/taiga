@@ -2,6 +2,11 @@ from taiga2.api_app import create_app
 from taiga2.ui import app as ui_app
 from werkzeug.wsgi import pop_path_info, peek_path_info
 from werkzeug.serving import run_simple
+import logging
+import sys
+from taiga2.celery_init import configure_celery
+
+log = logging.getLogger(__name__)
 
 class PathDispatcher(object):
     "Delegate requests prefixed with 'api' to separate app"
@@ -19,9 +24,16 @@ class PathDispatcher(object):
         app = self.get_application(peek_path_info(environ))
         return app(environ, start_response)
 
-
 def main():
-    api_app, flask_api_app = create_app()
+    if len(sys.argv) != 2:
+        log.error("Needs config file")
+        sys.exit(-1)
+
+    settings_file = sys.argv[1]
+
+    api_app, flask_api_app = create_app(settings_file=settings_file)
+    configure_celery(flask_api_app)
+
     debug = flask_api_app.config["DEBUG"]
 
     application = PathDispatcher(api_app, ui_app)

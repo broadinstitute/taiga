@@ -66,11 +66,16 @@ def get_s3_credentials():
 
     dict_credentials = temporary_session_credentials['Credentials']
 
+    bucket = flask.current_app.config["S3_BUCKET"]
+    prefix = flask.current_app.config.get("S3_PREFIX", "upload/")
+
     model_frontend_credentials = {
         'accessKeyId': dict_credentials['AccessKeyId'],
         'expiration': dict_credentials['Expiration'],
         'secretAccessKey': dict_credentials['SecretAccessKey'],
-        'sessionToken': dict_credentials['SessionToken']
+        'sessionToken': dict_credentials['SessionToken'],
+        'bucket': bucket,
+        'prefix': prefix
     }
 
     # See frontend/models/models.ts for the S3Credentials object

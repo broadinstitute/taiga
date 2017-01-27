@@ -1,7 +1,6 @@
-from celery import Celery
+from taiga2.tasks import celery
 
-def create_celery(app):
-    celery = Celery("taiga2", include=['taiga2.tasks'])
+def configure_celery(app):
     celery.config_from_object(app.config)
 
     # only relevant for the worker process

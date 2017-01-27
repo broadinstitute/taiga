@@ -1,9 +1,6 @@
 import flask
 import os
 
-from taiga2.factory import create_app
-
-
 # app = create_app(__name__, settings_override)
 app = flask.Flask(__name__)
 

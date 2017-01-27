@@ -9,7 +9,7 @@ setup(
     author="Philip Montgomery",
     author_email="pmontgom@broadinstitute.org",
     entry_points={'console_scripts': [
-        "taiga2 = taiga2.app:main"]},
+        "taiga2 = taiga2.main:main"]},
     install_requires=[
         'attrs==16.2.0',
         'connexion>=1.0.129',
