@@ -9,6 +9,8 @@ import * as Models from "../models/models"
 import { TaigaApi } from "../models/api"
 import * as Dialogs from "./Dialogs"
 
+import { toLocalDateString } from "../Utilities/formats";
+
 export interface DatasetViewProps {
     params : any
 }
@@ -19,6 +21,8 @@ export interface DatasetViewState {
     showEditName? : boolean;
     showEditDescription? : boolean;
 }
+
+let tapi: TaigaApi = null;
 
 export class DatasetView extends React.Component<DatasetViewProps, DatasetViewState> {
     static contextTypes = {
@@ -34,12 +38,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     componentDidMount() {
+        tapi = (this.context as any).tapi;
         this.doFetch();
     }
 
     doFetch() {
         // could do fetches in parallel if url encoded both ids
-        let tapi : TaigaApi = (this.context as any).tapi;
         let _datasetVersion : Models.DatasetVersion = null;
 
         return tapi.get_dataset_version(this.props.params.datasetVersionId).then(datasetVersion => {
@@ -51,16 +55,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     updateName(name : string) {
-        let tapi : TaigaApi = (this.context as any).tapi;
-
         tapi.update_dataset_name(this.state.datasetVersion.dataset_id, name).then( () => {
             return this.doFetch()
         } )
     }
 
     updateDescription(description : string) {
-        let tapi : TaigaApi = (this.context as any).tapi;
-
         tapi.update_dataset_description(this.state.datasetVersion.dataset_id, description).then( () => {
             return this.doFetch()
         } )        
@@ -78,7 +78,14 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let dataset = this.state.dataset;
         let datasetVersion = this.state.datasetVersion;
 
-        let versions = dataset.versions.map( x => x.name+" ("+x.status+") " ).join(", ");
+        let versions = dataset.versions.map((dataset_version, index) => {
+            return <span key={dataset_version.id} >
+                        <Link to={"/app/dataset/"+dataset_version.id}>{dataset_version.name}</Link>
+                        {dataset.versions.length != index + 1 &&
+                            <span>, </span>
+                        }
+                    </span>
+        });
 
         let entries = datasetVersion.datafiles.map( (df, index) => {
             return <tr key={index}>
@@ -151,7 +158,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     } } />
 
                 <h1>{dataset.name} <small>{dataset.permanames[dataset.permanames.length-1]}</small></h1>
-                <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on {datasetVersion.creation_date}</p>
+                <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on {toLocalDateString(datasetVersion.creation_date)}</p>
                 <p>Versions: {versions} </p>
                 <p>Contained within {folders}</p>
                 {ancestor_section}

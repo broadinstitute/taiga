@@ -1,5 +1,13 @@
 import connexion
-from celery import Celery
+
+
+def create_db():
+    """Create the database, based on the app configuration,
+    if it does not exist already"""
+    with backend_app.app_context():
+        from taiga2.models import db as _db
+        _db.create_all()
+        print(_db)
 
 
 def create_app(name, settings_override):

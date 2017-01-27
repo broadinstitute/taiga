@@ -128,50 +128,6 @@ paths:
               name:
                 type: string
 
-
-  /folders/update:
-    post:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: update_folders
-      description: Perform multiple updates to folders within a single transaction.  Can be used for moves (a remove and add somewhere else), copies (and add) and deletes (a remove and add to trash)
-      parameters:
-        - in: body
-          name: operations
-          schema:
-            type: object
-            properties:
-              operations:
-                type: array
-                items:
-                  type: object
-                  required:
-                    - parent
-                    - opType
-                    - idType
-                    - id
-                  properties:
-                    parent:
-                      type: string
-                    opType:
-                      type: string
-                      enum:
-                        - add
-                        - remove
-                    idType:
-                      type: string
-                      enum:
-                        - folder
-                        - dataset
-                        - datasetVersion
-                    id:
-                      type: string
-      responses:
-        200:
-          description: Successful execution of update
-        400:
-          description: Attempted to do something bad (move trash or home, or modify non-existant entry)
-
-
   /user:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -196,26 +152,6 @@ paths:
               home_folder_id:
                 type: string
               trash_folder_id:
-                type: string
-
-  /uploadurl:
-    get:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_upload_url
-      description: Get url used to upload data
-      responses:
-        200:
-          description: Url and id to use to refer to upload location
-          schema:
-            title: FileUploadInfo
-            type: object
-            required:
-              - id
-              - url
-            properties:
-              id:
-                type: string
-              url:
                 type: string
 
   /credentials_s3:
@@ -245,56 +181,55 @@ paths:
               sessionToken:
                 type: string
 
-  /process_new_datafile:
-    post:
+  /upload_session:
+    get:
       x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: process_new_datafile
-      description: Process a freshly S3 uploaded datafile (conversion and storage reference)
-      consumes:
-        - application/json
-      parameters:
-        - in: body
-          name: S3UploadedFileMetadata
-          required: true
-          schema:
-            "$ref": "#/definitions/S3UploadedFileMetadata"
+      operationId: create_new_upload_session
+      description: Ask for the creation of a new Upload Session to post new files in a dataset
       responses:
         200:
-          description: Received data, they are correct and conversion currently doing
+          description: The unique Upload Session Id
           schema:
-            title: TaskId
-            type: string
+            title: UploadSessionId
+            required:
+              - sid
+            properties:
+              sid:
+                type: string
 
   /dataset:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: create_dataset
       description: Create a dataset from a set of already uploaded objects
+      consumes:
+        - application/json
       parameters:
         - in: body
-          name: DatasetDefinition
+          name: sessionDatasetInfo
+          required: true
           schema:
             type: object
             required:
-              - name
-              - parent
-              - entries
+              - sessionId
+              - datasetName
+              - datasetDescription
+              - currentFolderId
             properties:
-              name:
+              sessionId:
                 type: string
-              description:
+              datasetName:
                 type: string
-              parent:
+              datasetDescription:
                 type: string
-              entries:
-                type: array
-                items:
-                  "$ref": "#/definitions/DataFileSubmission"
+              currentFolderId:
+                type: string
       responses:
         200:
           description: The info about the newly created dataset
           schema:
-            "$ref": "#/definitions/ImportStatus"
+            title: DatasetId
+            type: string
 
   /dataset/{datasetId}:
     get:
@@ -349,11 +284,11 @@ paths:
               acl:
                 "$ref": "#/definitions/Acl"
 
-  /dataset/{dataset_id}/latest:
+  /dataset/{dataset_id}/first:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_dataset_latest
-      description: Fetch the latest (dataset_)version of a dataset
+      operationId: get_dataset_first
+      description: Fetch the first (dataset_)version of a dataset
       parameters:
         - name: dataset_id
           in: path
@@ -416,50 +351,6 @@ paths:
                       type: string
               provenance:
                 "$ref": "#/definitions/Provenance"
-
-  /dataset/{datasetId}/version:
-    post:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: update_dataset
-      description: Create a new dataset version by updating the data files associated with dataset.
-      parameters:
-        - name: datasetId
-          in: path
-          type: string
-          description: Folder ID
-          required: true
-        - in: body
-          name: DatasetUpdate
-          schema:
-            type: object
-            properties:
-              old_entries:
-                description: The names of data files to remove.
-              new_entries:
-                description: Data files to add as part of the new version.
-                type: array
-                items:
-                  "$ref": "#/definitions/DataFileSubmission"
-      responses:
-        200:
-          description: The info about the newly created dataset
-          schema:
-            "$ref": "#/definitions/ImportStatus"
-
-  /dataset/{datasetId}/activity:
-    get:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_dataset_activity
-      description: Fetch activity history for this dataset
-      parameters:
-        - name: datasetId
-          in: path
-          type: string
-          description: Dataset ID
-          required: true
-      responses:
-        200:
-          description: Successfully updated
 
   /dataset/{datasetId}/name:
     post:
@@ -582,38 +473,30 @@ paths:
               provenance:
                 "$ref": "#/definitions/Provenance"
 
-  /datasetVersion/{datasetVersionId}/status:
-    get:
+  /datafile/{sid}:
+    post:
       x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_dataset_version_status
-      description: Fetch the status of a dataset being imported
+      operationId: create_datafile
+      description: Process a freshly S3 uploaded file (conversion and storage reference)
+      consumes:
+        - application/json
       parameters:
-        - name: datasetVersionId
+        - name: sid
           in: path
           type: string
-          description: Dataset Version ID
+          description: The Upload Session id
           required: true
-      responses:
-        200:
-          description: Status of import, and any error which may have occurred
+        - in: body
+          name: S3UploadedFileMetadata
+          required: true
           schema:
-            "$ref": "#/definitions/ImportStatus"
-
-  /datafile:
-    get:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_datafile
-      # do we need to support conversion?
-      description: Get datafile contents
-      parameters:
-        - name: name
-          in: query
-          type: string
-          description: dataset_id or dataset_version_id with optional version number and filename
-          required: true
+            "$ref": "#/definitions/S3UploadedFileMetadata"
       responses:
         200:
-          description: Successfully updated
+          description: Received data, they are correct and conversion currently doing
+          schema:
+            title: TaskId
+            type: string
 
   /task_status/{taskStatusId}:
     get:
@@ -638,6 +521,7 @@ paths:
               - message
               - current
               - total
+              - fileName
             properties:
               id:
                 type: string

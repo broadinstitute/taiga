@@ -1,4 +1,4 @@
-from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile
+from taiga2.models import *
 from taiga2.models import generate_permaname
 from taiga2.models import db
 
@@ -89,7 +89,16 @@ def add_folder_entry(folder_id, entry_id):
     folder = get_folder(folder_id)
     entry = get_entry(entry_id)
 
-    folder.entries.append(entry)
+    # TODO: See if this is the right place to do that...
+    # If it is a dataset, we need to update the location of its dataset_versions
+    if type(entry) is Dataset:
+        # Add this folder to the dataset_versions
+        for dataset_version in entry.dataset_versions:
+            add_folder_entry(folder_id, dataset_version.id)
+
+    # TODO: This should be a set, not a list.
+    if entry not in folder.entries:
+        folder.entries.append(entry)
 
     db.session.add(folder)
     db.session.commit()
@@ -145,8 +154,7 @@ def add_dataset(name="No name",
         # containing DataFiles
 
         # TODO: Think about a meaningful name
-        new_dataset_version = add_dataset_version(name="No name",
-                                                  creator_id=creator.id,
+        new_dataset_version = add_dataset_version(creator_id=creator.id,
                                                   dataset_id=new_dataset.id,
                                                   version=1,
                                                   datafiles_ids=datafiles_ids)
@@ -158,6 +166,32 @@ def add_dataset(name="No name",
     # TODO: Add the activity
     # TODO: Think about an automatic way of adding/updating the activity
     return new_dataset
+
+
+def add_dataset_from_session(session_id, dataset_name, dataset_description, current_folder_id):
+    # We retrieve all the upload_session_files related to the UploadSession
+    added_files = get_upload_session_files_from_session(session_id)
+
+    # Generate the datafiles from these files
+    added_datafiles = []
+    for file in added_files:
+        new_datafile = add_datafile(name=file.filename,
+                                    url=file.url)
+        added_datafiles.append(new_datafile)
+
+    # TODO: Get the user from the session
+    admin = get_user(1)
+    dataset_permaname = generate_permaname(dataset_name)
+    added_dataset = add_dataset(creator_id=admin.id,
+                                name=dataset_name,
+                                permaname=dataset_permaname,
+                                description=dataset_description,
+                                datafiles_ids=[datafile.id
+                                               for datafile in added_datafiles])
+    updated_folder = add_folder_entry(current_folder_id,
+                                      added_dataset.id)
+
+    return added_dataset
 
 
 def get_dataset(dataset_id):
@@ -174,6 +208,11 @@ def get_dataset_from_permaname(dataset_permaname):
 
     return dataset
 
+def get_first_dataset_version(dataset_id):
+    dataset_version_first = db.session.query(DatasetVersion) \
+        .filter(DatasetVersion.dataset_id == dataset_id, DatasetVersion.version == 1).one()
+
+    return dataset_version_first
 
 def get_latest_dataset_version(dataset_id):
     dataset = get_dataset(dataset_id)
@@ -246,12 +285,11 @@ def update_dataset_contents(dataset_id,
     # latest_version_datafiles = dataset_version_latest_version.datafiles
 
     # Create the new dataset_version from the latest and update its version
-    new_updated_dataset_version = add_dataset_version(name=dataset_version_latest_version.name,
-                                                      creator_id=dataset_version_latest_version.creator.id,
+    # TODO: Remove the increment of the version since it should be handled by add_dataset_version directly
+    new_updated_dataset_version = add_dataset_version(creator_id=dataset_version_latest_version.creator.id,
                                                       dataset_id=dataset_version_latest_version.dataset.id,
                                                       datafiles_ids=[datafile.id
-                                                                     for datafile in dataset_version_latest_version.datafiles],
-                                                      version=dataset_version_latest_version.version+1)
+                                                                     for datafile in dataset_version_latest_version.datafiles])
 
     new_updated_version_datafiles = new_updated_dataset_version.datafiles
 
@@ -291,11 +329,11 @@ def delete_dataset(dataset_id):
 #</editor-fold>
 
 #<editor-fold desc="DatasetVersion">
-def add_dataset_version(name,
-                        creator_id,
+def add_dataset_version(creator_id,
                         dataset_id,
                         datafiles_ids=None,
-                        version=1):
+                        version=1,
+                        name=None):
     if not datafiles_ids:
         datafiles_ids = []
 
@@ -306,6 +344,16 @@ def add_dataset_version(name,
 
     # TODO: User the power of Query to make only one query instead of calling get_datafile
     datafiles = [get_datafile(datafile_id) for datafile_id in datafiles_ids]
+
+    latest_dataset_version = get_latest_dataset_version(dataset_id)
+    if latest_dataset_version:
+        version += latest_dataset_version.version
+    else:
+        version = 1
+
+    # If we did not set a name for the dataset_version, we take one by default
+    if not name:
+        name = "".join([dataset.name, "_v", str(version)])
 
     # Create the DatasetVersion object
     new_dataset_version = DatasetVersion(name=name,
@@ -362,19 +410,13 @@ def get_entry(entry_id):
 
 #<editor-fold desc="DataFile">
 def add_datafile(name="No name",
-                 permaname=None,
                  url=""):
     # TODO: See register_datafile_id
     new_datafile_name = name
-    if not permaname:
-        new_datafile_permaname = generate_permaname(new_datafile_name)
-    else:
-        new_datafile_permaname = permaname
 
     new_datafile_url = url
 
     new_datafile = DataFile(name=new_datafile_name,
-                            permaname=new_datafile_permaname,
                             url=new_datafile_url)
 
     db.session.add(new_datafile)
@@ -388,4 +430,43 @@ def get_datafile(datafile_id):
         .filter(DataFile.id == datafile_id).one()
 
     return datafile
+#</editor-fold>
+
+#<editor-fold desc="Upload Session">
+def add_new_upload_session():
+    us = UploadSession()
+    db.session.add(us)
+    db.session.commit()
+    return us
+
+
+def get_upload_session(session_id):
+    upload_session = db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
+    return upload_session
+
+
+def get_upload_session_files_from_session(session_id):
+    # TODO: We could also fetch the datafiles with only one query
+    upload_session = db.session.query(UploadSession) \
+        .filter(UploadSession.id == session_id).one()
+    upload_session_files = upload_session.upload_session_files
+
+    # For each upload_session_file, we retrieve its datafile
+    return upload_session_files
+
+#</editor-fold>
+
+#<editor-fold desc="Upload Session File">
+def add_upload_session_file(session_id, filename, url):
+    upload_session_file = UploadSessionFile(session_id=session_id,
+                                            filename=filename,
+                                            url=url)
+    db.session.add(upload_session_file)
+    db.session.commit()
+    return upload_session_file
+
+def get_upload_session_file(upload_session_file_id):
+    upload_session_file = db.session.query(UploadSessionFile) \
+        .filter(UploadSessionFile.id == upload_session_file_id).one()
+    return upload_session_file
 #</editor-fold>

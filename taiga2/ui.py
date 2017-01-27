@@ -3,13 +3,6 @@ import os
 
 from taiga2.factory import create_app
 
-settings_override = {
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:///taiga2.db',
-    'SQLALCHEMY_ECHO': True,
-    'SQLALCHEMY_TRACK_MODIFICATIONS': True,
-
-    # 'CELERY_IMPORTS': ['taiga2.controllers.endpoint']
-}
 
 # app = create_app(__name__, settings_override)
 app = flask.Flask(__name__)

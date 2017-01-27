@@ -55,12 +55,16 @@ export class TaigaApi {
         return this._fetch<DatasetVersion>("/datasetVersion/"+dataset_version_id)
     }
 
-    get_dataset_version_latest(dataset_id: string) : Promise<DatasetVersion> {
-        return this._fetch<DatasetVersion>("/dataset/"+dataset_id+"/latest")
+    get_dataset_version_first(dataset_id: string) : Promise<DatasetVersion> {
+        return this._fetch<DatasetVersion>("/dataset/"+dataset_id+"/first")
     }
 
     get_s3_credentials() : Promise<S3Credentials> {
         return this._fetch<S3Credentials>("/credentials_s3")
+    }
+
+    get_upload_session(): Promise<string> {
+        return this._fetch<string>("/upload_session")
     }
 
     update_dataset_name(dataset_id : string, name: string) {
@@ -79,13 +83,20 @@ export class TaigaApi {
         return this._post<void>("/folder/"+folder_id+"/description", {description: description})
     }
 
-    process_new_datafile(location: string, eTag: string, bucket: string, key: string) {
-        return this._post<string>("/process_new_datafile", {location: location, eTag: eTag,
+    create_datafile(location: string, eTag: string, bucket: string, key: string, sid: string) {
+        return this._post<string>("/datafile/"+sid, {location: location, eTag: eTag,
                                                             bucket: bucket, key: key})
     }
 
     get_task_status(taskStatusId: string) {
         return this._fetch<TaskStatus>("/task_status/"+taskStatusId)
+    }
+
+    create_dataset(sid: string, datasetName: string, datasetDescription: string, currentFolderId: string) {
+        return this._post<string>("/dataset", {sessionId: sid,
+                                                datasetName: datasetName,
+                                                datasetDescription: datasetDescription,
+                                                currentFolderId: currentFolderId})
     }
 }
 
