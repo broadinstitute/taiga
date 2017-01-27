@@ -3,7 +3,6 @@ import time
 from taiga2.celery import celery
 import taiga2.controllers.models_controller as models_controller
 
-
 @celery.task(bind=True)
 def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_session_file_id):
     import boto3
@@ -14,30 +13,52 @@ def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_se
     # TODO: The permaname should not be generated here, but directly fetch from key
     file_name = datafile['key']
     permaname = models_controller.generate_permaname(datafile['key'])
+    file_type = datafile['filetype']
 
-    # TODO: Think about the access of Celery to S3 directly
-    s3 = boto3.resource('s3')
-    object = s3.Object(datafile['bucket'], datafile['key'])
-    temp_raw_tcsv_file_path = '/tmp/taiga2/' + permaname
-    os.makedirs(os.path.dirname(temp_raw_tcsv_file_path), exist_ok=True)
-
-    with open(temp_raw_tcsv_file_path, 'w+b') as data:
-        message = "Downloading the file from S3"
+    # If we receive a raw file, we don't need to do anything
+    from taiga2.models import DataFile
+    # TODO: Instead of comparing two strings, we could also use DataFileType(file_type) and compare the result, or catch the exception
+    if file_type == DataFile.DataFileType.Raw.value:
+        message = "Received {}".format(file_name)
         self.update_state(state='PROGRESS',
                           meta={'current': 0, 'total': '0',
                                 'message': message, 'fileName': file_name})
-        object.download_fileobj(data)
+    elif file_type == DataFile.DataFileType.Columnar.value:
+        # TODO: Think about the access of Celery to S3 directly
+        s3 = boto3.resource('s3')
+        object = s3.Object(datafile['bucket'], datafile['key'])
+        temp_raw_tcsv_file_path = '/tmp/taiga2/' + permaname
+        os.makedirs(os.path.dirname(temp_raw_tcsv_file_path), exist_ok=True)
 
-    temp_hdf5_tcsv_file_path = tcsv_to_hdf5(self, temp_raw_tcsv_file_path, file_name)
+        with open(temp_raw_tcsv_file_path, 'w+b') as data:
+            message = "Downloading the file from S3"
+            self.update_state(state='PROGRESS',
+                              meta={'current': 0, 'total': '0',
+                                        'message': message, 'fileName': file_name})
+            object.download_fileobj(data)
 
-    # Upload the hdf5
-    message = "Uploading the HDF5 to S3"
-    self.update_state(state='PROGRESS',
-                      meta={'current': 0, 'total': '0',
-                            'message': message, 'fileName': file_name})
+        temp_hdf5_tcsv_file_path = tcsv_to_hdf5(self, temp_raw_tcsv_file_path, file_name)
 
-    with open(temp_hdf5_tcsv_file_path, 'rb') as data:
-        object.upload_fileobj(data)
+        # Upload the hdf5
+        message = "Uploading the HDF5 to S3"
+        self.update_state(state='PROGRESS',
+                          meta={'current': 0, 'total': '0',
+                                    'message': message, 'fileName': file_name})
+
+        with open(temp_hdf5_tcsv_file_path, 'rb') as data:
+            object.upload_fileobj(data)
+    elif file_type == DataFile.DataFileType.HDF5.value:
+        message = "HDF5 conversion is not implemented yet (filename {})".format(file_name)
+        self.update_state(state='FAILURE',
+                          meta={'current': 0, 'total': '0',
+                                'message': message, 'fileName': file_name})
+        raise Exception(message)
+    else:
+        message = "The file type {} is not known for {}".format(file_type, file_name)
+        self.update_state(state='FAILURE',
+                          meta={'current': 0, 'total': '0',
+                                'message': message, 'fileName': file_name})
+        raise Exception(message)
 
 
 def tcsv_to_hdf5(celery_instance, temp_raw_tcsv_file_path, file_name):

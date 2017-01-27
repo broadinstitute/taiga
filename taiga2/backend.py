@@ -12,7 +12,7 @@ def create_db():
 
 def create_app(name, settings_override):
     print("We are in create_app factory of {}".format(__name__))
-    api_app = connexion.App(__name__, specification_dir='./swagger/')
+    api_app = connexion.App(name, specification_dir='./swagger/')
     app = api_app.app
 
     for setting_key, setting_value in settings_override.items():
