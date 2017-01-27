@@ -139,7 +139,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 });
 
                 // Subscribe to measure progress
-                upload.on('httpUploadProgress', (evt) => {
+                upload.on('httpUploadProgress', (evt : any) => {
                     // TODO: evt.key is not recognized in the DefinitelyType AWS, but it works. Raise an issue in Git
                     console.log('Progress:', evt.loaded, '/', evt.total, 'of ', evt.key);
 
@@ -267,7 +267,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         })
     }
 
-    checkOrContinue(status: TaskStatus, filename: string) {
+    checkOrContinue(status: TaskStatus, filename: string) : Promise<string> {
         // If status == SUCCESS, return the last check
         // If status != SUCCESS, wait 1 sec and check again
         // TODO: Make an enum from the task state
