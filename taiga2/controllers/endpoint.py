@@ -135,6 +135,7 @@ def create_datafile(S3UploadedFileMetadata, sid):
     # Register this new file to the UploadSession received
     upload_session_file = models_controller.add_upload_session_file(sid,
                                                                     S3UploadedFileMetadata['key'],
+                                                                    S3UploadedFileMetadata['filetype'],
                                                                     S3UploadedFileMetadata['location'])
 
     # Launch a Celery process to convert and get back to populate the db + send finish to client

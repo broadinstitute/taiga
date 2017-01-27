@@ -148,9 +148,17 @@ class DataFile(db.Model):
     # TODO: Can we create a datafile without including it in a datasetVersion?
     __tablename__ = 'datafiles'
 
+    # IMPORTANT: Need to sync with frontend for each changes
+    class DataFileType(enum.Enum):
+        Raw = 'Raw'
+        HDF5 = 'HDF5'
+        Columnar = 'Columnar'
+
     id = db.Column(db.Integer, primary_key=True)
 
     name = db.Column(db.String(80))
+
+    type = db.Column(db.Enum(DataFileType))
 
     url = db.Column(db.Text)
 
@@ -235,5 +243,7 @@ class UploadSessionFile(db.Model):
                               backref=__tablename__)
 
     filename = db.Column(db.Text)
+
+    filetype = db.Column(db.Enum(DataFile.DataFileType))
 
     url = db.Column(db.Text)

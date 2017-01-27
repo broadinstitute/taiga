@@ -667,6 +667,7 @@ definitions:
       - eTag
       - bucket
       - key
+      - filetype
     properties:
       location:
         type: string
@@ -675,4 +676,6 @@ definitions:
       bucket:
         type: string
       key:
+        type: string
+      filetype:
         type: string

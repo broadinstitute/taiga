@@ -1,3 +1,5 @@
+import { getFormatType } from "../Utilities/formats";
+
 export class Folder {
     'id': string;
     'name': string;
@@ -126,7 +128,7 @@ export class FileUploadStatus {
 
     // These exist because of special needs for react-bootstrap-table. See https://github.com/AllenFang/react-bootstrap-table/issues/50
     fileName: string;
-    fileType: string;
+    fileType: SupportedTypeEnum;
     fileSize: number;
 
     progress: number;
@@ -136,7 +138,7 @@ export class FileUploadStatus {
         this.file = file;
 
         this.fileName = this.file.name;
-        this.fileType = this.file.type;
+        this.fileType = getFormatType(this.file.type);
         this.fileSize = this.file.size
 
         this.progress = 0;
@@ -151,4 +153,11 @@ export class TaskStatus {
     current: string;
     total: string;
     fileName: string;
+}
+
+// IMPORTANT: Need to sync with backend for each changes
+export enum SupportedTypeEnum {
+    Raw = <any> 'Raw',
+    HDF5 = <any> 'HDF5',
+    Columnar = <any> 'Columnar'
 }
