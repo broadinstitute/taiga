@@ -1,8 +1,11 @@
 import taiga2.controllers.models_controller as models_controller
 from celery import shared_task
+from taiga2.aws import aws
 
 @shared_task(bind=True)
 def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_session_file_id):
+    import csv
+    import numpy as np
     import boto3
     import os
 
@@ -12,8 +15,7 @@ def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_se
     file_name = datafile['key']
     permaname = models_controller.generate_permaname(datafile['key'])
 
-    # TODO: Think about the access of Celery to S3 directly
-    s3 = boto3.resource('s3')
+    s3 = aws.s3
     object = s3.Object(datafile['bucket'], datafile['key'])
     temp_raw_tcsv_file_path = '/tmp/taiga2/' + permaname
     os.makedirs(os.path.dirname(temp_raw_tcsv_file_path), exist_ok=True)

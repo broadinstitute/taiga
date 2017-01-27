@@ -5,8 +5,9 @@ import taiga2.schemas as schemas
 
 # Handle URL upload
 from flask import render_template, request, redirect, url_for
-import os, json, boto3
+import os, json
 
+from taiga2.aws import aws
 from uuid import uuid4
 
 import flask
@@ -55,10 +56,9 @@ def get_s3_credentials():
     Create an access token to access S3 using the ~/.aws/credentials information
     :return: S3Credentials
     """
-    # TODO: Use config instead of hard coding
-    expires_in = 900
+    expires_in = flask.current_app.config.get("CLIENT_UPLOAD_TOKEN_EXPIRY", 900)
 
-    sts = boto3.client('sts')
+    sts = aws.client_upload_sts
 
     temporary_session_credentials = sts.get_session_token(
         DurationSeconds=expires_in
