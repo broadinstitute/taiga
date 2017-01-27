@@ -1,6 +1,7 @@
 import 'whatwg-fetch';
 
-import {User, Folder, Dataset, DatasetVersion, S3Credentials, TaskStatus} from './models';
+import { User, Folder, Dataset, DatasetVersion, S3Credentials,
+    TaskStatus, DatasetVersionWithDataset } from './models';
 
 export class TaigaApi {
     baseUrl: string;
@@ -54,6 +55,10 @@ export class TaigaApi {
 
     get_dataset_version(dataset_version_id: string): Promise<DatasetVersion> {
         return this._fetch<DatasetVersion>("/datasetVersion/" + dataset_version_id)
+    }
+
+    get_dataset_version_by_dataset_id(datasetId: string, datasetVersionId: string) {
+        return this._fetch<DatasetVersionWithDataset>("/dataset/" + datasetId + "/" + datasetVersionId)
     }
 
     get_dataset_version_first(dataset_id: string): Promise<DatasetVersion> {

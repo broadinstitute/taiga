@@ -120,6 +120,18 @@ def get_dataset_version(datasetVersion_id):
     return flask.jsonify(json_dv_data)
 
 
+def get_dataset_version_from_dataset(datasetId, datasetVersionId):
+    print("Received {} and {}".format(datasetId, datasetVersionId))
+    dataset_version_full_dataset_schema = schemas.DatasetVersionFullDatasetSchema()
+    dataset_version = models_controller \
+        .get_dataset_version_by_dataset_id_and_dataset_version_id(datasetId,
+                                                                  datasetVersionId)
+    print("In endpoint, we got this dataset_version {}".format(dataset_version))
+    json_dv_data = dataset_version_full_dataset_schema.dump(dataset_version).data
+
+    return flask.jsonify(json_dv_data)
+
+
 def create_datafile(S3UploadedFileMetadata, sid):
 
     # TODO: We should first check the file exists before adding it in the db

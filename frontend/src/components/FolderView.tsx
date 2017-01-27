@@ -12,6 +12,7 @@ import {DatasetVersion} from "../models/models";
 import {toLocalDateString} from "../Utilities/formats";
 
 import { Glyphicon } from "react-bootstrap";
+import {Dataset} from "../models/models";
 
 export interface FolderViewProps {
     params: any
@@ -20,6 +21,7 @@ export interface FolderViewProps {
 export interface FolderViewState {
     folder?: Folder.Folder;
     datasetFirstDatasetVersion?: {[dataset_id: string]: Folder.DatasetVersion}
+    datasetsVersion?: {[datasetVersion_id: string]: Folder.DatasetVersion}
     showEditName?: boolean;
     showEditDescription?: boolean;
     showUploadDataset?: boolean;
@@ -62,6 +64,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         console.log("FolderView: componentDidMount");
         // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
         let datasetsFirstDv: {[dataset_id: string]: Folder.DatasetVersion} = {};
+        let datasetsVersion: {[datasetVersion_id: string]: Folder.DatasetVersion} = {};
         let _folder: Folder.Folder = null;
         tapi.get_folder(this.props.params.folderId).then(folder => {
                 _folder = folder;
@@ -69,20 +72,26 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 return folder.entries
             }
         ).then((entries: Array<Folder.FolderEntries>) => {
-            let all_first_dataset_versions: Array<Promise<DatasetVersion>> = null;
-            all_first_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
+            let all_dataset_versions: Array<Promise<DatasetVersion>> = null;
+            all_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
                 if (entry.type == Folder.FolderEntries.TypeEnum.Dataset) {
                     return tapi.get_dataset_version_first(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
                         datasetsFirstDv[entry.id] = datasetVersion;
                     });
                 }
+                else if (entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
+                    return tapi.get_dataset_version(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
+                        datasetsVersion[datasetVersion.id] = datasetVersion
+                    });
+                }
             });
-            return Promise.all(all_first_dataset_versions);
+            return Promise.all(all_dataset_versions);
         }).then(() => {
             this.setState({
                 folder: _folder,
                 selection: {},
-                datasetFirstDatasetVersion: datasetsFirstDv
+                datasetFirstDatasetVersion: datasetsFirstDv,
+                datasetsVersion: datasetsVersion
             });
         });
     }
@@ -173,15 +182,19 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             let entryType: any;
 
             if (e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
-                link =
-                    <span>
-                        <Glyphicon glyph="glyphicon glyphicon-file"/>
-                        <span> </span>
-                        <Link key={index} to={"/app/dataset/"+e.id}>{e.name}</Link>
-                    </span>
-
-                entryType = 'Dataset Version'
+                entryType = 'Dataset Version';
+                let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[e.id];
+                // Since we don't have the id of the dataset, we need to ask the api for it
+                   link =
+                        <span>
+                            <Glyphicon glyph="glyphicon glyphicon-file"/>
+                            <span> </span>
+                            <Link key={index} to={"/app/dataset/"+full_datasetVersion.dataset_id+"/"+e.id}>
+                                {e.name}
+                            </Link>
+                        </span>
             } else if (e.type == Folder.FolderEntries.TypeEnum.Dataset) {
+                entryType = 'Dataset'
                 // TODO: Be careful about this add, not sure if we should access Dataset data like this
                 // TODO: We need to get the latest datasetVersion from this dataset
                 let firstDatasetVersion = this.state.datasetFirstDatasetVersion[e.id];
@@ -189,10 +202,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     <span>
                         <Glyphicon glyph="glyphicon glyphicon-inbox"/>
                         <span> </span>
-                        <Link key={index} to={"/app/dataset/"+firstDatasetVersion.id}>{e.name}</Link>
+                        <Link key={index} to={"/app/dataset/"+e.id+"/"+firstDatasetVersion.id}>{e.name}</Link>
                     </span>
-
-                entryType = 'Dataset'
             }
             else {
                 link = e.name;

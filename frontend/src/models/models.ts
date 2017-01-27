@@ -61,6 +61,11 @@ export interface DatasetVersion {
     provenance?: Provenance;
 }
 
+export interface DatasetVersionWithDataset {
+    "datasetVersion": DatasetVersion;
+    "dataset": Dataset;
+}
+
 export interface DatasetVersionDatafiles {
     "name": string;
     "url": string;
@@ -82,6 +87,7 @@ export interface Dataset {
     "description": string;
     "versions": Array<DatasetVersions>;
     acl: Acl;
+    "folders": Array<NamedId>;
 }
 
 interface Method {
