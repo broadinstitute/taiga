@@ -160,9 +160,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     } } />
 
                 <h1>{dataset.name} <small>{dataset.permanames[dataset.permanames.length-1]}</small></h1>
-                <p>Contained within {folders}</p>
                 <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on {toLocalDateString(datasetVersion.creation_date)}</p>
                 <p>Versions: {versions} </p>
+                <p>Contained within {folders}</p>
                 {ancestor_section}
 
                 {Dialogs.renderDescription( this.state.dataset.description )}
