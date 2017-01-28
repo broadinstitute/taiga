@@ -121,15 +121,21 @@ def get_dataset_version(datasetVersion_id):
 
 
 def get_dataset_version_from_dataset(datasetId, datasetVersionId):
-    print("Received {} and {}".format(datasetId, datasetVersionId))
-    dataset_version_full_dataset_schema = schemas.DatasetVersionFullDatasetSchema()
+    dataset_version_schema = schemas.DatasetVersionSchema()
+    dataset_schema = schemas.DatasetSchema()
+
     dataset_version = models_controller \
         .get_dataset_version_by_dataset_id_and_dataset_version_id(datasetId,
                                                                   datasetVersionId)
-    print("In endpoint, we got this dataset_version {}".format(dataset_version))
-    json_dv_data = dataset_version_full_dataset_schema.dump(dataset_version).data
+    dataset = dataset_version.dataset
 
-    return flask.jsonify(json_dv_data)
+    json_dv_data = dataset_version_schema.dump(dataset_version).data
+    json_dataset_data = dataset_schema.dump(dataset).data
+
+    # Preparation of the dictonary to return both objects
+    json_dv_and_dataset_data = {'datasetVersion': json_dv_data, 'dataset': json_dataset_data}
+
+    return flask.jsonify(json_dv_and_dataset_data)
 
 
 def create_datafile(S3UploadedFileMetadata, sid):

@@ -307,10 +307,13 @@ paths:
             title: Dataset
             type: object
             required:
-              - datasetVersionWithDataset
+              - dataset
+              - datasetVersion
             properties:
-              datasetVersionWithDataset:
-                "$ref": "#/definitions/DatasetVersionWithDataset"
+              dataset:
+                "$ref": "#/definitions/Dataset"
+              datasetVersion:
+                "$ref": "#/definitions/DatasetVersion"
 
   /dataset/{dataset_id}/first:
     get:
@@ -611,11 +614,11 @@ definitions:
       acl:
         "$ref": "#/definitions/Acl"
 
-  DatasetVersionWithDataset:
+  DatasetVersion:
     type: object
     required:
       - id
-      - dataset
+      - dataset_id
       - name
       - creation_date
       - creator
@@ -629,8 +632,8 @@ definitions:
         type: array
         items:
           "$ref": "#/definitions/NamedId"
-      dataset:
-          "$ref": "#/definitions/Dataset"
+      dataset_id:
+          type: string
       status:
         "$ref": "#/definitions/StatusEnum"
       name:

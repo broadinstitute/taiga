@@ -61,15 +61,15 @@ export interface DatasetVersion {
     provenance?: Provenance;
 }
 
-export interface DatasetVersionWithDataset {
-    "datasetVersion": DatasetVersion;
+export interface DatasetAndDatasetVersion {
     "dataset": Dataset;
+    "datasetVersion": DatasetVersion;
 }
 
 export interface DatasetVersionDatafiles {
     "name": string;
     "url": string;
-    "mimeType": string;
+    "type": SupportedTypeEnum;
     "description": string;
     "content_summary": string;
 }
