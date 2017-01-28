@@ -332,6 +332,18 @@ def test_get_dataset_version_by_permaname_and_version(session,
                                    if dataset_version.version == 1][0]
     assert first_dataset_version == check_first_dataset_version
     assert first_dataset_version.version == 1
+
+def test_dataset_version_by_dataset_id_and_dataset_version_id(session: SessionBase,
+                                                              new_dataset_version):
+
+    _dataset_version_id = new_dataset_version.dataset_id
+
+    test_dataset_version = get_dataset_version_by_dataset_id_and_dataset_version_id(_dataset_version_id,
+                                                                                    new_dataset_version.version)
+
+    assert test_dataset_version == new_dataset_version
+
+
 #</editor-fold>
 
 #<editor-fold desc="DataFile Tests">

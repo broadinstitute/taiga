@@ -40,7 +40,7 @@ def add_user(name):
 
 
 def get_user(user_id):
-    return db.session.query(User).filter(User.id == user_id).first()
+    return db.session.query(User).filter(User.id == user_id).one_or_none()
 #</editor-fold>
 
 #<editor-fold desc="Folder">
@@ -392,6 +392,12 @@ def get_dataset_version_by_permaname_and_version(permaname,
         .filter(Dataset.permaname == permaname) \
         .one()
 
+    return dataset_version
+
+
+def get_dataset_version_by_dataset_id_and_dataset_version_id(dataset_id,
+                                                             dataset_version_id):
+    dataset_version = get_dataset_version(dataset_version_id)
     return dataset_version
 
 #</editor-fold>
