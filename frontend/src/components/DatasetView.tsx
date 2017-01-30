@@ -67,6 +67,16 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         } )        
     }
 
+    getLinkOrNot(dataset_version: Models.DatasetVersion){
+        let dataset = this.state.dataset;
+        if(dataset_version.id == this.state.datasetVersion.id){
+            return <span>{dataset_version.name}</span>
+        }
+        else {
+            return <Link to={"/app/dataset/"+dataset.id+"/"+dataset_version.id}>{dataset_version.name}</Link>
+        }
+    }
+
     render() {
         if(! this.state) {
            return     <div>
@@ -79,9 +89,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let dataset = this.state.dataset;
         let datasetVersion = this.state.datasetVersion;
 
-        let versions = dataset.versions.map((dataset_version, index) => {
+        let versions = dataset.versions.map((dataset_version: Models.DatasetVersion, index: any) => {
             return <span key={dataset_version.id} >
-                        <Link to={"/app/dataset/"+dataset_version.id}>{dataset_version.name}</Link>
+                        {this.getLinkOrNot(dataset_version)}
                         {dataset.versions.length != index + 1 &&
                             <span>, </span>
                         }
