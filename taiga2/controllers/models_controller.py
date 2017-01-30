@@ -176,7 +176,8 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
     added_datafiles = []
     for file in added_files:
         new_datafile = add_datafile(name=file.filename,
-                                    url=file.url)
+                                    url=file.url,
+                                    type=file.filetype)
         added_datafiles.append(new_datafile)
 
     # TODO: Get the user from the session
@@ -410,14 +411,16 @@ def get_entry(entry_id):
 
 #<editor-fold desc="DataFile">
 def add_datafile(name="No name",
-                 url=""):
+                 url="",
+                 type=DataFile.DataFileType.Raw):
     # TODO: See register_datafile_id
     new_datafile_name = name
 
     new_datafile_url = url
 
     new_datafile = DataFile(name=new_datafile_name,
-                            url=new_datafile_url)
+                            url=new_datafile_url,
+                            type=type)
 
     db.session.add(new_datafile)
     db.session.commit()
@@ -457,9 +460,11 @@ def get_upload_session_files_from_session(session_id):
 #</editor-fold>
 
 #<editor-fold desc="Upload Session File">
-def add_upload_session_file(session_id, filename, url):
+def add_upload_session_file(session_id, filename, filetype, url):
+    enumed_filetype = DataFile.DataFileType(filetype)
     upload_session_file = UploadSessionFile(session_id=session_id,
                                             filename=filename,
+                                            filetype=enumed_filetype,
                                             url=url)
     db.session.add(upload_session_file)
     db.session.commit()

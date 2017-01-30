@@ -128,50 +128,6 @@ paths:
               name:
                 type: string
 
-
-  /folders/update:
-    post:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: update_folders
-      description: Perform multiple updates to folders within a single transaction.  Can be used for moves (a remove and add somewhere else), copies (and add) and deletes (a remove and add to trash)
-      parameters:
-        - in: body
-          name: operations
-          schema:
-            type: object
-            properties:
-              operations:
-                type: array
-                items:
-                  type: object
-                  required:
-                    - parent
-                    - opType
-                    - idType
-                    - id
-                  properties:
-                    parent:
-                      type: string
-                    opType:
-                      type: string
-                      enum:
-                        - add
-                        - remove
-                    idType:
-                      type: string
-                      enum:
-                        - folder
-                        - dataset
-                        - datasetVersion
-                    id:
-                      type: string
-      responses:
-        200:
-          description: Successful execution of update
-        400:
-          description: Attempted to do something bad (move trash or home, or modify non-existant entry)
-
-
   /user:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -198,26 +154,6 @@ paths:
               trash_folder_id:
                 type: string
 
-  /uploadurl:
-    get:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_upload_url
-      description: Get url used to upload data
-      responses:
-        200:
-          description: Url and id to use to refer to upload location
-          schema:
-            title: FileUploadInfo
-            type: object
-            required:
-              - id
-              - url
-            properties:
-              id:
-                type: string
-              url:
-                type: string
-
   /credentials_s3:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -234,6 +170,8 @@ paths:
               - expiration
               - secretAccessKey
               - sessionToken
+              - bucket
+              - prefix
             properties:
               accessKeyId:
                 type: string
@@ -243,6 +181,10 @@ paths:
               secretAccessKey:
                 type: string
               sessionToken:
+                type: string
+              bucket:
+                type: string
+              prefix:
                 type: string
 
   /upload_session:
@@ -416,50 +358,6 @@ paths:
               provenance:
                 "$ref": "#/definitions/Provenance"
 
-  /dataset/{datasetId}/version:
-    post:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: update_dataset
-      description: Create a new dataset version by updating the data files associated with dataset.
-      parameters:
-        - name: datasetId
-          in: path
-          type: string
-          description: Folder ID
-          required: true
-        - in: body
-          name: DatasetUpdate
-          schema:
-            type: object
-            properties:
-              old_entries:
-                description: The names of data files to remove.
-              new_entries:
-                description: Data files to add as part of the new version.
-                type: array
-                items:
-                  "$ref": "#/definitions/DataFileSubmission"
-      responses:
-        200:
-          description: The info about the newly created dataset
-          schema:
-            "$ref": "#/definitions/ImportStatus"
-
-  /dataset/{datasetId}/activity:
-    get:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_dataset_activity
-      description: Fetch activity history for this dataset
-      parameters:
-        - name: datasetId
-          in: path
-          type: string
-          description: Dataset ID
-          required: true
-      responses:
-        200:
-          description: Successfully updated
-
   /dataset/{datasetId}/name:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -580,66 +478,6 @@ paths:
                       type: string
               provenance:
                 "$ref": "#/definitions/Provenance"
-
-  /datasetVersion/{datasetVersionId}/status:
-    get:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_dataset_version_status
-      description: Fetch the status of a dataset being imported
-      parameters:
-        - name: datasetVersionId
-          in: path
-          type: string
-          description: Dataset Version ID
-          required: true
-      responses:
-        200:
-          description: Status of import, and any error which may have occurred
-          schema:
-            "$ref": "#/definitions/ImportStatus"
-
-  /datafile:
-    get:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_datafile
-      description: Get datafile contents
-      parameters:
-        - name: q
-          in: query
-          type: string
-          description: dataset_id or dataset_version_id with optional version number and filename
-        - name: format
-          in: query
-          type: string
-          description: the format to retreive as
-      responses:
-        200:
-          description: Will kick off conversion if not already availible.  Once reformated data is available, the location(s) will be returned in urls.  Multiple urls are returned because the data may need to be stored in seperate chunks, depending on format.
-          schema:
-            title: Datafileurl
-            type: object
-            required:
-              - dataset_id
-              - dataset_version_id
-              - name
-              - status
-            properties:
-              dataset_id:
-                type: string
-              dataset_version_id:
-                type: string
-              datafile_name:
-                type: string
-              urls:
-                type: array
-                items:
-                  type: string
-              status:
-                type: string
-        400:
-          description: Malformed request
-        500:
-          description: Error encountered during conversion.
 
   /datafile/{sid}:
     post:
@@ -829,6 +667,7 @@ definitions:
       - eTag
       - bucket
       - key
+      - filetype
     properties:
       location:
         type: string
@@ -837,4 +676,6 @@ definitions:
       bucket:
         type: string
       key:
+        type: string
+      filetype:
         type: string

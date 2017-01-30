@@ -5,8 +5,9 @@ import taiga2.schemas as schemas
 
 # Handle URL upload
 from flask import render_template, request, redirect, url_for
-import os, json, boto3
+import os, json
 
+from taiga2.aws import aws
 from uuid import uuid4
 
 import flask
@@ -53,10 +54,9 @@ def get_s3_credentials():
     Create an access token to access S3 using the ~/.aws/credentials information
     :return: S3Credentials
     """
-    # TODO: Use config instead of hard coding
-    expires_in = 900
+    expires_in = flask.current_app.config.get("CLIENT_UPLOAD_TOKEN_EXPIRY", 900)
 
-    sts = boto3.client('sts')
+    sts = aws.client_upload_sts
 
     temporary_session_credentials = sts.get_session_token(
         DurationSeconds=expires_in
@@ -64,11 +64,16 @@ def get_s3_credentials():
 
     dict_credentials = temporary_session_credentials['Credentials']
 
+    bucket = flask.current_app.config["S3_BUCKET"]
+    prefix = flask.current_app.config.get("S3_PREFIX", "upload/")
+
     model_frontend_credentials = {
         'accessKeyId': dict_credentials['AccessKeyId'],
         'expiration': dict_credentials['Expiration'],
         'secretAccessKey': dict_credentials['SecretAccessKey'],
-        'sessionToken': dict_credentials['SessionToken']
+        'sessionToken': dict_credentials['SessionToken'],
+        'bucket': bucket,
+        'prefix': prefix
     }
 
     # See frontend/models/models.ts for the S3Credentials object
@@ -128,13 +133,14 @@ def create_datafile(S3UploadedFileMetadata, sid):
     # Register this new file to the UploadSession received
     upload_session_file = models_controller.add_upload_session_file(sid,
                                                                     S3UploadedFileMetadata['key'],
+                                                                    S3UploadedFileMetadata['filetype'],
                                                                     S3UploadedFileMetadata['location'])
 
     # Launch a Celery process to convert and get back to populate the db + send finish to client
     from taiga2.tasks import background_process_new_datafile
-    background_process_new_datafile.delay(S3UploadedFileMetadata, sid, upload_session_file.id)
+    task = background_process_new_datafile.delay(S3UploadedFileMetadata, sid, upload_session_file.id)
 
-    return flask.jsonify(upload_session_file.id)
+    return flask.jsonify(task.id)
 
 
 def create_new_upload_session():

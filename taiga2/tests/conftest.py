@@ -7,6 +7,7 @@ from taiga2.models import db as _db
 
 import os
 
+# Temp db with different name for each test
 dir_path = os.path.dirname(os.path.realpath(__file__))
 TESTDB = os.path.join(dir_path, 'test_temp_taiga2.db')
 TESTDB_PATH = "{}".format(TESTDB)
@@ -65,4 +66,8 @@ def session(db, request):
     transaction.rollback()
     connection.close()
     _session.remove()
+
+
+
+
 

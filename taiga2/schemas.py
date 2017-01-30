@@ -6,7 +6,6 @@ from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile
 
 ma = Marshmallow()
 
-
 class UserSchema(ma.ModelSchema):
     class Meta:
         fields = ('id', 'name',
