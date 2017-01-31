@@ -11,9 +11,6 @@ class MonkeyS3:
         obj = bucket.objects[key]
         return obj
 
-    def Bucket(self, name):
-        return self.buckets[name]
-
 
 class MonkeyBucket:
     def __init__(self, s3):
