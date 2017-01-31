@@ -36,7 +36,7 @@ const modalStyles: any = {
 };
 
 const dropZoneStyle: any = {
-    height: '200px',
+    height: '75px',
     borderWidth: '2px',
     borderColor: 'rgb(102, 102, 102)',
     borderStyle: 'dashed',
@@ -446,7 +446,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                                             <Col sm={10}>
                                                 <FormControl value={this.state.descriptionValue}
                                                              onChange={(evt) => {this.handleFormDescriptionChange(evt)}}
-                                                             type="textarea"
+                                                             componentClass="textarea"
                                                              placeholder="Dataset description"/>
                                             </Col>
                                         </FormGroup>
