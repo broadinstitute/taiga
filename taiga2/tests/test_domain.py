@@ -148,6 +148,15 @@ def test_create_monkey_bucket_s3(session: SessionBase):
     assert isinstance(new_bucket, MonkeyBucket)
 
 
+# TODO: This does not work with the current implementation of Monkey
+# def test_create_two_monkey_bucket_s3(session: SessionBase):
+#     new_bucket = aws.s3.Bucket.create('bucket')
+#     new_bucket_2 = aws.s3.Bucket.create('bucket_2')
+#     assert isinstance(new_bucket, MonkeyBucket)
+#     assert new_bucket != new_bucket_2
+#     assert len(aws.s3.buckets) == 2
+
+
 def test_conversion_raw(session: SessionBase):
     new_bucket = aws.s3.Bucket.create('bucket')
     filename = 'hello.txt'
@@ -188,7 +197,14 @@ def test_conversion_csv(session: SessionBase):
     task = background_process_new_datafile.delay(dict_S3Metadata).wait()
 
 
+def test_get_session_token(session: SessionBase):
+    dict_credentials = aws.client_upload_sts.get_session_token()
+    # TODO: Assert the dict content
 
+
+def test_endpoint_s3_credentials(app, session: SessionBase):
+    dict_credentials = endpoint.get_s3_credentials()
+    # TODO: Assert the dict content
 
 # @pytest.fixture
 # @mock_s3

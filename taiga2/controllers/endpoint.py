@@ -78,7 +78,7 @@ def get_s3_credentials():
         'prefix': prefix
     }
 
-    # See frontend/models/models.ts for the S3Credentials object
+    # See frontend/models/models.ts for the S3Credentials object and Swagger.yaml
     return flask.jsonify(model_frontend_credentials)
 
 

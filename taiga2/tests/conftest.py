@@ -8,7 +8,7 @@ from taiga2.api_app import create_app
 from taiga2.celery_init import configure_celery
 from taiga2 import tasks
 
-from taiga2.tests.monkeys import MonkeyS3
+from taiga2.tests.monkeys import MonkeyS3, MonkeySTS
 
 from taiga2.models import db as _db
 
@@ -30,7 +30,13 @@ def monkey_s3():
 
 
 @pytest.fixture(scope='session')
-def app(request, monkey_s3):
+def monkey_sts():
+    sts = MonkeySTS()
+    return sts
+
+
+@pytest.fixture(scope='session')
+def app(request, monkey_s3, monkey_sts):
     """Session-wide test `Flask` application."""
     settings_override = {
         'TESTING': True,
@@ -39,7 +45,8 @@ def app(request, monkey_s3):
         'SQLALCHEMY_ECHO': False,
         'BROKER_URL': None,
         'CELERY_RESULT_BACKEND': None,
-        'CELERY_ALWAYS_EAGER': True
+        'CELERY_ALWAYS_EAGER': True,
+        'S3_BUCKET': 'Test_Bucket'
     }
     api_app, _app = create_app(settings_override)
 
@@ -52,11 +59,13 @@ def app(request, monkey_s3):
     print("Create app")
 
     # Establish an application context before running the tests.
-    ctx = _app.app_context()
+    ctx = _app.test_request_context()
     ctx.push()
 
     # Monkey patch S3
     g._s3_client = monkey_s3
+
+    g._sts_client = monkey_sts
 
     # Return _app and teardown
     yield _app

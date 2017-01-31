@@ -1,6 +1,6 @@
-import os
+import datetime
 
-
+#<editor-fold desc="MonkeyS3">
 class MonkeyS3:
     def __init__(self):
         self.buckets = {}
@@ -38,16 +38,35 @@ class MonkeyS3Object:
         self.bucket = bucket
         self.key = key
         self.prefix = '/tmp/'
+        self.full_path = self.prefix + self.key
 
     def download_fileobj(self, data):
-        with open(self.prefix+self.key, 'rb') as f:
+        with open(self.full_path, 'rb') as f:
             data.write(f.read())
 
     def upload_fileobj(self, data):
-        with open(self.prefix + self.key, 'w+b') as f:
+        with open(self.full_path, 'w+b') as f:
             f.write(data.read())
 
     def upload_file(self, path):
         with open(path, 'r') as data:
-            with open(self.prefix+self.key) as f:
+            with open(self.full_path) as f:
                 f.write(data.read())
+#</editor-fold>
+
+
+#<editor-fold desc="MonkeySTS">
+class MonkeySTS:
+    def get_session_token(self, *args, **kwargs):
+        expiration_seconds = kwargs.get('DurationSeconds', 900)
+        datetime_expiration = datetime.datetime.now() + datetime.timedelta(0, expiration_seconds)
+        dict_credentials = {
+            'Credentials': {
+                'AccessKeyId': 'AccessKeyId',
+                'Expiration': datetime_expiration.timestamp(),
+                'SecretAccessKey': 'SecretAccessKey',
+                'SessionToken': 'SessionToken'
+            }
+        }
+        return dict_credentials
+#</editor-fold>
