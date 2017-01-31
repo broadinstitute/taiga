@@ -1,6 +1,7 @@
-from taiga2.models import *
-from taiga2.models import generate_permaname
+import taiga2.models as models
 from taiga2.models import db
+from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
+from taiga2.models import UploadSession, UploadSessionFile
 
 from sqlalchemy.sql.expression import func
 
@@ -17,7 +18,7 @@ def add_user(name):
     new_user = User(name=name)
 
     home_folder = Folder(name="Home",
-                         folder_type=Folder.FolderType.home,
+                         folder_type=models.Folder.FolderType.home,
                          creator=new_user)
 
     trash_folder = Folder(name="Trash",
@@ -138,7 +139,7 @@ def add_dataset(name="No name",
                 description="No description provided",
                 datafiles_ids=None):
     if not permaname:
-        permaname = generate_permaname(name)
+        permaname = models.generate_permaname(name)
 
     creator = get_user(creator_id)
     new_dataset = Dataset(name=name,
@@ -182,7 +183,7 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
 
     # TODO: Get the user from the session
     admin = get_user(1)
-    dataset_permaname = generate_permaname(dataset_name)
+    dataset_permaname = models.generate_permaname(dataset_name)
     added_dataset = add_dataset(creator_id=admin.id,
                                 name=dataset_name,
                                 permaname=dataset_permaname,

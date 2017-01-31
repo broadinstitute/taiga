@@ -4,18 +4,19 @@ import pytest
 from freezegun import freeze_time
 from flask_sqlalchemy import SessionBase
 
-from taiga2.controllers.models_controller import *
+import taiga2.controllers.models_controller as mc
 
-from taiga2.models import User, Folder, Dataset, Entry, DatasetVersion, DataFile
+from taiga2.models import db
+from taiga2.models import User, Folder, Dataset, DatasetVersion
 from taiga2.models import generate_permaname
 
 # TODO: Remove the domain tests and bring them to test_domain.py
 #<editor-fold desc="User Tests">
 @pytest.fixture
 def new_user():
-    _new_user = get_user(1)
+    _new_user = mc.get_user(1)
     if not _new_user:
-        _new_user = add_user(name="Remi")
+        _new_user = mc.add_user(name="Remi")
 
     return _new_user
 
@@ -33,23 +34,23 @@ def test_add_user(session, new_user):
 
 
 def test_get_user(session, new_user):
-    db_user = get_user(new_user.id)
+    db_user = mc.get_user(new_user.id)
 
     assert db_user == new_user
 #</editor-fold>
 
 #<editor-fold desc="SessionUpload">
 def test_create_sessionUpload(session: SessionBase):
-    sessionUpload = UploadSession()
+    sessionUpload = mc.UploadSession()
 
-    assert isinstance(sessionUpload, UploadSession)
+    assert isinstance(sessionUpload, mc.UploadSession)
 #</editor-fold>
 
 #<editor-fold desc="Folder Tests">
 @pytest.fixture
 def new_folder(new_user):
     new_folder_name = "New folder"
-    _new_folder = add_folder(creator_id=new_user.id,
+    _new_folder = mc.add_folder(creator_id=new_user.id,
                             name=new_folder_name,
                             folder_type=Folder.FolderType.folder,
                             description="Test new folder description")
@@ -60,7 +61,7 @@ def new_folder(new_user):
 @pytest.fixture
 def new_dummy_folder(new_user):
     new_dummy_folder_name = "Dummy folder"
-    _new_dummy_folder = add_folder(creator_id=new_user.id,
+    _new_dummy_folder = mc.add_folder(creator_id=new_user.id,
                                    name=new_dummy_folder_name,
                                    folder_type=Folder.FolderType.home,
                                    description="I am a dummy folder for testing purpose")
@@ -78,14 +79,14 @@ def test_add_folder(session: SessionBase, new_user, new_folder):
 
 
 def test_get_folder(session: SessionBase, new_folder):
-    added_folder = get_folder(new_folder.id)
+    added_folder = mc.get_folder(new_folder.id)
 
     assert new_folder == added_folder
 
 
 def test_update_folder_name(session: SessionBase, new_folder):
     new_folder_name = "New folder name"
-    updated_folder = update_folder_name(folder_id=new_folder.id,
+    updated_folder = mc.update_folder_name(folder_id=new_folder.id,
                                         new_name=new_folder_name)
 
     assert updated_folder.name == new_folder_name
@@ -94,7 +95,7 @@ def test_update_folder_name(session: SessionBase, new_folder):
 
 def test_update_folder_description(session: SessionBase, new_folder):
     new_folder_description = "New folder description"
-    updated_folder = update_folder_description(new_folder.id, new_folder_description)
+    updated_folder = mc.update_folder_description(new_folder.id, new_folder_description)
 
     assert updated_folder.description == new_folder_description
     assert new_folder.description == new_folder_description
@@ -105,7 +106,7 @@ def test_get_one_parent_folders(session: SessionBase,
                             new_dummy_folder):
     new_folder.entries.append(new_dummy_folder)
 
-    parent_folders = get_parent_folders(new_dummy_folder.id)
+    parent_folders = mc.get_parent_folders(new_dummy_folder.id)
 
     assert len(parent_folders) == 1
     assert parent_folders[0] == new_folder
@@ -115,7 +116,7 @@ def test_get_parent_folders(session: SessionBase,
                             new_user,
                             new_folder,
                             new_dummy_folder):
-    folder_in_dummy_and_new_folder_folders = add_folder(creator_id=new_user.id,
+    folder_in_dummy_and_new_folder_folders = mc.add_folder(creator_id=new_user.id,
                                                         name="Inception",
                                                         folder_type=Folder.FolderType.folder,
                                                         description="Folder inside two folders")
@@ -124,7 +125,7 @@ def test_get_parent_folders(session: SessionBase,
 
     new_dummy_folder.entries.append(folder_in_dummy_and_new_folder_folders)
 
-    parent_folders = get_parent_folders(folder_in_dummy_and_new_folder_folders.id)
+    parent_folders = mc.get_parent_folders(folder_in_dummy_and_new_folder_folders.id)
 
     assert len(parent_folders) == 2
     assert new_folder in parent_folders
@@ -136,13 +137,13 @@ def test_add_folder_entry(session: SessionBase,
                           new_folder,
                           new_dummy_folder,
                           new_dataset):
-    updated_folder = add_folder_entry(new_folder.id,
+    updated_folder = mc.add_folder_entry(new_folder.id,
                                       new_dummy_folder.id)
 
     assert len(updated_folder.entries) == 1
     assert new_dummy_folder in updated_folder.entries
 
-    updated_again_folder = add_folder_entry(new_folder.id,
+    updated_again_folder = mc.add_folder_entry(new_folder.id,
                                             new_dataset.id)
 
     assert len(updated_again_folder.entries) == 2
@@ -158,7 +159,7 @@ def new_dataset():
     new_dataset_name = "New Dataset"
     new_dataset_permaname = generate_permaname(new_dataset_name)
 
-    _new_dataset = add_dataset(name=new_dataset_name,
+    _new_dataset = mc.add_dataset(name=new_dataset_name,
                                permaname=new_dataset_permaname,
                                description="New dataset description")
 
@@ -169,7 +170,7 @@ def test_add_dataset(session: SessionBase):
     new_dataset_name = "New Dataset"
     new_dataset_permaname = generate_permaname(new_dataset_name)
 
-    _new_dataset = add_dataset(name=new_dataset_name,
+    _new_dataset = mc.add_dataset(name=new_dataset_name,
                                permaname=new_dataset_permaname,
                                description="New dataset description")
 
@@ -199,7 +200,7 @@ def test_add_dataset_with_datafile(session: SessionBase,
 
     datafiles_ids = [new_datafile.id]
 
-    new_dataset = add_dataset(name=new_dataset_name,
+    new_dataset = mc.add_dataset(name=new_dataset_name,
                               creator_id=new_user.id,
                               description=new_dataset_description,
                               datafiles_ids=datafiles_ids)
@@ -215,7 +216,7 @@ def test_add_dataset_with_datafile(session: SessionBase,
 def test_update_dataset_name(session: SessionBase,
                              new_dataset):
     new_dataset_name = "New name"
-    updated_dataset = update_dataset_name(new_dataset.id,
+    updated_dataset = mc.update_dataset_name(new_dataset.id,
                                           new_dataset_name)
 
     assert new_dataset == updated_dataset
@@ -225,7 +226,7 @@ def test_update_dataset_name(session: SessionBase,
 def test_update_dataset_description(session: SessionBase,
                                     new_dataset):
     new_dataset_description = "New description"
-    updated_dataset = update_dataset_description(new_dataset.id,
+    updated_dataset = mc.update_dataset_description(new_dataset.id,
                                                  new_dataset_description)
 
     assert updated_dataset == new_dataset
@@ -245,10 +246,10 @@ def test_update_dataset_contents(session: SessionBase,
     session.commit()
 
     entries_to_remove = [new_datafile.id]
-    updated_dataset = update_dataset_contents(_new_dataset.id,
+    updated_dataset = mc.update_dataset_contents(_new_dataset.id,
                                               datafiles_id_to_remove=entries_to_remove)
 
-    last_dataset_version = get_latest_dataset_version(updated_dataset.id)
+    last_dataset_version = mc.get_latest_dataset_version(updated_dataset.id)
 
     assert updated_dataset == _new_dataset
     assert last_dataset_version.version == new_dataset_version.version + 1
@@ -256,10 +257,10 @@ def test_update_dataset_contents(session: SessionBase,
     assert len(last_dataset_version.datafiles) == 0
 
     entries_to_add = [new_datafile.id]
-    updated_added_dataset = update_dataset_contents(_new_dataset.id,
+    updated_added_dataset = mc.update_dataset_contents(_new_dataset.id,
                                                     datafiles_id_to_add=entries_to_add)
 
-    new_last_dataset_version = get_latest_dataset_version(updated_added_dataset.id)
+    new_last_dataset_version = mc.get_latest_dataset_version(updated_added_dataset.id)
 
     assert updated_added_dataset == updated_dataset
     assert len(updated_added_dataset.dataset_versions) == 3
@@ -268,7 +269,7 @@ def test_update_dataset_contents(session: SessionBase,
 
 def test_get_dataset(session: SessionBase,
                      new_dataset):
-    fetched_dataset = get_dataset(new_dataset.id)
+    fetched_dataset = mc.get_dataset(new_dataset.id)
 
     assert fetched_dataset == new_dataset
     assert fetched_dataset.id == new_dataset.id
@@ -276,7 +277,7 @@ def test_get_dataset(session: SessionBase,
 
 def test_get_dataset_by_permaname(session: SessionBase,
                                   new_dataset: Dataset):
-    fetched_dataset = get_dataset_from_permaname(new_dataset.permaname)
+    fetched_dataset = mc.get_dataset_from_permaname(new_dataset.permaname)
 
     assert fetched_dataset == new_dataset
     assert fetched_dataset.id == new_dataset.id
@@ -309,7 +310,7 @@ def test_add_dataset_version(session: SessionBase,
                              new_dataset):
     new_dataset_version_name = "New Dataset Version"
 
-    new_dataset_version = add_dataset_version(name=new_dataset_version_name,
+    new_dataset_version = mc.add_dataset_version(name=new_dataset_version_name,
                                               creator_id=new_user.id,
                                               dataset_id=new_dataset.id)
 
@@ -322,7 +323,7 @@ def test_add_dataset_version(session: SessionBase,
 
 def test_get_dataset_version(session,
                              new_dataset_version):
-    fetched_dataset_version = get_dataset_version(new_dataset_version.id)
+    fetched_dataset_version = mc.get_dataset_version(new_dataset_version.id)
 
     assert fetched_dataset_version == new_dataset_version
     assert fetched_dataset_version.id == new_dataset_version.id
@@ -331,7 +332,7 @@ def test_get_dataset_version_by_permaname_and_version(session,
                                                       new_dataset_version: DatasetVersion):
     dataset = new_dataset_version.dataset
     first_version_number = 1
-    first_dataset_version = get_dataset_version_by_permaname_and_version(dataset.permaname,
+    first_dataset_version = mc.get_dataset_version_by_permaname_and_version(dataset.permaname,
                                                                               first_version_number)
 
     check_first_dataset_version = [dataset_version
@@ -346,7 +347,7 @@ def test_get_dataset_version_by_dataset_id_and_dataset_version_id(session: Sessi
 
     _dataset_version_id = new_dataset_version.dataset_id
 
-    test_dataset_version = get_dataset_version_by_dataset_id_and_dataset_version_id(_dataset_version_id,
+    test_dataset_version = mc.get_dataset_version_by_dataset_id_and_dataset_version_id(_dataset_version_id,
                                                                                     new_dataset_version.id)
 
     assert test_dataset_version == new_dataset_version
@@ -362,7 +363,7 @@ def new_datafile():
 
     new_datafile_url = "http://google.com"
 
-    _new_datafile = add_datafile(name=new_datafile_name,
+    _new_datafile = mc.add_datafile(name=new_datafile_name,
                                  url=new_datafile_url)
 
     return _new_datafile
@@ -372,7 +373,7 @@ def new_datafile():
 
 def test_get_entry(session: SessionBase,
                    new_folder):
-    entry = get_entry(new_folder.id)
+    entry = mc.get_entry(new_folder.id)
 
     # TODO: Find why entry (new_folder) is not an Entry
     # assert type(entry) is Entry

@@ -1,4 +1,4 @@
-import taiga2.controllers.models_controller as models_controller
+from taiga2.models import generate_permaname
 from taiga2.aws import aws
 from celery import Celery
 from taiga2 import conversion
@@ -19,7 +19,8 @@ def background_process_new_datafile(self, S3UploadedFileMetadata):
     datafile = S3UploadedFileMetadata
     # TODO: The permaname should not be generated here, but directly fetch from key
     file_name = datafile['key']
-    permaname = models_controller.generate_permaname(datafile['key'])
+    # TODO: Would be better to have a permaname generation from the domain controller instead
+    permaname = generate_permaname(datafile['key'])
     file_type = datafile['filetype']
 
     
