@@ -49,6 +49,8 @@ const rowUploadFiles: any = {
 
 let tapi: TaigaApi = null;
 
+let s3_prefix = null;
+
 export class UploadDataset extends React.Component<DropzoneProps, DropzoneState> {
     static contextTypes = {
         tapi: React.PropTypes.object
@@ -122,14 +124,14 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 sessionToken: s3_credentials.sessionToken
             }
         });
-
+        s3_prefix = s3_credentials.prefix;
         // Looping through all the files
         let promises_fileUpload: Array<Promise<string>> = filesStatus.map((file: FileUploadStatus) => {
             console.log("Uploading now: " + file.fileName);
 
                 let params = {
                     Bucket: s3_credentials.bucket,
-                    Key: s3_credentials.prefix + file.fileName,
+                    Key: file.fileName,
                     Body: file.file
                 };
 
@@ -332,7 +334,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     typeFormatter(cell: any, row: any) {
         let formattedType: SupportedTypeEnum = getFormatType(cell);
-        return formattedType;
+        return formattedType.toString();
     }
 
     columnClassProgressFormat(fieldValue: any, row: any, rowIdx: number, colIds: number) {
@@ -373,7 +375,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         const fileTypeWidth = '170';
 
-        const createTypeEditor = (onUpdate, props) => (<TypeEditorBootstrapTable onUpdate={ onUpdate } {...props}/>);
+        const createTypeEditor = (onUpdate: any, props: any) => (<TypeEditorBootstrapTable onUpdate={ onUpdate } {...props}/>);
 
         // Show the uploaded files if we have some, otherwise say we have nothing yet
         // TODO: Use Colum Format to make a button on Remove boolean => http://allenfang.github.io/react-bootstrap-table/example.html#column-format -->

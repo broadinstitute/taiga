@@ -513,7 +513,7 @@ paths:
   /datafile/{sid}:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: create_datafile
+      operationId: create_upload_session_file
       description: Process a freshly S3 uploaded file (conversion and storage reference)
       consumes:
         - application/json

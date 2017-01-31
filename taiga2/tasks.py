@@ -13,10 +13,7 @@ def print_config():
     print(config)
 
 @celery.task(bind=True)
-def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_session_file_id):
-    import csv
-    import numpy as np
-    import boto3
+def background_process_new_datafile(self, S3UploadedFileMetadata):
     import os
 
     # TODO: Rename this as it is confusing
@@ -71,6 +68,7 @@ def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_se
                           meta={'current': 0, 'total': '0',
                                 'message': message, 'fileName': file_name})
         raise Exception(message)
+
 
 # TODO: This is only for background_process_new_datafile, how to get it generic for any Celery tasks?
 def taskstatus(task_id):

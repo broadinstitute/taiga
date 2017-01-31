@@ -377,6 +377,14 @@ def get_dataset_version(dataset_version_id=0):
     return dataset_version
 
 
+def get_dataset_versions(dataset_id=0):
+    dataset_versions = db.session.query(DatasetVersion) \
+        .filter(DatasetVersion.dataset_id == dataset_id) \
+        .all()
+
+    return dataset_versions
+
+
 def get_dataset_version_provenance(dataset_version_id=0,
                                    provenance=None):
     # TODO: See how to manage the provenance

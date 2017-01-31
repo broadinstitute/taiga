@@ -9,7 +9,7 @@ from taiga2.controllers.models_controller import *
 from taiga2.models import User, Folder, Dataset, Entry, DatasetVersion, DataFile
 from taiga2.models import generate_permaname
 
-
+# TODO: Remove the domain tests and bring them to test_domain.py
 #<editor-fold desc="User Tests">
 @pytest.fixture
 def new_user():
@@ -36,6 +36,13 @@ def test_get_user(session, new_user):
     db_user = get_user(new_user.id)
 
     assert db_user == new_user
+#</editor-fold>
+
+#<editor-fold desc="SessionUpload">
+def test_create_sessionUpload(session: SessionBase):
+    sessionUpload = UploadSession()
+
+    assert isinstance(sessionUpload, UploadSession)
 #</editor-fold>
 
 #<editor-fold desc="Folder Tests">
@@ -333,13 +340,14 @@ def test_get_dataset_version_by_permaname_and_version(session,
     assert first_dataset_version == check_first_dataset_version
     assert first_dataset_version.version == 1
 
-def test_dataset_version_by_dataset_id_and_dataset_version_id(session: SessionBase,
-                                                              new_dataset_version):
+def test_get_dataset_version_by_dataset_id_and_dataset_version_id(session: SessionBase,
+                                                                  new_dataset,
+                                                                  new_dataset_version):
 
     _dataset_version_id = new_dataset_version.dataset_id
 
     test_dataset_version = get_dataset_version_by_dataset_id_and_dataset_version_id(_dataset_version_id,
-                                                                                    new_dataset_version.version)
+                                                                                    new_dataset_version.id)
 
     assert test_dataset_version == new_dataset_version
 

@@ -5,6 +5,7 @@ from flask import g
 
 log = logging.getLogger(__name__)
 
+
 class AWSClients:
     @property
     def s3(self):

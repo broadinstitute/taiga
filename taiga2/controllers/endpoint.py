@@ -143,7 +143,7 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     return flask.jsonify(json_dv_and_dataset_data)
 
 
-def create_datafile(S3UploadedFileMetadata, sid):
+def create_upload_session_file(S3UploadedFileMetadata, sid):
 
     # TODO: We should first check the file exists before adding it in the db
     # TODO: We could also check the type of the object
@@ -158,7 +158,7 @@ def create_datafile(S3UploadedFileMetadata, sid):
 
     # Launch a Celery process to convert and get back to populate the db + send finish to client
     from taiga2.tasks import background_process_new_datafile
-    task = background_process_new_datafile.delay(S3UploadedFileMetadata, sid, upload_session_file.id)
+    task = background_process_new_datafile.delay(S3UploadedFileMetadata)
 
     return flask.jsonify(task.id)
 
