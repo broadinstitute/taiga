@@ -504,6 +504,51 @@ paths:
             title: TaskId
             type: string
 
+
+  /datafile:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_datafile
+      description: Get datafile contents
+      parameters:
+        - name: q
+          in: query
+          type: string
+          description: dataset_id or dataset_version_id with optional version number and filename
+        - name: format
+          in: query
+          type: string
+          description: the format to retreive as
+      responses:
+        200:
+          description: Will kick off conversion if not data in that form is not already availible.  Once reformated data is available, the location(s) will be returned in urls.  Multiple urls are returned because the data may need to be stored in seperate chunks, depending on format.
+          schema:
+            title: Datafileurl
+            type: object
+            required:
+              - dataset_id
+              - dataset_version_id
+              - name
+              - status
+            properties:
+              dataset_id:
+                type: string
+              dataset_version_id:
+                type: string
+              datafile_name:
+                type: string
+              urls:
+                type: array
+                items:
+                  type: string
+              status:
+                type: string
+        400:
+          description: Malformed request
+        500:
+          description: Error encountered during conversion.
+
+
   /task_status/{taskStatusId}:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint

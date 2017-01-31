@@ -40,3 +40,7 @@ class AWSClients:
         return g._sts_client
 
 aws = AWSClients()
+
+def sign_url(url):
+    # FIXME
+    raise Exception("unimp")

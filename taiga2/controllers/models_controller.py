@@ -1,6 +1,12 @@
+import json
+
+from sqlalchemy import and_
+
 from taiga2.models import *
 from taiga2.models import generate_permaname
 from taiga2.models import db
+from taiga2.models import ConversionCache
+from taiga2 import aws
 
 from sqlalchemy.sql.expression import func
 
@@ -547,18 +553,13 @@ def _find_cache_entry(dataset_version_id, format, datafile_name):
                                                           ConversionCache.datafile_name == datafile_name)).first()
     return entry
 
-
-from sqlalchemy import and_
-from taiga2.models import ConversionCache
-import json
-
 def get_signed_urls_from_cache_entry(paths_as_json):
     # if there's urls on the cache entry, report those too after signing them
     if paths_as_json is None or paths_as_json == "":
         return None
 
     urls = json.loads(paths_as_json)
-    signed_urls = [sign_url(url) for url in urls]
+    signed_urls = [aws.sign_url(url) for url in urls]
     return signed_urls
 
 def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
@@ -569,14 +570,15 @@ def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
         is_new = True
 
         # Create a new cache entry
-        status = "Conversion queued"
+        status = "Conversion pending"
         entry = ConversionCache(dataset_version_id = dataset_version_id,
             datafile_name = datafile_name,
             format = format,
             status = status)
-        entry_id = db.session.add(entry)
+        db.session.add(entry)
         db.session.commit()
 
+    assert entry.id is not None
     return is_new, entry
 
 #</editor-fold>
