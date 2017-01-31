@@ -137,10 +137,12 @@ export class FileUploadStatus {
     fileType: SupportedTypeEnum;
     fileSize: number;
 
+    s3Key: string;
+
     progress: number;
     conversionProgress: string;
 
-    constructor(file: File) {
+    constructor(file: File, s3Prefix: string) {
         this.file = file;
 
         this.fileName = this.file.name;
@@ -149,6 +151,12 @@ export class FileUploadStatus {
 
         this.progress = 0;
         this.conversionProgress = '';
+
+        this.s3Key = s3Prefix + this.fileName;
+    }
+
+    recreateS3Key(prefix: string) {
+        this.s3Key = prefix + this.fileName;
     }
 }
 
@@ -158,7 +166,7 @@ export class TaskStatus {
     message: string;
     current: string;
     total: string;
-    fileName: string;
+    s3Key: string;
 }
 
 // IMPORTANT: Need to sync with backend for each changes

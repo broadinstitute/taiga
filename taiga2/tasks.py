@@ -31,7 +31,7 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
         message = "Received {}".format(file_name)
         self.update_state(state='PROGRESS',
                           meta={'current': 0, 'total': '0',
-                                'message': message, 'fileName': file_name})
+                                'message': message, 's3Key': file_name})
     elif file_type == DataFile.DataFileType.Columnar.value:
         # TODO: Think about the access of Celery to S3 directly
         s3 = aws.s3
@@ -43,7 +43,7 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
             message = "Downloading the file from S3"
             self.update_state(state='PROGRESS',
                               meta={'current': 0, 'total': '0',
-                                        'message': message, 'fileName': file_name})
+                                        'message': message, 's3Key': file_name})
             object.download_fileobj(data)
 
         temp_hdf5_tcsv_file_path = conversion.tcsv_to_hdf5(self, temp_raw_tcsv_file_path, file_name)  
@@ -52,7 +52,7 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
         message = "Uploading the HDF5 to S3"
         self.update_state(state='PROGRESS',
                           meta={'current': 0, 'total': '0',
-                                    'message': message, 'fileName': file_name})
+                                    'message': message, 's3Key': file_name})
 
         with open(temp_hdf5_tcsv_file_path, 'rb') as data:
             object.upload_fileobj(data)
@@ -60,13 +60,13 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
         message = "HDF5 conversion is not implemented yet (filename {})".format(file_name)
         self.update_state(state='FAILURE',
                           meta={'current': 0, 'total': '0',
-                                'message': message, 'fileName': file_name})
+                                'message': message, 's3Key': file_name})
         raise Exception(message)
     else:
         message = "The file type {} is not known for {}".format(file_type, file_name)
         self.update_state(state='FAILURE',
                           meta={'current': 0, 'total': '0',
-                                'message': message, 'fileName': file_name})
+                                'message': message, 's3Key': file_name})
         raise Exception(message)
 
 
@@ -81,7 +81,7 @@ def taskstatus(task_id):
             'message': 'Waiting in the task queue',
             'current': 0,
             'total': 1,
-            'fileName': 'TODO'
+            's3Key': 'TODO'
         }
     elif task.state == 'SUCCESS':
         response = {
@@ -90,7 +90,7 @@ def taskstatus(task_id):
             'message': 'Task has successfully terminated',
             'current': 1,
             'total': 1,
-            'fileName': 'TODO'
+            's3Key': 'TODO'
         }
     elif task.state != 'FAILURE':
         response = {
@@ -99,7 +99,7 @@ def taskstatus(task_id):
             'message': 'Failure :/' if not task.info else task.info.get('message', 'No message'),
             'current': 0 if not task.info else task.info.get('current', 0),
             'total': -1 if not task.info else task.info.get('total', -1),
-            'fileName': 'TODO' if not task.info else task.info.get('fileName', 'TODO')
+            's3Key': 'TODO' if not task.info else task.info.get('s3Key', 'TODO')
         }
         if 'result' in task.info:
             response['result'] = task.info['result']
@@ -110,7 +110,7 @@ def taskstatus(task_id):
             'message': 'No Message' if task.info else task.info.get('message', 'No message'),
             'current': 1,
             'total': -1,
-            'fileName': 'TODO' if task.info else task.info.get('fileName', 'TODO')
+            's3Key': 'TODO' if task.info else task.info.get('s3Key', 'TODO')
         }
 
     return response

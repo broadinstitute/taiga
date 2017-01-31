@@ -558,7 +558,7 @@ paths:
               - message
               - current
               - total
-              - fileName
+              - s3Key
             properties:
               id:
                 type: string
@@ -570,7 +570,7 @@ paths:
                 type: string
               total:
                 type: string
-              fileName:
+              s3Key:
                 type: string
 
 

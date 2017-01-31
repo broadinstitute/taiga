@@ -49,7 +49,7 @@ const rowUploadFiles: any = {
 
 let tapi: TaigaApi = null;
 
-let s3_prefix = null;
+let credentials: S3Credentials = null;
 
 export class UploadDataset extends React.Component<DropzoneProps, DropzoneState> {
     static contextTypes = {
@@ -58,6 +58,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     constructor(props: any) {
         super(props);
+
         // TODO: How can we ensure we are not erasing/forgetting states defined in the interface?
         this.state = {
             filesStatus: new Array<FileUploadStatus>(),
@@ -71,7 +72,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     componentDidMount() {
         tapi = (this.context as any).tapi;
 
-        console.log("UploadDataset: componentDidMount");
+        // We need to retrieve now the s3 credentials, so we can build the FileStatus properly
+        // TODO: We should not allow the use of the form while we wait for these credentials
+        tapi.get_s3_credentials().then((_credentials: S3Credentials) => {
+            console.log("Received credentials! ");
+            console.log("- Access key id: " + _credentials.accessKeyId);
+            credentials = _credentials;
+        });
     }
 
     // When files are put in the drop zone
@@ -80,7 +87,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         // We construct the FileStatusUpload object for each accepted files
         let filesUploadStatus = acceptedFiles.map((file) => {
-            return new FileUploadStatus(file);
+            return new FileUploadStatus(file, credentials.prefix);
         });
         console.log('Files upload status: ', filesUploadStatus);
 
@@ -99,16 +106,11 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         console.log("We are in requestUpload!");
         console.log("Uploading through token:");
 
-        tapi.get_s3_credentials().then((credentials) => {
-            console.log("Received credentials! ");
-            console.log("- Access key id: " + credentials.accessKeyId);
-
-            // Request creation of Upload session => sid
-            return tapi.get_upload_session().then((sid: string) => {
-                console.log("New upload session received: " + sid);
-                // doUpload with this sid
-                this.doUpload(credentials, this.state.filesStatus, sid);
-            });
+        // Request creation of Upload session => sid
+        return tapi.get_upload_session().then((sid: string) => {
+            console.log("New upload session received: " + sid);
+            // doUpload with this sid
+            this.doUpload(credentials, this.state.filesStatus, sid);
         });
     }
 
@@ -124,14 +126,22 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 sessionToken: s3_credentials.sessionToken
             }
         });
-        s3_prefix = s3_credentials.prefix;
+
         // Looping through all the files
         let promises_fileUpload: Array<Promise<string>> = filesStatus.map((file: FileUploadStatus) => {
-            console.log("Uploading now: " + file.fileName);
+            // TODO: Find a better way to manage the prefix associated with the sid, since we currently receive them both separatly
+            console.log("Updating the s3 path with the session Id received");
+            let fileUploadStatus: FileUploadStatus = this.retrieveFileStatus(file.s3Key);
+            let newPrefix = credentials.prefix + sid + "/";
+            fileUploadStatus.recreateS3Key(newPrefix);
+
+            this.saveFileStatus(fileUploadStatus);
+
+            console.log("Uploading now: " + file.s3Key);
 
                 let params = {
                     Bucket: s3_credentials.bucket,
-                    Key: file.fileName,
+                    Key: file.s3Key,
                     Body: file.file
                 };
 
@@ -145,18 +155,14 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 // TODO: evt.key is not recognized in the DefinitelyType AWS, but it works. Raise an issue in Git
                 console.log('Progress:', evt.loaded, '/', evt.total, 'of ', evt.key);
 
-                let updatedFilesStatus = this.state.filesStatus;
-
-                // Get the file who received this progress notification
-                let updatedFileStatus = updatedFilesStatus.find((element: FileUploadStatus) => {
-                    return element.fileName == evt.key;
-                });
+                let updatedFilesStatus = this.retrieveFileStatus(evt.key);
 
                 let progressPercentage = Math.floor(evt.loaded / evt.total * 100);
-                updatedFileStatus.progress = progressPercentage;
+                updatedFilesStatus.progress = progressPercentage;
+
+                this.saveFileStatus(updatedFilesStatus);
 
                 this.setState({
-                    filesStatus: updatedFilesStatus,
                     disableUpload: true,
                     datasetFormDisabled: true
                 });
@@ -218,12 +224,12 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         });
     }
 
-    retrieveFileStatus(fileName: string) {
+    retrieveFileStatus(s3Key: string) {
         let updatedFilesStatus = this.state.filesStatus;
 
         // Get the file who received this progress notification
         let updatedFileStatus = updatedFilesStatus.find((element: FileUploadStatus) => {
-            return element.fileName == fileName;
+            return element.s3Key == s3Key;
         });
 
         return updatedFileStatus;
@@ -232,7 +238,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     saveFileStatus(fileStatus: FileUploadStatus) {
         let updatedFilesStatus = this.state.filesStatus;
 
-        let oldFileStatus = this.retrieveFileStatus(fileStatus.fileName);
+        let oldFileStatus = this.retrieveFileStatus(fileStatus.s3Key);
         oldFileStatus = fileStatus;
 
         this.setState({
@@ -247,38 +253,32 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         });
     }
 
-    displayStatusUpdate(status: TaskStatus, filename: string) {
-        let updatedFilesStatus = this.state.filesStatus;
+    displayStatusUpdate(status: TaskStatus, s3Key: string) {
+        let updatedFileStatus = this.retrieveFileStatus(s3Key);
 
-        console.log('The name of the file we are processing is: ' + status.fileName);
+        console.log('The name of the file we are processing is: ' + s3Key);
 
-        // Get the file who received this progress notification
-        let updatedFileStatus = updatedFilesStatus.find((element: FileUploadStatus) => {
-            return element.fileName == filename;
-        });
 
         if (updatedFileStatus) {
             updatedFileStatus.conversionProgress = status.message;
-            console.log("We just updated " + updatedFileStatus.fileName + " with this message '" + updatedFileStatus.conversionProgress + "'");
-            this.setState({
-                filesStatus: updatedFilesStatus,
-                disableUpload: true
-            });
+            console.log("We just updated " + updatedFileStatus.s3Key + " with this message '" + updatedFileStatus.conversionProgress + "'");
+
+            this.saveFileStatus(updatedFileStatus)
         }
         console.log(status.message);
     }
 
-    initRecurringCheckStatus(taskId: string, filename: string) {
+    initRecurringCheckStatus(taskId: string, s3Key: string) {
         return tapi.get_task_status(taskId).then((new_status: TaskStatus) => {
-            return this.checkOrContinue(new_status, filename);
+            return this.checkOrContinue(new_status, s3Key);
         })
     }
 
-    checkOrContinue(status: TaskStatus, filename: string) : Promise<string> {
+    checkOrContinue(status: TaskStatus, s3Key: string) : Promise<string> {
         // If status == SUCCESS, return the last check
         // If status != SUCCESS, wait 1 sec and check again
         // TODO: Make an enum from the task state
-        this.displayStatusUpdate(status, filename);
+        this.displayStatusUpdate(status, s3Key);
 
         if (status.state == 'SUCCESS') {
             console.log("Success of task: " + status.id);
@@ -292,7 +292,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 // Wait one sec Async then check again
                 // setTimeout(() => {return this.checkOrContinue(status)}, 1000);
                 return this.delay(1000).then(() => {
-                    return this.checkOrContinue(new_status, filename)
+                    return this.checkOrContinue(new_status, s3Key)
                 });
             });
         }
