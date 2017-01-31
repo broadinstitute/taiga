@@ -28,14 +28,12 @@ def get_dataset(datasetId):
 
 
 def get_folder(folder_id):
-    print("get_folder start", time.asctime())
     folder = models_controller.get_folder(folder_id)
     if folder is None:
         flask.abort(404)
 
     folder_schema = schemas.FolderSchema()
     json_data_folder = folder_schema.dump(folder).data
-    print("get_folder stop", time.asctime())
     return flask.jsonify(json_data_folder)
 
 

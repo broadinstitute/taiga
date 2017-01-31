@@ -73,10 +73,12 @@ def tcsv_to_hdf5(celery_instance, temp_raw_tcsv_file_path, file_name):
                                        'message': message, 'fileName': file_name})
     succes = _write_hdf5_matrix(temp_hdf5_tcsv_file_path, data, 'row_axis', row_header, 'col_axis', col_header)
     if succes:
-        print("Successfully created the HDF5")
         return temp_hdf5_tcsv_file_path
     else:
-        print("Failed to create the HDF5")
+        message = "Failed to create the hdf5 matrix"
+        celery_instance.update_state(state='FAILURE',
+                                     meta={'current': row_i, 'total': '0',
+                                           'message': message, 'fileName': file_name})
 
 
 def _write_hdf5_matrix(temp_hdf5_tcsv_file_path, data, row_axis, row_header, col_axis, col_header):

@@ -10,7 +10,6 @@ celery = Celery("taiga2")
 def print_config():
     import flask
     config = flask.current_app.config
-    print(config)
 
 @celery.task(bind=True)
 def background_process_new_datafile(self, S3UploadedFileMetadata):
@@ -93,9 +92,6 @@ def taskstatus(task_id):
             'fileName': 'TODO'
         }
     elif task.state != 'FAILURE':
-        print("TASK object {}".format(task))
-        print("TASK state {}".format(task.state))
-        print("TASK INFO {}".format(task.info))
         response = {
             'id': task.id,
             'state': task.state,

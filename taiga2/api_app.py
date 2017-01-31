@@ -10,7 +10,6 @@ def create_db():
     if it does not exist already"""
     from taiga2.models import db as _db
     _db.create_all()
-    print(_db)
 
 
 def create_app(settings_override=None, settings_file=None):
@@ -21,7 +20,6 @@ def create_app(settings_override=None, settings_file=None):
     from taiga2.models import db
     from taiga2.schemas import ma
 
-    print("We are in create_app factory of {}".format(__name__))
     api_app = connexion.App(__name__, specification_dir='./swagger/')
     api_app.add_api('swagger.yaml',
                     arguments={
