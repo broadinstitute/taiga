@@ -14,9 +14,6 @@ def print_config():
     config = flask.current_app.config
 
 
-
-
-
 @celery.task(bind=True)
 def background_process_new_upload_session_file(self, S3UploadedFileMetadata, converted_s3_key):
     import os
