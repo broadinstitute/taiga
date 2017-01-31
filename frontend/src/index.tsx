@@ -151,7 +151,7 @@ ReactDOM.render((
   <Router history={browserHistory}>
     <Route path="/app" component={App}>
         <IndexRoute component={Home} />
-        <Route path="dataset/:datasetVersionId" component={DatasetView as any}/>
+        <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any}/>
         <Route path="folder/:folderId" component={FolderView as any}/>
     </Route>
     <Route path="*" component={NoMatch}/>

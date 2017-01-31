@@ -4,12 +4,13 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 def create_db():
     """Create the database, based on the app configuration,
     if it does not exist already"""
     from taiga2.models import db as _db
     _db.create_all()
-    print(_db)
+
 
 def create_app(settings_override=None, settings_file=None):
     # create the flask app which handles api requests.  If settings_override is set, then settings
@@ -19,7 +20,6 @@ def create_app(settings_override=None, settings_file=None):
     from taiga2.models import db
     from taiga2.schemas import ma
 
-    print("We are in create_app factory of {}".format(__name__))
     api_app = connexion.App(__name__, specification_dir='./swagger/')
     api_app.add_api('swagger.yaml',
                     arguments={

@@ -1,5 +1,6 @@
 from taiga2.tasks import celery
 
+
 def configure_celery(app):
     celery.config_from_object(app.config)
 

@@ -5,6 +5,7 @@ from flask import g
 
 log = logging.getLogger(__name__)
 
+
 class AWSClients:
     @property
     def s3(self):
@@ -31,7 +32,7 @@ class AWSClients:
         To mock in a test, set flask.g._client_upload_sts_client in test setup
         """
         config = flask.current_app.config
-        if not hasattr(g, "_client_upload_sts_client"):
+        if not hasattr(g, "_sts_client"):
             aws_access_key_id=config['CLIENT_UPLOAD_AWS_ACCESS_KEY_ID']
             log.warn("Getting STS client with access key %s", aws_access_key_id)
             g._sts_client = boto3.client('sts',

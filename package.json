@@ -4,7 +4,9 @@
   "description": "Taiga main",
   "main": "./taiga2/static/frontend.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "tslint -c tslint.json 'src/**/*.{ts,tsx}'",
+    "pretest": "npm run lint",
+    "test": "jest"
   },
   "author": "Remi Marenco <rmarenco@broadinstitute.org>",
   "license": "ISC",
@@ -17,11 +19,24 @@
     "awesome-typescript-loader": "^3.0.0-beta.14",
     "exports-loader": "^0.6.3",
     "imports-loader": "^0.6.5",
+    "jest": "^18.1.0",
     "json-loader": "^0.5.4",
     "source-map-loader": "^0.1.5",
+    "ts-jest": "^18.0.2",
     "ts-loader": "^0.8.2",
     "typescript": "^2.1.4",
     "webpack": "^1.13.3"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "transform": {
+      "\\.(ts|tsx)$": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+    },
+    "testRegex": "/__tests__/.*\\.(ts|tsx|js)$"
   },
   "repository": "https://rmarenco@stash.broadinstitute.org/scm/cpds/taiga.git"
 }

@@ -26,14 +26,12 @@ def get_dataset(datasetId):
 
 
 def get_folder(folder_id):
-    print("get_folder start", time.asctime())
     folder = models_controller.get_folder(folder_id)
     if folder is None:
         flask.abort(404)
 
     folder_schema = schemas.FolderSchema()
     json_data_folder = folder_schema.dump(folder).data
-    print("get_folder stop", time.asctime())
     return flask.jsonify(json_data_folder)
 
 
@@ -76,7 +74,7 @@ def get_s3_credentials():
         'prefix': prefix
     }
 
-    # See frontend/models/models.ts for the S3Credentials object
+    # See frontend/models/models.ts for the S3Credentials object and Swagger.yaml
     return flask.jsonify(model_frontend_credentials)
 
 
@@ -123,7 +121,25 @@ def get_dataset_version(datasetVersion_id):
     return flask.jsonify(json_dv_data)
 
 
-def create_datafile(S3UploadedFileMetadata, sid):
+def get_dataset_version_from_dataset(datasetId, datasetVersionId):
+    dataset_version_schema = schemas.DatasetVersionSchema()
+    dataset_schema = schemas.DatasetSchema()
+
+    dataset_version = models_controller \
+        .get_dataset_version_by_dataset_id_and_dataset_version_id(datasetId,
+                                                                  datasetVersionId)
+    dataset = dataset_version.dataset
+
+    json_dv_data = dataset_version_schema.dump(dataset_version).data
+    json_dataset_data = dataset_schema.dump(dataset).data
+
+    # Preparation of the dictonary to return both objects
+    json_dv_and_dataset_data = {'datasetVersion': json_dv_data, 'dataset': json_dataset_data}
+
+    return flask.jsonify(json_dv_and_dataset_data)
+
+
+def create_upload_session_file(S3UploadedFileMetadata, sid):
 
     # TODO: We should first check the file exists before adding it in the db
     # TODO: We could also check the type of the object
@@ -138,7 +154,7 @@ def create_datafile(S3UploadedFileMetadata, sid):
 
     # Launch a Celery process to convert and get back to populate the db + send finish to client
     from taiga2.tasks import background_process_new_datafile
-    task = background_process_new_datafile.delay(S3UploadedFileMetadata, sid, upload_session_file.id)
+    task = background_process_new_datafile.delay(S3UploadedFileMetadata)
 
     return flask.jsonify(task.id)
 

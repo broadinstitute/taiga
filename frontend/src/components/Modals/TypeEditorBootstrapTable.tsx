@@ -27,7 +27,7 @@ export class TypeEditorBootstrapTable extends React.Component<TypeEditorProps, T
         // this.refs.inputRef.focus();
     }
 
-    updateData(evt) {
+    updateData(evt: any) {
         let newType: SupportedTypeEnum = evt.currentTarget.value;
         console.log("We just updated the value of the control: " + evt.currentTarget.value);
         this.setState({

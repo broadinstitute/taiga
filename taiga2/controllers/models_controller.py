@@ -2,11 +2,12 @@ import json
 
 from sqlalchemy import and_
 
-from taiga2.models import *
 from taiga2.models import generate_permaname
+import taiga2.models as models
 from taiga2.models import db
-from taiga2.models import ConversionCache
 from taiga2 import aws
+from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
+from taiga2.models import UploadSession, UploadSessionFile
 
 from sqlalchemy.sql.expression import func
 
@@ -23,7 +24,7 @@ def add_user(name):
     new_user = User(name=name)
 
     home_folder = Folder(name="Home",
-                         folder_type=Folder.FolderType.home,
+                         folder_type=models.Folder.FolderType.home,
                          creator=new_user)
 
     trash_folder = Folder(name="Trash",
@@ -46,7 +47,7 @@ def add_user(name):
 
 
 def get_user(user_id):
-    return db.session.query(User).filter(User.id == user_id).first()
+    return db.session.query(User).filter(User.id == user_id).one_or_none()
 #</editor-fold>
 
 #<editor-fold desc="Folder">
@@ -144,7 +145,7 @@ def add_dataset(name="No name",
                 description="No description provided",
                 datafiles_ids=None):
     if not permaname:
-        permaname = generate_permaname(name)
+        permaname = models.generate_permaname(name)
 
     creator = get_user(creator_id)
     new_dataset = Dataset(name=name,
@@ -188,7 +189,7 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
 
     # TODO: Get the user from the session
     admin = get_user(1)
-    dataset_permaname = generate_permaname(dataset_name)
+    dataset_permaname = models.generate_permaname(dataset_name)
     added_dataset = add_dataset(creator_id=admin.id,
                                 name=dataset_name,
                                 permaname=dataset_permaname,
@@ -383,6 +384,14 @@ def get_dataset_version(dataset_version_id=0):
     return dataset_version
 
 
+def get_dataset_versions(dataset_id=0):
+    dataset_versions = db.session.query(DatasetVersion) \
+        .filter(DatasetVersion.dataset_id == dataset_id) \
+        .all()
+
+    return dataset_versions
+
+
 def get_dataset_version_provenance(dataset_version_id=0,
                                    provenance=None):
     # TODO: See how to manage the provenance
@@ -398,6 +407,12 @@ def get_dataset_version_by_permaname_and_version(permaname,
         .filter(Dataset.permaname == permaname) \
         .one()
 
+    return dataset_version
+
+
+def get_dataset_version_by_dataset_id_and_dataset_version_id(dataset_id,
+                                                             dataset_version_id):
+    dataset_version = get_dataset_version(dataset_version_id)
     return dataset_version
 
 #</editor-fold>

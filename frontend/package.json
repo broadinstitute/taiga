@@ -27,6 +27,7 @@
     "@types/filesize": "^3.2.15",
     "@types/node": "^6.0.52",
     "@types/react": "^0.14.55",
+    "@types/react-addons-test-utils": "^0.14.17",
     "@types/react-bootstrap": "^0.0.43",
     "@types/react-bootstrap-table": "^2.3.33",
     "@types/react-dom": "^0.14.19",
@@ -35,6 +36,7 @@
     "@types/react-router": "^2.0.41",
     "@types/showdown": "^1.4.31",
     "@types/whatwg-fetch": "^0.0.33",
+    "react-addons-test-utils": "^15.4.2",
     "typescript": "^2.1.4"
   }
 }

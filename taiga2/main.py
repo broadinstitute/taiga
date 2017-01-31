@@ -8,6 +8,7 @@ from taiga2.celery_init import configure_celery
 
 log = logging.getLogger(__name__)
 
+
 class PathDispatcher(object):
     "Delegate requests prefixed with 'api' to separate app"
     def __init__(self, api_app, frontend_app):
@@ -23,6 +24,7 @@ class PathDispatcher(object):
     def __call__(self, environ, start_response):
         app = self.get_application(peek_path_info(environ))
         return app(environ, start_response)
+
 
 def main():
     if len(sys.argv) != 2:

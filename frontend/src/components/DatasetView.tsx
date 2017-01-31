@@ -44,13 +44,14 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     doFetch() {
         // could do fetches in parallel if url encoded both ids
-        let _datasetVersion : Models.DatasetVersion = null;
-
-        return tapi.get_dataset_version(this.props.params.datasetVersionId).then(datasetVersion => {
-            _datasetVersion = datasetVersion;
-            return tapi.get_dataset(datasetVersion.dataset_id);
-        }).then(dataset => {
-            this.setState({dataset: dataset, datasetVersion: _datasetVersion})
+        return tapi.get_dataset_version_with_dataset(this.props.params.datasetId,
+                                                        this.props.params.datasetVersionId
+        ).then((datasetAndDatasetVersion: Models.DatasetAndDatasetVersion) => {
+            let dataset = datasetAndDatasetVersion.dataset;
+            let datasetVersion = datasetAndDatasetVersion.datasetVersion;
+            this.setState({
+                dataset: dataset, datasetVersion: datasetVersion
+            });
         });
     }
 
@@ -66,6 +67,16 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         } )        
     }
 
+    getLinkOrNot(dataset_version: Models.DatasetVersion){
+        let dataset = this.state.dataset;
+        if(dataset_version.id == this.state.datasetVersion.id){
+            return <span>{dataset_version.name}</span>
+        }
+        else {
+            return <Link to={"/app/dataset/"+dataset.id+"/"+dataset_version.id}>{dataset_version.name}</Link>
+        }
+    }
+
     render() {
         if(! this.state) {
            return     <div>
@@ -78,9 +89,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let dataset = this.state.dataset;
         let datasetVersion = this.state.datasetVersion;
 
-        let versions = dataset.versions.map((dataset_version, index) => {
+        let versions = dataset.versions.map((dataset_version: Models.DatasetVersion, index: any) => {
             return <span key={dataset_version.id} >
-                        <Link to={"/app/dataset/"+dataset_version.id}>{dataset_version.name}</Link>
+                        {this.getLinkOrNot(dataset_version)}
                         {dataset.versions.length != index + 1 &&
                             <span>, </span>
                         }
@@ -90,8 +101,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let entries = datasetVersion.datafiles.map( (df, index) => {
             return <tr key={index}>
                     <td>{df.name}</td>
-                    <td>{df.description}</td>
+                    {/*<td>{df.description}</td>*/}
                     <td>{df.content_summary}</td>
+                    <td><a href={df.url} download={true}>{df.type}</a></td>
                 </tr>
         });
 
@@ -170,8 +182,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Description</th>
+                        {/*<th>Description</th>*/}
                         <th>Contains</th>
+                        <th>Download</th>
                     </tr>
                 </thead>
                 <tbody>

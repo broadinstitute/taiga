@@ -290,6 +290,37 @@ paths:
               acl:
                 "$ref": "#/definitions/Acl"
 
+  /dataset/{datasetId}/{datasetVersionId}:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_dataset_version_from_dataset
+      description: Fetch the details of a dataset version
+      parameters:
+        - name: datasetId
+          in: path
+          type: string
+          description: Dataset Id
+          required: true
+        - name: datasetVersionId
+          in: path
+          type: string
+          description: Dataset Version Id
+          required: true
+      responses:
+        200:
+          description: The data specific to a specific dataset
+          schema:
+            title: Dataset
+            type: object
+            required:
+              - dataset
+              - datasetVersion
+            properties:
+              dataset:
+                "$ref": "#/definitions/Dataset"
+              datasetVersion:
+                "$ref": "#/definitions/DatasetVersion"
+
   /dataset/{dataset_id}/first:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -482,7 +513,7 @@ paths:
   /datafile/{sid}:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: create_datafile
+      operationId: create_upload_session_file
       description: Process a freshly S3 uploaded file (conversion and storage reference)
       consumes:
         - application/json
@@ -591,6 +622,107 @@ paths:
 #missing provenance
 
 definitions:
+  Dataset:
+    type: object
+    required:
+      - id
+      - name
+      - description
+      - permanames
+      - versions
+      - folders
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      permanames:
+        type: array
+        items:
+          type: string
+      description:
+        type: string
+      versions:
+        type: array
+        items:
+          title: DatasetVersionSummary
+          type: object
+          required:
+            - name
+            - id
+            - status
+          properties:
+            name:
+              type: string
+            id:
+              type: string
+            status:
+              "$ref": "#/definitions/StatusEnum"
+      folders:
+        type: array
+        items:
+          "$ref": "#/definitions/NamedId"
+      acl:
+        "$ref": "#/definitions/Acl"
+
+  DatasetVersion:
+    type: object
+    required:
+      - id
+      - dataset_id
+      - name
+      - creation_date
+      - creator
+      - datafiles
+      - version
+      - folders
+    properties:
+      id:
+        type: string
+      folders:
+        type: array
+        items:
+          "$ref": "#/definitions/NamedId"
+      dataset_id:
+          type: string
+      status:
+        "$ref": "#/definitions/StatusEnum"
+      name:
+        type: string
+      version:
+        type: string
+      description:
+        type: string
+      creation_date:
+        type: string
+      creator:
+        "$ref": "#/definitions/NamedId"
+      datafiles:
+        type: array
+        items:
+          title: DataFile
+          type: object
+          required:
+            - name
+            - url
+            - mime_type
+            - description
+            - content_summary
+          properties:
+            name:
+              type: string
+            url:
+              type: string
+            mime_type:
+              type: string
+            description:
+              type: string
+            content_summary:
+              description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
+              type: string
+      provenance:
+        "$ref": "#/definitions/Provenance"
+
   Provenance:
     type: object
     properties:

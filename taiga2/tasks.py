@@ -1,4 +1,4 @@
-import taiga2.controllers.models_controller as models_controller
+from taiga2.models import generate_permaname
 from taiga2.aws import aws
 from celery import Celery
 from taiga2 import conversion
@@ -10,20 +10,17 @@ celery = Celery("taiga2")
 def print_config():
     import flask
     config = flask.current_app.config
-    print(config)
 
 @celery.task(bind=True)
-def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_session_file_id):
-    import csv
-    import numpy as np
-    import boto3
+def background_process_new_datafile(self, S3UploadedFileMetadata):
     import os
 
     # TODO: Rename this as it is confusing
     datafile = S3UploadedFileMetadata
     # TODO: The permaname should not be generated here, but directly fetch from key
     file_name = datafile['key']
-    permaname = models_controller.generate_permaname(datafile['key'])
+    # TODO: Would be better to have a permaname generation from the domain controller instead
+    permaname = generate_permaname(datafile['key'])
     file_type = datafile['filetype']
 
     
@@ -72,6 +69,7 @@ def background_process_new_datafile(self, S3UploadedFileMetadata, sid, upload_se
                                 'message': message, 'fileName': file_name})
         raise Exception(message)
 
+
 # TODO: This is only for background_process_new_datafile, how to get it generic for any Celery tasks?
 def taskstatus(task_id):
     task = background_process_new_datafile.AsyncResult(task_id)
@@ -95,9 +93,6 @@ def taskstatus(task_id):
             'fileName': 'TODO'
         }
     elif task.state != 'FAILURE':
-        print("TASK object {}".format(task))
-        print("TASK state {}".format(task.state))
-        print("TASK INFO {}".format(task.info))
         response = {
             'id': task.id,
             'state': task.state,

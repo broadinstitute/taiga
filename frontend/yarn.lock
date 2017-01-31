@@ -29,6 +29,12 @@
   version "6.0.62"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-6.0.62.tgz#85222c077b54f25b57417bb708b9f877bda37f89"
 
+"@types/react-addons-test-utils@^0.14.17":
+  version "0.14.17"
+  resolved "https://registry.yarnpkg.com/@types/react-addons-test-utils/-/react-addons-test-utils-0.14.17.tgz#79adf8a0246a7fe1bb9a6651e2545a7b43d7f0b8"
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-bootstrap-table@^2.3.33":
   version "2.6.1"
   resolved "https://registry.yarnpkg.com/@types/react-bootstrap-table/-/react-bootstrap-table-2.6.1.tgz#d5246ac4c392ad3f07f920ba7fdb240f2bffe43a"
@@ -428,6 +434,13 @@ query-string@^3.0.0:
 querystring@0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/querystring/-/querystring-0.2.0.tgz#b209849203bb25df820da756e747005878521620"
+
+react-addons-test-utils@^15.4.2:
+  version "15.4.2"
+  resolved "https://registry.yarnpkg.com/react-addons-test-utils/-/react-addons-test-utils-15.4.2.tgz#93bcaa718fcae7360d42e8fb1c09756cc36302a2"
+  dependencies:
+    fbjs "^0.8.4"
+    object-assign "^4.1.0"
 
 "react-addons-update@^0.14.0 || <15.4.0":
   version "15.3.2"
