@@ -356,7 +356,7 @@ def add_dataset_version(creator_id,
 
     latest_dataset_version = get_latest_dataset_version(dataset_id)
     if latest_dataset_version:
-        latest_dataset_version.version += 1
+        version = latest_dataset_version.version + 1
     else:
         version = 1
 
