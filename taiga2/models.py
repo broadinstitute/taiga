@@ -158,9 +158,9 @@ class DataFile(db.Model):
     dataset_version_id = db.Column(db.Integer, db.ForeignKey("dataset_versions.id"))
 
     dataset_version = db.relationship("DatasetVersion",
-                              foreign_keys=[dataset_version_id],
-                              backref=db.backref(__tablename__,
-                              cascade="all, delete-orphan"))
+                                      backref=db.backref(__tablename__),
+                                      single_parent=True,
+                                      cascade="all, delete-orphan")
 
 class DatasetVersion(Entry):
     # Missing the permaname of the DatasetVersion
@@ -179,8 +179,9 @@ class DatasetVersion(Entry):
 
     dataset = db.relationship("Dataset",
                               foreign_keys=[dataset_id],
-                              backref=db.backref(__tablename__,
-                                                 cascade="all, delete-orphan"))
+                              backref=db.backref(__tablename__),
+                              single_parent=True,
+                              cascade="all, delete-orphan")
 
     # Filled out by the server
     version = db.Column(db.Integer)

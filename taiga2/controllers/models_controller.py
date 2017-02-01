@@ -41,7 +41,7 @@ def add_user(name):
 
 
 def get_user(user_id):
-    return db.session.query(User).filter(User.id == user_id).one_or_none()
+    return db.session.query(User).filter(User.id == user_id).one()
 #</editor-fold>
 
 #<editor-fold desc="Folder">
@@ -91,11 +91,12 @@ def add_folder_entry(folder_id, entry_id):
     entry = get_entry(entry_id)
 
     # TODO: See if this is the right place to do that...
+    # TODO: Deactivate after the discussion with Phil. Only access to dataset for now
     # If it is a dataset, we need to update the location of its dataset_versions
-    if type(entry) is Dataset:
+    # if type(entry) is Dataset:
         # Add this folder to the dataset_versions
-        for dataset_version in entry.dataset_versions:
-            add_folder_entry(folder_id, dataset_version.id)
+        # for dataset_version in entry.dataset_versions:
+        #     add_folder_entry(folder_id, dataset_version.id)
 
     # TODO: This should be a set, not a list.
     if entry not in folder.entries:
@@ -449,6 +450,15 @@ def get_datafile(datafile_id):
         .filter(DataFile.id == datafile_id).one()
 
     return datafile
+
+
+def get_latest_version_datafiles_from_dataset(dataset_id):
+    dataset = get_dataset(dataset_id)
+
+    latest_dataset_version = dataset.dataset_versions[-1]
+
+    return latest_dataset_version.datafiles
+
 #</editor-fold>
 
 #<editor-fold desc="Upload Session">

@@ -1,5 +1,6 @@
 import datetime
 import pytest
+import uuid
 
 from freezegun import freeze_time
 from flask_sqlalchemy import SessionBase
@@ -14,23 +15,21 @@ from taiga2.models import generate_permaname
 #<editor-fold desc="User Tests">
 @pytest.fixture
 def new_user():
-    _new_user = mc.get_user(1)
-    if not _new_user:
-        _new_user = mc.add_user(name="Remi")
-
+    _new_user = mc.add_user(name=str(uuid.uuid4()))
     return _new_user
 
 
 def test_add_user(session, new_user):
-    new_user_name = "Remi"
+    new_user_name = "Test User"
+    _new_user = mc.add_user(name=new_user_name)
 
     # Retrieve the user to see if we get what we are supposed
     # to have stored
     added_user = session.query(User).filter(User.name == new_user_name).first()
 
-    assert new_user.id == added_user.id
-    assert new_user.name == added_user.name
-    assert new_user.home_folder.name == added_user.home_folder.name
+    assert _new_user.id == added_user.id
+    assert _new_user.name == added_user.name
+    assert _new_user.home_folder.name == added_user.home_folder.name
 
 
 def test_get_user(session, new_user):
@@ -155,24 +154,30 @@ def test_add_folder_entry(session: SessionBase,
 
 #<editor-fold desc="Dataset Tests">
 @pytest.fixture()
-def new_dataset():
+def new_dataset(new_user, new_datafile):
     new_dataset_name = "New Dataset"
     new_dataset_permaname = generate_permaname(new_dataset_name)
 
     _new_dataset = mc.add_dataset(name=new_dataset_name,
-                               permaname=new_dataset_permaname,
-                               description="New dataset description")
+                                  creator_id=new_user.id,
+                                  permaname=new_dataset_permaname,
+                                  description="New dataset description",
+                                  datafiles_ids=[new_datafile.id])
 
     return _new_dataset
 
 
-def test_add_dataset(session: SessionBase):
+def test_add_dataset(session: SessionBase,
+                     new_datafile,
+                     new_user):
     new_dataset_name = "New Dataset"
     new_dataset_permaname = generate_permaname(new_dataset_name)
 
     _new_dataset = mc.add_dataset(name=new_dataset_name,
-                               permaname=new_dataset_permaname,
-                               description="New dataset description")
+                                  creator_id=new_user.id,
+                                  permaname=new_dataset_permaname,
+                                  description="New dataset description",
+                                  datafiles_ids=[new_datafile.id])
 
     added_dataset_by_id = session.query(Dataset) \
         .filter(Dataset.id == _new_dataset.id) \
@@ -233,38 +238,38 @@ def test_update_dataset_description(session: SessionBase,
     assert updated_dataset.description == new_dataset_description
 
 
-def test_update_dataset_contents(session: SessionBase,
-                                 new_dataset_version,
-                                 new_datafile):
-    _new_dataset = new_dataset_version.dataset
-    # TODO: This test showed an issue with the conftest.py with session on db fixture. Temp fix with function as scope which destroys db
-    # TODO: Replace this with a fixture or a direct call to a function
-    # new_dataset = new_dataset_version.dataset
-    # Add one datafile to begin with
-    new_dataset_version.datafiles.append(new_datafile)
-    session.add(new_dataset_version)
-    session.commit()
-
-    entries_to_remove = [new_datafile.id]
-    updated_dataset = mc.update_dataset_contents(_new_dataset.id,
-                                              datafiles_id_to_remove=entries_to_remove)
-
-    last_dataset_version = mc.get_latest_dataset_version(updated_dataset.id)
-
-    assert updated_dataset == _new_dataset
-    assert last_dataset_version.version == new_dataset_version.version + 1
-    assert len(updated_dataset.dataset_versions) == 2
-    assert len(last_dataset_version.datafiles) == 0
-
-    entries_to_add = [new_datafile.id]
-    updated_added_dataset = mc.update_dataset_contents(_new_dataset.id,
-                                                    datafiles_id_to_add=entries_to_add)
-
-    new_last_dataset_version = mc.get_latest_dataset_version(updated_added_dataset.id)
-
-    assert updated_added_dataset == updated_dataset
-    assert len(updated_added_dataset.dataset_versions) == 3
-    assert len(new_last_dataset_version.datafiles) == 1
+# TODO: Deactivated for now since we are not yet doing updates
+# def test_update_dataset_contents(session: SessionBase,
+#                                  new_dataset,
+#                                  new_datafile):
+#     # TODO: This test showed an issue with the conftest.py with session on db fixture. Temp fix with function as scope which destroys db
+#     # TODO: Replace this with a fixture or a direct call to a function
+#     # new_dataset = new_dataset_version.dataset
+#     # Add one datafile to begin with
+#     new_dataset_version.datafiles.append(new_datafile)
+#     session.add(new_dataset_version)
+#     session.flush()
+#
+#     entries_to_remove = [new_datafile.id]
+#     updated_dataset = mc.update_dataset_contents(_new_dataset.id,
+#                                                  datafiles_id_to_remove=entries_to_remove)
+#
+#     last_dataset_version = mc.get_latest_dataset_version(updated_dataset.id)
+#
+#     assert updated_dataset == _new_dataset
+#     assert last_dataset_version.version == new_dataset_version.version + 1
+#     assert len(updated_dataset.dataset_versions) == 2
+#     assert len(last_dataset_version.datafiles) == 0
+#
+#     entries_to_add = [new_datafile.id]
+#     updated_added_dataset = mc.update_dataset_contents(_new_dataset.id,
+#                                                        datafiles_id_to_add=entries_to_add)
+#
+#     new_last_dataset_version = mc.get_latest_dataset_version(updated_added_dataset.id)
+#
+#     assert updated_added_dataset == updated_dataset
+#     assert len(updated_added_dataset.dataset_versions) == 3
+#     assert len(new_last_dataset_version.datafiles) == 1
 
 
 def test_get_dataset(session: SessionBase,
@@ -287,17 +292,22 @@ def test_get_dataset_by_permaname(session: SessionBase,
 
 #<editor-fold desc="DatasetVersion Tests">
 @pytest.fixture
-def new_dataset_version():
+def new_dataset_version(new_user):
     # TODO: Add in the name it is an empty dataset_version
-    new_dataset_version_name = "New Dataset Version"
+    new_dataset_name = "New Dataset for new_dataset_version"
+    new_dataset_description = "New description for new_dataset_version"
+    _new_datafile = mc.add_datafile(name="Datafile for new_dataset_version",
+                                   url="www.new_dataset_version.com",
+                                   type=mc.DataFile.DataFileType.Raw)
 
-    _new_user = new_user()
-    _new_dataset = new_dataset()
+    _new_dataset = mc.add_dataset(name=new_dataset_name,
+                                  creator_id=new_user.id,
+                                  description=new_dataset_description,
+                                  datafiles_ids=[_new_datafile.id])
 
-    _new_dataset_version = DatasetVersion(name=new_dataset_version_name,
-                                          creator=_new_user,
-                                          dataset=_new_dataset,
-                                          version=1)
+    _new_dataset_version = _new_dataset.dataset_versions[0]
+
+    _new_dataset_version.datafiles.append(_new_datafile)
 
     db.session.add(_new_dataset_version)
     db.session.commit()
@@ -306,13 +316,28 @@ def new_dataset_version():
 
 
 def test_add_dataset_version(session: SessionBase,
-                             new_user,
-                             new_dataset):
+                             new_user):
     new_dataset_version_name = "New Dataset Version"
 
-    new_dataset_version = mc.add_dataset_version(name=new_dataset_version_name,
-                                              creator_id=new_user.id,
-                                              dataset_id=new_dataset.id)
+    new_dataset_name = "New Dataset for test_add_dataset_version"
+    new_dataset_description = "New description for test_add_dataset_version"
+    _new_datafile = mc.add_datafile(name="Datafile for test_add_dataset_version",
+                                    url="www.test_add_dataset_version.com",
+                                    type=mc.DataFile.DataFileType.Raw)
+
+    _new_dataset = mc.add_dataset(name=new_dataset_version_name,
+                                  creator_id=new_user.id,
+                                  description=new_dataset_description,
+                                  datafiles_ids=[_new_datafile.id])
+
+    _new_dataset_version = _new_dataset.dataset_versions[0]
+
+    _new_dataset_version.datafiles.append(_new_datafile)
+
+    db.session.add(_new_dataset_version)
+    db.session.commit()
+
+    return _new_dataset_version
 
     assert new_dataset_version.name == new_dataset_version_name
     assert new_dataset_version.creator == new_user

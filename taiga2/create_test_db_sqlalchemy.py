@@ -1,3 +1,4 @@
+import copy
 import logging
 import readline
 import sys
@@ -67,12 +68,28 @@ def drop_and_create_db():
                                                       dataset_description="No description",
                                                       current_folder_id=folderB.id)
 
+    data_datafiles = models_controller.get_latest_version_datafiles_from_dataset(data.id)
+
+    temp_data_datafiles = copy.copy(data_datafiles)
+
     # Create A1 Data/A2 Data/A3 Data inside Folder A
     for i in range(1, 4):
         name = "".join(['A', str(i), " DatasetVersion"])
+
+        # We need now to generate new datafiles
+        if i >= 1:
+            loop_datafiles = []
+            for datafile in temp_data_datafiles:
+                loop_datafile = models_controller.add_datafile(name=datafile.name + 'v' + str(i),
+                                                               url=datafile.url,
+                                                               type=datafile.type)
+                loop_datafiles.append(loop_datafile)
+            temp_data_datafiles = loop_datafiles
+        datafiles_id = [datafile.id for datafile in temp_data_datafiles]
         dataAX = models_controller.add_dataset_version(name=name,
                                                        creator_id=admin_user.id,
-                                                       dataset_id=origin_dataset.id)
+                                                       dataset_id=origin_dataset.id,
+                                                       datafiles_ids=datafiles_id)
         models_controller.add_folder_entry(folder_id=folderA.id,
                                            entry_id=dataAX.id)
 

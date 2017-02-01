@@ -1,5 +1,5 @@
 SQLALCHEMY_DATABASE_URI = 'sqlite:///taiga2.db'
-SQLALCHEMY_ECHO = True
+SQLALCHEMY_ECHO = False
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 # celery settings
