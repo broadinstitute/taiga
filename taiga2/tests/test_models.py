@@ -292,25 +292,17 @@ def test_get_dataset_by_permaname(session: SessionBase,
 
 #<editor-fold desc="DatasetVersion Tests">
 @pytest.fixture
-def new_dataset_version(new_user):
+def new_dataset_version(new_user, new_datafile):
     # TODO: Add in the name it is an empty dataset_version
     new_dataset_name = "New Dataset for new_dataset_version"
     new_dataset_description = "New description for new_dataset_version"
-    _new_datafile = mc.add_datafile(name="Datafile for new_dataset_version",
-                                   url="www.new_dataset_version.com",
-                                   type=mc.DataFile.DataFileType.Raw)
 
     _new_dataset = mc.add_dataset(name=new_dataset_name,
                                   creator_id=new_user.id,
                                   description=new_dataset_description,
-                                  datafiles_ids=[_new_datafile.id])
+                                  datafiles_ids=[new_datafile.id])
 
     _new_dataset_version = _new_dataset.dataset_versions[0]
-
-    _new_dataset_version.datafiles.append(_new_datafile)
-
-    db.session.add(_new_dataset_version)
-    db.session.commit()
 
     return _new_dataset_version
 
@@ -322,6 +314,8 @@ def test_add_dataset_version(session: SessionBase,
     new_dataset_name = "New Dataset for test_add_dataset_version"
     new_dataset_description = "New description for test_add_dataset_version"
     _new_datafile = mc.add_datafile(name="Datafile for test_add_dataset_version",
+                                    s3_bucket="broadtaiga2prototype",
+                                    s3_key=mc.generate_convert_key(),
                                     url="www.test_add_dataset_version.com",
                                     type=mc.DataFile.DataFileType.Raw)
 
@@ -389,7 +383,9 @@ def new_datafile():
     new_datafile_url = "http://google.com"
 
     _new_datafile = mc.add_datafile(name=new_datafile_name,
-                                 url=new_datafile_url)
+                                    s3_bucket="broadtaiga2prototype",
+                                    s3_key=mc.generate_convert_key(),
+                                    url=new_datafile_url)
 
     return _new_datafile
 #</editor-fold>
