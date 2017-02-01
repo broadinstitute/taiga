@@ -19,6 +19,8 @@ log = logging.getLogger(__name__)
 
 ## NEVER USE IN PRODUCTION
 
+# TODO: Should use the settings.cfg for the bucket name
+bucket_name = "broadtaiga2prototype"
 
 def drop_and_create_db():
     models_controller.db.drop_all()
@@ -33,10 +35,11 @@ def drop_and_create_db():
     upload_session_origin = models_controller.add_new_upload_session(user_id=admin_user.id)
 
     # Create the origin data
-    upload_session_file_origin = models_controller.add_upload_session_file(upload_session_origin.id,
-                                                                           "origin",
-                                                                           models_controller.DataFile.DataFileType.Raw,
-                                                                           "www.origin_url.com")
+    upload_session_file_origin = models_controller.add_upload_session_file(session_id=upload_session_origin.id,
+                                                                           filename="origin",
+                                                                           s3_bucket=bucket_name,
+                                                                           filetype=models_controller.DataFile.DataFileType.Raw,
+                                                                           url="www.origin_url.com")
     origin_dataset = models_controller.add_dataset_from_session(session_id=upload_session_origin.id,
                                                                 dataset_name="origin",
                                                                 dataset_description="No description",
@@ -58,10 +61,11 @@ def drop_and_create_db():
 
     # Create Data inside Folder B
     upload_session_data = models_controller.add_new_upload_session(user_id=admin_user.id)
-    upload_session_file_data = models_controller.add_upload_session_file(upload_session_data.id,
-                                                                         "Data",
-                                                                         models.DataFile.DataFileType.Raw,
-                                                                         "www.data.com")
+    upload_session_file_data = models_controller.add_upload_session_file(session_id=upload_session_data.id,
+                                                                         filename="Data",
+                                                                         s3_bucket=bucket_name,
+                                                                         filetype=models.DataFile.DataFileType.Raw,
+                                                                         url="www.data.com")
 
     data = models_controller.add_dataset_from_session(session_id=upload_session_data.id,
                                                       dataset_name="Data",

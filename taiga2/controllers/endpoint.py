@@ -152,10 +152,11 @@ def create_upload_session_file(S3UploadedFileMetadata, sid):
     # TODO: Add also Parquet file conversion
 
     # Register this new file to the UploadSession received
-    upload_session_file = models_controller.add_upload_session_file(sid,
-                                                                    S3UploadedFileMetadata['filename'],
-                                                                    S3UploadedFileMetadata['filetype'],
-                                                                    S3UploadedFileMetadata['location'])
+    upload_session_file = models_controller.add_upload_session_file(session_id=sid,
+                                                                    filename=S3UploadedFileMetadata['filename'],
+                                                                    filetype=S3UploadedFileMetadata['filetype'],
+                                                                    url=S3UploadedFileMetadata['location'],
+                                                                    s3_bucket=S3UploadedFileMetadata['bucket'])
 
     convert_key = upload_session_file.converted_s3_key
 

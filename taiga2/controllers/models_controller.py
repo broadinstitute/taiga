@@ -510,7 +510,7 @@ def generate_convert_key():
     return os.path.join(enumed_convert_path + str(uuid.uuid4()))
 
 
-def add_upload_session_file(session_id, filename, filetype, url):
+def add_upload_session_file(session_id, filename, filetype, url, s3_bucket):
     enumed_filetype = DataFile.DataFileType(filetype)
 
     converted_s3_key = generate_convert_key()
@@ -519,6 +519,7 @@ def add_upload_session_file(session_id, filename, filetype, url):
                                             filename=filename,
                                             initial_filetype=enumed_filetype,
                                             url=url,
+                                            converted_s3_bucket=s3_bucket,
                                             converted_s3_key=converted_s3_key)
     db.session.add(upload_session_file)
     db.session.commit()
