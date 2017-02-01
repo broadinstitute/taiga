@@ -197,7 +197,7 @@ class DataFile(db.Model):
 
     url = db.Column(db.Text)
 
-    dataset_version_id = db.Column(db.Integer, db.ForeignKey("dataset_versions.id"))
+    dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
 
     dataset_version = db.relationship("DatasetVersion",
                                       backref=db.backref(__tablename__),
