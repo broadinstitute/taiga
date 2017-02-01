@@ -30,7 +30,7 @@ def drop_and_create_db():
     home_folder_admin = admin_user.home_folder
 
     # Create a session where all this is happening
-    upload_session_origin = models_controller.add_new_upload_session()
+    upload_session_origin = models_controller.add_new_upload_session(user_id=admin_user.id)
 
     # Create the origin data
     upload_session_file_origin = models_controller.add_upload_session_file(upload_session_origin.id,
@@ -57,7 +57,7 @@ def drop_and_create_db():
                                        entry_id=folderB.id)
 
     # Create Data inside Folder B
-    upload_session_data = models_controller.add_new_upload_session()
+    upload_session_data = models_controller.add_new_upload_session(user_id=admin_user.id)
     upload_session_file_data = models_controller.add_upload_session_file(upload_session_data.id,
                                                                          "Data",
                                                                          models.DataFile.DataFileType.Raw,

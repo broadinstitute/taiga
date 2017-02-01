@@ -4,8 +4,11 @@ import re
 import datetime
 
 from sqlalchemy import MetaData
+from sqlalchemy.types import TypeDecorator, CHAR
+from sqlalchemy.dialects.postgresql import UUID
 
 from flask_sqlalchemy import SQLAlchemy
+
 
 convention = {
     "ix": 'ix_%(column_0_label)s',
@@ -20,13 +23,52 @@ db = SQLAlchemy(metadata=metadata)
 
 # Base = declarative_base()
 
+
+# Utilities
+class GUID(TypeDecorator):
+    """Platform-independent GUID type.
+
+    Uses PostgreSQL's UUID type, otherwise uses
+    CHAR(32), storing as stringified hex values.
+
+    """
+    impl = CHAR
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(UUID())
+        else:
+            return dialect.type_descriptor(CHAR(32))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        elif dialect.name == 'postgresql':
+            return str(value)
+        else:
+            if not isinstance(value, uuid.UUID):
+                return "%.32x" % uuid.UUID(value).int
+            else:
+                # hexstring
+                return "%.32x" % value.int
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        else:
+            return uuid.UUID(value)
+
+
+def generate_uuid():
+    return uuid.uuid4()
+
 # Associations #
 
 # Association table for Many to Many relationship between folder and entries
 # As discussed in december 2016 with Philip Montgomery, we decided an entry could have multiple folders containing it
 folder_entry_association_table = db.Table('folder_entry_association',
-                                          db.Column('folder_id', db.Integer, db.ForeignKey('folders.id')),
-                                          db.Column('entry_id', db.Integer, db.ForeignKey('entries.id'))
+                                          db.Column('folder_id', GUID, db.ForeignKey('folders.id')),
+                                          db.Column('entry_id', GUID, db.ForeignKey('entries.id'))
                                           )
 
 # End Associations #
@@ -51,15 +93,15 @@ def generate_permaname(name):
 class User(db.Model):
     __tablename__ = 'users'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
     name = db.Column(db.String(80), unique=True)
 
-    home_folder_id = db.Column(db.Integer, db.ForeignKey("folders.id"))
+    home_folder_id = db.Column(GUID, db.ForeignKey("folders.id"))
     home_folder = db.relationship("Folder",
                                   foreign_keys="User.home_folder_id",
                                   backref="home_user")
 
-    trash_folder_id = db.Column(db.Integer, db.ForeignKey("folders.id"))
+    trash_folder_id = db.Column(GUID, db.ForeignKey("folders.id"))
     trash_folder = db.relationship("Folder",
                                    foreign_keys="User.trash_folder_id",
                                    backref="trash_user")
@@ -74,12 +116,12 @@ class User(db.Model):
 class Entry(db.Model):
     __tablename__ = 'entries'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
     name = db.Column(db.String(80), nullable=False)
     type = db.Column(db.String(50))
     creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
-    creator_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    creator_id = db.Column(GUID, db.ForeignKey("users.id"))
 
     creator = db.relationship("User",
                               foreign_keys="Folder.creator_id",
@@ -106,7 +148,7 @@ class Folder(Entry):
     __tablename__ = 'folders'
 
     # TODO: Instead of using a string 'entry.id', can we use Entry.id?
-    id = db.Column(db.Integer, db.ForeignKey('entries.id'), primary_key=True)
+    id = db.Column(GUID, db.ForeignKey('entries.id'), primary_key=True)
 
     folder_type = db.Column(db.Enum(FolderType))
     description = db.Column(db.Text)
@@ -125,7 +167,7 @@ class Folder(Entry):
 class Dataset(Entry):
     __tablename__ = 'datasets'
 
-    id = db.Column(db.Integer, db.ForeignKey('entries.id'), primary_key=True)
+    id = db.Column(GUID, db.ForeignKey('entries.id'), primary_key=True)
 
     description = db.Column(db.Text, default="No description provided")
 
@@ -147,7 +189,7 @@ class DataFile(db.Model):
         HDF5 = 'HDF5'
         Columnar = 'Columnar'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
 
     name = db.Column(db.String(80))
 
@@ -166,16 +208,16 @@ class DatasetVersion(Entry):
     # Missing the permaname of the DatasetVersion
     __tablename__ = 'dataset_versions'
 
-    id = db.Column(db.Integer,
+    id = db.Column(GUID,
                    db.ForeignKey('entries.id'),
                    primary_key=True)
 
-    creator_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    creator_id = db.Column(GUID, db.ForeignKey("users.id"))
 
     creator = db.relationship("User",
                               backref=__tablename__)
 
-    dataset_id = db.Column(db.Integer, db.ForeignKey("datasets.id"))
+    dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
 
     dataset = db.relationship("Dataset",
                               foreign_keys=[dataset_id],
@@ -202,14 +244,14 @@ class Activity(db.Model):
 
     __tablename__ = 'activities'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    user_id = db.Column(GUID, db.ForeignKey("users.id"))
 
     user = db.relationship("User",
                            backref=__tablename__)
 
-    dataset_id = db.Column(db.Integer, db.ForeignKey("datasets.id"))
+    dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
 
     dataset = db.relationship("Dataset",
                               backref=__tablename__)
@@ -223,17 +265,21 @@ class Activity(db.Model):
 class UploadSession(db.Model):
     __tablename__ = 'upload_sessions'
 
-    id = db.Column(db.Integer,
-                   primary_key=True)
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+
+    user_id = db.Column(GUID, db.ForeignKey('users.id'))
+    user = db.relationship("User",
+                           backref=__tablename__)
 
 
 class UploadSessionFile(db.Model):
     __tablename__ = 'upload_session_files'
 
-    id = db.Column(db.Integer,
-                   primary_key=True)
+    id = db.Column(GUID,
+                   primary_key=True,
+                   default=generate_uuid)
 
-    session_id = db.Column(db.Integer, db.ForeignKey("upload_sessions.id"))
+    session_id = db.Column(GUID, db.ForeignKey("upload_sessions.id"))
 
     session = db.relationship("UploadSession",
                               backref=__tablename__)
@@ -243,3 +289,5 @@ class UploadSessionFile(db.Model):
     filetype = db.Column(db.Enum(DataFile.DataFileType))
 
     url = db.Column(db.Text)
+
+

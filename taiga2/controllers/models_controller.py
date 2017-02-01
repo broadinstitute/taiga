@@ -40,6 +40,10 @@ def add_user(name):
     return new_user
 
 
+def _get_test_user():
+    return db.session.query(User).first()
+
+
 def get_user(user_id):
     return db.session.query(User).filter(User.id == user_id).one()
 #</editor-fold>
@@ -180,7 +184,7 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
         added_datafiles.append(new_datafile)
 
     # TODO: Get the user from the session
-    admin = get_user(1)
+    admin = get_user_from_upload_session(session_id)
     dataset_permaname = models.generate_permaname(dataset_name)
     added_dataset = add_dataset(creator_id=admin.id,
                                 name=dataset_name,
@@ -458,8 +462,10 @@ def get_latest_version_datafiles_from_dataset(dataset_id):
 #</editor-fold>
 
 #<editor-fold desc="Upload Session">
-def add_new_upload_session():
-    us = UploadSession()
+def add_new_upload_session(user_id):
+    # TODO: Remove the default user once we have the auth in place
+    # us = UploadSession(user_id=user_id)
+    us = UploadSession(user_id=_get_test_user().id)
     db.session.add(us)
     db.session.commit()
     return us
@@ -468,6 +474,11 @@ def add_new_upload_session():
 def get_upload_session(session_id):
     upload_session = db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
     return upload_session
+
+
+def get_user_from_upload_session(session_id):
+    session = db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
+    return session.user
 
 
 def get_upload_session_files_from_session(session_id):

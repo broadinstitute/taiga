@@ -41,8 +41,11 @@ def _get_user_id():
     return ADMIN_USER_ID
 
 
+# TODO: Should never be used in production!
+# TODO: Should implement a get_user(uuid) or get_user(name)
 def get_user():
-    user = models_controller.get_user(1)
+    # We get the first user which should be Admin
+    user = models_controller._get_test_user()
     user_schema = schemas.UserSchema()
     json_data_user = user_schema.dump(user).data
 
@@ -93,7 +96,7 @@ def create_folder(metadata):
 
 
 def get_dataset_first(dataset_id):
-    first_dataset_version = models_controller.get_first_dataset_version(int(dataset_id))
+    first_dataset_version = models_controller.get_first_dataset_version(dataset_id)
 
     dataset_version_schema = schemas.DatasetVersionSummarySchema()
     json_data_first_dataset_version = dataset_version_schema.dump(first_dataset_version).data
@@ -113,7 +116,7 @@ def update_dataset_description(datasetId, DescriptionUpdate):
 
 
 def get_dataset_version(datasetVersion_id):
-    dv = models_controller.get_dataset_version(dataset_version_id=int(datasetVersion_id))
+    dv = models_controller.get_dataset_version(dataset_version_id=datasetVersion_id)
     if dv is None:
         flask.abort(404)
 
@@ -163,7 +166,7 @@ def create_upload_session_file(S3UploadedFileMetadata, sid):
 
 def create_new_upload_session():
     # TODO: Add the user_id related to this new session
-    upload_session = models_controller.add_new_upload_session()
+    upload_session = models_controller.add_new_upload_session(0)
     return flask.jsonify(upload_session.id)
 
 
