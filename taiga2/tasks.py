@@ -1,7 +1,7 @@
 from taiga2.models import generate_permaname
 from taiga2.aws import aws
 from celery import Celery
-from taiga2 import conversion
+import taiga2.conv as conversion
 
 celery = Celery("taiga2")
 #Celery("taiga2", include=['taiga2.tasks'])
@@ -114,3 +114,43 @@ def taskstatus(task_id):
         }
 
     return response
+
+import tempfile
+import uuid
+import flask
+
+from taiga2.aws import parse_s3_url
+
+def get_converter(src_format, dst_format):
+    from taiga2.models import DataFile
+    if src_format == DataFile.DataFileType.HDF5 and dst_format == conversion.CSV_FORMAT:
+        return conversion.hdf5_to_tcsv
+    if src_format == DataFile.DataFileType.Columnar and dst_format == conversion.CSV_FORMAT:
+        return conversion.columnar_to_csv
+    raise Exception("No conversion for {} to {}".format(src_format, dst_format))
+
+def start_conversion_task(src_url, src_format, dst_format, cache_entry_id):
+    from taiga2.controllers import models_controller
+
+    dest_bucket = flask.current_app.config['S3_BUCKET']
+    dest_key = flask.current_app.config['S3_PREFIX']+"/exported/"+str(uuid.uuid4().hex)
+
+    s3 = aws.s3
+    bucket, key = parse_s3_url(src_url)
+    with tempfile.NamedTemporaryFile() as raw_t:
+        with tempfile.NamedTemporaryFile() as conv_t:
+            models_controller.update_conversion_cache_entry(cache_entry_id, "Downloading from S3")
+            s3.Object(bucket, key).download_fileobj(raw_t)
+            raw_t.flush()
+
+            models_controller.update_conversion_cache_entry(cache_entry_id, "Running conversion")
+
+            converter = get_converter(src_format, dst_format)
+            converter(raw_t.name, conv_t.name)
+
+            urls = ["s3://{}/{}".format(dest_bucket, dest_key)]
+
+            models_controller.update_conversion_cache_entry(cache_entry_id, "Uploading converted file to S3")
+            s3.Object(dest_bucket, dest_key).upload_fileobj(conv_t)
+
+            models_controller.update_conversion_cache_entry(cache_entry_id, "Completed successfully", urls=urls)

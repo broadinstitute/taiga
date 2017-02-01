@@ -20,6 +20,7 @@ from taiga2.tests.monkeys import MonkeyBucket
 
 
 test_files_folder_path = 'taiga2/tests/test_files'
+import boto3
 
 raw_file_name = 'hello.txt'
 raw_file_path = os.path.join(test_files_folder_path, raw_file_name)

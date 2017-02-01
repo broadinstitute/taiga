@@ -158,9 +158,9 @@ class DataFile(db.Model):
     dataset_version_id = db.Column(db.Integer, db.ForeignKey("dataset_versions.id"))
 
     dataset_version = db.relationship("DatasetVersion",
-                                      backref=db.backref(__tablename__),
-                                      single_parent=True,
-                                      cascade="all, delete-orphan")
+                              foreign_keys=[dataset_version_id],
+                              backref=db.backref(__tablename__,
+                              cascade="all, delete-orphan"))
 
 class DatasetVersion(Entry):
     # Missing the permaname of the DatasetVersion
@@ -218,6 +218,21 @@ class Activity(db.Model):
     type = db.Column(db.Enum(ActivityType))
 
     comments = db.Column(db.Text)
+
+class ConversionCache(db.Model):
+    __tablename__ = "conversion_cache"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    dataset_version_id = db.Column(db.Integer, db.ForeignKey("dataset_versions.id"))
+
+    datafile_name = db.Column(db.String(80))
+
+    format = db.Column(db.String(80))
+
+    status = db.Column(db.Text)
+
+    urls_as_json = db.Column(db.Text)
 
 
 class UploadSession(db.Model):
