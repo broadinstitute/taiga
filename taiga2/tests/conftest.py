@@ -12,8 +12,6 @@ from taiga2.tests.monkeys import MonkeyS3, MonkeySTS
 
 from taiga2.models import db as _db
 
-import boto3
-
 import os
 
 # Temp db with different name for each test

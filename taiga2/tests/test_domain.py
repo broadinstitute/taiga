@@ -1,5 +1,6 @@
 import datetime
 import pytest
+import os
 
 from freezegun import freeze_time
 from flask_sqlalchemy import SessionBase
@@ -17,12 +18,14 @@ from taiga2.aws import aws
 
 from taiga2.tests.monkeys import MonkeyBucket
 
-from flask import g
 
-import boto3
-from moto import mock_s3
+test_files_folder_path = 'taiga2/tests/test_files'
 
-import json
+raw_file_name = 'hello.txt'
+raw_file_path = os.path.join(test_files_folder_path, raw_file_name)
+
+csv_file_name = 'npcv1.csv'
+csv_file_path = os.path.join(test_files_folder_path, csv_file_name)
 
 
 @pytest.fixture
@@ -60,7 +63,7 @@ def new_session_upload():
 @pytest.fixture
 def new_raw_uploaded_file(session: SessionBase,
                           new_session_upload):
-    filename = "hello.txt"
+    filename = raw_file_name
     enumed_filetype = DataFile.DataFileType.Raw
     location = 'unknown'
 
@@ -82,12 +85,12 @@ def new_columnar_upload_file(session: SessionBase,
                              s3,
                              bucket,
                              new_session_upload):
-    filename = "npcv1.csv"
+    filename = csv_file_name
     enumed_filetype = DataFile.DataFileType.Columnar
     url = "www.test_columnar_filename.com"
 
-    file_key = 'npcv1.csv'
-    s3.Object(bucket.name, file_key).upload_file('test_files/' + file_key)
+    file_key = csv_file_name
+    s3.Object(bucket.name, file_key).upload_file(csv_file_path)
 
     # new_columnar_uploadedFile = s3.Object(test_bucket.name, file_key)
 
@@ -123,12 +126,12 @@ def new_columnar_upload_file(session: SessionBase,
 
 def test_create_monkey_s3_object(session: SessionBase):
     new_bucket = aws.s3.Bucket.create('bucket')
-    with open('test_files/hello.txt', 'rb') as data:
-        aws.s3.Bucket(new_bucket.name).put_object(Key='hello.txt', Body=data)
+    with open(raw_file_path, 'rb') as data:
+        aws.s3.Bucket(new_bucket.name).put_object(Key=raw_file_name, Body=data)
 
-    new_object = aws.s3.Object('bucket', 'hello.txt')
+    new_object = aws.s3.Object('bucket', raw_file_name)
     assert new_object.bucket.name == 'bucket'
-    assert new_object.key == 'hello.txt'
+    assert new_object.key == raw_file_name
 
 
 # def test_monkey_upload_file_to_s3(session: SessionBase):
@@ -159,10 +162,10 @@ def test_create_monkey_bucket_s3(session: SessionBase):
 
 def test_conversion_raw(session: SessionBase):
     new_bucket = aws.s3.Bucket.create('bucket')
-    filename = 'hello.txt'
+    filename = raw_file_name
 
-    with open('test_files/hello.txt', 'rb') as data:
-        aws.s3.Bucket(new_bucket.name).put_object(Key='hello.txt', Body=data)
+    with open(raw_file_path, 'rb') as data:
+        aws.s3.Bucket(new_bucket.name).put_object(Key=raw_file_name, Body=data)
     s3_raw_uploaded_file = aws.s3.Object(new_bucket.name, filename)
 
     from taiga2.models import DataFile
@@ -179,10 +182,10 @@ def test_conversion_raw(session: SessionBase):
 
 def test_conversion_csv(session: SessionBase):
     new_bucket = aws.s3.Bucket.create('bucket')
-    filename = 'npcv1.csv'
+    filename = csv_file_name
 
-    with open('test_files/npcv1.csv', 'rb') as data:
-        aws.s3.Bucket(new_bucket.name).put_object(Key='npcv1.csv', Body=data)
+    with open(csv_file_path, 'rb') as data:
+        aws.s3.Bucket(new_bucket.name).put_object(Key=csv_file_name, Body=data)
     s3_raw_uploaded_file = aws.s3.Object(new_bucket.name, filename)
 
     from taiga2.models import DataFile
