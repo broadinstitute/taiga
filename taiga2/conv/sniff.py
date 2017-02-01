@@ -6,8 +6,8 @@ Column = namedtuple("Column", ["name", "type"])
 def sniff(filename, rows_to_check=None, delimiter="\t"):
     with open(filename, 'rU') as fd:
         r = csv.reader(fd, delimiter=delimiter)
-        col_header = r.next()
-        row = r.next()
+        col_header = next(r)
+        row = next(r)
         if len(col_header) == len(row):
             hasRowNames = False
         elif len(col_header) == (len(row) - 1):
@@ -22,7 +22,7 @@ def sniff(filename, rows_to_check=None, delimiter="\t"):
                 columnValues[i].append(x)
 
             try:
-                row = r.next()
+                row = next(r)
                 row_count += 1
             except StopIteration:
                 break
@@ -30,7 +30,7 @@ def sniff(filename, rows_to_check=None, delimiter="\t"):
     if hasRowNames:
         del columnValues[0]
 
-    columns = [Column(col_header[i], determine_type(columnValues[i])) for i in xrange(len(columnValues))]
+    columns = [Column(col_header[i], determine_type(columnValues[i])) for i in range(len(columnValues))]
 
     return hasRowNames, columns
 

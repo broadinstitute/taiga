@@ -1,29 +1,66 @@
 import time
+import taiga2.models as models
+import taiga2.controllers.models_controller as mc
+import re
+import json
 
 MAX_TIME = 5
 
-def create_dataset(num_of_files=1):
-    unimp()
 
-def test_dataset_upload(app):
+def create_dataset_version(tmpdir, user_id, monkey_s3):
+    from taiga2.conv import csv_to_columnar
+
+    tmpsrc = str(tmpdir.join("thing.csv"))
+    tmpdst = str(tmpdir.join("thing.columnar"))
+
+    with open(tmpsrc, "wt") as fd:
+        fd.write("a,b\n1,2\n")
+
+    csv_to_columnar(tmpsrc, tmpdst)
+
+    # put data into mock S3
+    monkey_s3.Object("bucket", "key").upload_file(tmpdst)
+
+    # create datafile
+    df = mc.add_datafile(name="dfname",
+                     url="s3://bucket/key",
+                     type=models.DataFile.DataFileType.Columnar)
+
+    ds = mc.add_dataset(name="dataset name", creator_id=user_id, description="dataset description", datafiles_ids=[df.id])
+    return str(ds.dataset_versions[0].id)
+
+from taiga2.aws import parse_s3_url
+from taiga2.tests.monkeys import parse_presigned_url
+
+
+def test_dataset_export(app, db, monkey_s3, user_id, tmpdir):
+    assert user_id is not None
+
     with app.test_client() as c:
-        mock_s3 = setup_mock_s3(app)
-
-        dataset_version_id = create_dataset()
+        dataset_version_id = create_dataset_version(tmpdir, user_id, monkey_s3)
 
         start = time.time()
         resulting_urls = None
         while time.time() < start + MAX_TIME:
-            r = c.get("/datafile?q="+dataset_version_id+"&format=csv")
+            r = c.get("/api/datafile?dataset_version_id="+dataset_version_id+"&name=dfname&format=csv")
+            assert r.status_code == 200
+            response = json.loads(r.data.decode("utf8"))
 
-            for prop in ['dataset_id', 'dataset_version_id', 'name', 'status']:
-                assert r[prop] is not None
+            for prop in ['dataset_id', 'dataset_version_id', 'datafile_name', 'status']:
+                assert response[prop] is not None
 
-            if 'urls' in prop:
-                resulting_urls = prop['urls']
+            print("status:", response['status'])
+
+            if 'urls' in response:
+                resulting_urls = response['urls']
+                print("resulting_urls", repr(resulting_urls))
+                break
+
+            time.sleep(0.1)
 
         assert resulting_urls is not None
-        assert len(prop["urls"]) == 1
-        data = mock_s3.get(prop["urls"][0])
+        assert len(resulting_urls) == 1
+        bucket, key = parse_presigned_url(resulting_urls[0])
+        data = monkey_s3.Object(bucket, key).download_as_bytes()
 
-        assert data == "a,b\n1,2\n"
+        assert data == b"a,b\r\n1,2\r\n"

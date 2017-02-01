@@ -1,11 +1,11 @@
-import cStringIO
 import struct
 import zlib
 import array
-import sniff
+from taiga2.conv import sniff
 import csv
 from collections import namedtuple
-from StringIO import StringIO
+from io import StringIO
+from io import BytesIO
 
 ColumnDef = namedtuple("ColumnDef", ["name", "index", "persister"])
 
@@ -108,27 +108,27 @@ def read_int(fd):
 
 def write_str(output, s):
     write_int(output, len(s))
-    output.write(s)
+    output.write(s.encode("ascii"))
 
 
 def read_str(fd):
     length = read_int(fd)
     if length == None:
         return None
-    return fd.read(length)
+    return str(fd.read(length), "utf8")
 
 
 class StringSerializer(object):
     type_name = "str"
 
     def to_buffer(self, values):
-        output = cStringIO.StringIO()
+        output = BytesIO()
         for s in values:
             write_str(output, s)
         return output.getvalue()
 
     def from_buffer(self, array):
-        fd = cStringIO.StringIO(array)
+        fd = BytesIO(array)
         values = []
         while True:
             v = read_str(fd)
@@ -350,7 +350,7 @@ def read_column_definitions(fd):
 class DatasetWriter(object):
     def __init__(self, filename, columns, rows_per_block=100000):
         self.filename = filename
-        self.output = open(filename, "w")
+        self.output = open(filename, "wb")
         self.columns = columns
 
         persisters = []
@@ -430,7 +430,7 @@ def convert_csv_to_tabular(input_file, output_file, delimiter):
         w = DatasetWriter(output_file, datafile_columns)
 
         # throw out the header row
-        reader.next()
+        next(reader)
         line_number = 1
 
         for row in reader:
@@ -445,7 +445,7 @@ def convert_csv_to_tabular(input_file, output_file, delimiter):
 
 
 def convert_tabular_to_csv(input_file, output_file, delimiter, select_names=None, predicate=None):
-    with open(input_file) as fd:
+    with open(input_file, "rb") as fd:
 
         if predicate == None:
             predicate = AlwaysSatisfied()

@@ -22,13 +22,6 @@ db = SQLAlchemy(metadata=metadata)
 
 # Associations #
 
-# Association for Many to Many relationship between dataset_version and datafile
-datasetVersion_dataFile_association_table = db.Table('datasetVersion_dataFile_association',
-                                                     db.Column('datasetversion_id', db.Integer,
-                                                               db.ForeignKey('dataset_versions.id')),
-                                                     db.Column('datafile_id', db.Integer, db.ForeignKey('datafiles.id'))
-                                                     )
-
 # Association table for Many to Many relationship between folder and entries
 # As discussed in december 2016 with Philip Montgomery, we decided an entry could have multiple folders containing it
 folder_entry_association_table = db.Table('folder_entry_association',
@@ -162,6 +155,12 @@ class DataFile(db.Model):
 
     url = db.Column(db.Text)
 
+    dataset_version_id = db.Column(db.Integer, db.ForeignKey("dataset_versions.id"))
+
+    dataset_version = db.relationship("DatasetVersion",
+                              foreign_keys=[dataset_version_id],
+                              backref=db.backref(__tablename__,
+                              cascade="all, delete-orphan"))
 
 class DatasetVersion(Entry):
     # Missing the permaname of the DatasetVersion
@@ -185,10 +184,6 @@ class DatasetVersion(Entry):
 
     # Filled out by the server
     version = db.Column(db.Integer)
-
-    datafiles = db.relationship("DataFile",
-                                secondary=datasetVersion_dataFile_association_table,
-                                backref=__tablename__)
 
     # TODO: See how to manage the status (persist.py)
 
@@ -236,7 +231,7 @@ class ConversionCache(db.Model):
 
     status = db.Column(db.Text)
 
-    paths_as_json = db.Column(db.Text)
+    urls_as_json = db.Column(db.Text)
 
 
 class UploadSession(db.Model):

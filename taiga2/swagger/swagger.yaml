@@ -542,10 +542,14 @@ paths:
       operationId: get_datafile
       description: Get datafile contents
       parameters:
-        - name: q
+        - name: dataset_version_id
           in: query
           type: string
-          description: dataset_id or dataset_version_id with optional version number and filename
+          description: dataset version id
+        - name: name
+          in: query
+          type: string
+          description: datafile name
         - name: format
           in: query
           type: string
