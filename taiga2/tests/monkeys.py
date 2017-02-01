@@ -1,4 +1,6 @@
+import copy
 import datetime
+import os
 
 #<editor-fold desc="MonkeyS3">
 class MonkeyS3:
@@ -29,6 +31,19 @@ class MonkeyBucket:
         self.objects[new_object.key] = new_object
         return new_object
 
+    def copy(self, copy_source, key):
+        bucket_source_name = copy_source['Bucket']
+        key_source_name = copy_source['Key']
+
+        obj_source = self.s3.buckets[bucket_source_name].objects[key_source_name]
+
+        copy_obj = copy.deepcopy(obj_source)
+
+        copy_obj.bucket = self
+        copy_obj.key = key
+
+        self.objects[key] = copy_obj
+
     def __call__(self, name):
         return self
 
@@ -38,7 +53,12 @@ class MonkeyS3Object:
         self.bucket = bucket
         self.key = key
         self.prefix = '/tmp/'
-        self.full_path = self.prefix + self.key
+
+        os.makedirs(os.path.dirname(self.full_path), exist_ok=True)
+
+    @property
+    def full_path(self):
+        return self.prefix + self.key
 
     def download_fileobj(self, data):
         with open(self.full_path, 'rb') as f:

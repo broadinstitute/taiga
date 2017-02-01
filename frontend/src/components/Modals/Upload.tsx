@@ -10,7 +10,10 @@ import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row} from 'react-
 import {DialogProps, DialogState} from "../Dialogs";
 import { TypeEditorBootstrapTable } from "./TypeEditorBootstrapTable";
 import { getFormatType } from "../../Utilities/formats";
-import {S3Credentials, FileUploadStatus, TaskStatus, SupportedTypeEnum} from "../../models/models";
+import {
+    S3Credentials, FileUploadStatus, TaskStatus, SupportedTypeEnum,
+    S3UploadedFileMetadata, S3UploadedData
+} from "../../models/models";
 import {TaigaApi} from "../../models/api";
 
 
@@ -171,28 +174,29 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             // Create an upload promise via the aws sdk and launch it
             let uploadPromise = upload.promise();
             // TODO: Manage all the errors that can come along the way
-            return uploadPromise.then((data: any) => {
-                console.log('Success uploading to S3. Data received: ' + data);
-                console.log('Here is the url of the file: ' + data.Location);
-                console.log('Here is the Key of the file: ' + data.ETag);
+            return uploadPromise.then((s3uploadeData: S3UploadedData) => {
+                console.log('Success uploading to S3. Data received: ' + s3uploadeData);
+                console.log('Here is the url of the file: ' + s3uploadeData.Location);
+                console.log('Here is the Key of the file: ' + s3uploadeData.ETag);
                 // TODO: Send the signal the upload is done on the AWS side, so you can begin the conversion on the backend
                 // POST
+                // We need to retrieve the filetype and the filename to send it to the api too
+                let uploadedFileStatus = this.retrieveFileStatus(s3uploadeData.Key);
 
-                // We need to retrieve the filetype to send it to the api
-                const filestatus = this.retrieveFileStatus(data.Key);
-                const filetype = filestatus.fileType;
+                let s3FileMetadata = new S3UploadedFileMetadata(s3uploadeData,
+                    uploadedFileStatus.fileName,
+                    uploadedFileStatus.fileType);
 
-                return tapi.create_datafile(data.Location, data.ETag,
-                    data.Bucket, data.Key, filetype.toString(), sid
+                return tapi.create_datafile(sid, s3FileMetadata
                 ).then((taskStatusId) => {
-                    console.log("The new datafile " + data.Key + " has been sent!");
+                    console.log("The new datafile " + s3FileMetadata.key + " has been sent!");
                     console.log("We now check the task until we receive success");
 
-                    return this.initRecurringCheckStatus(taskStatusId, data.Key);
+                    return this.initRecurringCheckStatus(taskStatusId, s3FileMetadata.key);
                 }).then(() => {
                     console.log("Task finished!");
                     // Get the file who received this progress notification
-                    let updatedFileStatus = this.retrieveFileStatus(data.Key);
+                    let updatedFileStatus = this.retrieveFileStatus(s3FileMetadata.key);
                     updatedFileStatus.conversionProgress = "Done";
                     this.saveFileStatus(updatedFileStatus);
 

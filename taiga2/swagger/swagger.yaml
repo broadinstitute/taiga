@@ -192,6 +192,7 @@ paths:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: create_new_upload_session
       description: Ask for the creation of a new Upload Session to post new files in a dataset
+
       responses:
         200:
           description: The unique Upload Session Id
@@ -799,6 +800,7 @@ definitions:
       - eTag
       - bucket
       - key
+      - filename
       - filetype
     properties:
       location:
@@ -808,6 +810,8 @@ definitions:
       bucket:
         type: string
       key:
+        type: string
+      filename:
         type: string
       filetype:
         type: string

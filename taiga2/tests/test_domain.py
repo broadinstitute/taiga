@@ -174,7 +174,8 @@ def test_conversion_raw(session: SessionBase):
         'eTag': 'eTag',
         'bucket': new_bucket.name,
         'key': s3_raw_uploaded_file.key,
-        'filetype': DataFile.DataFileType.Raw.value
+        'filetype': DataFile.DataFileType.Raw.value,
+        'filename': filename
     }
 
     task = background_process_new_upload_session_file.delay(dict_S3Metadata).wait()
@@ -194,7 +195,8 @@ def test_conversion_csv(session: SessionBase):
         'eTag': 'eTag',
         'bucket': new_bucket.name,
         'key': s3_raw_uploaded_file.key,
-        'filetype': DataFile.DataFileType.Columnar.value
+        'filetype': DataFile.DataFileType.Columnar.value,
+        'filename': csv_file_name
     }
 
     task = background_process_new_upload_session_file.delay(dict_S3Metadata).wait()

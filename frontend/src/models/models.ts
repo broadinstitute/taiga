@@ -128,6 +128,32 @@ export interface S3Credentials {
     prefix: string;
 }
 
+export interface S3UploadedData {
+    Location: string;
+    ETag: string;
+    Bucket: string;
+    Key: string;
+}
+
+export class S3UploadedFileMetadata {
+    location: string;
+    eTag: string;
+    bucket: string;
+    key: string;
+    filename: string;
+    filetype: string;
+
+    constructor(uploadS3Data: S3UploadedData, filename: string, filetype: SupportedTypeEnum) {
+        this.location = uploadS3Data.Location;
+        this.eTag = uploadS3Data.ETag;
+        this.bucket = uploadS3Data.Bucket;
+        this.key = uploadS3Data.Key;
+
+        this.filename = filename;
+        this.filetype = filetype.toString();
+    }
+}
+
 // Upload
 export class FileUploadStatus {
     file: File;
