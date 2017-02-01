@@ -197,6 +197,9 @@ class DataFile(db.Model):
 
     url = db.Column(db.Text)
 
+    s3_bucket = db.Column(db.Text)
+    s3_key = db.Column(db.Text)
+
     dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
 
     dataset_version = db.relationship("DatasetVersion",

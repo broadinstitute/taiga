@@ -93,12 +93,11 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata, con
                                 'message': message, 's3Key': s3_upload_key})
         raise Exception(message)
 
+
 @celery.task
 def update_session_file_converted_type(converted_type, upload_session_file_id):
     # TODO: Think about the implications of requiring the code of the app in celery => Would need to restart this service each time we change the code of the app
     # TODO: Handle the exception/error management here
-    print(converted_type)
-    print(upload_session_file_id)
     mc.update_session_file_converted_type(converted_type=converted_type,
                                           upload_session_file_id=upload_session_file_id)
 

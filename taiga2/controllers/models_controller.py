@@ -184,6 +184,8 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
     for file in added_files:
         new_datafile = add_datafile(name=file.filename,
                                     url=file.url,
+                                    s3_bucket=file.converted_s3_bucket,
+                                    s3_key=file.converted_s3_key,
                                     type=file.converted_filetype)
         added_datafiles.append(new_datafile)
 
@@ -431,7 +433,9 @@ def get_entry(entry_id):
 #</editor-fold>
 
 #<editor-fold desc="DataFile">
-def add_datafile(name="No name",
+def add_datafile(s3_bucket,
+                 s3_key,
+                 name="No name",
                  url="",
                  type=DataFile.DataFileType.Raw):
     # TODO: See register_datafile_id
@@ -440,6 +444,8 @@ def add_datafile(name="No name",
     new_datafile_url = url
 
     new_datafile = DataFile(name=new_datafile_name,
+                            s3_bucket=s3_bucket,
+                            s3_key=s3_key,
                             url=new_datafile_url,
                             type=type)
 
@@ -533,11 +539,8 @@ def get_upload_session_file(upload_session_file_id):
 
 
 def update_session_file_converted_type(converted_type, upload_session_file_id):
-    print("Adding the conversion {}".format(converted_type))
     upload_session_file = get_upload_session_file(upload_session_file_id)
-    print("Filetype before {}".format(upload_session_file.converted_filetype))
     upload_session_file.converted_filetype = converted_type
-    print("Filetype after {}".format(upload_session_file.converted_filetype))
 
     db.session.add(upload_session_file)
     db.session.commit()

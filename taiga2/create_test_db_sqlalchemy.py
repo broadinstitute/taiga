@@ -40,6 +40,9 @@ def drop_and_create_db():
                                                                            s3_bucket=bucket_name,
                                                                            filetype=models_controller.DataFile.DataFileType.Raw,
                                                                            url="www.origin_url.com")
+    models_controller.update_session_file_converted_type(converted_type=models_controller.DataFile.DataFileType.Raw,
+                                                         upload_session_file_id=upload_session_file_origin.id)
+
     origin_dataset = models_controller.add_dataset_from_session(session_id=upload_session_origin.id,
                                                                 dataset_name="origin",
                                                                 dataset_description="No description",
@@ -67,6 +70,9 @@ def drop_and_create_db():
                                                                          filetype=models.DataFile.DataFileType.Raw,
                                                                          url="www.data.com")
 
+    models_controller.update_session_file_converted_type(converted_type=models_controller.DataFile.DataFileType.Raw,
+                                                         upload_session_file_id=upload_session_file_data.id)
+
     data = models_controller.add_dataset_from_session(session_id=upload_session_data.id,
                                                       dataset_name="Data",
                                                       dataset_description="No description",
@@ -85,6 +91,8 @@ def drop_and_create_db():
             loop_datafiles = []
             for datafile in temp_data_datafiles:
                 loop_datafile = models_controller.add_datafile(name=datafile.name + 'v' + str(i),
+                                                               s3_bucket=bucket_name,
+                                                               s3_key=models_controller.generate_convert_key(),
                                                                url=datafile.url,
                                                                type=datafile.type)
                 loop_datafiles.append(loop_datafile)
