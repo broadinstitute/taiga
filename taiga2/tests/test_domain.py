@@ -164,9 +164,11 @@ def test_conversion_raw(session: SessionBase):
     new_bucket = aws.s3.Bucket.create('bucket')
     filename = raw_file_name
 
+    convert_key = models_controller.generate_convert_key()
+
     with open(raw_file_path, 'rb') as data:
-        aws.s3.Bucket(new_bucket.name).put_object(Key=raw_file_name, Body=data)
-    s3_raw_uploaded_file = aws.s3.Object(new_bucket.name, filename)
+        aws.s3.Bucket(new_bucket.name).put_object(Key=convert_key, Body=data)
+    s3_raw_uploaded_file = aws.s3.Object(new_bucket.name, convert_key)
 
     from taiga2.models import DataFile
     dict_S3Metadata = {
@@ -178,16 +180,18 @@ def test_conversion_raw(session: SessionBase):
         'filename': filename
     }
 
-    task = background_process_new_upload_session_file.delay(dict_S3Metadata).wait()
+    task = background_process_new_upload_session_file.delay(dict_S3Metadata, convert_key).wait()
 
 
 def test_conversion_csv(session: SessionBase):
     new_bucket = aws.s3.Bucket.create('bucket')
     filename = csv_file_name
 
+    convert_key = models_controller.generate_convert_key()
+
     with open(csv_file_path, 'rb') as data:
-        aws.s3.Bucket(new_bucket.name).put_object(Key=csv_file_name, Body=data)
-    s3_raw_uploaded_file = aws.s3.Object(new_bucket.name, filename)
+        aws.s3.Bucket(new_bucket.name).put_object(Key=convert_key, Body=data)
+    s3_raw_uploaded_file = aws.s3.Object(new_bucket.name, convert_key)
 
     from taiga2.models import DataFile
     dict_S3Metadata = {
@@ -199,7 +203,7 @@ def test_conversion_csv(session: SessionBase):
         'filename': csv_file_name
     }
 
-    task = background_process_new_upload_session_file.delay(dict_S3Metadata).wait()
+    task = background_process_new_upload_session_file.delay(dict_S3Metadata, convert_key).wait()
 
 
 def test_get_session_token(session: SessionBase):

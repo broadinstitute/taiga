@@ -14,15 +14,11 @@ def print_config():
     config = flask.current_app.config
 
 
-class EnumS3FolderPath(enum.Enum):
-    """Enum which could be useful to have a central way of manipulating the s3 prefixes"""
-    Upload = 'upload/'
-    Convert = 'convert/'
-    Export = 'export/'
+
 
 
 @celery.task(bind=True)
-def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
+def background_process_new_upload_session_file(self, S3UploadedFileMetadata, converted_s3_key):
     import os
 
     # TODO: Rename this as it is confusing
@@ -39,9 +35,6 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
     s3 = aws.s3
     bucket = s3.Bucket(bucket_name)
 
-    convert_key = os.path.join(EnumS3FolderPath.Convert.value, filename)
-    converted_s3_object = None
-    
     # If we receive a raw file, we don't need to do anything
     from taiga2.models import DataFile
     # TODO: Instead of comparing two strings, we could also use DataFileType(file_type) and compare the result, or catch the exception
@@ -62,7 +55,7 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
             'Bucket': bucket_name,
             'Key': s3_upload_key
         }
-        converted_s3_object = bucket.copy(copy_source, convert_key)
+        converted_s3_object = bucket.copy(copy_source, converted_s3_key)
     elif file_type == DataFile.DataFileType.Columnar.value:
         s3_object = s3.Object(bucket_name, s3_upload_key)
         temp_raw_tcsv_file_path = '/tmp/taiga2/' + permaname
@@ -84,7 +77,7 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
                                 'message': message, 's3Key': s3_upload_key})
 
         with open(temp_hdf5_tcsv_file_path, 'rb') as data:
-            converted_s3_object = bucket.put_object(Key=convert_key, Body=data)
+            converted_s3_object = bucket.put_object(Key=converted_s3_key, Body=data)
     elif file_type == DataFile.DataFileType.HDF5.value:
         message = "HDF5 conversion is not implemented yet"
         self.update_state(state='FAILURE',
@@ -97,8 +90,6 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
                           meta={'current': 0, 'total': '0',
                                 'message': message, 's3Key': s3_upload_key})
         raise Exception(message)
-
-    # return converted_s3_object
 
 
 # TODO: This is only for background_process_new_upload_session_file, how to get it generic for any Celery tasks?

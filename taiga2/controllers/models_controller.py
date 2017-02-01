@@ -1,3 +1,7 @@
+import enum
+import uuid
+import os
+
 import taiga2.models as models
 from taiga2.models import db
 from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
@@ -494,15 +498,33 @@ def get_upload_session_files_from_session(session_id):
 #</editor-fold>
 
 #<editor-fold desc="Upload Session File">
+class EnumS3FolderPath(enum.Enum):
+    """Enum which could be useful to have a central way of manipulating the s3 prefixes"""
+    Upload = 'upload/'
+    Convert = 'convert/'
+    Export = 'export/'
+
+
+def generate_convert_key():
+    enumed_convert_path = EnumS3FolderPath.Convert.value
+    return os.path.join(enumed_convert_path + str(uuid.uuid4()))
+
+
 def add_upload_session_file(session_id, filename, filetype, url):
     enumed_filetype = DataFile.DataFileType(filetype)
+
+
+    converted_s3_key = generate_convert_key()
+
     upload_session_file = UploadSessionFile(session_id=session_id,
                                             filename=filename,
                                             filetype=enumed_filetype,
-                                            url=url)
+                                            url=url,
+                                            converted_s3_key=converted_s3_key)
     db.session.add(upload_session_file)
     db.session.commit()
     return upload_session_file
+
 
 def get_upload_session_file(upload_session_file_id):
     upload_session_file = db.session.query(UploadSessionFile) \

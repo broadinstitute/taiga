@@ -290,4 +290,7 @@ class UploadSessionFile(db.Model):
 
     url = db.Column(db.Text)
 
+    converted_s3_bucket = db.Column(db.Text)
+    converted_s3_key = db.Column(db.Text)
+
 
