@@ -155,8 +155,8 @@ def create_upload_session_file(S3UploadedFileMetadata, sid):
                                                                     S3UploadedFileMetadata['location'])
 
     # Launch a Celery process to convert and get back to populate the db + send finish to client
-    from taiga2.tasks import background_process_new_datafile
-    task = background_process_new_datafile.delay(S3UploadedFileMetadata)
+    from taiga2.tasks import background_process_new_upload_session_file
+    task = background_process_new_upload_session_file.delay(S3UploadedFileMetadata)
 
     return flask.jsonify(task.id)
 

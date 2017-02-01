@@ -12,7 +12,7 @@ def print_config():
     config = flask.current_app.config
 
 @celery.task(bind=True)
-def background_process_new_datafile(self, S3UploadedFileMetadata):
+def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
     import os
 
     # TODO: Rename this as it is confusing
@@ -70,9 +70,9 @@ def background_process_new_datafile(self, S3UploadedFileMetadata):
         raise Exception(message)
 
 
-# TODO: This is only for background_process_new_datafile, how to get it generic for any Celery tasks?
+# TODO: This is only for background_process_new_upload_session_file, how to get it generic for any Celery tasks?
 def taskstatus(task_id):
-    task = background_process_new_datafile.AsyncResult(task_id)
+    task = background_process_new_upload_session_file.AsyncResult(task_id)
     if task.state == 'PENDING':
         # job did not start yet
         response = {

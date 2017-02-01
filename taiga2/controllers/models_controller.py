@@ -153,7 +153,6 @@ def add_dataset(name="No name",
 
     assert len(datafiles_ids) > 0
 
-    # TODO: Think about a meaningful name
     new_dataset_version = add_dataset_version(creator_id=creator.id,
                                               dataset_id=new_dataset.id,
                                               version=1,
@@ -338,16 +337,13 @@ def add_dataset_version(creator_id,
 
     assert len(datafiles_ids) > 0
 
-    if not datafiles_ids:
-        datafiles_ids = []
-
     # Fetch the object from the database
     creator = get_user(creator_id)
 
     dataset = get_entry(dataset_id)
 
-    # TODO: User the power of Query to make only one query instead of calling get_datafile
-    datafiles = [get_datafile(datafile_id) for datafile_id in datafiles_ids]
+    datafiles = db.session.query(DataFile) \
+        .filter(DataFile.id.in_(datafiles_ids)).all()
 
     latest_dataset_version = get_latest_dataset_version(dataset_id)
     if latest_dataset_version:
@@ -478,6 +474,7 @@ def get_upload_session_files_from_session(session_id):
     # TODO: We could also fetch the datafiles with only one query
     upload_session = db.session.query(UploadSession) \
         .filter(UploadSession.id == session_id).one()
+
     upload_session_files = upload_session.upload_session_files
 
     # For each upload_session_file, we retrieve its datafile

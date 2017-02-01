@@ -9,7 +9,7 @@ import taiga2.controllers.models_controller as models_controller
 import taiga2.controllers.endpoint as endpoint
 from taiga2.tests.test_models import new_dummy_folder, new_user
 
-from taiga2.tasks import background_process_new_datafile, print_config
+from taiga2.tasks import background_process_new_upload_session_file, print_config
 
 from taiga2.models import User, Folder, Dataset, Entry, DatasetVersion, DataFile
 from taiga2.models import generate_permaname
@@ -119,7 +119,7 @@ def new_columnar_upload_file(session: SessionBase,
 #         'filetype': new_raw_uploaded_file.filetype
 #     }
 #
-#     task = background_process_new_datafile.delay(dict_S3Metadata,
+#     task = background_process_new_upload_session_file.delay(dict_S3Metadata,
 #                                                  session_upload.id,
 #                                                  new_raw_uploaded_file.id)
 
@@ -177,7 +177,7 @@ def test_conversion_raw(session: SessionBase):
         'filetype': DataFile.DataFileType.Raw.value
     }
 
-    task = background_process_new_datafile.delay(dict_S3Metadata).wait()
+    task = background_process_new_upload_session_file.delay(dict_S3Metadata).wait()
 
 
 def test_conversion_csv(session: SessionBase):
@@ -197,7 +197,7 @@ def test_conversion_csv(session: SessionBase):
         'filetype': DataFile.DataFileType.Columnar.value
     }
 
-    task = background_process_new_datafile.delay(dict_S3Metadata).wait()
+    task = background_process_new_upload_session_file.delay(dict_S3Metadata).wait()
 
 
 def test_get_session_token(session: SessionBase):
@@ -245,7 +245,7 @@ def test_endpoint_s3_credentials(app, session: SessionBase):
 #                                             new_sessionUpload.id)
 #
 #     import json
-#     result = background_process_new_datafile.AsyncResult(json.loads(json_task_id))
+#     result = background_process_new_upload_session_file.AsyncResult(json.loads(json_task_id))
 #
 #     # Wait for the task to finish
 #     result.get()
@@ -288,12 +288,12 @@ def test_endpoint_s3_credentials(app, session: SessionBase):
 #     #                                         new_sessionUpload.id)
 #     #
 #     # import json
-#     # result = background_process_new_datafile.AsyncResult(json.loads(json_task_id))
+#     # result = background_process_new_upload_session_file.AsyncResult(json.loads(json_task_id))
 #
 #     # Wait for the task to finish
 #     # result.get()
 #
-#     task = background_process_new_datafile.delay(dict_S3Metadata,
+#     task = background_process_new_upload_session_file.delay(dict_S3Metadata,
 #                                                  new_sessionUpload.id,
 #                                                  new_raw_uploadFile.id)
 #
