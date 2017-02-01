@@ -1,3 +1,6 @@
+import csv
+import numpy as np
+
 # methods for converting external dataformats to internal types.
 
 def tcsv_to_hdf5(progress, temp_raw_tcsv_file_path, file_name):

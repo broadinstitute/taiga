@@ -2,6 +2,7 @@ from taiga2.models import generate_permaname
 from taiga2.aws import aws
 from celery import Celery
 import taiga2.conv as conversion
+from taiga2.conv.util import Progress
 
 celery = Celery("taiga2")
 #Celery("taiga2", include=['taiga2.tasks'])
@@ -46,7 +47,7 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata):
                                         'message': message, 'fileName': file_name})
             object.download_fileobj(data)
 
-        temp_hdf5_tcsv_file_path = conversion.tcsv_to_hdf5(self, temp_raw_tcsv_file_path, file_name)  
+        temp_hdf5_tcsv_file_path = conversion.tcsv_to_hdf5(Progress(self), temp_raw_tcsv_file_path, file_name)  
 
         # Upload the hdf5
         message = "Uploading the HDF5 to S3"
