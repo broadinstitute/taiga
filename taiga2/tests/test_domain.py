@@ -20,7 +20,6 @@ from taiga2.tests.monkeys import MonkeyBucket
 from flask import g
 
 import boto3
-from moto import mock_s3
 
 import json
 
