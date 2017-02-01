@@ -1,11 +1,10 @@
 import time
 import taiga2.models as models
 import taiga2.controllers.models_controller as mc
-import re
 import json
+from taiga2.tests.monkeys import parse_presigned_url
 
 MAX_TIME = 5
-
 
 def create_dataset_version(tmpdir, user_id, monkey_s3):
     from taiga2.conv import csv_to_columnar
@@ -29,8 +28,6 @@ def create_dataset_version(tmpdir, user_id, monkey_s3):
     ds = mc.add_dataset(name="dataset name", creator_id=user_id, description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
 
-from taiga2.aws import parse_s3_url
-from taiga2.tests.monkeys import parse_presigned_url
 
 
 def test_dataset_export(app, db, monkey_s3, user_id, tmpdir):
