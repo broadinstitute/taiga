@@ -184,7 +184,7 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
     for file in added_files:
         new_datafile = add_datafile(name=file.filename,
                                     url=file.url,
-                                    type=file.filetype)
+                                    type=file.converted_filetype)
         added_datafiles.append(new_datafile)
 
     # TODO: Get the user from the session
@@ -513,12 +513,11 @@ def generate_convert_key():
 def add_upload_session_file(session_id, filename, filetype, url):
     enumed_filetype = DataFile.DataFileType(filetype)
 
-
     converted_s3_key = generate_convert_key()
 
     upload_session_file = UploadSessionFile(session_id=session_id,
                                             filename=filename,
-                                            filetype=enumed_filetype,
+                                            initial_filetype=enumed_filetype,
                                             url=url,
                                             converted_s3_key=converted_s3_key)
     db.session.add(upload_session_file)
@@ -529,5 +528,18 @@ def add_upload_session_file(session_id, filename, filetype, url):
 def get_upload_session_file(upload_session_file_id):
     upload_session_file = db.session.query(UploadSessionFile) \
         .filter(UploadSessionFile.id == upload_session_file_id).one()
+    return upload_session_file
+
+
+def update_session_file_converted_type(converted_type, upload_session_file_id):
+    print("Adding the conversion {}".format(converted_type))
+    upload_session_file = get_upload_session_file(upload_session_file_id)
+    print("Filetype before {}".format(upload_session_file.converted_filetype))
+    upload_session_file.converted_filetype = converted_type
+    print("Filetype after {}".format(upload_session_file.converted_filetype))
+
+    db.session.add(upload_session_file)
+    db.session.commit()
+
     return upload_session_file
 #</editor-fold>

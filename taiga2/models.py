@@ -204,6 +204,7 @@ class DataFile(db.Model):
                                       single_parent=True,
                                       cascade="all, delete-orphan")
 
+
 class DatasetVersion(Entry):
     # Missing the permaname of the DatasetVersion
     __tablename__ = 'dataset_versions'
@@ -286,7 +287,8 @@ class UploadSessionFile(db.Model):
 
     filename = db.Column(db.Text)
 
-    filetype = db.Column(db.Enum(DataFile.DataFileType))
+    initial_filetype = db.Column(db.Enum(DataFile.DataFileType))
+    converted_filetype = db.Column(db.Enum(DataFile.DataFileType))
 
     url = db.Column(db.Text)
 

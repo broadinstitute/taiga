@@ -1,6 +1,7 @@
 import enum
 
 from taiga2.models import generate_permaname, DataFile
+import taiga2.controllers.models_controller as mc
 from taiga2.aws import aws
 from celery import Celery
 from taiga2 import conversion
@@ -53,6 +54,8 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata, con
             'Key': s3_upload_key
         }
         converted_s3_object = bucket.copy(copy_source, converted_s3_key)
+
+        return DataFile.DataFileType.Raw.value
     elif file_type == DataFile.DataFileType.Columnar.value:
         s3_object = s3.Object(bucket_name, s3_upload_key)
         temp_raw_tcsv_file_path = '/tmp/taiga2/' + permaname
@@ -75,6 +78,8 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata, con
 
         with open(temp_hdf5_tcsv_file_path, 'rb') as data:
             converted_s3_object = bucket.put_object(Key=converted_s3_key, Body=data)
+
+        return DataFile.DataFileType.HDF5.value
     elif file_type == DataFile.DataFileType.HDF5.value:
         message = "HDF5 conversion is not implemented yet"
         self.update_state(state='FAILURE',
@@ -87,6 +92,15 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata, con
                           meta={'current': 0, 'total': '0',
                                 'message': message, 's3Key': s3_upload_key})
         raise Exception(message)
+
+@celery.task
+def update_session_file_converted_type(converted_type, upload_session_file_id):
+    # TODO: Think about the implications of requiring the code of the app in celery => Would need to restart this service each time we change the code of the app
+    # TODO: Handle the exception/error management here
+    print(converted_type)
+    print(upload_session_file_id)
+    mc.update_session_file_converted_type(converted_type=converted_type,
+                                          upload_session_file_id=upload_session_file_id)
 
 
 # TODO: This is only for background_process_new_upload_session_file, how to get it generic for any Celery tasks?

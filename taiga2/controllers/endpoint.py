@@ -160,8 +160,10 @@ def create_upload_session_file(S3UploadedFileMetadata, sid):
     convert_key = upload_session_file.converted_s3_key
 
     # Launch a Celery process to convert and get back to populate the db + send finish to client
-    from taiga2.tasks import background_process_new_upload_session_file
-    task = background_process_new_upload_session_file.delay(S3UploadedFileMetadata, convert_key)
+    from taiga2.tasks import background_process_new_upload_session_file, update_session_file_converted_type
+    task = background_process_new_upload_session_file \
+        .apply_async((S3UploadedFileMetadata, convert_key),
+                     link=update_session_file_converted_type.s(upload_session_file.id))
 
     # We need to update the uploadSession with the return of the background_process
 
