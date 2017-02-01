@@ -331,9 +331,12 @@ def delete_dataset(dataset_id):
 #<editor-fold desc="DatasetVersion">
 def add_dataset_version(creator_id,
                         dataset_id,
-                        datafiles_ids=None,
+                        datafiles_ids,
                         version=1,
                         name=None):
+
+    assert len(datafiles_ids) > 0
+
     if not datafiles_ids:
         datafiles_ids = []
 
