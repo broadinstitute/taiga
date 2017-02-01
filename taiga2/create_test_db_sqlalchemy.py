@@ -90,8 +90,6 @@ def drop_and_create_db():
                                                        creator_id=admin_user.id,
                                                        dataset_id=origin_dataset.id,
                                                        datafiles_ids=datafiles_id)
-        models_controller.add_folder_entry(folder_id=folderA.id,
-                                           entry_id=dataAX.id)
 
 
 if __name__ == "__main__":

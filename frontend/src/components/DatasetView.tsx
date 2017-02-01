@@ -107,7 +107,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 </tr>
         });
 
-        let folders = datasetVersion.folders.map( (f, index) => {
+        let folders = dataset.folders.map( (f, index) => {
             return <Link key={index} to={"/app/folder/"+f.id}>{f.name}</Link>
         } )
 
