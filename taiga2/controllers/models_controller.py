@@ -148,20 +148,18 @@ def add_dataset(name="No name",
                           creator=creator)
 
     db.session.add(new_dataset)
+    db.session.flush()
+
+    assert len(datafiles_ids) > 0
+
+    # TODO: Think about a meaningful name
+    new_dataset_version = add_dataset_version(creator_id=creator.id,
+                                              dataset_id=new_dataset.id,
+                                              version=1,
+                                              datafiles_ids=datafiles_ids)
+
+    db.session.add(new_dataset_version)
     db.session.commit()
-
-    if datafiles_ids:
-        # It means we would want to create a first dataset with a DatasetVersion
-        # containing DataFiles
-
-        # TODO: Think about a meaningful name
-        new_dataset_version = add_dataset_version(creator_id=creator.id,
-                                                  dataset_id=new_dataset.id,
-                                                  version=1,
-                                                  datafiles_ids=datafiles_ids)
-
-        db.session.add(new_dataset_version)
-        db.session.commit()
 
     # Add the related activity
     # TODO: Add the activity
