@@ -12,6 +12,8 @@ from taiga2 import aws
 from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 
+from sqlalchemy.sql.expression import func
+
 
 # Base.metadata.drop_all(engine)
 # Base.metadata.create_all(engine)
@@ -21,7 +23,7 @@ from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 #   no application bound to current context" while trying around within command line,
 #   You need to push the context of you app => app.app_context().push() (for us frontend_app.app_context().push()
 
-#<editor-fold desc="User">
+# <editor-fold desc="User">
 def add_user(name):
     new_user = User(name=name)
 
@@ -54,14 +56,15 @@ def _get_test_user():
 
 def get_user(user_id):
     return db.session.query(User).filter(User.id == user_id).one()
-#</editor-fold>
 
-#<editor-fold desc="Folder">
+
+# </editor-fold>
+
+# <editor-fold desc="Folder">
 def add_folder(creator_id=None,
                name="Untitled Folder",
                folder_type=Folder.FolderType.folder,
                description="No description provided"):
-
     creator = get_user(creator_id)
 
     new_folder = Folder(name=name,
@@ -106,9 +109,9 @@ def add_folder_entry(folder_id, entry_id):
     # TODO: Deactivate after the discussion with Phil. Only access to dataset for now
     # If it is a dataset, we need to update the location of its dataset_versions
     # if type(entry) is Dataset:
-        # Add this folder to the dataset_versions
-        # for dataset_version in entry.dataset_versions:
-        #     add_folder_entry(folder_id, dataset_version.id)
+    # Add this folder to the dataset_versions
+    # for dataset_version in entry.dataset_versions:
+    #     add_folder_entry(folder_id, dataset_version.id)
 
     # TODO: This should be a set, not a list.
     if entry not in folder.entries:
@@ -139,13 +142,15 @@ def get_folders_containing():
 
 def get_parent_folders(entry_id):
     entry = db.session.query(Entry) \
-            .filter(Entry.id == entry_id).one()
+        .filter(Entry.id == entry_id).one()
     parent_folders = entry.parents
 
     return parent_folders
-#</editor-fold>
 
-#<editor-fold desc="Dataset">
+
+# </editor-fold>
+
+# <editor-fold desc="Dataset">
 def add_dataset(name,
                 creator_id=None,
                 permaname=None,
@@ -164,7 +169,6 @@ def add_dataset(name,
 
     db.session.add(new_dataset)
     db.session.flush()
-
 
     # It means we would want to create a first dataset with a DatasetVersion
     # containing DataFiles
@@ -226,11 +230,13 @@ def get_dataset_from_permaname(dataset_permaname):
 
     return dataset
 
+
 def get_first_dataset_version(dataset_id):
     dataset_version_first = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.dataset_id == dataset_id, DatasetVersion.version == 1).one()
 
     return dataset_version_first
+
 
 def get_latest_dataset_version(dataset_id):
     dataset = get_dataset(dataset_id)
@@ -268,7 +274,7 @@ def update_dataset_description(dataset_id, description):
 
 
 # TODO: update_datafile_summaries
-#def update_datafile_summaries
+# def update_datafile_summaries
 
 
 def update_dataset_contents(dataset_id,
@@ -307,7 +313,8 @@ def update_dataset_contents(dataset_id,
     new_updated_dataset_version = add_dataset_version(creator_id=dataset_version_latest_version.creator.id,
                                                       dataset_id=dataset_version_latest_version.dataset.id,
                                                       datafiles_ids=[datafile.id
-                                                                     for datafile in dataset_version_latest_version.datafiles])
+                                                                     for datafile in
+                                                                     dataset_version_latest_version.datafiles])
 
     new_updated_version_datafiles = new_updated_dataset_version.datafiles
 
@@ -344,14 +351,13 @@ def delete_dataset(dataset_id):
     # TODO: Shouldn't have to clean up, see Cascade and co
 
 
-#</editor-fold>
+# </editor-fold>
 
-#<editor-fold desc="DatasetVersion">
+# <editor-fold desc="DatasetVersion">
 def add_dataset_version(creator_id,
                         dataset_id,
                         datafiles_ids=None,
                         name=None):
-
     assert len(datafiles_ids) > 0
 
     # Fetch the object from the database
@@ -424,9 +430,10 @@ def get_dataset_version_by_dataset_id_and_dataset_version_id(dataset_id,
     dataset_version = get_dataset_version(dataset_version_id)
     return dataset_version
 
-#</editor-fold>
 
-#<editor-fold desc="Entry">
+# </editor-fold>
+
+# <editor-fold desc="Entry">
 def get_entry(entry_id):
     entry = db.session.query(Entry) \
         .filter(Entry.id == entry_id) \
@@ -437,9 +444,9 @@ def get_entry(entry_id):
 
 # TODO: I don't think we need this anymore
 # def _convert_entries_to_dict(entries):
-#</editor-fold>
+# </editor-fold>
 
-#<editor-fold desc="DataFile">
+# <editor-fold desc="DataFile">
 def add_datafile(s3_bucket,
                  s3_key,
                  name="No name",
@@ -461,10 +468,12 @@ def add_datafile(s3_bucket,
 
     return new_datafile
 
+
 def get_datafile_by_version_and_name(dataset_version_id, name):
     return db.session.query(DataFile).filter(DataFile.name == name) \
         .filter(DataFile.dataset_version_id == dataset_version_id) \
         .one()
+
 
 def get_datafile(datafile_id):
     datafile = db.session.query(DataFile) \
@@ -480,9 +489,10 @@ def get_latest_version_datafiles_from_dataset(dataset_id):
 
     return latest_dataset_version.datafiles
 
-#</editor-fold>
 
-#<editor-fold desc="Upload Session">
+# </editor-fold>
+
+# <editor-fold desc="Upload Session">
 def add_new_upload_session(user_id):
     # TODO: Remove the default user once we have the auth in place
     # us = UploadSession(user_id=user_id)
@@ -512,9 +522,10 @@ def get_upload_session_files_from_session(session_id):
     # For each upload_session_file, we retrieve its datafile
     return upload_session_files
 
-#</editor-fold>
 
-#<editor-fold desc="Upload Session File">
+# </editor-fold>
+
+# <editor-fold desc="Upload Session File">
 class EnumS3FolderPath(enum.Enum):
     """Enum which could be useful to have a central way of manipulating the s3 prefixes"""
     Upload = 'upload/'
@@ -557,9 +568,11 @@ def update_session_file_converted_type(converted_type, upload_session_file_id):
     db.session.commit()
 
     return upload_session_file
-#</editor-fold>
 
-#<editor-fold desc="Download datafiles">
+
+# </editor-fold>
+
+# <editor-fold desc="Download datafiles">
 
 
 # def get_dataset(dataset_id):
@@ -646,6 +659,7 @@ def _find_cache_entry(dataset_version_id, format, datafile_name):
                                                           ConversionCache.datafile_name == datafile_name)).first()
     return entry
 
+
 def get_signed_urls_from_cache_entry(paths_as_json):
     # if there's urls on the cache entry, report those too after signing them
     if paths_as_json is None or paths_as_json == "":
@@ -654,6 +668,7 @@ def get_signed_urls_from_cache_entry(paths_as_json):
     urls = json.loads(paths_as_json)
     signed_urls = [aws.sign_url(url) for url in urls]
     return signed_urls
+
 
 def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
     entry = _find_cache_entry(dataset_version_id, format, datafile_name)
@@ -664,15 +679,16 @@ def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
 
         # Create a new cache entry
         status = "Conversion pending"
-        entry = ConversionCache(dataset_version_id = dataset_version_id,
-            datafile_name = datafile_name,
-            format = format,
-            status = status)
+        entry = ConversionCache(dataset_version_id=dataset_version_id,
+                                datafile_name=datafile_name,
+                                format=format,
+                                status=status)
         db.session.add(entry)
         db.session.commit()
 
     assert entry.id is not None
     return is_new, entry
+
 
 def update_conversion_cache_entry(entry_id, status, urls=None):
     print("update_conversion_cache", entry_id, status, urls)
@@ -685,4 +701,4 @@ def update_conversion_cache_entry(entry_id, status, urls=None):
     entry.status = status
     db.session.commit()
 
-#</editor-fold>
+# </editor-fold>

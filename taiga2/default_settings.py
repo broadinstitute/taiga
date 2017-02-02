@@ -1,3 +1,5 @@
+# TODO: Move this into setting.cfg.sample so we can use the sample by default and it can stay iso with the required configuration
+
 SQLALCHEMY_DATABASE_URI = 'sqlite:///taiga2.db'
 SQLALCHEMY_ECHO = False
 SQLALCHEMY_TRACK_MODIFICATIONS = True
@@ -5,5 +7,5 @@ SQLALCHEMY_TRACK_MODIFICATIONS = True
 # celery settings
 BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND ='redis://localhost:6379'
-S3_PREFIX = "taiga2"
+S3_PREFIX = "upload/"
 
