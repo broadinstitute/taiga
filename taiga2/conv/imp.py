@@ -1,6 +1,9 @@
-def tcsv_to_hdf5(celery_instance, temp_raw_tcsv_file_path, file_name):
-    import csv
-    import numpy as np
+import csv
+import numpy as np
+
+# methods for converting external dataformats to internal types.
+
+def tcsv_to_hdf5(progress, temp_raw_tcsv_file_path, file_name):
 
     with open(temp_raw_tcsv_file_path, 'r') as tcsv:
         dialect = csv.Sniffer().sniff(tcsv.read(1024))
@@ -17,9 +20,7 @@ def tcsv_to_hdf5(celery_instance, temp_raw_tcsv_file_path, file_name):
         for i, x in enumerate(col_header):
             if x == '':
                 message = "Column name for column {} was blank".format(i + 1, )
-                celery_instance.update_state(state='FAILURE',
-                                             meta={'current': 0, 'total': '0',
-                                                   'message': message, 'fileName': file_name})
+                progress.failed(message, file_name)
                 raise Exception(message)
 
         row_header = []
@@ -28,36 +29,30 @@ def tcsv_to_hdf5(celery_instance, temp_raw_tcsv_file_path, file_name):
         for row_i, row in enumerate(r):
             if row_i % 250 == 0:
                 message = "Conversion in progress, row {}".format(row_i)
-                celery_instance.update_state(state='PROGRESS',
-                                             meta={'current': row_i, 'total': '0',
-                                                   'message': message, 'fileName': file_name})
+                progress.progress(message, file_name, row_i)
+
             line += 1
             row_header.append(row[0])
             data_row = row[1:]
             if len(data_row) == 0:
                 message = """On line {}: found no data, only row header label {}.  Did you choose the right delimiter
                     for this file? (Currently using {})""".format(line, repr(row[0]), repr(dialect.delimiter))
-                celery_instance.update_state(state='FAILURE',
-                                             meta={'current': row_i, 'total': '0',
-                                                   'message': message, 'fileName': file_name})
+                progress.failed(message, file_name)
                 raise Exception(message)
             if len(data_row) != len(col_header):
                 message = "On line %d: Expected %d columns, but found %d columns." % (
                     line, len(col_header), len(data_row))
                 if line == 2 and (len(col_header) - 1) == len(data_row):
                     message += "  This looks like you may be missing R-style row and column headers from your file."
-                celery_instance.update_state(state='FAILURE',
-                                             meta={'current': row_i, 'total': '0',
-                                                   'message': message, 'fileName': file_name})
+                progress.failed(message, file_name)
                 raise Exception(message)
             rows.append(data_row)
 
     data = np.empty((len(rows), len(rows[0])), 'd')
     data[:] = np.nan
     message = "Numpy object under creation and population"
-    celery_instance.update_state(state='PROGRESS',
-                                 meta={'current': row_i, 'total': '0',
-                                       'message': message, 'fileName': file_name})
+    progress.progress(message, file_name, row_i)
+
     for row_i, row in enumerate(rows):
         for col_i, value in enumerate(row):
             if value == "NA" or value == "":
@@ -68,9 +63,8 @@ def tcsv_to_hdf5(celery_instance, temp_raw_tcsv_file_path, file_name):
     temp_hdf5_tcsv_file_path = temp_raw_tcsv_file_path + '.hdf5'
 
     message = "Writing the hdf5 matrix"
-    celery_instance.update_state(state='PROGRESS',
-                                 meta={'current': row_i, 'total': '0',
-                                       'message': message, 'fileName': file_name})
+    progress.progress(message, file_name, row_i)
+
     succes = _write_hdf5_matrix(temp_hdf5_tcsv_file_path, data, 'row_axis', row_header, 'col_axis', col_header)
     if succes:
         return temp_hdf5_tcsv_file_path
@@ -100,3 +94,6 @@ def _write_hdf5_matrix(temp_hdf5_tcsv_file_path, data, row_axis, row_header, col
 
     # TODO: Find a better way to handle the errors which could appear along the way
     return True
+
+def tcsv_to_columnar(self, input_file, output_file, delimiter):
+    columnar.convert_csv_to_tabular(input_file, columnar_path, delimiter)

@@ -5,5 +5,5 @@ SQLALCHEMY_TRACK_MODIFICATIONS = True
 # celery settings
 BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND ='redis://localhost:6379'
-
+S3_PREFIX = "taiga2"
 

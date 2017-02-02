@@ -1,48 +1,61 @@
 import copy
 import datetime
 import os
+import io
+import tempfile
+import re
 
 #<editor-fold desc="MonkeyS3">
 class MonkeyS3:
-    def __init__(self):
-        self.buckets = {}
-        self.Bucket = MonkeyBucket(self)
+    def __init__(self, tmpdir):
+        self.file_per_key = {}
+        self.tmpdir = tmpdir
+
+    def _get_unique_filename(self):
+        fd = tempfile.NamedTemporaryFile(dir=self.tmpdir, delete=False)
+        fd.close()
+        return fd.name
+
+    def Bucket(self, bucket_name):
+        return MonkeyBucket(self, bucket_name)
 
     def Object(self, bucket_name, key):
-        bucket = self.buckets[bucket_name]
-        obj = bucket.objects[key]
-        return obj
+        bucket = self.Bucket(bucket_name)
+        return MonkeyS3Object(bucket, key)
+
+    def generate_presigned_url(self, ClientMethod, Params):
+        assert ClientMethod=='get_object'
+        return "s3://"+Params["Bucket"]+"/"+Params["Key"]+"?signed"
+
+
+def parse_presigned_url(url):
+    g = re.match("s3://([^/]+)/([^?]+)\\?signed", url)
+    return g.group(1), g.group(2)
 
 
 class MonkeyBucket:
-    def __init__(self, s3):
+    def __init__(self, s3, name):
         self.s3 = s3
-        self.name = None
-        self.objects = {}
-
-    def create(self, name):
         self.name = name
-        self.s3.buckets[self.name] = self
+
+    def create(self):
         return self
 
-    def put_object(self, Key=None, Body=None):
+    # TODO: I am adding back the capitalized arguments because this is how it is done in the Boto3 doc: http://boto3.readthedocs.io/en/latest/reference/services/s3.html#S3.Bucket.put_object
+    def put_object(self, Key, Body):
         new_object = MonkeyS3Object(self, Key)
         new_object.upload_fileobj(Body)
-        self.objects[new_object.key] = new_object
         return new_object
 
     def copy(self, copy_source, key):
         bucket_source_name = copy_source['Bucket']
         key_source_name = copy_source['Key']
 
-        obj_source = self.s3.buckets[bucket_source_name].objects[key_source_name]
+        path_source = self.s3.file_per_key[(bucket_source_name, key_source_name)]
+        # obj_source = self.s3.buckets[bucket_source_name].objects[key_source_name]
 
-        copy_obj = copy.deepcopy(obj_source)
-
-        copy_obj.bucket = self
-        copy_obj.key = key
-
-        self.objects[key] = copy_obj
+        with open(path_source, "rb") as data_copy_source:
+            self.put_object(key, data_copy_source)
 
     def __call__(self, name):
         return self
@@ -60,18 +73,36 @@ class MonkeyS3Object:
     def full_path(self):
         return self.prefix + self.key
 
-    def download_fileobj(self, data):
-        with open(self.full_path, 'rb') as f:
-            data.write(f.read())
+    def download_fileobj(self, writer):
+        full_path = self.bucket.s3.file_per_key[(self.bucket.name, self.key)]
+
+        with open(full_path, 'rb') as f:
+            writer.write(f.read())
 
     def upload_fileobj(self, data):
-        with open(self.full_path, 'w+b') as f:
+        full_path = self.bucket.s3._get_unique_filename()
+
+        with open(full_path, 'w+b') as f:
             f.write(data.read())
 
+        self.bucket.s3.file_per_key[(self.bucket.name, self.key)] = full_path
+
     def upload_file(self, path):
-        with open(path, 'r') as data:
-            with open(self.full_path) as f:
-                f.write(data.read())
+        with open(path, 'rb') as data:
+            self.upload_fileobj(data)
+
+    def upload_bytes(self, b):
+        """Not a real boto3 method.  Just convience for testing"""
+        assert isinstance(b, bytes)
+        self.upload_fileobj(io.BytesIO(b))
+
+    def download_as_bytes(self):
+        """Not a real boto3 method.  Just convience for testing"""
+        full_path = self.bucket.s3.file_per_key[(self.bucket.name, self.key)]
+
+        with open(full_path, 'rb') as f:
+            return f.read()
+
 #</editor-fold>
 
 

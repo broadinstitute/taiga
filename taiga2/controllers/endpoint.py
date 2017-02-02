@@ -13,9 +13,7 @@ from uuid import uuid4
 import flask
 import time
 
-
 ADMIN_USER_ID = "admin"
-
 
 def get_dataset(datasetId):
     dataset = models_controller.get_dataset(datasetId)
@@ -195,3 +193,38 @@ def task_status(taskStatusId):
     from taiga2.tasks import taskstatus
     status = taskstatus(taskStatusId)
     return flask.jsonify(status)
+
+import taiga2.conv as conversion
+from taiga2.models import DataFile
+
+def get_datafile(dataset_version_id, name, format):
+    from taiga2.tasks import start_conversion_task
+
+    datafile = models_controller.get_datafile_by_version_and_name(dataset_version_id, name)
+    if datafile is None:
+        flask.abort(404)
+
+    dataset_version = datafile.dataset_version
+    dataset_version_id = dataset_version.id
+    dataset_id = dataset_version.dataset.id
+    datafile_name = datafile.name
+
+    if format == conversion.RAW_FORMAT and datafile.type == DataFile.DataFileType:
+        # no conversion is necessary
+        urls = [aws.sign_url(datafile.url)]
+    else:
+        is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
+
+        if is_new:
+            start_conversion_task(datafile.url, datafile.type, format, entry.id)
+        urls = models_controller.get_signed_urls_from_cache_entry(entry.urls_as_json)
+
+    result = dict(dataset_id=dataset_id,
+                  dataset_version_id=dataset_version_id,
+                  datafile_name=datafile_name,
+                  urls=urls,
+                  status=entry.status)
+
+    print("result:", repr(result))
+
+    return flask.jsonify(result)

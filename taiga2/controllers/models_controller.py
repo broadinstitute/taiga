@@ -2,12 +2,16 @@ import enum
 import uuid
 import os
 
+import json
+
+from sqlalchemy import and_
+
 import taiga2.models as models
 from taiga2.models import db
+from taiga2 import aws
 from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
-from taiga2.models import UploadSession, UploadSessionFile
+from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 
-from sqlalchemy.sql.expression import func
 
 # Base.metadata.drop_all(engine)
 # Base.metadata.create_all(engine)
@@ -142,11 +146,13 @@ def get_parent_folders(entry_id):
 #</editor-fold>
 
 #<editor-fold desc="Dataset">
-def add_dataset(name="No name",
+def add_dataset(name,
                 creator_id=None,
                 permaname=None,
                 description="No description provided",
                 datafiles_ids=None):
+    assert len(datafiles_ids) > 0
+
     if not permaname:
         permaname = models.generate_permaname(name)
 
@@ -159,11 +165,13 @@ def add_dataset(name="No name",
     db.session.add(new_dataset)
     db.session.flush()
 
-    assert len(datafiles_ids) > 0
 
+    # It means we would want to create a first dataset with a DatasetVersion
+    # containing DataFiles
+
+    # TODO: Think about a meaningful name
     new_dataset_version = add_dataset_version(creator_id=creator.id,
                                               dataset_id=new_dataset.id,
-                                              version=1,
                                               datafiles_ids=datafiles_ids)
 
     db.session.add(new_dataset_version)
@@ -341,8 +349,7 @@ def delete_dataset(dataset_id):
 #<editor-fold desc="DatasetVersion">
 def add_dataset_version(creator_id,
                         dataset_id,
-                        datafiles_ids,
-                        version=1,
+                        datafiles_ids=None,
                         name=None):
 
     assert len(datafiles_ids) > 0
@@ -357,7 +364,7 @@ def add_dataset_version(creator_id,
 
     latest_dataset_version = get_latest_dataset_version(dataset_id)
     if latest_dataset_version:
-        version += latest_dataset_version.version
+        version = latest_dataset_version.version + 1
     else:
         version = 1
 
@@ -454,6 +461,10 @@ def add_datafile(s3_bucket,
 
     return new_datafile
 
+def get_datafile_by_version_and_name(dataset_version_id, name):
+    return db.session.query(DataFile).filter(DataFile.name == name) \
+        .filter(DataFile.dataset_version_id == dataset_version_id) \
+        .one()
 
 def get_datafile(datafile_id):
     datafile = db.session.query(DataFile) \
@@ -546,4 +557,132 @@ def update_session_file_converted_type(converted_type, upload_session_file_id):
     db.session.commit()
 
     return upload_session_file
+#</editor-fold>
+
+#<editor-fold desc="Download datafiles">
+
+
+# def get_dataset(dataset_id):
+#     dataset = db.session.query(Dataset) \
+#         .filter(Dataset.id == dataset_id).one()
+#
+#     return dataset
+#
+#
+# def get_dataset_from_permaname(dataset_permaname):
+#     dataset = db.session.query(Dataset) \
+#         .filter(Dataset.permaname == dataset_permaname) \
+#         .one()
+#
+#     return dataset
+#
+# def resolve_to_dataset(name):
+#     m = re.match("([^/:]+)$", name)
+#     if m is None:
+#         return None
+#     permaname_or_id = m.group(1)
+#
+#     dataset = get_dataset(permaname_or_id)
+#     if dataset is None:
+#         dataset_version = get_dataset_version_by_id(permaname_or_id)
+#         if dataset_version is None:
+#             return None
+#         dataset = dataset_version.dataset
+#
+#     return dataset
+#
+# def resolve_to_dataset_version(name):
+#     m = re.match("([^/:]+)(?::([0-9]+))?$", name)
+#     if m is None:
+#         return None
+#     permaname = m.group(1)
+#     version = m.group(2)
+#
+#     dataset_id = resolve_to_dataset(permaname)
+#     if dataset_id is None:
+#         if get_dataset_version(permaname) is not None:
+#             return permaname
+#         else:
+#             return None
+#
+#     dataset = get_dataset(dataset_id)
+#     # now look for version
+#     if version == "" or version is None:
+#         version = len(dataset['versions'])-1
+#     else:
+#         version = int(version)-1
+#
+#     if version >= len(dataset['versions']):
+#         return None
+#
+#     dataset_version_id = dataset['versions'][version]
+#     return dataset_version_id
+#
+# import re
+# def resolve_to_datafile(name):
+#     m = re.match("([^/:]+(?::[0-9]+)?)(/.*)$", name)
+#     if m is None:
+#         return None
+#     dataset_name = m.group(1)
+#     path = m.group(2)
+#
+#     dataset_version_id = resolve_to_dataset_version(dataset_name)
+#     if dataset_version_id is None:
+#         return None
+#
+#     dataset_version = get_dataset_version(dataset_version_id)
+#     if path == "":
+#         path = dataset_version["entries"]["name"]
+#
+#     entries = [e for e in dataset_version['entries'] if e['name'] == path]
+#     if len(entries) == 0:
+#         return None
+#     else:
+#         return entries[0]
+
+def _find_cache_entry(dataset_version_id, format, datafile_name):
+    entry = db.session.query(ConversionCache).filter(and_(ConversionCache.dataset_version_id == dataset_version_id,
+                                                          ConversionCache.format == format,
+                                                          ConversionCache.datafile_name == datafile_name)).first()
+    return entry
+
+def get_signed_urls_from_cache_entry(paths_as_json):
+    # if there's urls on the cache entry, report those too after signing them
+    if paths_as_json is None or paths_as_json == "":
+        return None
+
+    urls = json.loads(paths_as_json)
+    signed_urls = [aws.sign_url(url) for url in urls]
+    return signed_urls
+
+def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
+    entry = _find_cache_entry(dataset_version_id, format, datafile_name)
+    if entry is not None:
+        is_new = False
+    else:
+        is_new = True
+
+        # Create a new cache entry
+        status = "Conversion pending"
+        entry = ConversionCache(dataset_version_id = dataset_version_id,
+            datafile_name = datafile_name,
+            format = format,
+            status = status)
+        db.session.add(entry)
+        db.session.commit()
+
+    assert entry.id is not None
+    return is_new, entry
+
+def update_conversion_cache_entry(entry_id, status, urls=None):
+    print("update_conversion_cache", entry_id, status, urls)
+    entry = db.session.query(ConversionCache).filter(and_(ConversionCache.id == entry_id)).first()
+    if urls is not None:
+        assert isinstance(urls, list)
+        assert len(urls) > 0
+        assert isinstance(urls[0], str)
+        entry.urls_as_json = json.dumps(urls)
+    entry.status = status
+    db.session.commit()
+
 #</editor-fold>

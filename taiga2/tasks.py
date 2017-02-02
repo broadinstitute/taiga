@@ -4,7 +4,8 @@ from taiga2.models import generate_permaname, DataFile
 import taiga2.controllers.models_controller as mc
 from taiga2.aws import aws
 from celery import Celery
-from taiga2 import conversion
+import taiga2.conv as conversion
+from taiga2.conv.util import Progress
 
 celery = Celery("taiga2")
 #Celery("taiga2", include=['taiga2.tasks'])
@@ -68,7 +69,7 @@ def background_process_new_upload_session_file(self, S3UploadedFileMetadata, con
                                         'message': message, 's3Key': s3_upload_key})
             s3_object.download_fileobj(data)
 
-        temp_hdf5_tcsv_file_path = conversion.tcsv_to_hdf5(self, temp_raw_tcsv_file_path, s3_upload_key)
+        temp_hdf5_tcsv_file_path = conversion.tcsv_to_hdf5(Progress(self), temp_raw_tcsv_file_path, s3_upload_key)
 
         # Create a new converted object to upload
         message = "Uploading the {} to S3".format(DataFile.DataFileType(file_type))
@@ -146,3 +147,43 @@ def taskstatus(task_id):
         }
 
     return response
+
+import tempfile
+import uuid
+import flask
+
+from taiga2.aws import parse_s3_url
+
+def get_converter(src_format, dst_format):
+    from taiga2.models import DataFile
+    if src_format == DataFile.DataFileType.HDF5 and dst_format == conversion.CSV_FORMAT:
+        return conversion.hdf5_to_tcsv
+    if src_format == DataFile.DataFileType.Columnar and dst_format == conversion.CSV_FORMAT:
+        return conversion.columnar_to_csv
+    raise Exception("No conversion for {} to {}".format(src_format, dst_format))
+
+def start_conversion_task(src_url, src_format, dst_format, cache_entry_id):
+    from taiga2.controllers import models_controller
+
+    dest_bucket = flask.current_app.config['S3_BUCKET']
+    dest_key = flask.current_app.config['S3_PREFIX']+"/exported/"+str(uuid.uuid4().hex)
+
+    s3 = aws.s3
+    bucket, key = parse_s3_url(src_url)
+    with tempfile.NamedTemporaryFile() as raw_t:
+        with tempfile.NamedTemporaryFile() as conv_t:
+            models_controller.update_conversion_cache_entry(cache_entry_id, "Downloading from S3")
+            s3.Object(bucket, key).download_fileobj(raw_t)
+            raw_t.flush()
+
+            models_controller.update_conversion_cache_entry(cache_entry_id, "Running conversion")
+
+            converter = get_converter(src_format, dst_format)
+            converter(raw_t.name, conv_t.name)
+
+            urls = ["s3://{}/{}".format(dest_bucket, dest_key)]
+
+            models_controller.update_conversion_cache_entry(cache_entry_id, "Uploading converted file to S3")
+            s3.Object(dest_bucket, dest_key).upload_fileobj(conv_t)
+
+            models_controller.update_conversion_cache_entry(cache_entry_id, "Completed successfully", urls=urls)

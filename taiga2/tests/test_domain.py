@@ -20,6 +20,7 @@ from taiga2.tests.monkeys import MonkeyBucket
 
 
 test_files_folder_path = 'taiga2/tests/test_files'
+import boto3
 
 raw_file_name = 'hello.txt'
 raw_file_path = os.path.join(test_files_folder_path, raw_file_name)
@@ -90,9 +91,9 @@ def new_columnar_upload_file(session: SessionBase,
     url = "www.test_columnar_filename.com"
 
     file_key = csv_file_name
-    s3.Object(bucket.name, file_key).upload_file(csv_file_path)
+    s3.Object("bucket", file_key).upload_file(csv_file_path)
 
-    # new_columnar_uploadedFile = s3.Object(test_bucket.name, file_key)
+    # new_columnar_uploadedFile = s3.Object("bucket", file_key)
 
     _new_raw_uploadFile = models_controller.add_upload_session_file(new_session_upload.id,
                                                                     filename=filename,
@@ -125,12 +126,10 @@ def new_columnar_upload_file(session: SessionBase,
 
 
 def test_create_monkey_s3_object(session: SessionBase):
-    new_bucket = aws.s3.Bucket.create('bucket')
     with open(raw_file_path, 'rb') as data:
-        aws.s3.Bucket(new_bucket.name).put_object(Key=raw_file_name, Body=data)
+        aws.s3.Object("bucket", raw_file_name).upload_fileobj(data)
 
     new_object = aws.s3.Object('bucket', raw_file_name)
-    assert new_object.bucket.name == 'bucket'
     assert new_object.key == raw_file_name
 
 
@@ -146,10 +145,6 @@ def test_create_monkey_s3_object(session: SessionBase):
 #         object.upload_fileobj(data)
 
 
-def test_create_monkey_bucket_s3(session: SessionBase):
-    new_bucket = aws.s3.Bucket.create('bucket')
-    assert isinstance(new_bucket, MonkeyBucket)
-
 
 # TODO: This does not work with the current implementation of Monkey
 # def test_create_two_monkey_bucket_s3(session: SessionBase):
@@ -161,8 +156,9 @@ def test_create_monkey_bucket_s3(session: SessionBase):
 
 
 def test_conversion_raw(session: SessionBase):
-    new_bucket = aws.s3.Bucket.create('bucket')
     filename = raw_file_name
+    new_bucket = aws.s3.Bucket('bucket')
+    new_bucket.create()
 
     convert_key = models_controller.generate_convert_key()
 
@@ -170,11 +166,12 @@ def test_conversion_raw(session: SessionBase):
         aws.s3.Bucket(new_bucket.name).put_object(Key=convert_key, Body=data)
     s3_raw_uploaded_file = aws.s3.Object(new_bucket.name, convert_key)
 
+
     from taiga2.models import DataFile
     dict_S3Metadata = {
         'location': 'location',
         'eTag': 'eTag',
-        'bucket': new_bucket.name,
+        'bucket': 'bucket',
         'key': s3_raw_uploaded_file.key,
         'filetype': DataFile.DataFileType.Raw.value,
         'filename': filename
@@ -184,8 +181,9 @@ def test_conversion_raw(session: SessionBase):
 
 
 def test_conversion_csv(session: SessionBase):
-    new_bucket = aws.s3.Bucket.create('bucket')
     filename = csv_file_name
+    new_bucket = aws.s3.Bucket('bucket')
+    new_bucket.create()
 
     convert_key = models_controller.generate_convert_key()
 
@@ -193,11 +191,12 @@ def test_conversion_csv(session: SessionBase):
         aws.s3.Bucket(new_bucket.name).put_object(Key=convert_key, Body=data)
     s3_raw_uploaded_file = aws.s3.Object(new_bucket.name, convert_key)
 
+
     from taiga2.models import DataFile
     dict_S3Metadata = {
         'location': 'location',
         'eTag': 'eTag',
-        'bucket': new_bucket.name,
+        'bucket': 'bucket',
         'key': s3_raw_uploaded_file.key,
         'filetype': DataFile.DataFileType.Columnar.value,
         'filename': csv_file_name

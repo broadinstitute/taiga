@@ -11,6 +11,8 @@ from taiga2 import tasks
 from taiga2.tests.monkeys import MonkeyS3, MonkeySTS
 
 from taiga2.models import db as _db
+from taiga2.controllers import models_controller as mc
+import boto3
 
 import os
 
@@ -21,19 +23,19 @@ TESTDB_PATH = "{}".format(TESTDB)
 TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 
 
-@pytest.fixture(scope='session')
-def monkey_s3():
-    s3 = MonkeyS3()
+@pytest.fixture(scope='function')
+def monkey_s3(tmpdir):
+    s3 = MonkeyS3(str(tmpdir))
     return s3
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def monkey_sts():
     sts = MonkeySTS()
     return sts
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def app(request, monkey_s3, monkey_sts):
     """Session-wide test `Flask` application."""
     settings_override = {
@@ -101,6 +103,11 @@ def session(db, request):
     transaction.rollback()
     connection.close()
     _session.remove()
+
+@pytest.fixture(scope="function")
+def user_id(db):
+    u = mc.add_user("username")
+    return u.id
 
 #
 # @pytest.fixture(scope='function')
