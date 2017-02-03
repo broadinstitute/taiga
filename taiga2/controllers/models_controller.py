@@ -638,4 +638,16 @@ def update_conversion_cache_entry(entry_id, status, urls=None):
     entry.status = status
     db.session.commit()
 
+def update_conversion_cache_entry_with_task_id(entry_id, task_id):
+    db.session.query(ConversionCache). \
+        filter(ConversionCache.id == entry_id). \
+        update({"task_id":task_id})
+    db.session.commit()
+
+def delete_conversion_cache_entry(entry_id):
+    db.session.query(ConversionCache). \
+        filter(ConversionCache.id == entry_id). \
+        delete()
+    db.session.commit()
+
 #</editor-fold>

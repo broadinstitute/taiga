@@ -21,3 +21,4 @@ def _to_string_with_nan_mask(x):
         return str(x)
 
 
+r_escape_str = lambda x: '"' + x.replace("\"", "\\\"") + '"'

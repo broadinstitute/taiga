@@ -124,13 +124,20 @@ from taiga2.aws import parse_s3_url
 
 def get_converter(src_format, dst_format):
     from taiga2.models import DataFile
-    if src_format == DataFile.DataFileType.HDF5 and dst_format == conversion.CSV_FORMAT:
+
+    is_hdf5 = (src_format == str(DataFile.DataFileType.HDF5))
+    is_columnar = str(DataFile.DataFileType.Columnar)
+
+    if is_hdf5 and dst_format == conversion.CSV_FORMAT:
         return conversion.hdf5_to_tcsv
-    if src_format == DataFile.DataFileType.Columnar and dst_format == conversion.CSV_FORMAT:
+    if is_columnar and dst_format == conversion.CSV_FORMAT:
         return conversion.columnar_to_csv
+    if is_columnar and dst_format == conversion.RDS_FORMAT:
+        return conversion.columnar_to_rds
     raise Exception("No conversion for {} to {}".format(src_format, dst_format))
 
-def start_conversion_task(src_url, src_format, dst_format, cache_entry_id):
+@celery.task(bind=True)
+def start_conversion_task(self, src_url, src_format, dst_format, cache_entry_id):
     from taiga2.controllers import models_controller
 
     dest_bucket = flask.current_app.config['S3_BUCKET']

@@ -3,6 +3,10 @@ from flask import current_app, json
 import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 
+import logging
+
+log = logging.getLogger(__name__)
+
 # Handle URL upload
 from flask import render_template, request, redirect, url_for
 import os, json
@@ -205,8 +209,15 @@ def get_datafile(dataset_version_id, name, format):
     else:
         is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
 
+        if not is_new and not entry_is_valid(entry):
+            log.warn("Cache entry not associated with a running task, deleting to try again")
+            models_controller.delete_conversion_cache_entry(entry.id)
+            is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
+
         if is_new:
-            start_conversion_task(datafile.url, datafile.type, format, entry.id)
+            t = start_conversion_task.delay(datafile.url, str(datafile.type), format, entry.id)
+            models_controller.update_conversion_cache_entry_with_task_id(entry.id, t.id)
+
         urls = models_controller.get_signed_urls_from_cache_entry(entry.urls_as_json)
 
     result = dict(dataset_id=dataset_id,
@@ -218,3 +229,16 @@ def get_datafile(dataset_version_id, name, format):
     print("result:", repr(result))
 
     return flask.jsonify(result)
+
+def entry_is_valid(entry):
+    "make sure that either this entry resulted in a URL or is actively running now"
+    from taiga2.tasks import start_conversion_task
+    if entry.urls_as_json is not None:
+        return True
+
+    if entry.task_id is None:
+        return False
+
+    task = start_conversion_task.AsyncResult(entry.task_id)
+    return task.state == 'PENDING'
+

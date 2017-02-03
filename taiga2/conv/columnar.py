@@ -6,6 +6,9 @@ import csv
 from collections import namedtuple
 from io import StringIO
 from io import BytesIO
+import logging
+
+log = logging.getLogger(__name__)
 
 ColumnDef = namedtuple("ColumnDef", ["name", "index", "persister"])
 
@@ -105,11 +108,9 @@ def read_int(fd):
         return None
     return struct.unpack("I", buffer)[0]
 
-
 def write_str(output, s):
     write_int(output, len(s))
     output.write(s.encode("ascii"))
-
 
 def read_str(fd):
     length = read_int(fd)
@@ -445,6 +446,28 @@ def convert_csv_to_tabular(input_file, output_file, delimiter):
 
 
 def convert_tabular_to_csv(input_file, output_file, delimiter, select_names=None, predicate=None):
+    log.info("convert_tabular_to_csv %s -> %s", input_file, output_file)
+    _convert_tabular_to_csv(input_file, lambda: output_file, lambda row_count, file_len: False, delimiter, select_names, predicate)
+
+def convert_tabular_to_multiple_csvs(input_file, output_dir, delimiter, select_names=None, predicate=None, max_bytes=None, max_rows=None):
+    filenames = []
+    def output_file_callback():
+        fd, filename = tempfile.mkstemp(dir=output_dir)
+        os.close(fd)
+        filenames.append(filename)
+        return filename
+
+    def flush_callback(row_count, length):
+        if max_rows is not None and row_count >= max_rows:
+            return True
+        if max_bytes is not None and length >= max_bytes:
+            return True
+        return False
+
+    _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, delimiter, select_names, predicate)
+    return filenames
+
+def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, delimiter, select_names=None, predicate=None):
     with open(input_file, "rb") as fd:
 
         if predicate == None:
@@ -452,12 +475,59 @@ def convert_tabular_to_csv(input_file, output_file, delimiter, select_names=None
 
         if select_names == None:
             column_definitions = read_column_definitions(fd)
-            #      print "col defs", column_definitions
             select_names = [x.name for x in column_definitions.columns]
             fd.seek(0)
 
-        with open(output_file, "w") as output:
-            w = csv.writer(output, delimiter=delimiter)
-            w.writerow(select_names)
-            for row in execute_query(fd, select_names, predicate):
-                w.writerow(row)
+        row_generator = execute_query(fd, select_names, predicate)
+
+        output_file = None
+
+        for row in row_generator:
+            if output_file is None:
+                output_file = output_file_callback()
+                output = open(output_file, "w")
+                w = csv.writer(output, delimiter=delimiter)
+                w.writerow(select_names)
+                row_count = 0
+            w.writerow(row)
+            row_count += 1
+
+            # check if we need to move onto the next output file
+            if flush_callback(row_count, fd.tell()):
+                output.close()
+                output_file = None
+
+        if output_file is not None:
+            output.close()
+
+
+
+import tempfile
+import subprocess
+from taiga2.conv.util import r_escape_str
+import os
+
+def columnar_to_rds(input_file, destination_dir, max_rows=None, max_bytes=50*1024*1024):
+    # two step conversion: First convert to csvs, then for each use R to load CSV and write Rdata file.  Not clear that we can do better
+    # at the moment
+    tempdir = tempfile.mkdtemp(dir=destination_dir)
+
+    csv_files = convert_tabular_to_multiple_csvs(input_file, tempdir, ",", max_rows=max_rows, max_bytes=max_bytes)
+    rds_files = []
+    for csv_file in csv_files:
+        fd, destination_file = tempfile.mkstemp(dir=tempdir)
+        os.close(fd)
+
+        script = """
+            data <- read.table(%s, sep=',', head=T, as.is=T, check.names=F, quote='\"', comment.char='');
+            saveRDS(data, file=%s)
+            """ % (r_escape_str(csv_file), r_escape_str(destination_file))
+
+        handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        stdout, stderr = handle.communicate(script.encode("utf8"))
+        if handle.returncode != 0:
+            raise Exception("R process failed: %s\n%s" % (stdout, stderr))
+
+        rds_files.append(destination_file)
+    return rds_files
