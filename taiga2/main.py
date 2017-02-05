@@ -40,5 +40,5 @@ def main():
 
     application = PathDispatcher(api_app, ui_app)
 
-    run_simple('localhost', 8080, application,
+    run_simple('0.0.0.0', 8080, application,
                use_reloader=True, use_debugger=debug, use_evalex=True)

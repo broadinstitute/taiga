@@ -9,5 +9,3 @@ configure_celery(api_app)
 
 # the celery worker uses this instance
 celery = tasks.celery
-
-

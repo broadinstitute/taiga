@@ -115,18 +115,18 @@ if __name__ == "__main__":
 
     with backend_app.app_context():
         print("Dropping existing DB")
-
-        sure = input("WAIT! Dropping DB...are you sure? ")
-        if sure == 'y':
-            sure_sure = input("Really sure?? ")
-            if sure_sure != 'yes':
-                if sure_sure.lower() == 'y' or sure_sure.lower() == 'yes':
-                    print('Nice try but...nope!')
-                else:
-                    print("Pfiou...almost a catastrophic event :)")
-            else:
-                drop_and_create_db()
-        else:
-            if sure.lower() == 'yes':
-                print('Nice try but...nope!')
-            print("Better this way...bye!")
+        drop_and_create_db()
+        # sure = input("WAIT! Dropping DB...are you sure? ")
+        # if sure == 'y':
+        #     sure_sure = input("Really sure?? ")
+        #     if sure_sure != 'yes':
+        #         if sure_sure.lower() == 'y' or sure_sure.lower() == 'yes':
+        #             print('Nice try but...nope!')
+        #         else:
+        #             print("Pfiou...almost a catastrophic event :)")
+        #     else:
+        #         drop_and_create_db()
+        # else:
+        #     if sure.lower() == 'yes':
+        #         print('Nice try but...nope!')
+        #     print("Better this way...bye!")
