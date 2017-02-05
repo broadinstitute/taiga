@@ -90,3 +90,4 @@ def test_columnar_to_rds(tmpdir,max_rows,expected_file_count):
     files = exp.columnar_to_rds(columnar_file, str(tmpdir), max_rows=max_rows)
     assert len(files) == expected_file_count
     rds_to_csv(files, final_csv)
+

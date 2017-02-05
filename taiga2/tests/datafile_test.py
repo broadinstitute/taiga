@@ -29,7 +29,6 @@ def create_dataset_version(tmpdir, user_id, monkey_s3):
     return str(ds.dataset_versions[0].id)
 
 
-
 def test_dataset_export(app, db, monkey_s3, user_id, tmpdir):
     assert user_id is not None
 
@@ -61,3 +60,45 @@ def test_dataset_export(app, db, monkey_s3, user_id, tmpdir):
         data = monkey_s3.Object(bucket, key).download_as_bytes()
 
         assert data == b"a,b\r\n1,2\r\n"
+
+from taiga2.controllers.models_controller import find_datafile
+
+
+def create_simple_dataset(user_id):
+    # create datafile
+    df = mc.add_datafile(name="df",
+                     url="s3://bucket/key",
+                     type=models.DataFile.DataFileType.Raw)
+
+    ds = mc.add_dataset(name="dataset name", creator_id=user_id, description="dataset description", datafiles_ids=[df.id])
+    return ds.permaname, len(ds.dataset_versions)[0].id, "df"
+
+
+def test_find_datafile(db, user_id):
+    permaname, dataset_version_id, datafile_name = create_simple_dataset(user_id)
+
+    # using only permaname
+    assert find_datafile(permaname, None, None, None) is not None
+
+    # using permaname and version
+    assert find_datafile(permaname, 1, None, None) is not None
+
+    # using dataset version id
+    assert find_datafile(None, None, dataset_version_id, None) is not None
+
+    # using dataset version id and dataset name
+    assert find_datafile(None, None, dataset_version_id, datafile_name) is not None
+
+    # now make sure bad parameters can't find a dataset by accident
+    # using only permaname
+    assert find_datafile("invalid", None, None, None) is None
+
+    # using permaname and version
+    assert find_datafile(permaname, 2, None, None) is None
+
+    # using dataset version id
+    assert find_datafile(None, None, "invalid", None) is None
+
+    # using dataset version id and dataset name
+    assert find_datafile(None, None, dataset_version_id, "invalid") is None
+

@@ -561,11 +561,17 @@ paths:
             title: Datafileurl
             type: object
             required:
+              - dataset_name
+              - dataset_version
               - dataset_id
               - dataset_version_id
-              - name
+              - datafile_name
               - status
             properties:
+              dataset_name:
+                type: string
+              dataset_version:
+                type: string
               dataset_id:
                 type: string
               dataset_version_id:

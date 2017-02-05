@@ -399,6 +399,14 @@ def get_dataset_version_provenance(dataset_version_id=0,
     raise NotImplementedError
 
 
+def get_latest_dataset_version_by_permaname(permaname):
+    dataset_version = db.session.query(DatasetVersion) \
+        .filter(Dataset.permaname == permaname) \
+        .order_by(DatasetVersion.version.desc()) \
+        .one()
+
+    return dataset_version
+
 def get_dataset_version_by_permaname_and_version(permaname,
                                                  version):
     """From the permaname of a dataset, retrieve the specific dataset version"""
@@ -649,5 +657,42 @@ def delete_conversion_cache_entry(entry_id):
         filter(ConversionCache.id == entry_id). \
         delete()
     db.session.commit()
+
+class IllegalArgumentError(ValueError):
+    pass
+
+def find_datafile(dataset_permaname, version_number, dataset_version_id, datafile_name):
+    """Look up a datafile given either a permaname (and optional version number) or a dataset_version_id.  The datafile_name
+    is also optional.  If unspecified, and there is a single datafile for that dataset_version, that will be returned.
+    Otherwise datafile_name is required. """
+    if dataset_permaname is not None:
+        if dataset_version_id is not None:
+            raise IllegalArgumentError("Cannot search by both a permaname and a dataset_version_id")
+
+        if version_number is None:
+            dataset_version = get_latest_dataset_version_by_permaname(dataset_permaname)
+        else:
+            dataset_version = get_dataset_version_by_permaname_and_version(dataset_permaname, version_number)
+
+        if dataset_version is None:
+            return None
+
+        dataset_version_id = dataset_version.id
+    else:
+        if dataset_version_id is None:
+            raise IllegalArgumentError("Must have either a permaname or a dataset_version_id")
+        if version_number is not None:
+            raise IllegalArgumentError("If permaname is not provided, cannot use version number in search")
+
+    if datafile_name is None:
+        dataset_version = get_dataset_version(dataset_version_id)
+        if len(dataset_version.datafiles) > 1:
+            raise IllegalArgumentError("The retrieved dataset version has more than one datafile so the name must be specified")
+        else:
+            datafile = list(dataset_version.datafiles)[0]
+    else:
+        datafile = get_datafile_by_version_and_name(dataset_version_id, datafile_name)
+
+    return datafile
 
 #</editor-fold>
