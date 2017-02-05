@@ -128,6 +128,61 @@ paths:
               name:
                 type: string
 
+  /folder/{folderId}/name:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: update_folder_name
+      description: Update the name of the folder folderId
+      consumes:
+        - application/json
+      parameters:
+        - name: folderId
+          in: path
+          type: string
+          description: Folder ID
+          required: true
+        - name: NameUpdate
+          in: body
+          schema:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+      responses:
+        200:
+          description: Folder name updated
+
+  /folder/{folderId}/description:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: update_folder_description
+      description: Update the description of the folderId
+      consumes:
+        - application/json
+      parameters:
+        - in: path
+          name: folderId
+          type: string
+          description: Folder ID
+          required: true
+        - in: body
+          name: DescriptionUpdate
+          description: Description content to update in the folder folderId
+          required: true
+          schema:
+            type: object
+            required:
+              - description
+            properties:
+              description:
+                type: string
+      responses:
+        200:
+          description: Folder description updated
+
+
   /user:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -395,6 +450,8 @@ paths:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: update_dataset_name
       description: Update dataset name
+      consumes:
+        - application/json
       parameters:
         - name: datasetId
           in: path
@@ -419,6 +476,8 @@ paths:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: update_dataset_description
       description: Update dataset description
+      consumes:
+        - application/json
       parameters:
         - name: datasetId
           in: path

@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "tslint -c tslint.json 'src/**/*.{ts,tsx}'",
     "pretest": "npm run lint",
-    "test": "jest"
+    "test": "jest",
+    "start": "webpack --progress --colors --watch"
   },
   "author": "Remi Marenco <rmarenco@broadinstitute.org>",
   "license": "ISC",

@@ -57,7 +57,7 @@ class FolderSchema(ma.ModelSchema):
     # TODO: Add the ACL
     class Meta:
         # We just don't take the folder_type because of the Enum
-        additional = ('id', 'name', 'type',
+        additional = ('id', 'name', 'type', 'description',
                       'entries', 'creator', 'creation_date',
                       'parents')
     entries = ma.Nested(EntrySchema, many=True)

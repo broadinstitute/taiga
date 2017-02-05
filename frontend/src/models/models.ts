@@ -1,11 +1,11 @@
 import { getFormatType } from "../Utilities/formats";
 
 export class Folder {
-    'id': string;
-    'name': string;
-    'type': Folder.TypeEnum;
-    'parents': Array<NamedId>;
-    'entries': Array<FolderEntries>;
+    id: string;
+    name: string;
+    type: Folder.TypeEnum;
+    parents: Array<NamedId>;
+    entries: Array<FolderEntries>;
     description: string;
     acl: Acl;
 }

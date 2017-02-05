@@ -36,6 +36,16 @@ def get_folder(folder_id):
     json_data_folder = folder_schema.dump(folder).data
     return flask.jsonify(json_data_folder)
 
+def update_folder_name(folderId, NameUpdate):
+    updated_dataset = models_controller.update_folder_name(folderId, NameUpdate["name"])
+    # TODO: Return the dataset id
+    return flask.jsonify({})
+
+
+def update_folder_description(folderId, DescriptionUpdate):
+    models_controller.update_folder_description(folderId, DescriptionUpdate["description"])
+    # TODO: Return the dataset id
+    return flask.jsonify({})
 
 def _get_user_id():
     return ADMIN_USER_ID
@@ -104,13 +114,13 @@ def get_dataset_first(dataset_id):
 
 
 def update_dataset_name(datasetId, NameUpdate):
-    updated_dataset = models_controller.update_dataset_name(_get_user_id(), datasetId, NameUpdate["name"])
+    updated_dataset = models_controller.update_dataset_name(datasetId, NameUpdate["name"])
     # TODO: Return the dataset id
     return flask.jsonify({})
 
 
 def update_dataset_description(datasetId, DescriptionUpdate):
-    models_controller.update_dataset_description(_get_user_id(), datasetId, DescriptionUpdate["description"])
+    models_controller.update_dataset_description(datasetId, DescriptionUpdate["description"])
     # TODO: Return the dataset id
     return flask.jsonify({})
 
