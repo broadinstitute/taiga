@@ -7,6 +7,7 @@ export class Folder {
     parents: Array<NamedId>;
     entries: Array<FolderEntries>;
     description: string;
+    creator: NamedId;
     acl: Acl;
 }
 

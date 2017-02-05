@@ -2,6 +2,9 @@ import * as React from "react";
 import * as Modal from "react-modal";
 import * as Showdown from "showdown";
 
+interface CreateFolderProps extends DialogProps {
+    save: (name: string, description: string) => void;
+}
 
 interface EditStringProps {
     isVisible : boolean;
@@ -78,6 +81,48 @@ export class EditDescription extends React.Component<EditStringProps, any> {
             <div className="modal-footer">
               <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
               <button type="button" className="btn btn-primary" onClick={() => { this.props.save(this.textArea.value) } }>Save changes</button>
+            </div>
+          </div>
+        </form>
+        </Modal>
+    }
+}
+
+export class CreateFolder extends React.Component<CreateFolderProps, any> {
+    textInput : any;
+    textArea : any;
+
+    render() {
+        //className="Modal__Bootstrap modal-dialog"
+        return <Modal
+          style={ modalStyles }
+          closeTimeoutMS={150}
+          isOpen={this.props.isVisible}
+          onRequestClose={this.props.cancel}
+          contentLabel="CreateFolder">
+        <form>
+          <div className="modal-content">
+            <div className="modal-body">
+                <div className="form-group">
+                    <label htmlFor="nameInput">Name</label>
+                    <input type="text" defaultValue="No name"
+                           className="form-control"
+                           id="nameInput"
+                           ref={ (c) => {this.textInput = c}  }/>
+
+                    <label htmlFor="descriptionInput">Description</label>
+                    <textarea rows={15}
+                              defaultValue="No description"
+                              className="form-control" id="descriptionInput"
+                              ref={ (c) => {this.textArea = c}  }
+                    />
+                </div>
+              </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
+              <button type="button" className="btn btn-primary" onClick={() => {
+                  this.props.save(this.textInput.value, this.textArea.value)
+              } }>Save changes</button>
             </div>
           </div>
         </form>

@@ -25,6 +25,7 @@ export interface FolderViewState {
     showEditName?: boolean;
     showEditDescription?: boolean;
     showUploadDataset?: boolean;
+    showCreateFolder?: boolean;
     error?: string;
     selection?: any;
 }
@@ -126,6 +127,16 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         tapi.update_folder_description(this.state.folder.id, description).then(() => {
             return this.doFetch()
         })
+    }
+
+    createFolder(name: string, description: string) {
+        const current_folder_id: string = this.state.folder.id;
+        // TODO: To fetch instead the current user once we have the authentication
+        const current_creator_id: string = this.state.folder.creator.id;
+
+        tapi.create_folder(current_folder_id, current_creator_id, name, description).then(() => {
+           return this.doFetch();
+        });
     }
 
     render() {
@@ -239,6 +250,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 },
                 {
                     label: "Create a subfolder", action: () => {
+                        this.setState({showCreateFolder: true})
                 }
                 },
                 {
@@ -291,6 +303,15 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             this.doFetch();
                         }}
                         currentFolderId={this.state.folder.id}
+                    />
+
+                    <Dialogs.CreateFolder
+                        isVisible={this.state.showCreateFolder}
+                        cancel={ () => { this.setState({showCreateFolder: false}) }}
+                        save={ (name, description) => {
+                            this.setState({showCreateFolder: false});
+                            this.createFolder(name, description);
+                        }}
                     />
 
                     <h1>{folder.name}</h1>

@@ -1,7 +1,9 @@
 import 'whatwg-fetch';
 
-import { User, Folder, Dataset, DatasetVersion, S3Credentials,
-    TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata } from './models';
+import {
+    User, Folder, Dataset, DatasetVersion, S3Credentials,
+    TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId
+} from './models';
 
 export class TaigaApi {
     baseUrl: string;
@@ -81,6 +83,15 @@ export class TaigaApi {
 
     update_dataset_description(dataset_id: string, description: string) {
         return this._post<void>("/dataset/" + dataset_id + "/description", {description: description})
+    }
+
+    create_folder(current_folder_id: string, current_user_id: string, name: string, description: string) {
+        return this._post<NamedId>("/folder/create", {
+            'creatorId': current_user_id,
+            'parentId': current_folder_id,
+            'name': name,
+            'description': description
+        });
     }
 
     update_folder_name(folder_id: string, name: string) {

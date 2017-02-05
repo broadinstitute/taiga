@@ -90,11 +90,13 @@ paths:
               acl:
                 "$ref": "#/definitions/Acl"
 
-  /folders/create:
+  /folder/create:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: create_folder
       description: Create a new folder
+      consumes:
+        - application/json
       parameters:
         - in: body
           name: metadata
@@ -102,7 +104,8 @@ paths:
             type: object
             required:
               - name
-              - parent
+              - parentId
+              - creatorId
             properties:
               name:
                 type: string
@@ -110,9 +113,12 @@ paths:
               description:
                 type: string
                 description: Long description
-              parent:
+              parentId:
                 type: string
                 description: Parent folder ID to initially insert this folder under
+              creatorId:
+                type: string
+                description: User Id who initialized the creation of the folder
       responses:
         200:
           description: The id of the newly created folder

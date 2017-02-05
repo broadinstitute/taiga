@@ -27,6 +27,27 @@ def get_dataset(datasetId):
     return flask.jsonify(json_dataset_data)
 
 
+def create_folder(metadata):
+    # TODO: Add the add_folder_entry inside the add_folder function?
+    folder_name = metadata['name']
+    folder_description = metadata['description']
+    parent_id = metadata['parentId']
+    creator_id = metadata['creatorId']
+
+
+    # TODO: Instead of the string 'folder', use the model.Folder.FolderType.folder
+    new_folder = models_controller.add_folder(creator_id=creator_id,
+                                              name=folder_name,
+                                              folder_type='folder',
+                                              description=folder_description)
+    models_controller.add_folder_entry(parent_id, new_folder.id)
+
+    folder_named_id_schema = schemas.FolderNamedIdSchema()
+    json_folder_named_id = folder_named_id_schema.dump(new_folder).data
+
+    return flask.jsonify(json_folder_named_id)
+
+
 def get_folder(folder_id):
     folder = models_controller.get_folder(folder_id)
     if folder is None:
@@ -35,6 +56,7 @@ def get_folder(folder_id):
     folder_schema = schemas.FolderSchema()
     json_data_folder = folder_schema.dump(folder).data
     return flask.jsonify(json_data_folder)
+
 
 def update_folder_name(folderId, NameUpdate):
     updated_dataset = models_controller.update_folder_name(folderId, NameUpdate["name"])
@@ -91,18 +113,6 @@ def get_s3_credentials():
 
     # See frontend/models/models.ts for the S3Credentials object and Swagger.yaml
     return flask.jsonify(model_frontend_credentials)
-
-
-def create_folder(metadata):
-    # TODO: Add the add_folder_entry inside the add_folder function?
-    folder_name = metadata['name']
-    folder_description = metadata['description']
-    parent_id = metadata['parent']
-
-    folder_id = models_controller.add_folder(folder_name, 'folder', folder_description)
-    models_controller.add_folder_entry(parent_id, folder_id, 'folder')
-
-    return flask.jsonify(id=folder_id, name=metadata['name'])
 
 
 def get_dataset_first(dataset_id):
