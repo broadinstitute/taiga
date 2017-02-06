@@ -4,6 +4,7 @@ import * as Modal from "react-modal";
 import * as AWS from "aws-sdk";
 import * as Dropzone from "react-dropzone";
 import * as filesize from "filesize";
+
 import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit } from "react-bootstrap-table";
 import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row} from 'react-bootstrap';
 

@@ -79,7 +79,7 @@ Starting the project is not yet straightforward, but will be in the near future:
  
 1. Clone this repository to your machine:
  
-        `git clone https://rmarenco@stash.broadinstitute.org/scm/cpds/taiga.git`
+        `git clone https://github.com/broadinstitute/taiga.git`
 
 2. Checkout the Taiga 2 branch:
 
@@ -91,20 +91,19 @@ Starting the project is not yet straightforward, but will be in the near future:
         `yarn install`
         `cd frontend/ && yarn install && cd ..`
 
-4. (Hopefully temporary) Replace, in frontend/node_modules/@types/react-dropzone/index.d.ts the `export default Dropzone` by `export = Dropzone`
-5. Configure the application as you need (AWS credentials, hostname/port and so on), in settings.cfg:
+4. Configure the application as you need (AWS credentials, hostname/port and so on), in settings.cfg:
 
         `cp settings.cfg.sample settings.cfg && vim settings.cfg`
 
-6. Create the database to have some data to work with:
+5. Create the database to have some data to work with:
 
-        `python taiga2/create_test_db_sqlalchemy.py`
+        `python taiga2/create_test_db_sqlalchemy.py settings.cfg`
 
 6. Open 4 terminal windows to launch Webpack, Taiga 2, Celery and Redis processes: 
 
     a. In the root folder:
 
-        `webpack --progress --colors --watch`
+        `npm start` or `webpack --progress --colors --watch` 
 
     b. In your redis folder, with your redis configuration file redis.conf:
 
@@ -146,3 +145,4 @@ We use Git for versioning! If you don't know how to use it, we strongly recommen
 ## Acknowledgments
 
 - Cancer Data Science
+- Broad Institute
