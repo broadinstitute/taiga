@@ -278,6 +278,8 @@ class ConversionCache(db.Model):
 
     status = db.Column(db.Text)
 
+    task_id = db.Column(db.Text)
+
     urls_as_json = db.Column(db.Text)
 
 
@@ -303,11 +305,13 @@ class UploadSessionFile(db.Model):
     session = db.relationship("UploadSession",
                               backref=__tablename__)
 
+    # filename submitted by user
     filename = db.Column(db.Text)
 
     initial_filetype = db.Column(db.Enum(DataFile.DataFileType))
     converted_filetype = db.Column(db.Enum(DataFile.DataFileType))
 
+    # s3://bucket/key for raw data user uploaded
     url = db.Column(db.Text)
 
     converted_s3_bucket = db.Column(db.Text)

@@ -15,6 +15,9 @@ from taiga2.controllers import models_controller as mc
 import boto3
 
 import os
+import logging
+
+log = logging.getLogger(__name__)
 
 # Temp db with different name for each test
 dir_path = os.path.dirname(os.path.realpath(__file__))

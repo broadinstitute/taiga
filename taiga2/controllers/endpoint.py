@@ -3,6 +3,10 @@ from flask import current_app, json
 import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 
+import logging
+
+log = logging.getLogger(__name__)
+
 # Handle URL upload
 from flask import render_template, request, redirect, url_for
 import os, json
@@ -219,34 +223,78 @@ def task_status(taskStatusId):
 import taiga2.conv as conversion
 from taiga2.models import DataFile
 
-def get_datafile(dataset_version_id, name, format):
+
+def _no_transform_needed(requested_format, datafile_type):
+    if requested_format == conversion.RAW_FORMAT and datafile_type == DataFile.DataFileType.Raw:
+        return True
+
+    if requested_format == conversion.HDF5_FORMAT and datafile_type == DataFile.DataFileType.HDF5:
+        return True
+
+    if requested_format == conversion.COLUMNAR_FORMAT and datafile_type == DataFile.DataFileType.Columnar:
+        return True
+
+    return False
+
+def get_datafile(dataset_permaname, version, dataset_version_id, datafile_name, format):
     from taiga2.tasks import start_conversion_task
 
-    datafile = models_controller.get_datafile_by_version_and_name(dataset_version_id, name)
+    datafile = models_controller.find_datafile(dataset_permaname, version, dataset_version_id, datafile_name)
     if datafile is None:
         flask.abort(404)
 
     dataset_version = datafile.dataset_version
+    dataset_version_version = dataset_version.version
     dataset_version_id = dataset_version.id
     dataset_id = dataset_version.dataset.id
     datafile_name = datafile.name
+    dataset_name = dataset_version.dataset.name
 
-    if format == conversion.RAW_FORMAT and datafile.type == DataFile.DataFileType:
+    if _no_transform_needed(format, datafile.type):
         # no conversion is necessary
         urls = [aws.sign_url(datafile.url)]
     else:
         is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
 
+        if not is_new and not entry_is_valid(entry):
+            log.warn("Cache entry not associated with a running task, deleting to try again")
+            models_controller.delete_conversion_cache_entry(entry.id)
+            is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
+
         if is_new:
-            start_conversion_task(datafile.url, datafile.type, format, entry.id)
+            log.error("endpoint %s %s", id(flask.g), dir(flask.g))
+            t = start_conversion_task.delay(datafile.url, str(datafile.type), format, entry.id)
+            log.error("ended %s %s", flask.g, dir(flask.g))
+            models_controller.update_conversion_cache_entry_with_task_id(entry.id, t.id)
+
         urls = models_controller.get_signed_urls_from_cache_entry(entry.urls_as_json)
 
-    result = dict(dataset_id=dataset_id,
+    result = dict(dataset_name=dataset_name,
+                  dataset_version=dataset_version_version,
+                  dataset_id=dataset_id,
                   dataset_version_id=dataset_version_id,
                   datafile_name=datafile_name,
-                  urls=urls,
                   status=entry.status)
 
-    print("result:", repr(result))
+    if urls is not None:
+        result['urls'] = urls
 
     return flask.jsonify(result)
+
+def entry_is_valid(entry):
+    # while celery eager eval is enabled, we cannot use AsyncResult so just assume any existing
+    # cache value is fine.
+    if flask.current_app.config["TESTING"]:
+        return True
+
+    "make sure that either this entry resulted in a URL or is actively running now"
+    from taiga2.tasks import start_conversion_task
+    if entry.urls_as_json is not None:
+        return True
+
+    if entry.task_id is None:
+        return False
+
+    task = start_conversion_task.AsyncResult(entry.task_id)
+    return task.state == 'PENDING'
+

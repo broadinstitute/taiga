@@ -2,6 +2,7 @@ import flask
 import boto3
 import logging
 from flask import g
+import re
 
 log = logging.getLogger(__name__)
 
@@ -43,10 +44,15 @@ class AWSClients:
 
 aws = AWSClients()
 
-import re
-
 def parse_s3_url(url):
     g = re.match("s3://([^/]+)/(.*)", url)
+
+    # TODO: update the urls in the db to always use the s3://bucket/key syntax
+    if g is None:
+        g = re.match("https?://([^.]+).s3.amazonaws.com/(.+)", url)
+
+    assert g is not None, "Could not parse {} into bucket and key".format(repr(url))
+
     return g.group(1), g.group(2)
 
 def sign_url(url):
