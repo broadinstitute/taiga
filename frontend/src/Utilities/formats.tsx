@@ -5,13 +5,25 @@ export function toLocalDateString(stringDate: string) {
     return date.toLocaleDateString();
 }
 
-export function getInitialFileTypeFromMimeType(mimeType : string) : InitialFileType {
-    if (mimeType == 'text/csv') {
-        return InitialFileType.NumericMatrixCSV;
-    } else if(mimeType == 'text/tab-separated-values') {
-        return InitialFileType.NumericMatrixTSV;
-    } else {
-        return InitialFileType.Raw;
+export function getInitialFileTypeFromMimeType(mimeTypeOrEnum: string|InitialFileType) : InitialFileType {
+    // Manage the case of receiving the Enum
+    let formattedType: InitialFileType = InitialFileType.Raw;
+    if(mimeTypeOrEnum in InitialFileType){
+        formattedType = mimeTypeOrEnum as InitialFileType;
     }
+    else {
+        if (mimeTypeOrEnum == 'text/csv') {
+            formattedType = InitialFileType.NumericMatrixCSV;
+        }
+        else if(mimeTypeOrEnum == 'text/tab-separated-values') {
+            formattedType = InitialFileType.NumericMatrixTSV;
+        }
+        else {
+            formattedType = InitialFileType.Raw;
+        }
+    }
+    console.log("In getInitial: "+ mimeTypeOrEnum);
+    console.log("Returning: " + mimeTypeOrEnum);
+    return formattedType;
 }
 

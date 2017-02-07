@@ -1,3 +1,4 @@
+import { getInitialFileTypeFromMimeType } from "../Utilities/formats";
 
 export class Folder {
     id: string;
@@ -173,7 +174,7 @@ export class FileUploadStatus {
         this.file = file;
 
         this.fileName = this.file.name;
-        this.mimeType = this.file.type;
+        this.fileType = getInitialFileTypeFromMimeType(this.file.type);
         this.fileSize = this.file.size
 
         this.progress = 0;

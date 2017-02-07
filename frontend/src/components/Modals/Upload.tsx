@@ -9,7 +9,10 @@ import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, Cel
 import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row} from 'react-bootstrap';
 
 import {DialogProps, DialogState} from "../Dialogs";
+
 import { TypeEditorBootstrapTable } from "./TypeEditorBootstrapTable";
+import { getInitialFileTypeFromMimeType } from "../../Utilities/formats";
+
 import {
     S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,
     S3UploadedFileMetadata, S3UploadedData
@@ -337,7 +340,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     }
 
     typeFormatter(cell: any, row: any) {
-        return cell.toString();
+        let formattedType: InitialFileType = getInitialFileTypeFromMimeType(cell);
+        return formattedType.toString();
     }
 
     columnClassProgressFormat(fieldValue: any, row: any, rowIdx: number, colIds: number) {
@@ -391,6 +395,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     <TableHeaderColumn isKey dataField='fileName'>Name</TableHeaderColumn>
                     <TableHeaderColumn dataField='fileType'
                                        width={fileTypeWidth}
+                                       dataFormat={ this.typeFormatter }
                                        customEditor={ { getElement: createTypeEditor }}>Type</TableHeaderColumn>
                     <TableHeaderColumn dataField='fileSize'
                                        width="150"

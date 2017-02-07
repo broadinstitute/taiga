@@ -1,6 +1,7 @@
 import * as React from "react";
 import { FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
 import { InitialFileType } from "../../models/models";
+import { getInitialFileTypeFromMimeType } from "../../Utilities/formats";
 
 interface TypeEditorProps {
     defaultValue: any;
@@ -15,7 +16,7 @@ export class TypeEditorBootstrapTable extends React.Component<TypeEditorProps, T
     constructor(props: any) {
         super(props);
         // TODO: How can we ensure we are not erasing/forgetting states defined in the interface?
-        let initType = InitialFileType.Raw;
+        let initType: InitialFileType = getInitialFileTypeFromMimeType(this.props.defaultValue);
 
         this.state = {
             type: initType
