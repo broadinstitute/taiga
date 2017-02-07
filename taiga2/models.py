@@ -23,44 +23,10 @@ db = SQLAlchemy(metadata=metadata)
 
 # Base = declarative_base()
 
-
-# Utilities
-class GUID(TypeDecorator):
-    """Platform-independent GUID type.
-
-    Uses PostgreSQL's UUID type, otherwise uses
-    CHAR(32), storing as stringified hex values.
-
-    """
-    impl = CHAR
-
-    def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
-            return dialect.type_descriptor(UUID())
-        else:
-            return dialect.type_descriptor(CHAR(32))
-
-    def process_bind_param(self, value, dialect):
-        if value is None:
-            return value
-        elif dialect.name == 'postgresql':
-            return str(value)
-        else:
-            if not isinstance(value, uuid.UUID):
-                return "%.32x" % uuid.UUID(value).int
-            else:
-                # hexstring
-                return "%.32x" % value.int
-
-    def process_result_value(self, value, dialect):
-        if value is None:
-            return value
-        else:
-            return uuid.UUID(value)
-
+GUID = db.String(80)
 
 def generate_uuid():
-    return uuid.uuid4()
+    return uuid.uuid4().hex
 
 # Associations #
 
@@ -178,6 +144,12 @@ class Dataset(Entry):
         'polymorphic_identity': "Dataset"
     }
 
+class InitialFileType(enum.Enum):
+    NumericMatrixCSV = "NumericMatrixCSV"
+    NumericMatrixTSV = "NumericMatrixTSV"
+    Table = "Table"
+    GCT = "GCT"
+    Raw = "Raw"
 
 class DataFile(db.Model):
     # TODO: Can we create a datafile without including it in a datasetVersion?
@@ -308,12 +280,11 @@ class UploadSessionFile(db.Model):
     # filename submitted by user
     filename = db.Column(db.Text)
 
-    initial_filetype = db.Column(db.Enum(DataFile.DataFileType))
+    initial_filetype = db.Column(db.Enum(InitialFileType))
+    initial_s3_key = db.Column(db.Text)
+
     converted_filetype = db.Column(db.Enum(DataFile.DataFileType))
-
-    # s3://bucket/key for raw data user uploaded
-    url = db.Column(db.Text)
-
-    converted_s3_bucket = db.Column(db.Text)
     converted_s3_key = db.Column(db.Text)
+
+    s3_bucket = db.Column(db.Text)
 

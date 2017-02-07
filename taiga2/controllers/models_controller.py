@@ -202,16 +202,15 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
         added_datafiles.append(new_datafile)
 
     # TODO: Get the user from the session
-    admin = get_user_from_upload_session(session_id)
+    user = get_user_from_upload_session(session_id)
     dataset_permaname = models.generate_permaname(dataset_name)
-    added_dataset = add_dataset(creator_id=admin.id,
+    added_dataset = add_dataset(creator_id=user.id,
                                 name=dataset_name,
                                 permaname=dataset_permaname,
                                 description=dataset_description,
                                 datafiles_ids=[datafile.id
                                                for datafile in added_datafiles])
-    updated_folder = add_folder_entry(current_folder_id,
-                                      added_dataset.id)
+    add_folder_entry(current_folder_id, added_dataset.id)
 
     return added_dataset
 
@@ -546,15 +545,15 @@ def generate_convert_key():
     return os.path.join(enumed_convert_path + str(uuid.uuid4()))
 
 
-def add_upload_session_file(session_id, filename, filetype, url, s3_bucket):
-    enumed_filetype = DataFile.DataFileType(filetype)
+def add_upload_session_file(session_id, filename, initial_file_type, initial_s3_key, s3_bucket):
+    initial_file_type = models.InitialFileType(initial_file_type)
 
     converted_s3_key = generate_convert_key()
 
     upload_session_file = UploadSessionFile(session_id=session_id,
                                             filename=filename,
-                                            initial_filetype=enumed_filetype,
-                                            url=url,
+                                            initial_filetype=initial_file_type,
+                                            initial_s3_key=initial_s3_key,
                                             converted_s3_bucket=s3_bucket,
                                             converted_s3_key=converted_s3_key)
     db.session.add(upload_session_file)
@@ -724,6 +723,8 @@ def delete_conversion_cache_entry(entry_id):
 class IllegalArgumentError(ValueError):
     pass
 
+from sqlalchemy.orm.exc import NoResultFound
+
 def find_datafile(dataset_permaname, version_number, dataset_version_id, datafile_name):
     """Look up a datafile given either a permaname (and optional version number) or a dataset_version_id.  The datafile_name
     is also optional.  If unspecified, and there is a single datafile for that dataset_version, that will be returned.
@@ -733,9 +734,15 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
             raise IllegalArgumentError("Cannot search by both a permaname and a dataset_version_id")
 
         if version_number is None:
-            dataset_version = get_latest_dataset_version_by_permaname(dataset_permaname)
+            try:
+                dataset_version = get_latest_dataset_version_by_permaname(dataset_permaname)
+            except NoResultFound:
+                return None
         else:
-            dataset_version = get_dataset_version_by_permaname_and_version(dataset_permaname, version_number)
+            try:
+                dataset_version = get_dataset_version_by_permaname_and_version(dataset_permaname, version_number)
+            except NoResultFound:
+                return None
 
         if dataset_version is None:
             return None
@@ -747,6 +754,12 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
         if version_number is not None:
             raise IllegalArgumentError("If permaname is not provided, cannot use version number in search")
 
+        # verify that this is a valid dataset_version_id
+        try:
+            get_dataset_version(dataset_version_id)
+        except NoResultFound:
+            return None
+
     if datafile_name is None:
         dataset_version = get_dataset_version(dataset_version_id)
         if len(dataset_version.datafiles) > 1:
@@ -754,7 +767,10 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
         else:
             datafile = list(dataset_version.datafiles)[0]
     else:
-        datafile = get_datafile_by_version_and_name(dataset_version_id, datafile_name)
+        try:
+            datafile = get_datafile_by_version_and_name(dataset_version_id, datafile_name)
+        except NoResultFound:
+            return None
 
     return datafile
 

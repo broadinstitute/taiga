@@ -1,107 +1,76 @@
-import enum
-
-from taiga2.models import generate_permaname, DataFile
 import taiga2.controllers.models_controller as mc
 from taiga2.aws import aws
 from celery import Celery
 import taiga2.conv as conversion
 from taiga2.conv.util import Progress
+import tempfile
+import uuid
+import flask
+import logging
+
+from taiga2.aws import parse_s3_url
 
 celery = Celery("taiga2")
-#Celery("taiga2", include=['taiga2.tasks'])
+log = logging.getLogger()
 
 @celery.task
 def print_config():
     import flask
-    config = flask.current_app.config
+    print(flask.current_app.config)
+
+def _from_s3_convert_to_s3(progress, s3_object, download_dest, converted_dest, converted_s3_object, converter):
+    progress.process("Downloading the file from S3")
+    s3_object.download_fileobj(download_dest)
+
+    converter(progress, download_dest.name, converted_dest.name)
+
+    # Create a new converted object to upload
+    progress.process("Uploading to S3")
+    converted_s3_object.upload_fileobj(converted_dest)
 
 
 @celery.task(bind=True)
-def background_process_new_upload_session_file(self, S3UploadedFileMetadata, converted_s3_key):
-    import os
-
-    # TODO: Rename this as it is confusing
-    datafile = S3UploadedFileMetadata
-    # TODO: The permaname should not be generated here, but directly fetch from key
-    s3_upload_key = datafile['key']
-    filename = datafile['filename']
-    # TODO: Would be better to have a permaname generation from the domain controller instead
-    permaname = generate_permaname(datafile['key'])
-    file_type = datafile['filetype']
-
-    bucket_name = datafile['bucket']
-
+def background_process_new_upload_session_file(self, upload_session_file_id, initial_s3_key, file_type, bucket_name, converted_s3_key):
     s3 = aws.s3
-    bucket = s3.Bucket(bucket_name)
+    progress = Progress(self)
 
     # If we receive a raw file, we don't need to do anything
     from taiga2.models import DataFile
+    from taiga2 import models
+
     # TODO: Instead of comparing two strings, we could also use DataFileType(file_type) and compare the result, or catch the exception
-    if file_type == DataFile.DataFileType.Raw.value:
-        message = "Received {}".format(s3_upload_key)
-        self.update_state(state='PROGRESS',
-                          meta={'current': 0, 'total': '0',
-                                'message': message, 's3Key': s3_upload_key})
+    if file_type == models.InitialFileType.Raw.value:
+        progress.progress("Received {}".format(initial_s3_key))
 
         # Create a new converted object to upload
-        message = "Uploading the {} to S3".format(DataFile.DataFileType(file_type))
-        self.update_state(state='PROGRESS',
-                          meta={'current': 0, 'total': '0',
-                                'message': message, 's3Key': s3_upload_key})
+        progress.progress("Uploading the {} to S3".format(DataFile.DataFileType(file_type)))
 
         # We copy the file to 'convert/'
         copy_source = {
             'Bucket': bucket_name,
-            'Key': s3_upload_key
+            'Key': initial_s3_key
         }
-        converted_s3_object = bucket.copy(copy_source, converted_s3_key)
+        s3.Bucket(bucket_name).copy(copy_source, converted_s3_key)
 
-        return DataFile.DataFileType.Raw.value
-    elif file_type == DataFile.DataFileType.Columnar.value:
-        s3_object = s3.Object(bucket_name, s3_upload_key)
-        temp_raw_tcsv_file_path = '/tmp/taiga2/' + permaname
-        os.makedirs(os.path.dirname(temp_raw_tcsv_file_path), exist_ok=True)
-
-        with open(temp_raw_tcsv_file_path, 'w+b') as data:
-            message = "Downloading the file from S3"
-            self.update_state(state='PROGRESS',
-                              meta={'current': 0, 'total': '0',
-                                        'message': message, 's3Key': s3_upload_key})
-            s3_object.download_fileobj(data)
-
-        temp_hdf5_tcsv_file_path = conversion.tcsv_to_hdf5(Progress(self), temp_raw_tcsv_file_path, s3_upload_key)
-
-        # Create a new converted object to upload
-        message = "Uploading the {} to S3".format(DataFile.DataFileType(file_type))
-        self.update_state(state='PROGRESS',
-                          meta={'current': 0, 'total': '0',
-                                'message': message, 's3Key': s3_upload_key})
-
-        with open(temp_hdf5_tcsv_file_path, 'rb') as data:
-            converted_s3_object = bucket.put_object(Key=converted_s3_key, Body=data)
-
-        return DataFile.DataFileType.HDF5.value
-    elif file_type == DataFile.DataFileType.HDF5.value:
-        message = "HDF5 conversion is not implemented yet"
-        self.update_state(state='FAILURE',
-                          meta={'current': 0, 'total': '0',
-                                'message': message, 's3Key': s3_upload_key})
-        raise Exception(message)
+        resulting_data_type = DataFile.DataFileType.Raw
     else:
-        message = "The file type {} is not known for {}".format(file_type, s3_upload_key)
-        self.update_state(state='FAILURE',
-                          meta={'current': 0, 'total': '0',
-                                'message': message, 's3Key': s3_upload_key})
-        raise Exception(message)
+        if file_type == models.InitialFileType.NumericMatrixCSV:
+            converter = conversion.tcsv_to_hdf5
+            resulting_data_type = DataFile.DataFileType.HDF5
+        elif file_type == models.InitialFileType.Table:
+            converter = conversion.tcsv_to_columnar
+            resulting_data_type = DataFile.DataFileType.Columnar
+        else:
+            raise Exception("unimplemented: {}".format(file_type))
 
+        s3_object = s3.Object(bucket_name, initial_s3_key)
+        converted_s3_object = s3.Object(bucket_name, converted_s3_key)
 
-@celery.task
-def update_session_file_converted_type(converted_type, upload_session_file_id):
-    # TODO: Think about the implications of requiring the code of the app in celery => Would need to restart this service each time we change the code of the app
-    # TODO: Handle the exception/error management here
-    mc.update_session_file_converted_type(converted_type=converted_type,
-                                          upload_session_file_id=upload_session_file_id)
+        with tempfile.NamedTemporaryFile("wb") as download_dest:
+            with tempfile.NamedTemporaryFile("wb") as converted_dest:
+                _from_s3_convert_to_s3(progress, s3_object, download_dest, converted_dest, converted_s3_object, converter)
 
+    mc.update_upload_session_file(upload_session_file_id, resulting_data_type)
 
 # TODO: This is only for background_process_new_upload_session_file, how to get it generic for any Celery tasks?
 def taskstatus(task_id):
@@ -148,12 +117,6 @@ def taskstatus(task_id):
 
     return response
 
-import tempfile
-import uuid
-import flask
-
-from taiga2.aws import parse_s3_url
-
 def get_converter(src_format, dst_format):
     from taiga2.models import DataFile
 
@@ -194,10 +157,6 @@ def _start_conversion_task(self, src_url, src_format, dst_format, cache_entry_id
 
             models_controller.update_conversion_cache_entry(cache_entry_id, "Completed successfully", urls=urls)
 
-
-import logging
-
-log = logging.getLogger()
 
 @celery.task(bind=True)
 def start_conversion_task(self, src_url, src_format, dst_format, cache_entry_id):

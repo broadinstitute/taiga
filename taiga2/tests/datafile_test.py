@@ -71,11 +71,13 @@ from taiga2.controllers.models_controller import find_datafile
 def create_simple_dataset(user_id):
     # create datafile
     df = mc.add_datafile(name="df",
-                     url="s3://bucket/key",
-                     type=models.DataFile.DataFileType.Raw)
+                                url="s3://bucket/key",
+                                s3_bucket="bucket",
+                                s3_key="converted/key",
+                                type=models.DataFile.DataFileType.Raw)
 
     ds = mc.add_dataset(name="dataset name", creator_id=user_id, description="dataset description", datafiles_ids=[df.id])
-    return ds.permaname, len(ds.dataset_versions)[0].id, "df"
+    return ds.permaname, ds.dataset_versions[0].id, "df"
 
 
 def test_find_datafile(db, user_id):

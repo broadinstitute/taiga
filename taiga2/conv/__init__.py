@@ -12,3 +12,5 @@ def csv_to_columnar(src, dst):
 CSV_FORMAT = "csv"
 RAW_FORMAT = "raw"
 RDS_FORMAT = "rds"
+HDF5_FORMAT = "hdf5"
+COLUMNAR_FORMAT = "columnar"

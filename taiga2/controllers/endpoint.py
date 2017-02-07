@@ -2,6 +2,9 @@ from flask import current_app, json
 # TODO: Change the app containing db to api_app => current_app
 import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
+import taiga2.conv as conversion
+from taiga2.models import DataFile
+
 
 import logging
 
@@ -169,28 +172,28 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
 
 def create_upload_session_file(S3UploadedFileMetadata, sid):
+#      location:
+#      eTag:
+#      bucket:
+#      key:
+#      filename:
+#      filetype:
 
-    # TODO: We should first check the file exists before adding it in the db
-    # TODO: We could also check the type of the object
-    # TODO: We need to make a distinction between numerical or table data
-    # TODO: Add also Parquet file conversion
+    s3_bucket = S3UploadedFileMetadata['bucket']
+
+    initial_file_type = S3UploadedFileMetadata['filetype']
+    initial_s3_key = S3UploadedFileMetadata['key']
 
     # Register this new file to the UploadSession received
     upload_session_file = models_controller.add_upload_session_file(session_id=sid,
                                                                     filename=S3UploadedFileMetadata['filename'],
-                                                                    filetype=S3UploadedFileMetadata['filetype'],
-                                                                    url=S3UploadedFileMetadata['location'],
-                                                                    s3_bucket=S3UploadedFileMetadata['bucket'])
-
-    convert_key = upload_session_file.converted_s3_key
+                                                                    initial_file_type=initial_file_type,
+                                                                    initial_s3_key=initial_s3_key,
+                                                                    s3_bucket=s3_bucket)
 
     # Launch a Celery process to convert and get back to populate the db + send finish to client
-    from taiga2.tasks import background_process_new_upload_session_file, update_session_file_converted_type
-    task = background_process_new_upload_session_file \
-        .apply_async((S3UploadedFileMetadata, convert_key),
-                     link=update_session_file_converted_type.s(upload_session_file.id))
-
-    # We need to update the uploadSession with the return of the background_process
+    from taiga2.tasks import background_process_new_upload_session_file
+    task = background_process_new_upload_session_file.delay(upload_session_file.id, initial_s3_key, initial_file_type, s3_bucket, upload_session_file.converted_s3_key)
 
     return flask.jsonify(task.id)
 
@@ -220,9 +223,6 @@ def task_status(taskStatusId):
     status = taskstatus(taskStatusId)
     return flask.jsonify(status)
 
-import taiga2.conv as conversion
-from taiga2.models import DataFile
-
 
 def _no_transform_needed(requested_format, datafile_type):
     if requested_format == conversion.RAW_FORMAT and datafile_type == DataFile.DataFileType.Raw:
@@ -236,7 +236,7 @@ def _no_transform_needed(requested_format, datafile_type):
 
     return False
 
-def get_datafile(dataset_permaname, version, dataset_version_id, datafile_name, format):
+def get_datafile(format, dataset_permaname=None, version=None, dataset_version_id=None, datafile_name=None):
     from taiga2.tasks import start_conversion_task
 
     datafile = models_controller.find_datafile(dataset_permaname, version, dataset_version_id, datafile_name)
