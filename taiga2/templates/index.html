@@ -122,8 +122,8 @@
 <body>
   <div id="header">
       <div class="top-page-menu">
-          <img src="/static/taiga3.png" style="padding-right: 5px">Taiga
-          <a href="/app">Home</a>
+          <img src="{{ url_for('static', filename='taiga3.png') }}" style="padding-right: 5px">Taiga
+          <a href="/taiga">Home</a>
       </div>
 
       <div class="login-box pull-right">
@@ -147,8 +147,12 @@
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
   <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-    <!-- Main -->
-    <script src="/static/frontend.js"></script>
+  <!-- Main -->
+  <script>
+      // Fetch the variables of the environment
+      var taigaPrefix = '{{ prefix }}';
+  </script>
+  <script src="{{ url_for('static', filename='frontend.js') }}"></script>
 </body>
 </html>
 

@@ -10,6 +10,7 @@ import { TaigaApi } from "../models/api"
 import * as Dialogs from "./Dialogs"
 
 import { toLocalDateString } from "../Utilities/formats";
+import { relativePath } from "../Utilities/route";
 
 export interface DatasetViewProps {
     params : any
@@ -73,7 +74,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             return <span>{dataset_version.name}</span>
         }
         else {
-            return <Link to={"/app/dataset/"+dataset.id+"/"+dataset_version.id}>{dataset_version.name}</Link>
+            return <Link to={relativePath("dataset/"+dataset.id+"/"+dataset_version.id)}>{dataset_version.name}</Link>
         }
     }
 
@@ -108,7 +109,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         });
 
         let folders = dataset.folders.map( (f, index) => {
-            return <Link key={index} to={"/app/folder/"+f.id}>{f.name}</Link>
+            return <Link key={index} to={relativePath("folder/"+f.id)}>{f.name}</Link>
         } )
 
         let navItems = [
@@ -134,7 +135,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 }))
             let ancestor_links = [...ancestor_dataset_versions].map( (x, index) => {
                 return <li key={index}>
-                    <Link to={"/app/dataset/"+x.id}>{x.name}</Link>
+                    <Link to={relativePath("dataset/"+x.id)}>{x.name}</Link>
                 </li>
             })
             if(ancestor_links.length > 0) {

@@ -8,7 +8,14 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 
 # Install Nodejs/npm
-RUN apt-get install -y nodejs npm
+RUN apt-get install -y build-essential
+RUN curl -sL https://deb.nodesource.com/setup_6.x -o nodesource_setup.sh
+RUN bash nodesource_setup.sh
+RUN apt-get install -y nodejs
+
+RUN rm nodesource_setup.sh
+# The command below was taking an old 4.X version of node, not supported by yarn
+#RUN apt-get install -y nodejs npm
 
 # Install python and its related packages
 RUN apt-get install -y python3.5 python3-dev python3-pip python3-setuptools
@@ -51,7 +58,7 @@ WORKDIR ..
 RUN python3.5 taiga2/create_test_db_sqlalchemy.py settings.cfg
 
 # Build our frontend distribution
-RUN ln -s /usr/bin/nodejs /usr/bin/node
+#RUN ln -s /usr/bin/nodejs /usr/bin/node
 RUN node_modules/.bin/webpack
 
 # Set celery as being able to run as root => Can find a better way

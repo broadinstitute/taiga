@@ -10,6 +10,7 @@ import * as Upload from "./Modals/Upload";
 import {DatasetVersion} from "../models/models";
 
 import {toLocalDateString} from "../Utilities/formats";
+import {relativePath} from "../Utilities/route";
 
 import { Glyphicon } from "react-bootstrap";
 import {Dataset} from "../models/models";
@@ -157,7 +158,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         var folder: Folder.Folder = this.state.folder;
 
         var parent_links = folder.parents.map((p: Folder.NamedId, index: number) => {
-            return <Link key={index} to={"/app/folder/"+p.id}>{p.name}</Link>
+            return <Link key={index} to={relativePath("folder/"+p.id)}>{p.name}</Link>
         });
 
         var subfolders: Folder.FolderEntries[] = [];
@@ -178,7 +179,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                            onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
                     <span> </span>
-                    <Link key={index} to={"/app/folder/"+e.id}>
+                    <Link key={index} to={relativePath("folder/"+e.id)}>
                         {e.name}
                     </Link>
                 </td>
@@ -200,7 +201,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         <span>
                             <Glyphicon glyph="glyphicon glyphicon-file"/>
                             <span> </span>
-                            <Link key={index} to={"/app/dataset/"+full_datasetVersion.dataset_id+"/"+e.id}>
+                            <Link key={index} to={relativePath("dataset/"+full_datasetVersion.dataset_id+"/"+e.id)}>
                                 {e.name}
                             </Link>
                         </span>
@@ -213,7 +214,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     <span>
                         <Glyphicon glyph="glyphicon glyphicon-inbox"/>
                         <span> </span>
-                        <Link key={index} to={"/app/dataset/"+e.id+"/"+firstDatasetVersion.id}>{e.name}</Link>
+                        <Link key={index} to={relativePath("dataset/"+e.id+"/"+firstDatasetVersion.id)}>{e.name}</Link>
                     </span>
             }
             else {
