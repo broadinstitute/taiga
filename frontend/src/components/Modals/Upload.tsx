@@ -10,9 +10,8 @@ import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row} from 'react-
 
 import {DialogProps, DialogState} from "../Dialogs";
 import { TypeEditorBootstrapTable } from "./TypeEditorBootstrapTable";
-import { getFormatType } from "../../Utilities/formats";
 import {
-    S3Credentials, FileUploadStatus, TaskStatus, SupportedTypeEnum,
+    S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,
     S3UploadedFileMetadata, S3UploadedData
 } from "../../models/models";
 import {TaigaApi} from "../../models/api";
@@ -338,8 +337,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     }
 
     typeFormatter(cell: any, row: any) {
-        let formattedType: SupportedTypeEnum = getFormatType(cell);
-        return formattedType.toString();
+        return cell.toString();
     }
 
     columnClassProgressFormat(fieldValue: any, row: any, rowIdx: number, colIds: number) {
@@ -393,7 +391,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     <TableHeaderColumn isKey dataField='fileName'>Name</TableHeaderColumn>
                     <TableHeaderColumn dataField='fileType'
                                        width={fileTypeWidth}
-                                       dataFormat={ this.typeFormatter }
                                        customEditor={ { getElement: createTypeEditor }}>Type</TableHeaderColumn>
                     <TableHeaderColumn dataField='fileSize'
                                        width="150"

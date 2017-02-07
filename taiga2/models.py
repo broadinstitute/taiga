@@ -168,8 +168,6 @@ class DataFile(db.Model):
 
     type = db.Column(db.Enum(DataFileType))
 
-    url = db.Column(db.Text)
-
     s3_bucket = db.Column(db.Text)
     s3_key = db.Column(db.Text)
 

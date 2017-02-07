@@ -1,21 +1,17 @@
-import { SupportedTypeEnum } from "../models/models";
+import { InitialFileType } from "../models/models";
 
 export function toLocalDateString(stringDate: string) {
     let date = new Date(stringDate);
     return date.toLocaleDateString();
 }
 
-export function getFormatType(mimeTypeOrEnum: string|SupportedTypeEnum): SupportedTypeEnum {
-    // Manage the case of receiving the Enum
-    let formattedType: SupportedTypeEnum = SupportedTypeEnum.Raw;
-    if(mimeTypeOrEnum in SupportedTypeEnum){
-        formattedType = mimeTypeOrEnum as SupportedTypeEnum;
+export function getInitialFileTypeFromMimeType(mimeType : string) : InitialFileType {
+    if (mimeType == 'text/csv') {
+        return InitialFileType.NumericMatrixCSV;
+    } else if(mimeType == 'text/tab-separated-values') {
+        return InitialFileType.NumericMatrixTSV;
+    } else {
+        return InitialFileType.Raw;
     }
-    // Else we convert the type
-    else {
-        if (mimeTypeOrEnum == 'text/csv' || mimeTypeOrEnum == 'text/tab-separated-values') {
-            formattedType = SupportedTypeEnum.Columnar;
-        }
-    }
-    return formattedType;
 }
+

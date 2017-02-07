@@ -87,7 +87,7 @@ class DatasetSchema(ma.ModelSchema):
 
 class DataFileSummarySchema(ma.ModelSchema):
     class Meta:
-        additional = ('name', 'url', 'type')
+        additional = ('name', 'type')
     # TODO: Manage the other fields in the model/db too
     type = EnumField(DataFile.DataFileType)
     description = fields.fields.Function(lambda obj: 'TODO')

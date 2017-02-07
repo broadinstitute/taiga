@@ -1,4 +1,3 @@
-import { getFormatType } from "../Utilities/formats";
 
 export class Folder {
     id: string;
@@ -70,7 +69,7 @@ export interface DatasetAndDatasetVersion {
 export interface DatasetVersionDatafiles {
     "name": string;
     "url": string;
-    "type": SupportedTypeEnum;
+    "type": DataFileType;
     "description": string;
     "content_summary": string;
 }
@@ -144,7 +143,7 @@ export class S3UploadedFileMetadata {
     filename: string;
     filetype: string;
 
-    constructor(uploadS3Data: S3UploadedData, filename: string, filetype: SupportedTypeEnum) {
+    constructor(uploadS3Data: S3UploadedData, filename: string, filetype: InitialFileType) {
         this.location = uploadS3Data.Location;
         this.eTag = uploadS3Data.ETag;
         this.bucket = uploadS3Data.Bucket;
@@ -161,7 +160,8 @@ export class FileUploadStatus {
 
     // These exist because of special needs for react-bootstrap-table. See https://github.com/AllenFang/react-bootstrap-table/issues/50
     fileName: string;
-    fileType: SupportedTypeEnum;
+    mimeType: string;
+    fileType: InitialFileType;
     fileSize: number;
 
     s3Key: string;
@@ -173,7 +173,7 @@ export class FileUploadStatus {
         this.file = file;
 
         this.fileName = this.file.name;
-        this.fileType = getFormatType(this.file.type);
+        this.mimeType = this.file.type;
         this.fileSize = this.file.size
 
         this.progress = 0;
@@ -197,7 +197,15 @@ export class TaskStatus {
 }
 
 // IMPORTANT: Need to sync with backend for each changes
-export enum SupportedTypeEnum {
+export enum InitialFileType {
+    NumericMatrixCSV = <any> 'NumericMatrixCSV',
+    NumericMatrixTSV = <any> 'NumericMatrixTSV',
+    Table = <any> 'Table',
+    GCT = <any> 'GCT',
+    Raw = <any> 'Raw'
+}
+
+export enum DataFileType {
     Raw = <any> 'Raw',
     HDF5 = <any> 'HDF5',
     Columnar = <any> 'Columnar'

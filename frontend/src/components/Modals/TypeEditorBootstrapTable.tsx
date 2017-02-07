@@ -1,7 +1,6 @@
 import * as React from "react";
 import { FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
-import { getFormatType } from "../../Utilities/formats";
-import { SupportedTypeEnum } from "../../models/models";
+import { InitialFileType } from "../../models/models";
 
 interface TypeEditorProps {
     defaultValue: any;
@@ -9,14 +8,14 @@ interface TypeEditorProps {
 }
 
 interface TypeEditorState {
-    type: SupportedTypeEnum;
+    type: InitialFileType;
 }
 
 export class TypeEditorBootstrapTable extends React.Component<TypeEditorProps, TypeEditorState> {
     constructor(props: any) {
         super(props);
         // TODO: How can we ensure we are not erasing/forgetting states defined in the interface?
-        let initType: SupportedTypeEnum = getFormatType(this.props.defaultValue);
+        let initType = InitialFileType.Raw;
 
         this.state = {
             type: initType
@@ -28,7 +27,7 @@ export class TypeEditorBootstrapTable extends React.Component<TypeEditorProps, T
     }
 
     updateData(evt: any) {
-        let newType: SupportedTypeEnum = evt.currentTarget.value;
+        let newType: InitialFileType = evt.currentTarget.value;
         console.log("We just updated the value of the control: " + evt.currentTarget.value);
         this.setState({
             type: newType
@@ -42,9 +41,9 @@ export class TypeEditorBootstrapTable extends React.Component<TypeEditorProps, T
                 <FormControl componentClass="select"
                              value={ this.state.type }
                              onChange={ (evt) => this.updateData(evt) } >
-                    <option value={SupportedTypeEnum.Raw}>{SupportedTypeEnum.Raw}</option>
-                    <option value={SupportedTypeEnum.HDF5}>{SupportedTypeEnum.HDF5}</option>
-                    <option value={SupportedTypeEnum.Columnar}>{SupportedTypeEnum.Columnar}</option>
+                    <option value={InitialFileType.NumericMatrixCSV}>{InitialFileType.NumericMatrixCSV}</option>
+                    <option value={InitialFileType.Raw}>{InitialFileType.Raw}</option>
+                    <option value={InitialFileType.Table}>{InitialFileType.Table}</option>
                 </FormControl>
             </FormGroup>
         )

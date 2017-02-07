@@ -38,10 +38,8 @@ def drop_and_create_db():
     upload_session_file_origin = models_controller.add_upload_session_file(session_id=upload_session_origin.id,
                                                                            filename="origin",
                                                                            s3_bucket=bucket_name,
-                                                                           filetype=models_controller.DataFile.DataFileType.Raw,
-                                                                           url="www.origin_url.com")
-    models_controller.update_session_file_converted_type(converted_type=models_controller.DataFile.DataFileType.Raw,
-                                                         upload_session_file_id=upload_session_file_origin.id)
+                                                                           initial_file_type=models.InitialFileType.Raw,
+                                                                           initial_s3_key="x")
 
     origin_dataset = models_controller.add_dataset_from_session(session_id=upload_session_origin.id,
                                                                 dataset_name="origin",
@@ -51,14 +49,14 @@ def drop_and_create_db():
     # Create the Folder A folder
     folderA = models_controller.add_folder(creator_id=admin_user.id,
                                            name="Folder A",
-                                           folder_type=models.Folder.FolderType.folder)
+                                           folder_type=models.Folder.FolderType.folder, description=None)
     models_controller.add_folder_entry(folder_id=home_folder_admin.id,
                                        entry_id=folderA.id)
 
     # Create Folder B inside Folder A
     folderB = models_controller.add_folder(creator_id=admin_user.id,
                                            name="Folder B",
-                                           folder_type=models.Folder.FolderType.folder)
+                                           folder_type=models.Folder.FolderType.folder, description=None)
     models_controller.add_folder_entry(folder_id=folderA.id,
                                        entry_id=folderB.id)
 
@@ -67,11 +65,8 @@ def drop_and_create_db():
     upload_session_file_data = models_controller.add_upload_session_file(session_id=upload_session_data.id,
                                                                          filename="Data",
                                                                          s3_bucket=bucket_name,
-                                                                         filetype=models.DataFile.DataFileType.Raw,
-                                                                         url="www.data.com")
-
-    models_controller.update_session_file_converted_type(converted_type=models_controller.DataFile.DataFileType.Raw,
-                                                         upload_session_file_id=upload_session_file_data.id)
+                                                                         initial_file_type=models.InitialFileType.Raw,
+                                                                         initial_s3_key="y")
 
     data = models_controller.add_dataset_from_session(session_id=upload_session_data.id,
                                                       dataset_name="Data",
@@ -93,7 +88,6 @@ def drop_and_create_db():
                 loop_datafile = models_controller.add_datafile(name=datafile.name + 'v' + str(i),
                                                                s3_bucket=bucket_name,
                                                                s3_key=models_controller.generate_convert_key(),
-                                                               url=datafile.url,
                                                                type=datafile.type)
                 loop_datafiles.append(loop_datafile)
             temp_data_datafiles = loop_datafiles

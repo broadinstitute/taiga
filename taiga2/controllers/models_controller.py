@@ -191,8 +191,7 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
     added_datafiles = []
     for file in added_files:
         new_datafile = add_datafile(name=file.filename,
-                                    url=file.url,
-                                    s3_bucket=file.converted_s3_bucket,
+                                    s3_bucket=file.s3_bucket,
                                     s3_key=file.converted_s3_key,
                                     type=file.converted_filetype)
         added_datafiles.append(new_datafile)
@@ -451,17 +450,13 @@ def get_entry(entry_id):
 def add_datafile(s3_bucket,
                  s3_key,
                  name,
-                 url,
                  type):
     # TODO: See register_datafile_id
     new_datafile_name = name
 
-    new_datafile_url = url
-
     new_datafile = DataFile(name=new_datafile_name,
                             s3_bucket=s3_bucket,
                             s3_key=s3_key,
-                            url=new_datafile_url,
                             type=type)
 
     db.session.add(new_datafile)
