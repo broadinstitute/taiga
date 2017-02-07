@@ -12,7 +12,7 @@ def index():
 
 @app.route("/<path:filename>")
 def sendindex2(filename):
-    return render_template('index.html')
+    return render_template('index.html', prefix=url_for('index'))
 
 
 @app.route("/js/<path:filename>")
