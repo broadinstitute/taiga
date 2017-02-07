@@ -30,7 +30,7 @@ setup(
         'pytest==3.0.5',
         'freezegun==0.3.8',
         'python-magic==0.4.12',
-        'h5py>=2.6.0',
-        'numpy>=1.11.3'
+        'h5py==2.6.0',
+        'numpy==1.11.3'
     ],
 )

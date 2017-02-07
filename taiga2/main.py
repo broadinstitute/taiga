@@ -11,23 +11,6 @@ from taiga2.celery_init import configure_celery
 log = logging.getLogger(__name__)
 
 
-class PathDispatcher(object):
-    "Delegate requests prefixed with 'api' to separate app"
-    def __init__(self, api_app, frontend_app):
-        self.api_app = api_app
-        self.frontend_app = frontend_app
-
-    def get_application(self, prefix):
-        if prefix == "api":
-            return self.api_app
-        else:
-            return self.frontend_app
-
-    def __call__(self, environ, start_response):
-        app = self.get_application(peek_path_info(environ))
-        return app(environ, start_response)
-
-
 def simple(env, resp):
     resp(b'200 OK', [(b'Content-Type', b'text/plain')])
     return [b"Hello WSGI World"]
@@ -46,10 +29,6 @@ def main():
 
     debug = flask_api_app.config["DEBUG"]
 
-    # application = PathDispatcher(api_app, ui_app)
-
-    # shared_app = SharedDataMiddleware(simple, {
-    # })
     prefix = flask_api_app.config["PREFIX"]
     prefix_with_api = os.path.join(prefix, 'api')
     parent_app = DispatcherMiddleware(simple, {
