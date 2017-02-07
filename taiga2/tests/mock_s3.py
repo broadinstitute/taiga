@@ -6,7 +6,7 @@ import tempfile
 import re
 
 #<editor-fold desc="MonkeyS3">
-class MonkeyS3:
+class MockS3:
     def __init__(self, tmpdir):
         self.file_per_key = {}
         self.tmpdir = tmpdir
@@ -17,11 +17,11 @@ class MonkeyS3:
         return fd.name
 
     def Bucket(self, bucket_name):
-        return MonkeyBucket(self, bucket_name)
+        return MockBucket(self, bucket_name)
 
     def Object(self, bucket_name, key):
         bucket = self.Bucket(bucket_name)
-        return MonkeyS3Object(bucket, key)
+        return MockS3Object(bucket, key)
 
     def generate_presigned_url(self, ClientMethod, Params):
         assert ClientMethod=='get_object'
@@ -33,7 +33,7 @@ def parse_presigned_url(url):
     return g.group(1), g.group(2)
 
 
-class MonkeyBucket:
+class MockBucket:
     def __init__(self, s3, name):
         self.s3 = s3
         self.name = name
@@ -43,7 +43,7 @@ class MonkeyBucket:
 
     # TODO: I am adding back the capitalized arguments because this is how it is done in the Boto3 doc: http://boto3.readthedocs.io/en/latest/reference/services/s3.html#S3.Bucket.put_object
     def put_object(self, Key, Body):
-        new_object = MonkeyS3Object(self, Key)
+        new_object = MockS3Object(self, Key)
         new_object.upload_fileobj(Body)
         return new_object
 
@@ -61,7 +61,7 @@ class MonkeyBucket:
         return self
 
 
-class MonkeyS3Object:
+class MockS3Object:
     def __init__(self, bucket, key):
         self.bucket = bucket
         self.key = key
@@ -107,7 +107,7 @@ class MonkeyS3Object:
 
 
 #<editor-fold desc="MonkeySTS">
-class MonkeySTS:
+class MockSTS:
     def get_session_token(self, *args, **kwargs):
         expiration_seconds = kwargs.get('DurationSeconds', 900)
         datetime_expiration = datetime.datetime.now() + datetime.timedelta(0, expiration_seconds)

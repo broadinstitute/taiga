@@ -2,7 +2,7 @@ import time
 import taiga2.models as models
 import taiga2.controllers.models_controller as mc
 import json
-from taiga2.tests.monkeys import parse_presigned_url
+from taiga2.tests.mock_s3 import parse_presigned_url
 
 MAX_TIME = 5
 
@@ -10,7 +10,7 @@ class StubProgress:
     def progress(self, message):
         print(message)
 
-def create_dataset_version(tmpdir, user_id, monkey_s3):
+def create_dataset_version(tmpdir, user_id, mock_s3):
     from taiga2.conv import csv_to_columnar
 
     tmpsrc = str(tmpdir.join("thing.csv"))
@@ -22,7 +22,7 @@ def create_dataset_version(tmpdir, user_id, monkey_s3):
     csv_to_columnar(StubProgress(), tmpsrc, tmpdst)
 
     # put data into mock S3
-    monkey_s3.Object("bucket", "key").upload_file(tmpdst)
+    mock_s3.Object("bucket", "key").upload_file(tmpdst)
 
     # create datafile
     # TODO: I can definitely remove them, but when we discussed about this I was 3/4 at the end of s3_bucket/s3_key in a datafile
@@ -36,11 +36,11 @@ def create_dataset_version(tmpdir, user_id, monkey_s3):
     return str(ds.dataset_versions[0].id)
 
 
-def test_dataset_export(app, db, monkey_s3, user_id, tmpdir):
+def test_dataset_export(app, db, mock_s3, user_id, tmpdir):
     assert user_id is not None
 
     with app.test_client() as c:
-        dataset_version_id = create_dataset_version(tmpdir, user_id, monkey_s3)
+        dataset_version_id = create_dataset_version(tmpdir, user_id, mock_s3)
 
         start = time.time()
         resulting_urls = None
@@ -64,7 +64,7 @@ def test_dataset_export(app, db, monkey_s3, user_id, tmpdir):
         assert resulting_urls is not None
         assert len(resulting_urls) == 1
         bucket, key = parse_presigned_url(resulting_urls[0])
-        data = monkey_s3.Object(bucket, key).download_as_bytes()
+        data = mock_s3.Object(bucket, key).download_as_bytes()
 
         assert data == b"a,b\r\n1,2\r\n"
 

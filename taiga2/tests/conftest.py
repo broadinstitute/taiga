@@ -8,7 +8,7 @@ from taiga2.api_app import create_app
 from taiga2.celery_init import configure_celery
 from taiga2 import tasks
 
-from taiga2.tests.monkeys import MonkeyS3, MonkeySTS
+from taiga2.tests.mock_s3 import MockS3, MockSTS
 
 from taiga2.models import db as _db
 from taiga2.controllers import models_controller as mc
@@ -27,19 +27,19 @@ TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 
 
 @pytest.fixture(scope='function')
-def monkey_s3(tmpdir):
-    s3 = MonkeyS3(str(tmpdir))
+def mock_s3(tmpdir):
+    s3 = MockS3(str(tmpdir))
     return s3
 
 
 @pytest.fixture(scope='function')
-def monkey_sts():
-    sts = MonkeySTS()
+def mock_sts():
+    sts = MockSTS()
     return sts
 
 
 @pytest.fixture(scope='function')
-def app(request, monkey_s3, monkey_sts):
+def app(request, mock_s3, mock_sts):
     """Session-wide test `Flask` application."""
     settings_override = {
         'TESTING': True,
@@ -66,9 +66,9 @@ def app(request, monkey_s3, monkey_sts):
     ctx.push()
 
     # Monkey patch S3
-    g._s3_client = monkey_s3
+    g._s3_client = mock_s3
 
-    g._sts_client = monkey_sts
+    g._sts_client = mock_sts
 
     # Return _app and teardown
     yield _app

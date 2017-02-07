@@ -1,8 +1,8 @@
-from taiga2.tests.monkeys import MonkeyS3
+from taiga2.tests.mock_s3 import MockS3
 import io
 
 def test_mock_s3_basics(tmpdir):
-    s3 = MonkeyS3(str(tmpdir))
+    s3 = MockS3(str(tmpdir))
 
     path = str(tmpdir)+"/download"
 
