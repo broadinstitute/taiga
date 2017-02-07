@@ -554,8 +554,9 @@ def add_upload_session_file(session_id, filename, initial_file_type, initial_s3_
                                             filename=filename,
                                             initial_filetype=initial_file_type,
                                             initial_s3_key=initial_s3_key,
-                                            converted_s3_bucket=s3_bucket,
-                                            converted_s3_key=converted_s3_key)
+                                            s3_bucket=s3_bucket,
+                                            converted_s3_key=converted_s3_key,
+                                            converted_filetype=models.find_converted_type_by_initial_type(initial_file_type))
     db.session.add(upload_session_file)
     db.session.commit()
     return upload_session_file
@@ -565,17 +566,6 @@ def get_upload_session_file(upload_session_file_id):
     upload_session_file = db.session.query(UploadSessionFile) \
         .filter(UploadSessionFile.id == upload_session_file_id).one()
     return upload_session_file
-
-
-def update_session_file_converted_type(converted_type, upload_session_file_id):
-    upload_session_file = get_upload_session_file(upload_session_file_id)
-    upload_session_file.converted_filetype = converted_type
-
-    db.session.add(upload_session_file)
-    db.session.commit()
-
-    return upload_session_file
-
 
 # </editor-fold>
 

@@ -1,4 +1,4 @@
-from taiga2.conv.imp import tcsv_to_hdf5
+from taiga2.conv.imp import csv_to_hdf5, tsv_to_hdf5
 
 from taiga2.conv import columnar
 from taiga2.conv.columnar import columnar_to_rds

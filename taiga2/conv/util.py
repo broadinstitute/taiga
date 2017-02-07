@@ -4,12 +4,12 @@ class Progress:
     def __init__(self, celery_instance):
         self.celery_instance = celery_instance
 
-    def failed(self, message, filename):
+    def failed(self, message, filename=None):
         self.celery_instance.update_state(state='FAILURE',
                                      meta={'current': 0, 'total': '0',
                                            'message': message, 'fileName': filename})
 
-    def progress(self, message, filename, current=0):
+    def progress(self, message, filename=None, current=0):
         self.celery_instance.update_state(state='PROGRESS',
                                      meta={'current': current, 'total': '0',
                                            'message': message, 'fileName': filename})

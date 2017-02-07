@@ -17,14 +17,18 @@ def _get_csv_dims(progress, tcsv, dialect):
 
     return row_count, len(col_header)
 
-def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, rows_per_block=None, max_size_per_block=DEFAULT_MAX_ELEMENTS_PER_BLOCK):
+def csv_to_hdf5(progress, src_csv_file, dst_hdf5_file, **kwargs):
+    return tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, csv.excel, **kwargs)
+
+def tsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, **kwargs):
+    return tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, csv.excel_tab, **kwargs)
+
+def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=None, max_size_per_block=DEFAULT_MAX_ELEMENTS_PER_BLOCK):
     import h5py
     # now we could resize the hdf5 matrix as necessary, or we can make two passes over the data.  Let's start with
     # dumb approach of walking over the data twice.
 
-    with open(src_csv_file, 'r') as tcsv:
-        dialect = csv.Sniffer().sniff(tcsv.read(1024*20))
-
+    with open(src_csv_file, 'rt') as tcsv:
         tcsv.seek(0)
         row_count, col_count = _get_csv_dims(progress, tcsv, dialect)
 
@@ -59,7 +63,9 @@ def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, rows_per_block=None, max
 
                 # update data (the hdf5 matrix we're writing to) with the latest block
                 block_end = row_index + len(block_row_header)
-                data[row_index:block_end,:] = block_data
+                data[row_index:block_end,:] = np.array(block_data)
+
+
                 row_index = block_end
 
             # lastly write the labels along the two axes

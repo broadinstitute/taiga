@@ -79,11 +79,11 @@ class MonkeyS3Object:
         with open(full_path, 'rb') as f:
             writer.write(f.read())
 
-    def upload_fileobj(self, data):
+    def upload_fileobj(self, fileobj):
         full_path = self.bucket.s3._get_unique_filename()
 
         with open(full_path, 'w+b') as f:
-            f.write(data.read())
+            f.write(fileobj.read())
 
         self.bucket.s3.file_per_key[(self.bucket.name, self.key)] = full_path
 

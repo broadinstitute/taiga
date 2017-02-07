@@ -151,6 +151,7 @@ class InitialFileType(enum.Enum):
     GCT = "GCT"
     Raw = "Raw"
 
+
 class DataFile(db.Model):
     # TODO: Can we create a datafile without including it in a datasetVersion?
     __tablename__ = 'datafiles'
@@ -179,6 +180,15 @@ class DataFile(db.Model):
                               backref=db.backref(__tablename__,
                               cascade="all, delete-orphan"))
 
+
+_INTIAL_TO_CONVERTED_MAPPING = {InitialFileType.NumericMatrixCSV: DataFile.DataFileType.HDF5,
+                                InitialFileType.NumericMatrixTSV: DataFile.DataFileType.HDF5,
+                                InitialFileType.GCT: DataFile.DataFileType.HDF5,
+                                InitialFileType.Table : DataFile.DataFileType.Columnar,
+                                InitialFileType.Raw: DataFile.DataFileType.Raw,
+                                }
+def find_converted_type_by_initial_type(initial_type):
+    return _INTIAL_TO_CONVERTED_MAPPING[initial_type]
 
 class DatasetVersion(Entry):
     # Missing the permaname of the DatasetVersion

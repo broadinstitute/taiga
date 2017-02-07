@@ -19,13 +19,15 @@ def print_config():
     print(flask.current_app.config)
 
 def _from_s3_convert_to_s3(progress, s3_object, download_dest, converted_dest, converted_s3_object, converter):
-    progress.process("Downloading the file from S3")
+    progress.progress("Downloading the file from S3")
     s3_object.download_fileobj(download_dest)
+    download_dest.flush()
 
     converter(progress, download_dest.name, converted_dest.name)
 
     # Create a new converted object to upload
-    progress.process("Uploading to S3")
+    progress.progress("Uploading to S3")
+    converted_dest.seek(0)
     converted_s3_object.upload_fileobj(converted_dest)
 
 
@@ -51,26 +53,22 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
             'Key': initial_s3_key
         }
         s3.Bucket(bucket_name).copy(copy_source, converted_s3_key)
-
-        resulting_data_type = DataFile.DataFileType.Raw
     else:
-        if file_type == models.InitialFileType.NumericMatrixCSV:
-            converter = conversion.tcsv_to_hdf5
-            resulting_data_type = DataFile.DataFileType.HDF5
-        elif file_type == models.InitialFileType.Table:
+        if file_type == models.InitialFileType.NumericMatrixCSV.value:
+            converter = conversion.csv_to_hdf5
+        elif file_type == models.InitialFileType.NumericMatrixTSV.value:
+                converter = conversion.tsv_to_hdf5
+        elif file_type == models.InitialFileType.Table.value:
             converter = conversion.tcsv_to_columnar
-            resulting_data_type = DataFile.DataFileType.Columnar
         else:
             raise Exception("unimplemented: {}".format(file_type))
 
         s3_object = s3.Object(bucket_name, initial_s3_key)
         converted_s3_object = s3.Object(bucket_name, converted_s3_key)
 
-        with tempfile.NamedTemporaryFile("wb") as download_dest:
-            with tempfile.NamedTemporaryFile("wb") as converted_dest:
+        with tempfile.NamedTemporaryFile("w+b") as download_dest:
+            with tempfile.NamedTemporaryFile("w+b") as converted_dest:
                 _from_s3_convert_to_s3(progress, s3_object, download_dest, converted_dest, converted_s3_object, converter)
-
-    mc.update_upload_session_file(upload_session_file_id, resulting_data_type)
 
 # TODO: This is only for background_process_new_upload_session_file, how to get it generic for any Celery tasks?
 def taskstatus(task_id):
