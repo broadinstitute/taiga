@@ -373,19 +373,19 @@ def test_get_dataset_version_by_dataset_id_and_dataset_version_id(session: Sessi
 
 
 #</editor-fold>
+from taiga2.models import DataFile
 
 #<editor-fold desc="DataFile Tests">
 @pytest.fixture
 def new_datafile():
     new_datafile_name = "New Datafile"
-    new_datafile_permaname = generate_permaname(new_datafile_name)
-
     new_datafile_url = "http://google.com"
 
     _new_datafile = mc.add_datafile(name=new_datafile_name,
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=mc.generate_convert_key(),
-                                    url=new_datafile_url)
+                                    url=new_datafile_url,
+                                    type=DataFile.DataFileType.Raw)
 
     return _new_datafile
 #</editor-fold>

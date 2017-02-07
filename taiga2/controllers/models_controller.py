@@ -11,12 +11,8 @@ from taiga2.models import db
 from taiga2 import aws
 from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
+from sqlalchemy.orm.exc import NoResultFound
 
-from sqlalchemy.sql.expression import func
-
-
-# Base.metadata.drop_all(engine)
-# Base.metadata.create_all(engine)
 
 # IMPORTANT:
 #   If you have this error "RuntimeError: application not registered on db instance and
@@ -61,10 +57,10 @@ def get_user(user_id):
 # </editor-fold>
 
 # <editor-fold desc="Folder">
-def add_folder(creator_id=None,
-               name="Untitled Folder",
-               folder_type=Folder.FolderType.folder,
-               description="No description provided"):
+def add_folder(creator_id,
+               name,
+               folder_type,
+               description):
     creator = get_user(creator_id)
 
     new_folder = Folder(name=name,
@@ -152,10 +148,10 @@ def get_parent_folders(entry_id):
 
 # <editor-fold desc="Dataset">
 def add_dataset(name,
-                creator_id=None,
-                permaname=None,
-                description="No description provided",
-                datafiles_ids=None):
+                creator_id,
+                description,
+                datafiles_ids,
+                permaname=None):
     assert len(datafiles_ids) > 0
 
     if not permaname:
@@ -355,7 +351,7 @@ def delete_dataset(dataset_id):
 # <editor-fold desc="DatasetVersion">
 def add_dataset_version(creator_id,
                         dataset_id,
-                        datafiles_ids=None,
+                        datafiles_ids,
                         name=None):
     assert len(datafiles_ids) > 0
 
@@ -390,7 +386,7 @@ def add_dataset_version(creator_id,
     return new_dataset_version
 
 
-def get_dataset_version(dataset_version_id=0):
+def get_dataset_version(dataset_version_id):
     dataset_version = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.id == dataset_version_id) \
         .one()
@@ -398,7 +394,7 @@ def get_dataset_version(dataset_version_id=0):
     return dataset_version
 
 
-def get_dataset_versions(dataset_id=0):
+def get_dataset_versions(dataset_id):
     dataset_versions = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.dataset_id == dataset_id) \
         .all()
@@ -406,8 +402,8 @@ def get_dataset_versions(dataset_id=0):
     return dataset_versions
 
 
-def get_dataset_version_provenance(dataset_version_id=0,
-                                   provenance=None):
+def get_dataset_version_provenance(dataset_version_id,
+                                   provenance):
     # TODO: See how to manage the provenance
     raise NotImplementedError
 
@@ -449,16 +445,14 @@ def get_entry(entry_id):
     return entry
 
 
-# TODO: I don't think we need this anymore
-# def _convert_entries_to_dict(entries):
 # </editor-fold>
 
 # <editor-fold desc="DataFile">
 def add_datafile(s3_bucket,
                  s3_key,
-                 name="No name",
-                 url="",
-                 type=DataFile.DataFileType.Raw):
+                 name,
+                 url,
+                 type):
     # TODO: See register_datafile_id
     new_datafile_name = name
 
@@ -572,84 +566,6 @@ def get_upload_session_file(upload_session_file_id):
 # <editor-fold desc="Download datafiles">
 
 
-# def get_dataset(dataset_id):
-#     dataset = db.session.query(Dataset) \
-#         .filter(Dataset.id == dataset_id).one()
-#
-#     return dataset
-#
-#
-# def get_dataset_from_permaname(dataset_permaname):
-#     dataset = db.session.query(Dataset) \
-#         .filter(Dataset.permaname == dataset_permaname) \
-#         .one()
-#
-#     return dataset
-#
-# def resolve_to_dataset(name):
-#     m = re.match("([^/:]+)$", name)
-#     if m is None:
-#         return None
-#     permaname_or_id = m.group(1)
-#
-#     dataset = get_dataset(permaname_or_id)
-#     if dataset is None:
-#         dataset_version = get_dataset_version_by_id(permaname_or_id)
-#         if dataset_version is None:
-#             return None
-#         dataset = dataset_version.dataset
-#
-#     return dataset
-#
-# def resolve_to_dataset_version(name):
-#     m = re.match("([^/:]+)(?::([0-9]+))?$", name)
-#     if m is None:
-#         return None
-#     permaname = m.group(1)
-#     version = m.group(2)
-#
-#     dataset_id = resolve_to_dataset(permaname)
-#     if dataset_id is None:
-#         if get_dataset_version(permaname) is not None:
-#             return permaname
-#         else:
-#             return None
-#
-#     dataset = get_dataset(dataset_id)
-#     # now look for version
-#     if version == "" or version is None:
-#         version = len(dataset['versions'])-1
-#     else:
-#         version = int(version)-1
-#
-#     if version >= len(dataset['versions']):
-#         return None
-#
-#     dataset_version_id = dataset['versions'][version]
-#     return dataset_version_id
-#
-# import re
-# def resolve_to_datafile(name):
-#     m = re.match("([^/:]+(?::[0-9]+)?)(/.*)$", name)
-#     if m is None:
-#         return None
-#     dataset_name = m.group(1)
-#     path = m.group(2)
-#
-#     dataset_version_id = resolve_to_dataset_version(dataset_name)
-#     if dataset_version_id is None:
-#         return None
-#
-#     dataset_version = get_dataset_version(dataset_version_id)
-#     if path == "":
-#         path = dataset_version["entries"]["name"]
-#
-#     entries = [e for e in dataset_version['entries'] if e['name'] == path]
-#     if len(entries) == 0:
-#         return None
-#     else:
-#         return entries[0]
-
 def _find_cache_entry(dataset_version_id, format, datafile_name):
     entry = db.session.query(ConversionCache).filter(and_(ConversionCache.dataset_version_id == dataset_version_id,
                                                           ConversionCache.format == format,
@@ -713,7 +629,6 @@ def delete_conversion_cache_entry(entry_id):
 class IllegalArgumentError(ValueError):
     pass
 
-from sqlalchemy.orm.exc import NoResultFound
 
 def find_datafile(dataset_permaname, version_number, dataset_version_id, datafile_name):
     """Look up a datafile given either a permaname (and optional version number) or a dataset_version_id.  The datafile_name
