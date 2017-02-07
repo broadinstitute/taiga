@@ -6,6 +6,9 @@ from taiga2.tests.monkeys import parse_presigned_url
 
 MAX_TIME = 5
 
+class StubProgress:
+    def progress(self, message):
+        print(message)
 
 def create_dataset_version(tmpdir, user_id, monkey_s3):
     from taiga2.conv import csv_to_columnar
@@ -16,7 +19,7 @@ def create_dataset_version(tmpdir, user_id, monkey_s3):
     with open(tmpsrc, "wt") as fd:
         fd.write("a,b\n1,2\n")
 
-    csv_to_columnar(tmpsrc, tmpdst)
+    csv_to_columnar(StubProgress(), tmpsrc, tmpdst)
 
     # put data into mock S3
     monkey_s3.Object("bucket", "key").upload_file(tmpdst)

@@ -29,8 +29,6 @@ def hdf5_to_rds(hdf5_path, destination_dir, max_elements_per_block=DEFAULT_MAX_E
     finally:
         r.close()
 
-    handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
 
     generated_files = []
     for block_index in range(block_count):
@@ -53,12 +51,14 @@ def hdf5_to_rds(hdf5_path, destination_dir, max_elements_per_block=DEFAULT_MAX_E
             data <- t(h5read(fn,'/data', start=c(1,first.row.in.this.block), count=c(columns, rows.in.this.block)));
             dimnames(data) <- list(dim.0[first.row.in.this.block:last.row.in.this.block], dim.1);
             data[is.nan(data)] <- NA;
-            saveRDS(data, file=dst.fn))
+            saveRDS(data, file=dst.fn)
             """.format(r_escape_str(hdf5_path), r_escape_str(destination_file), rows_per_block, block_index).encode("utf8"))
 
-        # with open("dump", "wb") as fd:
-        #     fd.write(script)
+        with open("dump", "wb") as fd:
+            fd.write(script)
 
+        handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
         stdout, stderr = handle.communicate(script)
         if handle.returncode != 0:
             raise Exception("R process failed: %s\n%s" % (stdout, stderr))

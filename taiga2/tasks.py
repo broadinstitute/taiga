@@ -129,7 +129,7 @@ def get_converter(src_format, dst_format):
         return conversion.columnar_to_rds
     raise Exception("No conversion for {} to {}".format(src_format, dst_format))
 
-def _start_conversion_task(self, src_url, src_format, dst_format, cache_entry_id):
+def _start_conversion_task(self, progress, src_url, src_format, dst_format, cache_entry_id):
     from taiga2.controllers import models_controller
 
     dest_bucket = flask.current_app.config['S3_BUCKET']
@@ -146,7 +146,7 @@ def _start_conversion_task(self, src_url, src_format, dst_format, cache_entry_id
             models_controller.update_conversion_cache_entry(cache_entry_id, "Running conversion")
 
             converter = get_converter(src_format, dst_format)
-            converter(raw_t.name, conv_t.name)
+            converter(progress, raw_t.name, conv_t.name)
 
             urls = ["s3://{}/{}".format(dest_bucket, dest_key)]
 
@@ -160,7 +160,7 @@ def _start_conversion_task(self, src_url, src_format, dst_format, cache_entry_id
 def start_conversion_task(self, src_url, src_format, dst_format, cache_entry_id):
     try:
         log.error("start, %s %s", id(flask.g), dir(flask.g))
-        return _start_conversion_task(self, src_url, src_format, dst_format, cache_entry_id)
+        return _start_conversion_task(self, Progress(self), src_url, src_format, dst_format, cache_entry_id)
         log.error("end")
     except:
         log.exception("exception")

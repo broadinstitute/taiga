@@ -8,14 +8,17 @@ def _get_csv_dims(progress, tcsv, dialect):
     r = csv.reader(tcsv, dialect)
     row_count = 0
     col_header = next(r)
+    first_row = None
 
-    for _ in r:
+    for row in r:
+        if first_row is None:
+           first_row = row
         row_count += 1
         if row_count % 1000 == 0:
             message = "Scanning through file to determine size (line {})".format(row_count+1)
             progress.progress(message, None, row_count+1)
 
-    return row_count, len(col_header)
+    return row_count, len(first_row) - 1
 
 def csv_to_hdf5(progress, src_csv_file, dst_hdf5_file, **kwargs):
     return tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, csv.excel, **kwargs)
@@ -63,8 +66,12 @@ def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=
 
                 # update data (the hdf5 matrix we're writing to) with the latest block
                 block_end = row_index + len(block_row_header)
-                data[row_index:block_end,:] = np.array(block_data)
 
+                print("block_row_header", len(block_row_header))
+                print("block_data", np.array(block_data))
+                print("target", np.array(data[row_index:block_end,:]))
+
+                data[row_index:block_end,:] = np.array(block_data)
 
                 row_index = block_end
 

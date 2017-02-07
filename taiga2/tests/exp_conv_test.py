@@ -2,6 +2,7 @@ import subprocess
 
 from taiga2.conv import exp
 from taiga2.conv import imp
+from taiga2 import conv
 from taiga2.conv.util import r_escape_str
 import csv
 
@@ -67,7 +68,7 @@ def test_hdf5_to_rds(tmpdir,max_elements_per_block,expected_file_count):
 
     write_sample_csv(original_csv, 10, 5)
 
-    imp.tcsv_to_hdf5(ProgressStub(), original_csv, hdf5_file)
+    conv.csv_to_hdf5(ProgressStub(), original_csv, hdf5_file)
     files = exp.hdf5_to_rds(hdf5_file, str(tmpdir), max_elements_per_block=max_elements_per_block)
     assert len(files) == expected_file_count
     rds_to_csv(files, final_csv)
@@ -86,7 +87,7 @@ def test_columnar_to_rds(tmpdir,max_rows,expected_file_count):
 
     write_sample_table(original_csv, 10, 5)
 
-    imp.tcsv_to_columnar(ProgressStub(), original_csv, columnar_file, ",")
+    conv.csv_to_columnar(ProgressStub(), original_csv, columnar_file)
     files = exp.columnar_to_rds(columnar_file, str(tmpdir), max_rows=max_rows)
     assert len(files) == expected_file_count
     rds_to_csv(files, final_csv)
