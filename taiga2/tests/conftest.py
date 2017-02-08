@@ -8,7 +8,7 @@ from taiga2.api_app import create_app
 from taiga2.celery_init import configure_celery
 from taiga2 import tasks
 
-from taiga2.tests.mock_s3 import MockS3, MockSTS
+from taiga2.tests.mock_s3 import MockS3, MockSTS, MockS3Client
 
 from taiga2.models import db as _db
 from taiga2.controllers import models_controller as mc
@@ -66,7 +66,9 @@ def app(request, mock_s3, mock_sts):
     ctx.push()
 
     # Monkey patch S3
-    g._s3_client = mock_s3
+    g._s3_resource = mock_s3
+
+    g._s3_client = MockS3Client()
 
     g._sts_client = mock_sts
 

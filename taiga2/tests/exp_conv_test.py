@@ -1,7 +1,6 @@
 import subprocess
 
 from taiga2.conv import exp
-from taiga2.conv import imp
 from taiga2 import conv
 from taiga2.conv.util import r_escape_str
 import csv
@@ -55,11 +54,11 @@ class ProgressStub:
     def progress(self, *args, **kwargs):
         print("progress", args, kwargs)
 
-@pytest.mark.parametrize("max_elements_per_block,expected_file_count", [
+@pytest.mark.parametrize("max_elements_per_block, expected_file_count", [
     (10000,1),
     (5*5, 2)
 ])
-def test_hdf5_to_rds(tmpdir,max_elements_per_block,expected_file_count):
+def test_hdf5_to_rds(tmpdir, max_elements_per_block, expected_file_count):
     # actually test this by round-tripping from csv to hdf5 to rds to csv to make sure that we can recapitulate what was
     # originally submitted
 
@@ -76,7 +75,7 @@ def test_hdf5_to_rds(tmpdir,max_elements_per_block,expected_file_count):
         assert len(files) == expected_file_count
         rds_to_csv(files, final_csv)
 
-@pytest.mark.parametrize("max_rows,expected_file_count", [
+@pytest.mark.parametrize("max_rows, expected_file_count", [
     (None,1),
     (5, 2)
 ])

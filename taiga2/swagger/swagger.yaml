@@ -627,6 +627,10 @@ paths:
           in: query
           type: string
           description: the format to retreive as
+        - name: force
+          in: query
+          type: string
+          description: "if set to 'Y' will kick off this conversion even if on already has been done/started"
       responses:
         200:
           description: Will kick off conversion if not data in that form is not already availible.  Once reformated data is available, the location(s) will be returned in urls.  Multiple urls are returned because the data may need to be stored in seperate chunks, depending on format.
@@ -641,6 +645,8 @@ paths:
               - datafile_name
               - status
             properties:
+              dataset_permaname:
+                type: string
               dataset_name:
                 type: string
               dataset_version:

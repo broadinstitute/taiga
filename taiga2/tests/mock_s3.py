@@ -28,10 +28,6 @@ class MockS3:
         return "s3://"+Params["Bucket"]+"/"+Params["Key"]+"?signed"
 
 
-def parse_presigned_url(url):
-    g = re.match("s3://([^/]+)/([^?]+)\\?signed", url)
-    return g.group(1), g.group(2)
-
 
 class MockBucket:
     def __init__(self, s3, name):
@@ -104,6 +100,14 @@ class MockS3Object:
             return f.read()
 
 #</editor-fold>
+
+class MockS3Client:
+    def generate_presigned_url(self, ClientMethod, Params):
+        return "https://mocks3/{}/{}?signed=Y".format(Params["Bucket"], Params["Key"])
+
+def parse_presigned_url(url):
+    g = re.match("https://mocks3/([^/]+)/([^?]+)\\?signed=Y", url)
+    return g.group(1), g.group(2)
 
 
 #<editor-fold desc="MonkeySTS">

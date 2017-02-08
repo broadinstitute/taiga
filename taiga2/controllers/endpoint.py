@@ -15,11 +15,9 @@ from flask import render_template, request, redirect, url_for
 import os, json
 
 from taiga2.aws import aws
-from uuid import uuid4
+from taiga2.aws import sign_url as aws_sign_url
 
 import flask
-import time
-import enum
 
 ADMIN_USER_ID = "admin"
 
@@ -236,7 +234,7 @@ def _no_transform_needed(requested_format, datafile_type):
 
     return False
 
-def get_datafile(format, dataset_permaname=None, version=None, dataset_version_id=None, datafile_name=None):
+def get_datafile(format, dataset_permaname=None, version=None, dataset_version_id=None, datafile_name=None, force=None):
     from taiga2.tasks import start_conversion_task
 
     datafile = models_controller.find_datafile(dataset_permaname, version, dataset_version_id, datafile_name)
@@ -249,19 +247,25 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
     dataset_id = dataset_version.dataset.id
     datafile_name = datafile.name
     dataset_name = dataset_version.dataset.name
+    dataset_permaname = dataset_version.dataset.permaname
 
-    if _no_transform_needed(format, datafile.type):
+    if format == "metadata":
+        urls = None
+        conversion_status = ""
+    elif _no_transform_needed(format, datafile.type):
         # no conversion is necessary
-        urls = [aws.sign_url(datafile.url)]
+        urls = [aws_sign_url(datafile.url)]
+        conversion_status = ""
     else:
+        force_conversion = force == "Y"
         is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
 
         from taiga2 import models
         if not is_new:
-            if entry.state == models.ConversionEntryState.failed:
+            if entry.state == models.ConversionEntryState.failed and not force_conversion:
                 flask.abort(500) # report internal error
-            elif not entry_is_valid(entry):
-                log.warn("Cache entry not associated with a running task, deleting to try again")
+            elif not entry_is_valid(entry) or force_conversion:
+                log.warning("Cache entry not associated with a running task, deleting to try again")
                 models_controller.delete_conversion_cache_entry(entry.id)
                 is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
 
@@ -272,13 +276,15 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
             models_controller.update_conversion_cache_entry_with_task_id(entry.id, t.id)
 
         urls = models_controller.get_signed_urls_from_cache_entry(entry.urls_as_json)
+        conversion_status = entry.status
 
     result = dict(dataset_name=dataset_name,
+                  dataset_permaname=dataset_permaname,
                   dataset_version=dataset_version_version,
                   dataset_id=dataset_id,
                   dataset_version_id=dataset_version_id,
                   datafile_name=datafile_name,
-                  status=entry.status)
+                  status=conversion_status)
 
     if urls is not None:
         result['urls'] = urls

@@ -507,8 +507,6 @@ def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, de
             output.close()
 
 
-
-
 def columnar_to_rds(progress, input_file, temp_file_generator: "() -> str", max_rows=None, max_bytes=50*1024*1024):
     # two step conversion: First convert to csvs, then for each use R to load CSV and write Rdata file.  Not clear that we can do better
     # at the moment

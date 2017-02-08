@@ -16,11 +16,23 @@ class AWSClients:
         To mock in a test, set flask.g._s3_client in test setup
         """
         config = flask.current_app.config
-        if not hasattr(g, "_s3_client"):
+        if not hasattr(g, "_s3_resource"):
             aws_access_key_id=config['AWS_ACCESS_KEY_ID']
-            log.info("Getting S3 client with access key %s", aws_access_key_id)
-            g._s3_client = boto3.resource('s3',
+            log.info("Getting S3 resource with access key %s", aws_access_key_id)
+            g._s3_resource = boto3.resource('s3',
 #                                          config=Config(signature_version='s3v4'),
+                                          aws_access_key_id=aws_access_key_id,
+                                          aws_secret_access_key=config['AWS_SECRET_ACCESS_KEY'])
+        return g._s3_resource
+
+    @property
+    def s3_client(self):
+        config = flask.current_app.config
+        if not hasattr(g, "_s3_client"):
+            aws_access_key_id = config['AWS_ACCESS_KEY_ID']
+            log.info("Getting S3 client with access key %s", aws_access_key_id)
+            g._s3_client = boto3.client('s3',
+                                          #   config=Config(signature_version='s3v4'),
                                           aws_access_key_id=aws_access_key_id,
                                           aws_secret_access_key=config['AWS_SECRET_ACCESS_KEY'])
         return g._s3_client
@@ -59,7 +71,7 @@ def sign_url(url):
     # TODO: Set expiry on signing url
     bucket, key = parse_s3_url(url)
 
-    signed_url = aws.s3.generate_presigned_url(
+    signed_url = aws.s3_client.generate_presigned_url(
         ClientMethod='get_object',
         Params={
             'Bucket': bucket,
