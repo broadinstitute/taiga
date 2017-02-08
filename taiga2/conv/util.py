@@ -1,4 +1,25 @@
 import math
+import contextlib
+import os
+import tempfile
+
+@contextlib.contextmanager
+def make_temp_file_generator():
+    filenames = []
+
+    def temp_file_generator():
+        fd = tempfile.NamedTemporaryFile(delete=False)
+        filename = fd.name
+        fd.close()
+        filenames.append(filename)
+        print("Returning new file", filename)
+        return filename
+
+    yield temp_file_generator
+
+    for filename in filenames:
+        os.unlink(filename)
+
 
 class Progress:
     def __init__(self, celery_instance):

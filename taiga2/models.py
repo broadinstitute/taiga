@@ -245,6 +245,12 @@ class Activity(db.Model):
 
     comments = db.Column(db.Text)
 
+
+class ConversionEntryState(enum.Enum):
+    failed = "Failed"
+    running = "Running"
+    complete = "Complete"
+
 class ConversionCache(db.Model):
     __tablename__ = "conversion_cache"
 
@@ -261,6 +267,9 @@ class ConversionCache(db.Model):
     task_id = db.Column(db.Text)
 
     urls_as_json = db.Column(db.Text)
+
+    state = db.Column(db.Enum(ConversionEntryState))
+
 
 
 class UploadSession(db.Model):

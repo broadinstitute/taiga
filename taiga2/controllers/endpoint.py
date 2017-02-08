@@ -256,14 +256,18 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
     else:
         is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
 
-        if not is_new and not entry_is_valid(entry):
-            log.warn("Cache entry not associated with a running task, deleting to try again")
-            models_controller.delete_conversion_cache_entry(entry.id)
-            is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
+        from taiga2 import models
+        if not is_new:
+            if entry.state == models.ConversionEntryState.failed:
+                flask.abort(500) # report internal error
+            elif not entry_is_valid(entry):
+                log.warn("Cache entry not associated with a running task, deleting to try again")
+                models_controller.delete_conversion_cache_entry(entry.id)
+                is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
 
         if is_new:
             log.error("endpoint %s %s", id(flask.g), dir(flask.g))
-            t = start_conversion_task.delay(datafile.url, str(datafile.type), format, entry.id)
+            t = start_conversion_task.delay(datafile.s3_bucket, datafile.s3_key, str(datafile.type), format, entry.id)
             log.error("ended %s %s", flask.g, dir(flask.g))
             models_controller.update_conversion_cache_entry_with_task_id(entry.id, t.id)
 

@@ -421,7 +421,7 @@ def get_dataset_version_by_permaname_and_version(permaname,
     # dataset = get_dataset_from_permaname(permaname)
     dataset_version = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.version == version) \
-        .filter(Dataset.permaname == permaname) \
+        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
         .one()
 
     return dataset_version
@@ -590,7 +590,8 @@ def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
         entry = ConversionCache(dataset_version_id=dataset_version_id,
                                 datafile_name=datafile_name,
                                 format=format,
-                                status=status)
+                                status=status,
+                                state=models.ConversionEntryState.running)
         db.session.add(entry)
         db.session.commit()
 
@@ -621,6 +622,12 @@ def delete_conversion_cache_entry(entry_id):
         delete()
     db.session.commit()
 
+def mark_conversion_cache_entry_as_failed(entry_id):
+    db.session.query(ConversionCache). \
+        filter(ConversionCache.id == entry_id). \
+        update({"state":models.ConversionEntryState.failed})
+    db.session.commit()
+
 class IllegalArgumentError(ValueError):
     pass
 
@@ -640,6 +647,7 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
                 return None
         else:
             try:
+                print("dataset_perma", repr((dataset_permaname, version_number)))
                 dataset_version = get_dataset_version_by_permaname_and_version(dataset_permaname, version_number)
             except NoResultFound:
                 return None

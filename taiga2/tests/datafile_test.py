@@ -3,6 +3,7 @@ import taiga2.models as models
 import taiga2.controllers.models_controller as mc
 import json
 from taiga2.tests.mock_s3 import parse_presigned_url
+from taiga2.controllers.models_controller import find_datafile
 
 MAX_TIME = 5
 
@@ -10,7 +11,30 @@ class StubProgress:
     def progress(self, message):
         print(message)
 
-def create_dataset_version(tmpdir, user_id, mock_s3):
+def create_matrix_dataset_version(tmpdir, user_id, mock_s3):
+    from taiga2.conv import csv_to_hdf5
+
+    tmpsrc = str(tmpdir.join("thing.csv"))
+    tmpdst = str(tmpdir.join("thing.hdf5"))
+
+    with open(tmpsrc, "wt") as fd:
+        fd.write("a,b\nc,1,2\n")
+
+    csv_to_hdf5(StubProgress(), tmpsrc, tmpdst)
+
+    # put data into mock S3
+    mock_s3.Object("bucket", "key").upload_file(tmpdst)
+
+    # create datafile
+    df = mc.add_datafile(name="dfname",
+                         s3_bucket='bucket',
+                         s3_key='key',
+                         type=models.DataFile.DataFileType.HDF5)
+
+    ds = mc.add_dataset(name="dataset name", creator_id=user_id, description="dataset description", datafiles_ids=[df.id])
+    return str(ds.dataset_versions[0].id)
+
+def create_table_dataset_version(tmpdir, user_id, mock_s3):
     from taiga2.conv import csv_to_columnar
 
     tmpsrc = str(tmpdir.join("thing.csv"))
@@ -25,27 +49,35 @@ def create_dataset_version(tmpdir, user_id, mock_s3):
     mock_s3.Object("bucket", "key").upload_file(tmpdst)
 
     # create datafile
-    # TODO: I can definitely remove them, but when we discussed about this I was 3/4 at the end of s3_bucket/s3_key in a datafile
     df = mc.add_datafile(name="dfname",
                          s3_bucket='bucket',
                          s3_key='key',
-                         url="s3://bucket/key",
                          type=models.DataFile.DataFileType.Columnar)
 
     ds = mc.add_dataset(name="dataset name", creator_id=user_id, description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
 
+import pytest
 
-def test_dataset_export(app, db, mock_s3, user_id, tmpdir):
+@pytest.mark.parametrize("src_format, out_format, is_expected", [
+    ("table", "csv", lambda x: x == b"a,b\r\n1,2\r\n"),
+    ("table", "rds", lambda x: len(x) > 0),
+    ("matrix", "csv", lambda x: x == b",a,b\r\nc,1.0,2.0\r\n"),
+    ("matrix", "rds", lambda x: len(x) > 0)
+])
+def test_dataset_export(app, db, mock_s3, user_id, tmpdir, src_format, out_format, is_expected):
     assert user_id is not None
 
     with app.test_client() as c:
-        dataset_version_id = create_dataset_version(tmpdir, user_id, mock_s3)
+        if src_format == "table":
+            dataset_version_id = create_table_dataset_version(tmpdir, user_id, mock_s3)
+        else:
+            dataset_version_id = create_matrix_dataset_version(tmpdir, user_id, mock_s3)
 
         start = time.time()
         resulting_urls = None
         while time.time() < start + MAX_TIME:
-            r = c.get("/api/datafile?dataset_version_id="+dataset_version_id+"&name=dfname&format=csv")
+            r = c.get("/api/datafile?dataset_version_id="+dataset_version_id+"&name=dfname&format="+out_format)
             assert r.status_code == 200
             response = json.loads(r.data.decode("utf8"))
 
@@ -66,15 +98,12 @@ def test_dataset_export(app, db, mock_s3, user_id, tmpdir):
         bucket, key = parse_presigned_url(resulting_urls[0])
         data = mock_s3.Object(bucket, key).download_as_bytes()
 
-        assert data == b"a,b\r\n1,2\r\n"
-
-from taiga2.controllers.models_controller import find_datafile
+        assert is_expected(data)
 
 
 def create_simple_dataset(user_id):
     # create datafile
     df = mc.add_datafile(name="df",
-                                url="s3://bucket/key",
                                 s3_bucket="bucket",
                                 s3_key="converted/key",
                                 type=models.DataFile.DataFileType.Raw)

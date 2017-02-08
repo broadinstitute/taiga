@@ -9,6 +9,7 @@ import flask
 import logging
 
 from taiga2.aws import parse_s3_url
+from taiga2.conv.util import make_temp_file_generator
 
 celery = Celery("taiga2")
 log = logging.getLogger()
@@ -122,23 +123,24 @@ def get_converter(src_format, dst_format):
     is_columnar = str(DataFile.DataFileType.Columnar)
 
     if is_hdf5 and dst_format == conversion.CSV_FORMAT:
-        return conversion.hdf5_to_tcsv
+        return conversion.hdf5_to_csv
+    if is_hdf5 and dst_format == conversion.RDS_FORMAT:
+        return conversion.hdf5_to_rds
     if is_columnar and dst_format == conversion.CSV_FORMAT:
         return conversion.columnar_to_csv
     if is_columnar and dst_format == conversion.RDS_FORMAT:
         return conversion.columnar_to_rds
     raise Exception("No conversion for {} to {}".format(src_format, dst_format))
 
-def _start_conversion_task(self, progress, src_url, src_format, dst_format, cache_entry_id):
+
+def _start_conversion_task(self, progress, bucket, key, src_format, dst_format, cache_entry_id):
     from taiga2.controllers import models_controller
 
     dest_bucket = flask.current_app.config['S3_BUCKET']
-    dest_key = flask.current_app.config['S3_PREFIX'] + "/exported/" + str(uuid.uuid4().hex)
 
     s3 = aws.s3
-    bucket, key = parse_s3_url(src_url)
     with tempfile.NamedTemporaryFile() as raw_t:
-        with tempfile.NamedTemporaryFile() as conv_t:
+        with make_temp_file_generator() as temp_file_generator:
             models_controller.update_conversion_cache_entry(cache_entry_id, "Downloading from S3")
             s3.Object(bucket, key).download_fileobj(raw_t)
             raw_t.flush()
@@ -146,23 +148,32 @@ def _start_conversion_task(self, progress, src_url, src_format, dst_format, cach
             models_controller.update_conversion_cache_entry(cache_entry_id, "Running conversion")
 
             converter = get_converter(src_format, dst_format)
-            converter(progress, raw_t.name, conv_t.name)
+            converted_files = converter(progress, raw_t.name, temp_file_generator)
+            assert isinstance(converted_files, list)
+            print("Converted", converted_files)
 
-            urls = ["s3://{}/{}".format(dest_bucket, dest_key)]
+            urls = []
+            for converted_file in converted_files:
+                dest_key = flask.current_app.config['S3_PREFIX'] + "/exported/" + str(uuid.uuid4().hex)
+                urls.append("s3://{}/{}".format(dest_bucket, dest_key))
 
-            models_controller.update_conversion_cache_entry(cache_entry_id, "Uploading converted file to S3")
-            s3.Object(dest_bucket, dest_key).upload_fileobj(conv_t)
+                models_controller.update_conversion_cache_entry(cache_entry_id, "Uploading converted file to S3")
+                with open(converted_file, "rb") as converted_file_fd:
+                    s3.Object(dest_bucket, dest_key).upload_fileobj(converted_file_fd)
 
-            models_controller.update_conversion_cache_entry(cache_entry_id, "Completed successfully", urls=urls)
+        models_controller.update_conversion_cache_entry(cache_entry_id, "Completed successfully", urls=urls)
 
+
+from taiga2.controllers import models_controller
 
 @celery.task(bind=True)
-def start_conversion_task(self, src_url, src_format, dst_format, cache_entry_id):
+def start_conversion_task(self, bucket, key, src_format, dst_format, cache_entry_id):
     try:
         log.error("start, %s %s", id(flask.g), dir(flask.g))
-        return _start_conversion_task(self, Progress(self), src_url, src_format, dst_format, cache_entry_id)
+        return _start_conversion_task(self, Progress(self), bucket, key, src_format, dst_format, cache_entry_id)
         log.error("end")
     except:
+        models_controller.mark_conversion_cache_entry_as_failed(cache_entry_id)
         log.exception("exception")
         raise
 

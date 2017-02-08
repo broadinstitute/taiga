@@ -12,10 +12,8 @@ from taiga2.conv.columnar import columnar_to_rds
 # aim for about 50MB per block, consisting of doubles which are 8 bytes each
 DEFAULT_MAX_ELEMENTS_PER_BLOCK=int(50*1e6//8)
 
-def hdf5_to_rds(hdf5_path, destination_dir, max_elements_per_block=DEFAULT_MAX_ELEMENTS_PER_BLOCK, progress_update=lambda x: None):
+def hdf5_to_rds(progress, hdf5_path, temp_file_generator, max_elements_per_block=DEFAULT_MAX_ELEMENTS_PER_BLOCK, progress_update=lambda x: None):
     "returns a list of filenames that were written"
-
-    assert os.path.isdir(destination_dir)
 
     # estimate how many rows we can pack into a single rds file
     r = h5py.File(hdf5_path, "r")
@@ -33,7 +31,7 @@ def hdf5_to_rds(hdf5_path, destination_dir, max_elements_per_block=DEFAULT_MAX_E
     generated_files = []
     for block_index in range(block_count):
         progress_update("Converting block {} out of {}".format(block_index, block_count))
-        destination_file = os.path.join(destination_dir, str(block_index)+".rds")
+        destination_file = temp_file_generator()
         script = ("""library(rhdf5);
             fn <- {};
             dst.fn <- {};
@@ -69,15 +67,16 @@ def hdf5_to_rds(hdf5_path, destination_dir, max_elements_per_block=DEFAULT_MAX_E
 
     return generated_files
 
-def hdf5_to_tabular_csv(self, hdf5_path, destination_file, delimiter=",", dedup_headers=False):
-    with self.hdf5fs.hdf5_open(hdf5_path) as f:
-        fd_out = open(destination_file, "w")
+def _hdf5_to_tcsv(progress, src_path, temp_file_generator, delimiter, dedup_headers=False):
+    f = h5py.File(src_path, "r")
+    destination_file = temp_file_generator()
+    with open(destination_file, "w") as fd_out:
         w = csv.writer(fd_out, delimiter=delimiter)
 
         data = f['data']
 
-        row_header = list(f['dim_0'])
-        col_header = list(f['dim_1'])
+        row_header = [x.decode('utf8') for x in f['dim_0']]
+        col_header = [x.decode('utf8') for x in f['dim_1']]
 
         if dedup_headers:
             def dedup(l):
@@ -98,7 +97,14 @@ def hdf5_to_tabular_csv(self, hdf5_path, destination_file, delimiter=",", dedup_
         for i in range(row_count):
             row = data[i, :]
             w.writerow([row_header[i]] + [_to_string_with_nan_mask(x) for x in row])
-        fd_out.close()
+
+    return [destination_file]
+
+def hdf5_to_csv(progress, src_path, temp_file_generator):
+    return _hdf5_to_tcsv(progress, src_path, temp_file_generator, ",")
+
+def hdf5_to_tsv(progress, src_path, temp_file_generator):
+    return _hdf5_to_tcsv(progress, src_path, temp_file_generator, "\t")
 
 def columnar_to_tcsv(input_file, output_file, delimiter):
     columnar.convert_tabular_to_csv(input_file, output_file, delimiter)

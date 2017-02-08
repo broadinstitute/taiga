@@ -7,6 +7,8 @@ from collections import namedtuple
 from io import StringIO
 from io import BytesIO
 import logging
+import subprocess
+from taiga2.conv.util import r_escape_str
 
 log = logging.getLogger(__name__)
 
@@ -449,11 +451,10 @@ def convert_tabular_to_csv(input_file, output_file, delimiter, select_names=None
     log.info("convert_tabular_to_csv %s -> %s", input_file, output_file)
     _convert_tabular_to_csv(input_file, lambda: output_file, lambda row_count, file_len: False, delimiter, select_names, predicate)
 
-def convert_tabular_to_multiple_csvs(input_file, output_dir, delimiter, select_names=None, predicate=None, max_bytes=None, max_rows=None):
+def convert_tabular_to_multiple_csvs(input_file, temp_file_generator, delimiter, select_names=None, predicate=None, max_bytes=None, max_rows=None):
     filenames = []
     def output_file_callback():
-        fd, filename = tempfile.mkstemp(dir=output_dir)
-        os.close(fd)
+        filename = temp_file_generator()
         filenames.append(filename)
         return filename
 
@@ -468,6 +469,11 @@ def convert_tabular_to_multiple_csvs(input_file, output_dir, delimiter, select_n
     return filenames
 
 def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, delimiter, select_names=None, predicate=None):
+    assert isinstance(input_file, str)
+    assert callable(output_file_callback)
+    assert callable(flush_callback)
+    assert isinstance(delimiter, str)
+
     with open(input_file, "rb") as fd:
 
         if predicate == None:
@@ -502,21 +508,14 @@ def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, de
 
 
 
-import tempfile
-import subprocess
-from taiga2.conv.util import r_escape_str
-import os
 
-def columnar_to_rds(input_file, destination_dir, max_rows=None, max_bytes=50*1024*1024):
+def columnar_to_rds(progress, input_file, temp_file_generator: "() -> str", max_rows=None, max_bytes=50*1024*1024):
     # two step conversion: First convert to csvs, then for each use R to load CSV and write Rdata file.  Not clear that we can do better
     # at the moment
-    tempdir = tempfile.mkdtemp(dir=destination_dir)
-
-    csv_files = convert_tabular_to_multiple_csvs(input_file, tempdir, ",", max_rows=max_rows, max_bytes=max_bytes)
+    csv_files = convert_tabular_to_multiple_csvs(input_file, temp_file_generator, ",", max_rows=max_rows, max_bytes=max_bytes)
     rds_files = []
     for csv_file in csv_files:
-        fd, destination_file = tempfile.mkstemp(dir=tempdir)
-        os.close(fd)
+        destination_file = temp_file_generator()
 
         script = """
             data <- read.table(%s, sep=',', head=T, as.is=T, check.names=F, quote='\"', comment.char='');
@@ -525,6 +524,7 @@ def columnar_to_rds(input_file, destination_dir, max_rows=None, max_bytes=50*102
 
         handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
+
         stdout, stderr = handle.communicate(script.encode("utf8"))
         if handle.returncode != 0:
             raise Exception("R process failed: %s\n%s" % (stdout, stderr))
