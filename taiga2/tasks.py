@@ -60,7 +60,7 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
         elif file_type == models.InitialFileType.NumericMatrixTSV.value:
                 converter = conversion.tsv_to_hdf5
         elif file_type == models.InitialFileType.Table.value:
-            converter = conversion.tcsv_to_columnar
+            converter = conversion.csv_to_columnar
         else:
             raise Exception("unimplemented: {}".format(file_type))
 
