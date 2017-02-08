@@ -105,14 +105,14 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
             <div className="modal-body">
                 <div className="form-group">
                     <label htmlFor="nameInput">Name</label>
-                    <input type="text" defaultValue="No name"
+                    <input type="text" placeholder="A name is required"
                            className="form-control"
                            id="nameInput"
                            ref={ (c) => {this.textInput = c}  }/>
 
                     <label htmlFor="descriptionInput">Description</label>
                     <textarea rows={15}
-                              defaultValue="No description"
+                              placeholder="No description given"
                               className="form-control" id="descriptionInput"
                               ref={ (c) => {this.textArea = c}  }
                     />
