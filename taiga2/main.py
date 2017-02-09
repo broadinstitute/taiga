@@ -29,6 +29,10 @@ def main():
 
     debug = flask_api_app.config["DEBUG"]
 
+    # TODO: We could find a better way than propagating some settings fron api_app to ui_app
+    ui_app.config['TAKE_USER_NAME_FROM_HEADER'] = flask_api_app.config.get('TAKE_USER_NAME_FROM_HEADER', '')
+    ui_app.config['TAKE_USER_EMAIL_FROM_HEADER'] = flask_api_app.config.get('TAKE_USER_EMAIL_FROM_HEADER', '')
+
     prefix = flask_api_app.config["PREFIX"]
     prefix_with_api = os.path.join(prefix, 'api')
     parent_app = DispatcherMiddleware(simple, {

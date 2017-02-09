@@ -2,6 +2,8 @@ import connexion
 import os
 import logging
 
+from taiga2.auth import init_auth
+
 log = logging.getLogger(__name__)
 
 
@@ -49,6 +51,8 @@ def create_app(settings_override=None, settings_file=None):
     # Init the Serialization/Deserialization Schemas Marshmallow with the app
     # It needs to be done after the SQLAlchemy init
     ma.init_app(app)
+
+    init_auth(app)
 
     return api_app, app
 

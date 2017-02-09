@@ -1,4 +1,5 @@
 import enum
+import flask
 import uuid
 import os
 
@@ -24,8 +25,9 @@ from sqlalchemy.sql.expression import func
 #   You need to push the context of you app => app.app_context().push() (for us frontend_app.app_context().push()
 
 # <editor-fold desc="User">
-def add_user(name):
-    new_user = User(name=name)
+def add_user(name, email):
+    new_user = User(name=name,
+                    email=email)
 
     home_folder = Folder(name="Home",
                          folder_type=models.Folder.FolderType.home,
@@ -58,14 +60,25 @@ def get_user(user_id):
     return db.session.query(User).filter(User.id == user_id).one()
 
 
+def get_current_session_user():
+    return flask.g.current_user
+
+
+def get_user_by_name(user_name):
+    return db.session.query(User).filter(User.name == user_name).one()
+
+
+def get_user_by_email(user_email):
+    return db.session.query(User).filter(User.email == user_email).one()
+
+
 # </editor-fold>
 
 # <editor-fold desc="Folder">
-def add_folder(creator_id=None,
-               name="Untitled Folder",
+def add_folder(name="Untitled Folder",
                folder_type=Folder.FolderType.folder,
                description="No description provided"):
-    creator = get_user(creator_id)
+    creator = get_current_session_user()
 
     new_folder = Folder(name=name,
                         folder_type=folder_type,
@@ -152,7 +165,6 @@ def get_parent_folders(entry_id):
 
 # <editor-fold desc="Dataset">
 def add_dataset(name,
-                creator_id=None,
                 permaname=None,
                 description="No description provided",
                 datafiles_ids=None):
@@ -161,7 +173,7 @@ def add_dataset(name,
     if not permaname:
         permaname = models.generate_permaname(name)
 
-    creator = get_user(creator_id)
+    creator = get_current_session_user()
     new_dataset = Dataset(name=name,
                           permaname=permaname,
                           description=description,
@@ -174,8 +186,7 @@ def add_dataset(name,
     # containing DataFiles
 
     # TODO: Think about a meaningful name
-    new_dataset_version = add_dataset_version(creator_id=creator.id,
-                                              dataset_id=new_dataset.id,
+    new_dataset_version = add_dataset_version(dataset_id=new_dataset.id,
                                               datafiles_ids=datafiles_ids)
 
     db.session.add(new_dataset_version)
@@ -204,8 +215,7 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
     # TODO: Get the user from the session
     admin = get_user_from_upload_session(session_id)
     dataset_permaname = models.generate_permaname(dataset_name)
-    added_dataset = add_dataset(creator_id=admin.id,
-                                name=dataset_name,
+    added_dataset = add_dataset(name=dataset_name,
                                 permaname=dataset_permaname,
                                 description=dataset_description,
                                 datafiles_ids=[datafile.id
@@ -310,8 +320,7 @@ def update_dataset_contents(dataset_id,
 
     # Create the new dataset_version from the latest and update its version
     # TODO: Remove the increment of the version since it should be handled by add_dataset_version directly
-    new_updated_dataset_version = add_dataset_version(creator_id=dataset_version_latest_version.creator.id,
-                                                      dataset_id=dataset_version_latest_version.dataset.id,
+    new_updated_dataset_version = add_dataset_version(dataset_id=dataset_version_latest_version.dataset.id,
                                                       datafiles_ids=[datafile.id
                                                                      for datafile in
                                                                      dataset_version_latest_version.datafiles])
@@ -354,14 +363,13 @@ def delete_dataset(dataset_id):
 # </editor-fold>
 
 # <editor-fold desc="DatasetVersion">
-def add_dataset_version(creator_id,
-                        dataset_id,
+def add_dataset_version(dataset_id,
                         datafiles_ids=None,
                         name=None):
     assert len(datafiles_ids) > 0
 
     # Fetch the object from the database
-    creator = get_user(creator_id)
+    creator = get_current_session_user()
 
     dataset = get_entry(dataset_id)
 
@@ -493,10 +501,9 @@ def get_latest_version_datafiles_from_dataset(dataset_id):
 # </editor-fold>
 
 # <editor-fold desc="Upload Session">
-def add_new_upload_session(user_id):
-    # TODO: Remove the default user once we have the auth in place
-    # us = UploadSession(user_id=user_id)
-    us = UploadSession(user_id=_get_test_user().id)
+def add_new_upload_session():
+    user = get_current_session_user()
+    us = UploadSession(user_id=user.id)
     db.session.add(us)
     db.session.commit()
     return us

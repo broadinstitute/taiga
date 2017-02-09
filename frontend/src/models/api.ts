@@ -5,15 +5,28 @@ import {
     TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId
 } from './models';
 
+import { currentUserName, currentUserEmail } from '../Utilities/route';
+
 export class TaigaApi {
     baseUrl: string;
+    authHeaders: any;
 
     constructor(baseUrl: string) {
         this.baseUrl = baseUrl;
+        // TODO: Don't pass the name and email as clear strings. We could use a hash function shared between api_app and ui_app to encode/decode
+        this.authHeaders = {
+            "userName": currentUserName,
+            "userEmail": currentUserEmail
+        }
     }
 
     _fetch<T>(url: string): Promise<T> {
-        return window.fetch(this.baseUrl + url)
+        return window.fetch(this.baseUrl + url, {
+            headers: {
+                "X-Forwarded-User": this.authHeaders.userName,
+                "X-Forwarded-Email": this.authHeaders.userEmail
+            }
+        })
             .then(function (response: Response): Promise<Response> {
                 if (response.status >= 200 && response.status < 300) {
                     return Promise.resolve(response)
@@ -29,7 +42,9 @@ export class TaigaApi {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Accept": "application/json"
+                "Accept": "application/json",
+                "X-Forwarded-User": this.authHeaders.userName,
+                "X-Forwarded-Email": this.authHeaders.userEmail
             },
             body: JSON.stringify(args)
         })
