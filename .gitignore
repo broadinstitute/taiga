@@ -35,3 +35,5 @@ pytestdebug.log
 
 # For docker, ignore the taiga.tar.gz that could be built with 'build.sh'
 docker/taiga.tar.gz
+
+!.travis.yml
