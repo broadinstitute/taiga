@@ -1,4 +1,4 @@
-# Command to trigger travis on all branches having a .travis.ymll
+# Command to trigger travis on all branches having a .travis.yml
 branches:
   only:
     - /.*/
