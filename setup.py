@@ -31,6 +31,7 @@ setup(
         'freezegun==0.3.8',
         'python-magic==0.4.12',
         'h5py==2.6.0',
-        'numpy==1.11.3'
+        'numpy==1.11.3',
+        'psycopg2==2.6.2'
     ],
 )

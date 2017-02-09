@@ -17,8 +17,14 @@ RUN rm nodesource_setup.sh
 # The command below was taking an old 4.X version of node, not supported by yarn
 #RUN apt-get install -y nodejs npm
 
+# Install vim
+RUN apt-get install -y vim
+
 # Install python and its related packages
 RUN apt-get install -y python3.5 python3-dev python3-pip python3-setuptools
+
+# Install postgresql minimal set binaries and headers
+RUN apt-get install -y libpq-dev
 
 # Pre-install the python packages needed by the app, so we don't have to reinstall them each time
 # But still install new ones in case we need them
@@ -42,7 +48,8 @@ RUN pip3 install -q attrs==16.2.0 \
         freezegun==0.3.8 \
         python-magic==0.4.12 \
         h5py==2.6.0 \
-        numpy==1.11.3
+        numpy==1.11.3 \
+        psycopg2==2.6.2
 
 RUN apt-get update -y
 
@@ -83,7 +90,8 @@ WORKDIR frontend
 RUN yarn install
 
 WORKDIR ..
-RUN python3.5 taiga2/create_test_db_sqlalchemy.py settings.cfg
+# Now we are using the right db, should use instead settings.cfg
+#RUN python3.5 taiga2/create_test_db_sqlalchemy.py settings.cfg
 
 # Build our frontend distribution
 #RUN ln -s /usr/bin/nodejs /usr/bin/node
