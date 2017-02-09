@@ -16,7 +16,7 @@ from taiga2.models import generate_permaname
 # TODO: Remove the domain tests and bring them to test_domain.py
 #<editor-fold desc="User Tests">
 
-
+# TODO: These two tests generate Integrity error on the token. Why? Due to the way a uuid is generated during the tests?
 # @pytest.fixture(scope='function')
 # def new_user():
 #     print("Our users before {}".format(mc.get_all_users()))
