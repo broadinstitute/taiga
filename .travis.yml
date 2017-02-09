@@ -1,0 +1,11 @@
+# Command to trigger travis on all branches having a .travis.ymll
+branches:
+  only:
+    - /.*/
+language: python
+python:
+  - "3.5"
+# Command to install dependencies
+install: "pip install -r requirements.txt"
+# Command to run tests
+script: pytest
