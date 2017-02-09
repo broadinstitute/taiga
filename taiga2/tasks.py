@@ -8,7 +8,6 @@ import taiga2.conv as conversion
 from taiga2.conv.util import Progress
 
 celery = Celery("taiga2")
-#Celery("taiga2", include=['taiga2.tasks'])
 
 @celery.task
 def print_config():

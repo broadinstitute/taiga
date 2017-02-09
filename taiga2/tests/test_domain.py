@@ -8,7 +8,7 @@ from flask_sqlalchemy import SessionBase
 import taiga2.controllers.models_controller as models_controller
 import taiga2.controllers.endpoint as endpoint
 
-from taiga2.tasks import background_process_new_upload_session_file, print_config
+from taiga2.tasks import background_process_new_upload_session_file
 
 from taiga2.models import User, Folder, Dataset, Entry, DatasetVersion, DataFile
 from taiga2.models import generate_permaname

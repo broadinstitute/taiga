@@ -43,7 +43,6 @@ def update_user_info():
     user_email_header_name = flask.request.headers['X-Forwarded-Email']
 
     if user_id is None and bearer_token_lookup is not None:
-        print("We are in bearer_tolent_lookup!")
         authorization = request.headers.get('Authorization')
         if authorization is not None:
             m = re.match("Bearer (\\S+)", authorization)
@@ -64,8 +63,8 @@ def update_user_info():
             # User does not exists so we can create it
             user = mc.add_user(name=user_name_header_name,
                                email=user_email_header_name)
-            print("We just created the user {} with email {}".format(user_name_header_name, user_email_header_name))
-            print("Check of the user name ({}) and email ({})".format(user.name, user.email))
+            log.debug("We just created the user {} with email {}".format(user_name_header_name, user_email_header_name))
+            log.debug("Check of the user name ({}) and email ({})".format(user.name, user.email))
         user_id = user.id
         log.debug("Looked up header field user_name %s and user_email %s to find username: %s",
                   user_name_header_name,
