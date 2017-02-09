@@ -75,11 +75,9 @@ WORKDIR ../../
 RUN apt-get install -y yarn
 
 # Use the tar to get the source code of taiga
-COPY taiga.tar.gz .
-RUN tar -xzf taiga.tar.gz
-RUN rm taiga.tar.gz
-
+ADD taiga.tar.gz taiga/
 WORKDIR /taiga
+
 RUN pip3 install -r requirements.txt
 
 # Install backend javascript dependencies
