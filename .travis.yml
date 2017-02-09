@@ -1,7 +1,10 @@
 # Command to trigger travis on all branches having a .travis.ymll
+
 branches:
   only:
-    - /.*/
+    - taiga2
+    - docker
+    - travis
 language: python
 python:
   - "3.5"
