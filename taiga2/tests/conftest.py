@@ -3,6 +3,7 @@ import os
 import pytest
 
 from flask import g
+import flask
 
 from taiga2.api_app import create_app
 from taiga2.celery_init import configure_celery
@@ -46,7 +47,9 @@ def app(request, monkey_s3, monkey_sts):
         'BROKER_URL': None,
         'CELERY_RESULT_BACKEND': None,
         'CELERY_ALWAYS_EAGER': True,
-        'S3_BUCKET': 'Test_Bucket'
+        'S3_BUCKET': 'Test_Bucket',
+        'USER_NAME': 'test',
+        'USER_EMAIL': 'test@broadinstitute,org'
     }
     api_app, _app = create_app(settings_override)
 
@@ -56,10 +59,11 @@ def app(request, monkey_s3, monkey_sts):
     # the celery worker uses this instance
     celery = tasks.celery
 
-    print("Create app")
-
     # Establish an application context before running the tests.
-    ctx = _app.test_request_context()
+    ctx = _app.test_request_context(headers={
+        'X-Forwarded-User': settings_override['USER_NAME'],
+        'X-Forwarded-Email': settings_override['USER_EMAIL']
+    })
     ctx.push()
 
     # Monkey patch S3
@@ -98,52 +102,19 @@ def session(db, request):
 
     db.session = _session
 
+    # We call before_request
+    flask.current_app.preprocess_request()
+
     # Return db and teardown
     yield _session
     transaction.rollback()
     connection.close()
     _session.remove()
 
+
 @pytest.fixture(scope="function")
 def user_id(db):
-    u = mc.add_user("username")
+    u = mc.add_user("username",
+                    "username@broadinstitute.org")
     return u.id
-
-#
-# @pytest.fixture(scope='function')
-# def s3(request):
-#     _s3 = boto3.resource('s3')
-#
-#     yield _s3
-#
-#
-# @pytest.fixture(scope='function')
-# def bucket(s3, request):
-#     # TODO: Not sure why I get an iterator there but not before
-#     bucket_name = 'test_bucket'
-#     s3.Bucket(bucket_name).create()
-#     _bucket = s3.Bucket(bucket_name)
-#
-#     yield _bucket
-#
-#     _bucket.objects.delete()
-#     _bucket.delete()
-
-
-
-
-# @pytest.fixture(scope='session')
-# def celery_config():
-#     return {
-#         'CELERY_BROKER_URL': 'redis://localhost:6379',
-#         'CELERY_RESULT_BACKEND': 'redis://localhost:6379'
-#     }
-
-# @pytest.fixture(scope='session')
-# def celery_parameters():
-#     return {
-#         'task_cls': 'redis://localhost:6379',
-#         'CELERY_RESULT_BACKEND': 'redis://localhost:6379'
-#     }
-
 

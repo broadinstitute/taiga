@@ -4,10 +4,13 @@ import taiga2.controllers.models_controller as mc
 import json
 from taiga2.tests.monkeys import parse_presigned_url
 
+from flask_sqlalchemy import SessionBase
+
 MAX_TIME = 5
 
 
-def create_dataset_version(tmpdir, user_id, monkey_s3):
+def create_dataset_version(session: SessionBase,
+                           tmpdir, user_id, monkey_s3):
     from taiga2.conv import csv_to_columnar
 
     tmpsrc = str(tmpdir.join("thing.csv"))
@@ -29,7 +32,7 @@ def create_dataset_version(tmpdir, user_id, monkey_s3):
                          url="s3://bucket/key",
                          type=models.DataFile.DataFileType.Columnar)
 
-    ds = mc.add_dataset(name="dataset name", creator_id=user_id, description="dataset description", datafiles_ids=[df.id])
+    ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
 
 

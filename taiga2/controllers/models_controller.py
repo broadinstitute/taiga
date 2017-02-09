@@ -72,6 +72,11 @@ def get_user_by_email(user_email):
     return db.session.query(User).filter(User.email == user_email).one()
 
 
+def get_all_users():
+    users = db.session.query(User).all()
+    return users
+
+
 # </editor-fold>
 
 # <editor-fold desc="Folder">

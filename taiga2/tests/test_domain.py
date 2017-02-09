@@ -7,7 +7,6 @@ from flask_sqlalchemy import SessionBase
 
 import taiga2.controllers.models_controller as models_controller
 import taiga2.controllers.endpoint as endpoint
-from taiga2.tests.test_models import new_dummy_folder, new_user
 
 from taiga2.tasks import background_process_new_upload_session_file, print_config
 
@@ -30,35 +29,10 @@ csv_file_path = os.path.join(test_files_folder_path, csv_file_name)
 
 
 @pytest.fixture
-def new_session_upload():
+def new_session_upload(request):
+    print("In new_session_upload, the request is {}".format(request))
     _new_sessionUpload = models_controller.add_new_upload_session()
     return _new_sessionUpload
-
-
-# @pytest.fixture
-# @mock_s3
-# def new_s3_credentials():
-#     json_frontend_credentials = endpoint.get_s3_credentials()
-#     _new_s3_credentials = json.loads(json_frontend_credentials)
-#
-#     return _new_s3_credentials
-
-
-# @pytest.fixture
-# @mock_s3
-# def s3():
-#     _s3 = boto3.resource('s3')
-#     return _s3
-
-
-# @pytest.fixture
-# def bucket(s3):
-#     s3 = boto3.resource('s3')
-#     bucket_name = 'test_bucket'
-#     s3.Bucket(bucket_name).create()
-#     _test_bucket = s3.Bucket(bucket_name)
-#
-#     return _test_bucket
 
 
 @pytest.fixture
@@ -67,10 +41,6 @@ def new_raw_uploaded_file(session: SessionBase,
     filename = raw_file_name
     enumed_filetype = DataFile.DataFileType.Raw
     location = 'unknown'
-
-    # Upload the file
-    file_key = filename
-    # s3.Object(bucket.name, file_key).upload_file('test_files/' + file_key)
 
     # TODO: Url needs to be fixed somehow. Do we really need it then?
     _new_raw_uploadFile = models_controller.add_upload_session_file(new_session_upload.id,
