@@ -1,11 +1,24 @@
-# Command to trigger travis on all branches having a .travis.yml
-branches:
-  only:
-    - /.*/
+sudo: required
+
 language: python
 python:
   - "3.5"
 # Command to install dependencies
-install: "pip install -r requirements.txt"
+install:
+  - pip install -r requirements.txt
+  - pip install awscli
 # Command to run tests
 script: pytest
+
+# After success we build a new docker image and push it to ECR
+services:
+  - docker
+
+after_success:
+  - ./build_docker.sh
+  - travis/push_docker.sh
+
+# Command to trigger travis on all branches having a .travis.yml
+branches:
+  only:
+    - /.*/
