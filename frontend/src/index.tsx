@@ -8,7 +8,9 @@ import { DatasetView } from "./components/DatasetView"
 import { LeftNav } from "./components/LeftNav"
 import { TaigaApi } from "./models/api"
 
-const tapi = new TaigaApi("/api");
+import { relativePath } from "./Utilities/route"
+
+const tapi = new TaigaApi(relativePath("api"));
 
 const App = React.createClass({
     getChildContext() {
@@ -50,7 +52,7 @@ const Home = React.createClass({
             return (
                 <div id="main-content">
                     <p>
-                        <Link to={"/app/folder/"+this.state.user.home_folder_id}>My Data</Link>
+                        <Link to={relativePath("folder/"+this.state.user.home_folder_id)}>My Data</Link>
                     </p>
                 </div>
             );
@@ -149,7 +151,7 @@ const NoMatch = React.createClass({
 
 ReactDOM.render((
   <Router history={browserHistory}>
-    <Route path="/app" component={App}>
+    <Route path={relativePath('')} component={App}>
         <IndexRoute component={Home} />
         <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any}/>
         <Route path="folder/:folderId" component={FolderView as any}/>

@@ -117,7 +117,7 @@ Starting the project is not yet straightforward, but will be in the near future:
         
 7. Congratulations! You can now access to Taiga 2 through your browser at:
 
-        `http://localhost:8080`
+        `http://localhost:8080/taiga/`
 
 
 ## Running the tests

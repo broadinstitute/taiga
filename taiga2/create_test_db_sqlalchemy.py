@@ -7,6 +7,8 @@ from taiga2.api_app import create_app, create_db
 import taiga2.controllers.models_controller as models_controller
 import taiga2.models as models
 
+import flask
+
 log = logging.getLogger(__name__)
 
 
@@ -28,11 +30,14 @@ def drop_and_create_db():
     create_db()
 
     # Create the Admin user
-    admin_user = models_controller.add_user(name="Admin")
+    admin_user = models_controller.add_user(name="admin", email="admin@broadinstitute.org")
     home_folder_admin = admin_user.home_folder
 
+    # Setting up the flask user
+    flask.g.current_user = admin_user
+
     # Create a session where all this is happening
-    upload_session_origin = models_controller.add_new_upload_session(user_id=admin_user.id)
+    upload_session_origin = models_controller.add_new_upload_session()
 
     # Create the origin data
     upload_session_file_origin = models_controller.add_upload_session_file(session_id=upload_session_origin.id,
@@ -47,21 +52,19 @@ def drop_and_create_db():
                                                                 current_folder_id=home_folder_admin.id)
 
     # Create the Folder A folder
-    folderA = models_controller.add_folder(creator_id=admin_user.id,
-                                           name="Folder A",
-                                           folder_type=models.Folder.FolderType.folder, description=None)
+    folderA = models_controller.add_folder(name="Folder A",
+                                           folder_type=models.Folder.FolderType.folder)
     models_controller.add_folder_entry(folder_id=home_folder_admin.id,
                                        entry_id=folderA.id)
 
     # Create Folder B inside Folder A
-    folderB = models_controller.add_folder(creator_id=admin_user.id,
-                                           name="Folder B",
-                                           folder_type=models.Folder.FolderType.folder, description=None)
+    folderB = models_controller.add_folder(name="Folder B",
+                                           folder_type=models.Folder.FolderType.folder)
     models_controller.add_folder_entry(folder_id=folderA.id,
                                        entry_id=folderB.id)
 
     # Create Data inside Folder B
-    upload_session_data = models_controller.add_new_upload_session(user_id=admin_user.id)
+    upload_session_data = models_controller.add_new_upload_session()
     upload_session_file_data = models_controller.add_upload_session_file(session_id=upload_session_data.id,
                                                                          filename="Data",
                                                                          s3_bucket=bucket_name,
@@ -93,7 +96,6 @@ def drop_and_create_db():
             temp_data_datafiles = loop_datafiles
         datafiles_id = [datafile.id for datafile in temp_data_datafiles]
         dataAX = models_controller.add_dataset_version(name=name,
-                                                       creator_id=admin_user.id,
                                                        dataset_id=origin_dataset.id,
                                                        datafiles_ids=datafiles_id)
 

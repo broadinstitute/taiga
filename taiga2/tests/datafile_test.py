@@ -5,6 +5,8 @@ import json
 from taiga2.tests.mock_s3 import parse_presigned_url
 from taiga2.controllers.models_controller import find_datafile
 
+from flask_sqlalchemy import SessionBase
+
 MAX_TIME = 5
 
 class StubProgress:
@@ -54,7 +56,7 @@ def create_table_dataset_version(tmpdir, user_id, mock_s3):
                          s3_key='key',
                          type=models.DataFile.DataFileType.Columnar)
 
-    ds = mc.add_dataset(name="dataset name", creator_id=user_id, description="dataset description", datafiles_ids=[df.id])
+    ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
 
 import pytest

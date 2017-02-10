@@ -4,6 +4,7 @@ HOSTNAME = 'localhost'
 PORT = 8080
 USE_RELOADER = True
 USE_EVALEX = True
+PREFIX = '/taiga'
 
 # Amazon Web Services
 AWS_ACCESS_KEY_ID = ''
@@ -13,3 +14,6 @@ CLIENT_UPLOAD_AWS_ACCESS_KEY_ID = ''
 CLIENT_UPLOAD_AWS_SECRET_ACCESS_KEY = ''
 
 S3_BUCKET = ''
+
+# Database configuration
+SQLALCHEMY_DATABASE_URI = 'sqlite://'

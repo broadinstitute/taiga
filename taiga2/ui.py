@@ -1,23 +1,32 @@
 import flask
+from flask import Flask, render_template, send_from_directory, url_for, request
 import os
 
-# app = create_app(__name__, settings_override)
-app = flask.Flask(__name__)
+app = Flask(__name__)
 
-INDEX = "static/index.html"
+
+def render_index_html():
+    # TODO: If these headers are not populated, we should redirect the user to a not found or not authenticated page
+    default_user_name = flask.current_app.config.get('TAKE_USER_NAME_FROM_HEADER', '')
+    default_user_email = flask.current_app.config.get('TAKE_USER_EMAIL_FROM_HEADER', '')
+
+    current_user_name = request.headers.get('X-Forwarded-User', default_user_name)
+    current_user_email = request.headers.get('X-Forwarded-Email', default_user_email)
+    return render_template('index.html',
+                           prefix=url_for('index'),
+                           current_user_name=current_user_name,
+                           current_user_email=current_user_email)
 
 @app.route("/")
 def index():
-    return flask.redirect("/app")
+    return render_index_html()
 
-@app.route("/app")
-def sendindex1():
-    return flask.send_file(INDEX)
 
-@app.route("/app/<path:filename>")
+@app.route("/<path:filename>")
 def sendindex2(filename):
-    return flask.send_file(INDEX)
+    return render_index_html()
+
 
 @app.route("/js/<path:filename>")
 def static_f(filename):
-    return flask.send_from_directory(os.path.abspath("node_modules"), filename)
+    return send_from_directory(os.path.abspath("node_modules"), filename)

@@ -62,6 +62,9 @@ class User(db.Model):
     id = db.Column(GUID, primary_key=True, default=generate_uuid)
     name = db.Column(db.String(80), unique=True)
 
+    email = db.Column(db.TEXT)
+    token = db.Column(db.String(50), unique=True, default=str(generate_uuid()))
+
     home_folder_id = db.Column(GUID, db.ForeignKey("folders.id"))
     home_folder = db.relationship("Folder",
                                   foreign_keys="User.home_folder_id",

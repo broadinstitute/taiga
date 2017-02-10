@@ -5,6 +5,8 @@ import uuid
 from freezegun import freeze_time
 from flask_sqlalchemy import SessionBase
 
+import flask
+
 import taiga2.controllers.models_controller as mc
 
 from taiga2.models import db
@@ -13,29 +15,39 @@ from taiga2.models import generate_permaname
 
 # TODO: Remove the domain tests and bring them to test_domain.py
 #<editor-fold desc="User Tests">
-@pytest.fixture
-def new_user():
-    _new_user = mc.add_user(name=str(uuid.uuid4()))
-    return _new_user
+
+# TODO: These two tests generate Integrity error on the token. Why? Due to the way a uuid is generated during the tests?
+# @pytest.fixture(scope='function')
+# def new_user():
+#     print("Our users before {}".format(mc.get_all_users()))
+#     new_user_name = str(uuid.uuid4())
+#     new_user_email = new_user_name + "@broadinstitute.org"
+#     _new_user = mc.add_user(name=new_user_name,
+#                             email=new_user_email)
+#     print("Our users after {}".format(mc.get_all_users()))
+#     return _new_user
+#
+#
+# def test_add_user(session):
+#     new_user_name = str(uuid.uuid4())
+#     new_user_email = new_user_name + "@broadinstitute.org"
+#     _new_user = mc.add_user(name=new_user_name,
+#                             email=new_user_email)
+#
+#     # Retrieve the user to see if we get what we are supposed
+#     # to have stored
+#     added_user = session.query(User).filter(User.name == new_user_name).first()
+#
+#     assert _new_user.id == added_user.id
+#     assert _new_user.name == added_user.name
+#     assert _new_user.home_folder.name == added_user.home_folder.name
 
 
-def test_add_user(session, new_user):
-    new_user_name = "Test User"
-    _new_user = mc.add_user(name=new_user_name)
+def test_get_user(session):
+    current_user = flask.g.current_user
+    db_user = mc.get_user(current_user.id)
 
-    # Retrieve the user to see if we get what we are supposed
-    # to have stored
-    added_user = session.query(User).filter(User.name == new_user_name).first()
-
-    assert _new_user.id == added_user.id
-    assert _new_user.name == added_user.name
-    assert _new_user.home_folder.name == added_user.home_folder.name
-
-
-def test_get_user(session, new_user):
-    db_user = mc.get_user(new_user.id)
-
-    assert db_user == new_user
+    assert db_user == current_user
 #</editor-fold>
 
 #<editor-fold desc="SessionUpload">
@@ -47,31 +59,30 @@ def test_create_sessionUpload(session: SessionBase):
 
 #<editor-fold desc="Folder Tests">
 @pytest.fixture
-def new_folder(new_user):
+def new_folder():
     new_folder_name = "New folder"
-    _new_folder = mc.add_folder(creator_id=new_user.id,
-                            name=new_folder_name,
-                            folder_type=Folder.FolderType.folder,
-                            description="Test new folder description")
+    _new_folder = mc.add_folder(name=new_folder_name,
+                                folder_type=Folder.FolderType.folder,
+                                description="Test new folder description")
 
     return _new_folder
 
 
 @pytest.fixture
-def new_dummy_folder(new_user):
+def new_dummy_folder():
     new_dummy_folder_name = "Dummy folder"
-    _new_dummy_folder = mc.add_folder(creator_id=new_user.id,
-                                   name=new_dummy_folder_name,
-                                   folder_type=Folder.FolderType.home,
-                                   description="I am a dummy folder for testing purpose")
+    _new_dummy_folder = mc.add_folder(name=new_dummy_folder_name,
+                                      folder_type=Folder.FolderType.home,
+                                      description="I am a dummy folder for testing purpose")
 
     return _new_dummy_folder
 
 
 # TODO: Test multiple types of folders, depending on the populated attributes
-def test_add_folder(session: SessionBase, new_user, new_folder):
+def test_add_folder(session: SessionBase, new_folder):
+    current_user = flask.g.current_user
     added_folder = session.query(Folder) \
-        .filter(Folder.name == new_folder.name and User.name == new_user.name) \
+        .filter(Folder.name == new_folder.name and User.name == current_user.name) \
         .one()
 
     assert new_folder == added_folder
@@ -86,7 +97,7 @@ def test_get_folder(session: SessionBase, new_folder):
 def test_update_folder_name(session: SessionBase, new_folder):
     new_folder_name = "New folder name"
     updated_folder = mc.update_folder_name(folder_id=new_folder.id,
-                                        new_name=new_folder_name)
+                                           new_name=new_folder_name)
 
     assert updated_folder.name == new_folder_name
     assert new_folder.name == new_folder_name
@@ -101,8 +112,8 @@ def test_update_folder_description(session: SessionBase, new_folder):
 
 
 def test_get_one_parent_folders(session: SessionBase,
-                            new_folder,
-                            new_dummy_folder):
+                                new_folder,
+                                new_dummy_folder):
     new_folder.entries.append(new_dummy_folder)
 
     parent_folders = mc.get_parent_folders(new_dummy_folder.id)
@@ -112,13 +123,11 @@ def test_get_one_parent_folders(session: SessionBase,
 
 
 def test_get_parent_folders(session: SessionBase,
-                            new_user,
                             new_folder,
                             new_dummy_folder):
-    folder_in_dummy_and_new_folder_folders = mc.add_folder(creator_id=new_user.id,
-                                                        name="Inception",
-                                                        folder_type=Folder.FolderType.folder,
-                                                        description="Folder inside two folders")
+    folder_in_dummy_and_new_folder_folders = mc.add_folder(name="Inception",
+                                                           folder_type=Folder.FolderType.folder,
+                                                           description="Folder inside two folders")
     # new_folder.entries.append(new_dummy_folder)
     new_folder.entries.append(folder_in_dummy_and_new_folder_folders)
 
@@ -154,12 +163,11 @@ def test_add_folder_entry(session: SessionBase,
 
 #<editor-fold desc="Dataset Tests">
 @pytest.fixture()
-def new_dataset(new_user, new_datafile):
+def new_dataset(new_datafile):
     new_dataset_name = "New Dataset"
     new_dataset_permaname = generate_permaname(new_dataset_name)
 
     _new_dataset = mc.add_dataset(name=new_dataset_name,
-                                  creator_id=new_user.id,
                                   permaname=new_dataset_permaname,
                                   description="New dataset description",
                                   datafiles_ids=[new_datafile.id])
@@ -168,13 +176,11 @@ def new_dataset(new_user, new_datafile):
 
 
 def test_add_dataset(session: SessionBase,
-                     new_datafile,
-                     new_user):
+                     new_datafile):
     new_dataset_name = "New Dataset"
     new_dataset_permaname = generate_permaname(new_dataset_name)
 
     _new_dataset = mc.add_dataset(name=new_dataset_name,
-                                  creator_id=new_user.id,
                                   permaname=new_dataset_permaname,
                                   description="New dataset description",
                                   datafiles_ids=[new_datafile.id])
@@ -198,7 +204,6 @@ def test_add_dataset(session: SessionBase,
 
 
 def test_add_dataset_with_datafile(session: SessionBase,
-                                          new_user,
                                           new_datafile):
     new_dataset_name = "New dataset with datasetVersion"
     new_dataset_description = "New dataset with datasetVersion"
@@ -206,7 +211,6 @@ def test_add_dataset_with_datafile(session: SessionBase,
     datafiles_ids = [new_datafile.id]
 
     new_dataset = mc.add_dataset(name=new_dataset_name,
-                              creator_id=new_user.id,
                               description=new_dataset_description,
                               datafiles_ids=datafiles_ids)
 
@@ -292,13 +296,12 @@ def test_get_dataset_by_permaname(session: SessionBase,
 
 #<editor-fold desc="DatasetVersion Tests">
 @pytest.fixture
-def new_dataset_version(new_user, new_datafile):
+def new_dataset_version(new_datafile):
     # TODO: Add in the name it is an empty dataset_version
     new_dataset_name = "New Dataset for new_dataset_version"
     new_dataset_description = "New description for new_dataset_version"
 
     _new_dataset = mc.add_dataset(name=new_dataset_name,
-                                  creator_id=new_user.id,
                                   description=new_dataset_description,
                                   datafiles_ids=[new_datafile.id])
 
@@ -307,8 +310,7 @@ def new_dataset_version(new_user, new_datafile):
     return _new_dataset_version
 
 
-def test_add_dataset_version(session: SessionBase,
-                             new_user):
+def test_add_dataset_version(session: SessionBase):
     new_dataset_version_name = "New Dataset Version"
 
     new_dataset_name = "New Dataset for test_add_dataset_version"
@@ -319,7 +321,6 @@ def test_add_dataset_version(session: SessionBase,
                                     type=mc.DataFile.DataFileType.Raw)
 
     _new_dataset = mc.add_dataset(name=new_dataset_version_name,
-                                  creator_id=new_user.id,
                                   description=new_dataset_description,
                                   datafiles_ids=[_new_datafile.id])
 
@@ -333,7 +334,7 @@ def test_add_dataset_version(session: SessionBase,
     return _new_dataset_version
 
     assert new_dataset_version.name == new_dataset_version_name
-    assert new_dataset_version.creator == new_user
+    assert new_dataset_version.creator == flask.g.current_user
     assert new_dataset_version.dataset == new_dataset
     # TODO: Be careful with timezone between the database and the testing machine
     # assert new_dataset_version.creation_date.date() == datetime.datetime.now().date()

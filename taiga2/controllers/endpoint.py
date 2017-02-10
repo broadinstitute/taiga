@@ -37,12 +37,10 @@ def create_folder(metadata):
     folder_name = metadata['name']
     folder_description = metadata['description']
     parent_id = metadata['parentId']
-    creator_id = metadata['creatorId']
 
 
     # TODO: Instead of the string 'folder', use the model.Folder.FolderType.folder
-    new_folder = models_controller.add_folder(creator_id=creator_id,
-                                              name=folder_name,
+    new_folder = models_controller.add_folder(name=folder_name,
                                               folder_type='folder',
                                               description=folder_description)
     models_controller.add_folder_entry(parent_id, new_folder.id)
@@ -74,15 +72,10 @@ def update_folder_description(folderId, DescriptionUpdate):
     # TODO: Return the dataset id
     return flask.jsonify({})
 
-def _get_user_id():
-    return ADMIN_USER_ID
 
-
-# TODO: Should never be used in production!
-# TODO: Should implement a get_user(uuid) or get_user(name)
 def get_user():
     # We get the first user which should be Admin
-    user = models_controller._get_test_user()
+    user = models_controller.get_current_session_user()
     user_schema = schemas.UserSchema()
     json_data_user = user_schema.dump(user).data
 
@@ -197,8 +190,7 @@ def create_upload_session_file(S3UploadedFileMetadata, sid):
 
 
 def create_new_upload_session():
-    # TODO: Add the user_id related to this new session
-    upload_session = models_controller.add_new_upload_session(0)
+    upload_session = models_controller.add_new_upload_session()
     return flask.jsonify(upload_session.id)
 
 
