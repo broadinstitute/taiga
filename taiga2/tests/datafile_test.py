@@ -13,7 +13,7 @@ class StubProgress:
     def progress(self, message):
         print(message)
 
-def create_matrix_dataset_version(tmpdir, user_id, mock_s3):
+def create_matrix_dataset_version(tmpdir, mock_s3):
     from taiga2.conv import csv_to_hdf5
 
     tmpsrc = str(tmpdir.join("thing.csv"))
@@ -33,10 +33,10 @@ def create_matrix_dataset_version(tmpdir, user_id, mock_s3):
                          s3_key='key',
                          type=models.DataFile.DataFileType.HDF5)
 
-    ds = mc.add_dataset(name="dataset name", creator_id=user_id, description="dataset description", datafiles_ids=[df.id])
+    ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
 
-def create_table_dataset_version(tmpdir, user_id, mock_s3):
+def create_table_dataset_version(tmpdir, mock_s3):
     from taiga2.conv import csv_to_columnar
 
     tmpsrc = str(tmpdir.join("thing.csv"))
@@ -67,14 +67,14 @@ import pytest
     ("matrix", "csv", lambda x: x == b",a,b\r\nc,1.0,2.0\r\n"),
     ("matrix", "rds", lambda x: len(x) > 0)
 ])
-def test_dataset_export(app, db, mock_s3, user_id, tmpdir, src_format, out_format, is_expected):
+def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, out_format, is_expected):
     assert user_id is not None
 
     with app.test_client() as c:
         if src_format == "table":
-            dataset_version_id = create_table_dataset_version(tmpdir, user_id, mock_s3)
+            dataset_version_id = create_table_dataset_version(tmpdir, mock_s3)
         else:
-            dataset_version_id = create_matrix_dataset_version(tmpdir, user_id, mock_s3)
+            dataset_version_id = create_matrix_dataset_version(tmpdir, mock_s3)
 
         start = time.time()
         resulting_urls = None
@@ -103,19 +103,19 @@ def test_dataset_export(app, db, mock_s3, user_id, tmpdir, src_format, out_forma
         assert is_expected(data)
 
 
-def create_simple_dataset(user_id):
+def create_simple_dataset():
     # create datafile
     df = mc.add_datafile(name="df",
                                 s3_bucket="bucket",
                                 s3_key="converted/key",
                                 type=models.DataFile.DataFileType.Raw)
 
-    ds = mc.add_dataset(name="dataset name", creator_id=user_id, description="dataset description", datafiles_ids=[df.id])
+    ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return ds.permaname, ds.dataset_versions[0].id, "df"
 
 
-def test_find_datafile(db, user_id):
-    permaname, dataset_version_id, datafile_name = create_simple_dataset(user_id)
+def test_find_datafile(session, db, user_id):
+    permaname, dataset_version_id, datafile_name = create_simple_dataset()
 
     # using only permaname
     assert find_datafile(permaname, None, None, None) is not None

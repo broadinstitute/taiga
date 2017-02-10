@@ -76,8 +76,7 @@ def get_all_users():
 # </editor-fold>
 
 # <editor-fold desc="Folder">
-def add_folder(creator_id,
-               name,
+def add_folder(name,
                folder_type,
                description):
     creator = get_current_session_user()
@@ -167,7 +166,6 @@ def get_parent_folders(entry_id):
 
 # <editor-fold desc="Dataset">
 def add_dataset(name,
-                creator_id,
                 description,
                 datafiles_ids,
                 permaname=None):

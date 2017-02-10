@@ -26,7 +26,6 @@ TESTDB = os.path.join(dir_path, 'test_temp_taiga2.db')
 TESTDB_PATH = "{}".format(TESTDB)
 TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 
-
 @pytest.fixture(scope='function')
 def mock_s3(tmpdir):
     s3 = MockS3(str(tmpdir))

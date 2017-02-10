@@ -13,7 +13,6 @@ def create_db():
     from taiga2.models import db as _db
     _db.create_all()
 
-
 def create_app(settings_override=None, settings_file=None):
     # create the flask app which handles api requests.  If settings_override is set, then settings
     # are overriden using the values in the provided dictionary.  Otherwise, the environment variable
