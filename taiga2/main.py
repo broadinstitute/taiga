@@ -1,5 +1,5 @@
 from taiga2.api_app import create_app
-from taiga2.ui import app as ui_app
+from taiga2.ui import create_app as ui_create_app
 from werkzeug.wsgi import pop_path_info, peek_path_info, DispatcherMiddleware, SharedDataMiddleware
 from werkzeug.serving import run_simple
 import configparser
@@ -23,18 +23,20 @@ def main():
 
     settings_file = sys.argv[1]
 
+    # Init Api/Backend app
     api_app, flask_api_app = create_app(settings_file=settings_file)
 
     configure_celery(flask_api_app)
 
     debug = flask_api_app.config["DEBUG"]
 
-    # TODO: We could find a better way than propagating some settings fron api_app to ui_app
-    ui_app.config['TAKE_USER_NAME_FROM_HEADER'] = flask_api_app.config.get('TAKE_USER_NAME_FROM_HEADER', '')
-    ui_app.config['TAKE_USER_EMAIL_FROM_HEADER'] = flask_api_app.config.get('TAKE_USER_EMAIL_FROM_HEADER', '')
+    # Init frontend app
+    # ui_create_app uses also default_settings.py
+    ui_app = ui_create_app()
 
     prefix = flask_api_app.config["PREFIX"]
     prefix_with_api = os.path.join(prefix, 'api')
+
     parent_app = DispatcherMiddleware(simple, {
         prefix: ui_app,
         prefix_with_api: flask_api_app

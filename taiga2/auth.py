@@ -2,6 +2,9 @@ import flask
 import re
 import logging
 from sqlalchemy.orm.exc import NoResultFound
+import uuid
+
+from sqlalchemy.orm.exc import NoResultFound
 
 # There are a few ways we could get a user_id depending on the app's config
 #
@@ -19,40 +22,25 @@ from sqlalchemy.orm.exc import NoResultFound
 log = logging.getLogger(__name__)
 
 
-def get_user_id():
-    return flask.g._user_id
+def init_front_auth(app):
+    app.before_request(user_oauth_actions)
 
 
-def init_auth(app):
-    app.before_request(update_user_info)
-
-
-def update_user_info():
+def user_oauth_actions():
     import taiga2.controllers.models_controller as mc
     request = flask.request
     config = flask.current_app.config
-    user_id = None
+    user = None
 
     # Use for development environment
     # user_name_header_name = config.get("TAKE_USER_NAME_FROM_HEADER", None)
     # user_email_header_name = config.get("TAKE_USER_EMAIL_FROM_HEADER", None)
     bearer_token_lookup = config.get("BEARER_TOKEN_LOOKUP", None)
-    default_user_id = config.get("DEFAULT_USER_ID", None)
+    default_user_email = config.get("DEFAULT_USER_EMAIL", None)
 
     # Use for production environment
-    user_name_header_name = flask.request.headers['X-Forwarded-User']
-    user_email_header_name = flask.request.headers['X-Forwarded-Email']
-
-    if user_id is None and bearer_token_lookup is not None:
-        authorization = request.headers.get('Authorization')
-        if authorization is not None:
-            m = re.match("Bearer (\\S+)", authorization)
-            if m is not None:
-                token = m.group(1)
-                user_id = bearer_token_lookup(token)
-                log.debug("Got token %s which mapped to user %s", token, user_id)
-            else:
-                log.warn("Authorization header malformed: %s", authorization)
+    user_name_header_name = request.headers.get('X-Forwarded-User', None)
+    user_email_header_name = request.headers.get('X-Forwarded-Email', None)
 
     if user_name_header_name is not None or user_email_header_name is not None:
         # user_id = request.headers.get(user_id_header_name)
@@ -72,9 +60,56 @@ def update_user_info():
                   user_email_header_name,
                   user_id)
 
-    if user_id is None and default_user_id is not None:
-        user_id = default_user_id
+    if user is None and default_user_email is not None:
+        print("We did not find the user from the headers, loading the default user by its email {}" \
+              .format(default_user_email))
+
+        try:
+            user = mc.get_user_by_email(default_user_email)
+        except NoResultFound:
+            user = mc.add_user(name=str(uuid.uuid4()),
+                               email=default_user_email)
 
     flask.g.current_user = user
 
     return None
+
+
+def init_backend_auth(app):
+    app.before_request(from_bearer_set_current_user)
+
+
+def from_bearer_set_current_user():
+    import taiga2.controllers.models_controller as mc
+    request = flask.request
+    config = flask.current_app.config
+    user = None
+    bearer_token = request.headers.get("Authorization", None)
+    default_user_email = config.get("DEFAULT_USER_EMAIL", None)
+    # bearer_token_lookup = config.get("BEARER_TOKEN_LOOKUP", None)
+
+    if user is None and bearer_token is not None:
+        m = re.match("Bearer (\\S+)", bearer_token)
+        if m is not None:
+            token = m.group(1)
+            user = bearer_token_lookup(token)
+            log.debug("Got token %s which mapped to user %s", token, user.email)
+        else:
+            log.warn("Authorization header malformed: %s", bearer_token)
+    else:
+        # TODO: Should ask for returning a "Not authenticated" page/response number
+        if default_user_email is not None:
+            log.critical("Default user email is set, and a not authorized user is using it to call the api")
+            try:
+                user = mc.get_user_by_email(default_user_email)
+            except NoResultFound:
+                user = mc.add_user(name=str(uuid.uuid4()), email=default_user_email)
+        else:
+            raise Exception("No user passed")
+    flask.g.current_user = user
+
+
+def bearer_token_lookup(token):
+    import taiga2.controllers.models_controller as mc
+    user = mc.get_user_by_token(token)
+    return user

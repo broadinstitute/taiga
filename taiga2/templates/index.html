@@ -134,8 +134,8 @@
     </div>
 </div>
 
-<div id="content">
-    <div id="root"></div>
+  <div id="content">
+        <div id="root"></div>
 </div>
 
 <footer id="footer">
@@ -154,8 +154,7 @@
   <script>
       // Fetch the variables of the environment
       var taigaPrefix = '{{ prefix }}';
-      var taigaCurrentUserName = '{{ current_user_name }}'
-      var taigaCurrentUserEmail = '{{ current_user_email }}'
+      var taigaUserToken = '{{ user_token }}';
   </script>
   <script src="{{ url_for('static', filename='frontend.js') }}"></script>
 </body>

@@ -28,6 +28,10 @@ GUID = db.String(80)
 def generate_uuid():
     return uuid.uuid4().hex
 
+
+def generate_str_uuid():
+    return str(uuid.uuid4())
+
 # Associations #
 
 # Association table for Many to Many relationship between folder and entries
@@ -63,7 +67,7 @@ class User(db.Model):
     name = db.Column(db.String(80), unique=True)
 
     email = db.Column(db.TEXT)
-    token = db.Column(db.String(50), unique=True, default=generate_uuid)
+    token = db.Column(db.String(50), unique=True, default=generate_str_uuid)
 
     home_folder_id = db.Column(GUID, db.ForeignKey("folders.id"))
     home_folder = db.relationship("Folder",

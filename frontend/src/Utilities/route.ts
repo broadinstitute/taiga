@@ -8,22 +8,10 @@ function fetchPrefix(){
     }
 }
 
-function fetchUserName() {
-    // If taigaCurrentUserName exists in global scope
-    if(taigaCurrentUserName) {
-        console.log("User name is "+taigaCurrentUserName);
-        return taigaCurrentUserName;
-    }
-    else {
-        return undefined;
-    }
-}
-
-function fetchUserEmail() {
-    // If taigaCurrentUserEmail exists in global scope
-    if(taigaCurrentUserEmail) {
-        console.log("User email is "+taigaCurrentUserEmail);
-        return taigaCurrentUserEmail;
+function fetchUserToken() {
+    if(taigaUserToken) {
+        console.log("User token is "+taigaUserToken);
+        return taigaUserToken;
     }
     else {
         return undefined;
@@ -32,9 +20,7 @@ function fetchUserEmail() {
 
 export var taigaRoute:string = fetchPrefix();
 
-export var currentUserName:string = fetchUserName();
-
-export var currentUserEmail:string = fetchUserEmail();
+export var currentUserToken:string = fetchUserToken();
 
 function pathJoin(parts: Array<string>, sep?: string){
    var separator = sep || '/';
