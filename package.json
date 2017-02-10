@@ -4,9 +4,6 @@
   "description": "Taiga main",
   "main": "./taiga2/static/frontend.js",
   "scripts": {
-    "lint": "tslint -c tslint.json 'src/**/*.{ts,tsx}'",
-    "pretest": "npm run lint",
-    "test": "jest",
     "start": "webpack --progress --colors --watch"
   },
   "author": "Remi Marenco <rmarenco@broadinstitute.org>",
