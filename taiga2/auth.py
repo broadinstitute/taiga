@@ -1,6 +1,7 @@
 import flask
 import re
 import logging
+from sqlalchemy.orm.exc import NoResultFound
 
 # There are a few ways we could get a user_id depending on the app's config
 #
@@ -59,7 +60,7 @@ def update_user_info():
             user = mc.get_user_by_name(user_name_header_name)
             # TODO: This should never happen, but not sure what is the best: fetch by email or fetch by name (which is extracted from email by Oauth_prox)
             user = mc.get_user_by_email(user_email_header_name)
-        except:
+        except NoResultFound:
             # User does not exists so we can create it
             user = mc.add_user(name=user_name_header_name,
                                email=user_email_header_name)
