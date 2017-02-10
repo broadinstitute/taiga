@@ -1,6 +1,7 @@
 import flask
 import re
 import logging
+import uuid
 
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -65,7 +66,6 @@ def user_oauth_actions():
         try:
             user = mc.get_user_by_email(default_user_email)
         except NoResultFound:
-            import uuid
             user = mc.add_user(name=str(uuid.uuid4()),
                                email=default_user_email)
 
@@ -84,6 +84,7 @@ def from_bearer_set_current_user():
     config = flask.current_app.config
     user = None
     bearer_token = request.headers.get("Authorization", None)
+    default_user_email = config.get("DEFAULT_USER_EMAIL", None)
     # bearer_token_lookup = config.get("BEARER_TOKEN_LOOKUP", None)
 
     if user is None and bearer_token is not None:
@@ -96,7 +97,14 @@ def from_bearer_set_current_user():
             log.warn("Authorization header malformed: %s", bearer_token)
     else:
         # TODO: Should ask for returning a "Not authenticated" page/response number
-        raise Exception("No user passed")
+        if default_user_email is not None:
+            log.critical("Default user email is set, and a not authorized user is using it to call the api")
+            try:
+                user = mc.get_user_by_email(default_user_email)
+            except NoResultFound:
+                user = mc.add_user(name=str(uuid.uuid4()), email=default_user_email)
+        else:
+            raise Exception("No user passed")
     flask.g.current_user = user
 
 

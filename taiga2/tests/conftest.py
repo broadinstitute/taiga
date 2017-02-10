@@ -47,9 +47,7 @@ def app(request, monkey_s3, monkey_sts):
         'BROKER_URL': None,
         'CELERY_RESULT_BACKEND': None,
         'CELERY_ALWAYS_EAGER': True,
-        'S3_BUCKET': 'Test_Bucket',
-        'USER_NAME': 'test',
-        'USER_EMAIL': 'test@broadinstitute,org'
+        'S3_BUCKET': 'Test_Bucket'
     }
     api_app, _app = create_app(settings_override)
 
@@ -60,10 +58,7 @@ def app(request, monkey_s3, monkey_sts):
     celery = tasks.celery
 
     # Establish an application context before running the tests.
-    ctx = _app.test_request_context(headers={
-        'X-Forwarded-User': settings_override['USER_NAME'],
-        'X-Forwarded-Email': settings_override['USER_EMAIL']
-    })
+    ctx = _app.test_request_context()
     ctx.push()
 
     # Monkey patch S3
