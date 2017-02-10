@@ -7,13 +7,11 @@
         "target": "es6",
         "jsx": "react"
     },
-    "files": [
-        "./frontend/src/components/FolderView.tsx",
-        "./frontend/src/components/DatasetView.tsx",
-        "./frontend/src/components/Dialogs.tsx",
-        "./frontend/src/components/LeftNav.tsx",
-        "./frontend/src/models/models.ts",
-        "./frontend/src/models/api.ts",
-        "./frontend/src/index.tsx"
+    "include": [
+        "frontend/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "frontend/node_modules"
     ]
 }

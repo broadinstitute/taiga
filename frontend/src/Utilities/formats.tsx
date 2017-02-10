@@ -1,8 +1,8 @@
 import { InitialFileType } from "../models/models";
 
 export function toLocalDateString(stringDate: string) {
-    let date = new Date(stringDate);
-    return date.toLocaleDateString();
+    let _date = new Date(stringDate);
+    return _date.toLocaleDateString();
 }
 
 export function getInitialFileTypeFromMimeType(mimeTypeOrEnum: string|InitialFileType) : InitialFileType {
