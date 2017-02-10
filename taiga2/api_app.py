@@ -2,7 +2,7 @@ import connexion
 import os
 import logging
 
-from taiga2.auth import init_auth
+from taiga2.auth import init_backend_auth
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def create_app(settings_override=None, settings_file=None):
     # It needs to be done after the SQLAlchemy init
     ma.init_app(app)
 
-    init_auth(app)
+    init_backend_auth(app)
 
     return api_app, app
 

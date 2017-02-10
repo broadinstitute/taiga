@@ -72,6 +72,11 @@ def get_user_by_email(user_email):
     return db.session.query(User).filter(User.email == user_email).one()
 
 
+def get_user_by_token(user_token):
+    user = db.session.query(User).filter(User.token == user_token).one()
+    return user
+
+
 def get_all_users():
     users = db.session.query(User).all()
     return users
