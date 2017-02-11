@@ -1,5 +1,3 @@
-import datetime
-import os
 import pytest
 
 from flask import g
@@ -13,18 +11,11 @@ from taiga2.tests.mock_s3 import MockS3, MockSTS, MockS3Client
 
 from taiga2.models import db as _db
 from taiga2.controllers import models_controller as mc
-import boto3
 
 import os
 import logging
 
 log = logging.getLogger(__name__)
-
-# Temp db with different name for each test
-dir_path = os.path.dirname(os.path.realpath(__file__))
-TESTDB = os.path.join(dir_path, 'test_temp_taiga2.db')
-TESTDB_PATH = "{}".format(TESTDB)
-TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 
 TEST_USER_NAME = "username"
 TEST_USER_EMAIL = "username@broadinstitute.org"
@@ -47,7 +38,7 @@ def app(request, mock_s3, mock_sts):
     """Session-wide test `Flask` application."""
     settings_override = {
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': TEST_DATABASE_URI,
+        'SQLALCHEMY_DATABASE_URI': 'sqlite://',
         'SQLALCHEMY_TRACK_MODIFICATIONS': True,
         'SQLALCHEMY_ECHO': False,
         'BROKER_URL': None,
@@ -82,15 +73,10 @@ def app(request, mock_s3, mock_sts):
 @pytest.fixture(scope='function')
 def db(app, request):
     """Session-wide test database."""
-    if os.path.exists(TESTDB_PATH):
-        os.unlink(TESTDB_PATH)
-
     _db.create_all()
 
     # Return db and teardown
     yield _db
-    _db.drop_all()
-    os.unlink(TESTDB_PATH)
 
 
 @pytest.fixture(scope='function')
