@@ -18,3 +18,4 @@ addons:
   apt:
     packages:
       r-base
+      r-cran-hdf5
