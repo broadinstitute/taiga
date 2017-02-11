@@ -8,7 +8,7 @@ SQLALCHEMY_TRACK_MODIFICATIONS = True
 BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND ='redis://localhost:6379'
 S3_PREFIX = "upload/"
-
+PREFIX="/taiga2"
 # Frontend auth
 DEFAULT_USER_EMAIL = 'admin@broadinstitute.org'
 
