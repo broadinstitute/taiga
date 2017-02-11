@@ -11,11 +11,6 @@ from taiga2.celery_init import configure_celery
 log = logging.getLogger(__name__)
 
 
-def simple(env, resp):
-    resp(b'200 OK', [(b'Content-Type', b'text/plain')])
-    return [b"Hello WSGI World"]
-
-
 def main():
     if len(sys.argv) != 2:
         log.error("Needs config file")
@@ -35,9 +30,14 @@ def main():
     ui_app = ui_create_app()
 
     prefix = flask_api_app.config["PREFIX"]
+    assert prefix.startswith("/")
     prefix_with_api = os.path.join(prefix, 'api')
 
-    parent_app = DispatcherMiddleware(simple, {
+    def _unhandled_url(env, resp):
+        resp(b'200 OK', [(b'Content-Type', b'text/plain')])
+        return ["This url has no handler.  Instead, try going to {}".format(prefix).encode("utf8")]
+
+    parent_app = DispatcherMiddleware(_unhandled_url, {
         prefix: ui_app,
         prefix_with_api: flask_api_app
     })
