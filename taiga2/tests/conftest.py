@@ -26,6 +26,10 @@ TESTDB = os.path.join(dir_path, 'test_temp_taiga2.db')
 TESTDB_PATH = "{}".format(TESTDB)
 TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 
+TEST_USER_NAME = "username"
+TEST_USER_EMAIL = "username@broadinstitute.org"
+AUTH_HEADERS={'X-Forwarded-User': TEST_USER_NAME, 'X-Forwarded-Email': TEST_USER_EMAIL}
+
 @pytest.fixture(scope='function')
 def mock_s3(tmpdir):
     s3 = MockS3(str(tmpdir))
@@ -110,10 +114,9 @@ def session(db, request):
     connection.close()
     _session.remove()
 
-
 @pytest.fixture(scope="function")
 def user_id(db):
-    u = mc.add_user("username",
-                    "username@broadinstitute.org")
+    u = mc.add_user(TEST_USER_NAME,
+                    TEST_USER_EMAIL)
     return u.id
 
