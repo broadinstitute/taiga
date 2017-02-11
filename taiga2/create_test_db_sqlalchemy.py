@@ -53,13 +53,15 @@ def drop_and_create_db():
 
     # Create the Folder A folder
     folderA = models_controller.add_folder(name="Folder A",
-                                           folder_type=models.Folder.FolderType.folder)
+                                           folder_type=models.Folder.FolderType.folder,
+                                           description="desc")
     models_controller.add_folder_entry(folder_id=home_folder_admin.id,
                                        entry_id=folderA.id)
 
     # Create Folder B inside Folder A
     folderB = models_controller.add_folder(name="Folder B",
-                                           folder_type=models.Folder.FolderType.folder)
+                                           folder_type=models.Folder.FolderType.folder,
+                                            description="")
     models_controller.add_folder_entry(folder_id=folderA.id,
                                        entry_id=folderB.id)
 
