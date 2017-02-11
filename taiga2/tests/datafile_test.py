@@ -106,9 +106,9 @@ def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, 
 def create_simple_dataset():
     # create datafile
     df = mc.add_datafile(name="df",
-                                s3_bucket="bucket",
-                                s3_key="converted/key",
-                                type=models.DataFile.DataFileType.Raw)
+                        s3_bucket="bucket",
+                        s3_key="converted/key",
+                        type=models.DataFile.DataFileType.Raw)
 
     ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return ds.permaname, ds.dataset_versions[0].id, "df"
