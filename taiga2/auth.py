@@ -90,7 +90,7 @@ def set_current_user_from_bearer_token():
     else:
         # TODO: Should ask for returning a "Not authenticated" page/response number
         if default_user_email is not None:
-            log.critical("Default user email is set, and a not authorized user is using it to call the api")
+            log.critical("DEFAULT_USER_EMAIL is set in config, using that when accessing API")
             try:
                 user = mc.get_user_by_email(default_user_email)
             except NoResultFound:
