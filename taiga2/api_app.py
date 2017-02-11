@@ -3,9 +3,9 @@ import os
 import logging
 
 from taiga2.auth import init_backend_auth
+from taiga2.conf import load_config
 
 log = logging.getLogger(__name__)
-
 
 def create_db():
     """Create the database, based on the app configuration,
@@ -25,19 +25,7 @@ def create_app(settings_override=None, settings_file=None):
 
     app = api_app.app
 
-    app.config.from_object('taiga2.default_settings')
-    if settings_override is not None:
-        app.config.update(settings_override)
-    elif settings_file is not None:
-        if os.path.exists(settings_file):
-            settings_file = os.path.abspath(settings_file)
-            log.warn("Loading settings from %s", settings_file)
-            app.config.from_pyfile(settings_file)
-    else:
-        if "TAIGA2_SETTINGS" in os.environ:
-            settings_file = os.path.abspath(os.environ['TAIGA2_SETTINGS'])
-            log.warn("Loading settings from (envvar TAIGA2_SETTINGS): %s", settings_file)
-            app.config.from_pyfile(settings_file)
+    load_config(app,settings_override=settings_override, settings_file=settings_file)
 
     api_app.add_api('swagger.yaml',
                     arguments={

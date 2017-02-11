@@ -23,19 +23,16 @@ log = logging.getLogger(__name__)
 
 
 def init_front_auth(app):
-    app.before_request(user_oauth_actions)
+    app.before_request(set_current_user_from_x_forwarded)
 
 
-def user_oauth_actions():
+def set_current_user_from_x_forwarded():
     import taiga2.controllers.models_controller as mc
     request = flask.request
     config = flask.current_app.config
     user = None
 
     # Use for development environment
-    # user_name_header_name = config.get("TAKE_USER_NAME_FROM_HEADER", None)
-    # user_email_header_name = config.get("TAKE_USER_EMAIL_FROM_HEADER", None)
-    bearer_token_lookup = config.get("BEARER_TOKEN_LOOKUP", None)
     default_user_email = config.get("DEFAULT_USER_EMAIL", None)
 
     # Use for production environment
@@ -43,10 +40,7 @@ def user_oauth_actions():
     user_email_header_name = request.headers.get('X-Forwarded-Email', None)
 
     if user_name_header_name is not None or user_email_header_name is not None:
-        # user_id = request.headers.get(user_id_header_name)
         try:
-            user = mc.get_user_by_name(user_name_header_name)
-            # TODO: This should never happen, but not sure what is the best: fetch by email or fetch by name (which is extracted from email by Oauth_prox)
             user = mc.get_user_by_email(user_email_header_name)
         except NoResultFound:
             # User does not exists so we can create it
@@ -71,22 +65,19 @@ def user_oauth_actions():
                                email=default_user_email)
 
     flask.g.current_user = user
-
     return None
 
 
 def init_backend_auth(app):
-    app.before_request(from_bearer_set_current_user)
+    app.before_request(set_current_user_from_bearer_token)
 
-
-def from_bearer_set_current_user():
+def set_current_user_from_bearer_token():
     import taiga2.controllers.models_controller as mc
     request = flask.request
     config = flask.current_app.config
     user = None
     bearer_token = request.headers.get("Authorization", None)
     default_user_email = config.get("DEFAULT_USER_EMAIL", None)
-    # bearer_token_lookup = config.get("BEARER_TOKEN_LOOKUP", None)
 
     if user is None and bearer_token is not None:
         m = re.match("Bearer (\\S+)", bearer_token)
@@ -95,7 +86,7 @@ def from_bearer_set_current_user():
             user = bearer_token_lookup(token)
             log.debug("Got token %s which mapped to user %s", token, user.email)
         else:
-            log.warn("Authorization header malformed: %s", bearer_token)
+            log.warning("Authorization header malformed: %s", bearer_token)
     else:
         # TODO: Should ask for returning a "Not authenticated" page/response number
         if default_user_email is not None:
