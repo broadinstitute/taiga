@@ -20,7 +20,6 @@ setup(
         'redis==2.10.5',
         'requests==2.11.0',
         'six==1.10.0',
-        'tinydb==3.2.1',
         'SQLAlchemy==1.1.4',
         'Flask-SQLAlchemy==2.1',
         'marshmallow-sqlalchemy==0.12.1',
