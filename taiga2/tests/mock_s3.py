@@ -61,13 +61,6 @@ class MockS3Object:
     def __init__(self, bucket, key):
         self.bucket = bucket
         self.key = key
-        self.prefix = '/tmp/'
-
-        os.makedirs(os.path.dirname(self.full_path), exist_ok=True)
-
-    @property
-    def full_path(self):
-        return self.prefix + self.key
 
     def download_fileobj(self, writer):
         full_path = self.bucket.s3.file_per_key[(self.bucket.name, self.key)]
