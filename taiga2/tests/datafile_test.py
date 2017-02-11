@@ -79,7 +79,7 @@ def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, 
         start = time.time()
         resulting_urls = None
         while time.time() < start + MAX_TIME:
-            r = c.get("/api/datafile?dataset_version_id="+dataset_version_id+"&name=dfname&format="+out_format)
+            r = c.get("/datafile?dataset_version_id="+dataset_version_id+"&name=dfname&format="+out_format)
             assert r.status_code == 200
             response = json.loads(r.data.decode("utf8"))
 
