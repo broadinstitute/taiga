@@ -103,7 +103,7 @@ Starting the project is not yet straightforward, but will be in the near future:
 
     a. In the root folder:
 
-        `npm start` or `webpack --progress --colors --watch` 
+        `npm run build --progress --colors --watch` or `./node_modules/.bin/webpack --progress --colors --watch`
 
     b. In your redis folder, with your redis configuration file redis.conf:
 
