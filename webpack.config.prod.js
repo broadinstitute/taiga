@@ -1,6 +1,5 @@
 const path = require("path");
 const webpack = require('webpack');
-var ManifestPlugin = require('webpack-manifest-plugin');
 
 module.exports = {
     entry: {
@@ -26,7 +25,6 @@ module.exports = {
         rules: [
             // All files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'.
             { test: /\.tsx?$/, use: "awesome-typescript-loader" },
-            { test: /\.json$/, use: "json-loader" },
             {
                 enforce: 'pre',
                 test: /\.js$/,

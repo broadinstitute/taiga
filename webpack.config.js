@@ -23,7 +23,6 @@ module.exports = {
         rules: [
             // All files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'.
             { test: /\.tsx?$/, loader: "awesome-typescript-loader" },
-            { test: /\.json$/, loaders: ['json-loader'] },
             {
                 enforce: 'pre',
                 test: /\.js$/,
