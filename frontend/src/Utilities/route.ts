@@ -1,3 +1,6 @@
+declare let taigaPrefix;
+declare let taigaUserToken;
+
 function fetchPrefix(){
     // If taigaPrefix exists in the global scope
     if(taigaPrefix){
@@ -7,6 +10,7 @@ function fetchPrefix(){
         return undefined;
     }
 }
+
 
 function fetchUserToken() {
     if(taigaUserToken) {
@@ -18,9 +22,9 @@ function fetchUserToken() {
     }
 }
 
-export var taigaRoute:string = fetchPrefix();
+export const taigaRoute:string = fetchPrefix();
 
-export var currentUserToken:string = fetchUserToken();
+export const currentUserToken:string = fetchUserToken();
 
 function pathJoin(parts: Array<string>, sep?: string){
    var separator = sep || '/';
