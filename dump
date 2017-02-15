@@ -1,0 +1,19 @@
+library(rhdf5);
+            fn <- "/private/var/folders/_8/pjcl_0ls1ql62xvnrznvbw3592t5kd/T/pytest-of-rmarenco/pytest-0/test_hdf5_to_rds_25_2_0/t.hdf5";
+            dst.fn <- "/var/folders/_8/pjcl_0ls1ql62xvnrznvbw3592t5kd/T/tmpunjq49l3";
+            rows.per.block <- 5;
+            i <- 0;
+            dim.0 <- make.unique(h5read(fn, '/dim_0'));
+            dim.1 <- make.unique(h5read(fn, '/dim_1'));
+            columns <- length(dim.1);
+            rows <- length(dim.0);
+            first.row.in.this.block <- rows.per.block*i+1;
+            last.row.in.this.block <- min(rows.per.block*(i+1), rows);
+            rows.in.this.block <- last.row.in.this.block - first.row.in.this.block + 1;
+            cat("first.row.in.this.block", first.row.in.this.block, "\n")
+            cat("last.row.in.this.block", last.row.in.this.block, "\n")
+            data <- t(h5read(fn,'/data', start=c(1,first.row.in.this.block), count=c(columns, rows.in.this.block)));
+            dimnames(data) <- list(dim.0[first.row.in.this.block:last.row.in.this.block], dim.1);
+            data[is.nan(data)] <- NA;
+            saveRDS(data, file=dst.fn)
+            
