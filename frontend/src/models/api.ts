@@ -6,6 +6,7 @@ import {
 } from './models';
 
 import { currentUserToken } from '../Utilities/route';
+import {isUndefined} from "util";
 
 export class TaigaApi {
     baseUrl: string;
@@ -71,8 +72,15 @@ export class TaigaApi {
         return this._fetch<DatasetVersion>("/datasetVersion/" + dataset_version_id)
     }
 
-    get_dataset_version_with_dataset(datasetId: string, datasetVersionId: string) {
-        let dsAndDv = this._fetch<DatasetAndDatasetVersion>("/dataset/" + datasetId + "/" + datasetVersionId)
+    get_dataset_version_with_dataset(datasetId: string, datasetVersionId?: string) {
+        // If not datasetVersion is passed, return the first datasetVersion
+        let dsAndDv;
+        if (isUndefined(datasetVersionId)) {
+            dsAndDv = this._fetch<DatasetAndDatasetVersion>("/dataset/" + datasetId);
+        }
+        else {
+            dsAndDv = this._fetch<DatasetAndDatasetVersion>("/dataset/" + datasetId + "/" + datasetVersionId);
+        }
 
         return dsAndDv;
     }

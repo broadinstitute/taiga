@@ -14,6 +14,9 @@ from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from sqlalchemy.orm.exc import NoResultFound
 
+import logging
+
+log = logging.getLogger(__name__)
 
 # IMPORTANT:
 #   If you have this error "RuntimeError: application not registered on db instance and
@@ -447,7 +450,9 @@ def get_dataset_version_by_permaname_and_version(permaname,
 
 def get_dataset_version_by_dataset_id_and_dataset_version_id(dataset_id,
                                                              dataset_version_id):
+
     dataset_version = get_dataset_version(dataset_version_id)
+
     return dataset_version
 
 

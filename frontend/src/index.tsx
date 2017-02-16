@@ -153,6 +153,7 @@ ReactDOM.render((
   <Router history={browserHistory}>
     <Route path={relativePath('')} component={App}>
         <IndexRoute component={Home} />
+        <Route path="dataset/:datasetId" component={DatasetView as any}/>
         <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any}/>
         <Route path="folder/:folderId" component={FolderView as any}/>
     </Route>

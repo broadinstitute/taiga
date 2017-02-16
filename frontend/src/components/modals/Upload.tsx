@@ -1,23 +1,29 @@
 import * as React from "react";
+import { Link } from 'react-router';
 import * as Modal from "react-modal";
 
 import * as AWS from "aws-sdk";
 import * as Dropzone from "react-dropzone";
 import * as filesize from "filesize";
 
-import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit } from "react-bootstrap-table";
-import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row} from 'react-bootstrap';
+import { BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit } from "react-bootstrap-table";
+import { Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row } from 'react-bootstrap';
 
-import {DialogProps, DialogState} from "../Dialogs";
+import { DialogProps, DialogState } from "../Dialogs";
 
 import { TypeEditorBootstrapTable } from "./TypeEditorBootstrapTable";
+
 import { getInitialFileTypeFromMimeType } from "../../Utilities/formats";
+import { relativePath } from "../../Utilities/route.ts";
 
 import {
     S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,
-    S3UploadedFileMetadata, S3UploadedData
+    S3UploadedFileMetadata, S3UploadedData, DatasetVersion
 } from "../../models/models";
-import {TaigaApi} from "../../models/api";
+
+import { TaigaApi } from "../../models/api";
+import {isUndefined} from "util";
+import {isNullOrUndefined} from "util";
 
 
 interface DropzoneProps extends DialogProps {
@@ -31,6 +37,7 @@ interface DropzoneState extends DialogState {
     datasetFormDisabled?: boolean;
     nameValue?: string;
     descriptionValue?: string;
+    newDatasetVersion?: DatasetVersion;
 }
 
 // TODO: Duplication of modalStyles in Dialogs.tsx => Find a way to fix this
@@ -85,6 +92,17 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             console.log("- Access key id: " + _credentials.accessKeyId);
             credentials = _credentials;
         });
+    }
+
+    componentWillReceiveProps(nextProps) {
+        // We clean the filesStatus when we open this Upload Modal (isVisible is True)
+        if(nextProps.isVisible) {
+            // We clean the uploadedFileStatus
+            console.log("We openend!");
+            this.setState({
+                filesStatus: new Array<FileUploadStatus>()
+            });
+        }
     }
 
     // When files are put in the drop zone
@@ -230,6 +248,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         }).then((dataset_id) => {
             console.log("Dataset " + dataset_id + " has been created!");
             this.props.onFileUploadedAndConverted()
+
+            // We fetch the datasetVersion of the newly created dataset and change the state of it
+            tapi.get_dataset_version_first(dataset_id).then((newDatasetVersion) => {
+                this.setState({
+                    newDatasetVersion: newDatasetVersion
+                });
+            });
         }).catch((err: any) => {
             console.log(err);
         });
@@ -366,6 +391,10 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         }
     }
 
+    requestClose() {
+        this.props.cancel();
+    }
+
     render() {
         // TODO: Since the module to have the upload status grows bigger and bigger, think about refactoring it in another file or module
         const filesStatus = this.state.filesStatus;
@@ -387,6 +416,20 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         const fileTypeWidth = '170';
 
         const createTypeEditor = (onUpdate: any, props: any) => (<TypeEditorBootstrapTable onUpdate={ onUpdate } {...props}/>);
+
+        let newDatasetLink = undefined;
+        // If we have a new datasetVersion in the state, we can show the link button
+        if(!isNullOrUndefined(this.state.newDatasetVersion)) {
+            newDatasetLink = (
+                <Link className="btn btn-success"
+                      role="button"
+                      to={relativePath(
+                      "dataset/"+this.state.newDatasetVersion.dataset_id+"/"+this.state.newDatasetVersion.id
+                      )}>
+                    See my new Dataset
+                </Link>
+            );
+        }
 
         // Show the uploaded files if we have some, otherwise say we have nothing yet
         // TODO: Use Colum Format to make a button on Remove boolean => http://allenfang.github.io/react-bootstrap-table/example.html#column-format -->
@@ -427,7 +470,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             style={modalStyles}
             closeTimeoutMS={150}
             isOpen={this.props.isVisible}
-            onRequestClose={this.props.cancel}
             contentLabel="Upload">
             <div className="modal-content">
                 <div className="modal-header">
@@ -482,10 +524,12 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     </Grid>
                 </div>
                 <div className="modal-footer">
-                    <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
+                    <button type="button" className="btn btn-default" onClick={() => this.requestClose()}>Close</button>
                     <button type="button" className="btn btn-primary" disabled={this.state.disableUpload}
                             onClick={() => this.requestUpload()}>Upload
                     </button>
+
+                    { this.state.newDatasetVersion && newDatasetLink }
                 </div>
             </div>
         </Modal>
