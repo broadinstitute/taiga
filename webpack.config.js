@@ -1,11 +1,14 @@
 // For production: Use webpack.config.prod.js => webpack --config webpack.config.prod.js
 var webpack = require('webpack');
+const path = require("path");
 
 module.exports = {
-    entry: ["./frontend/src/index.tsx"],
+    entry: {
+        frontend: "./frontend/src/index.tsx",
+    },
     output: {
-        filename: "frontend.js",
-        path: __dirname + "/taiga2/static"
+        filename: '[name].js',
+        path: path.join(__dirname + "/taiga2/static")
     },
 
     // Enable sourcemaps for debugging webpack's output.
@@ -38,10 +41,15 @@ module.exports = {
     // This is important because it allows us to avoid bundling all of our
     // dependencies, which allows browsers to cache those libraries between builds.
     externals: {
+        "react": "React",
+        "react-dom": "ReactDOM",
+        "react-router": "ReactRouter",
+        "aws-sdk": "AWS",
+        "react-bootstrap": "ReactBootstrap",
+        "react-bootstrap-table": "ReactBootstrapTable"
     },
 
     plugins: [
-        new webpack.ProvidePlugin({'fetch': 'imports?this=>global!exports?global.fetch!whatwg-fetch'})
     ]
 
 };
