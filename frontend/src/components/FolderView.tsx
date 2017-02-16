@@ -6,7 +6,7 @@ import * as Folder from "../models/models";
 import {TaigaApi} from "../models/api";
 
 import * as Dialogs from "./Dialogs";
-import * as Upload from "./Modals/Upload";
+import * as Upload from "./modals/Upload";
 import {DatasetVersion} from "../models/models";
 
 import {toLocalDateString} from "../Utilities/formats";
