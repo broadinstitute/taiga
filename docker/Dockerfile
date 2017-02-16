@@ -81,11 +81,11 @@ WORKDIR /taiga
 RUN pip3 install -r requirements.txt
 
 # Install backend javascript dependencies
-RUN yarn install
+RUN yarn install --production
 
 # Install frontend javascript dependencies
 WORKDIR frontend
-RUN yarn install
+RUN yarn install --production
 
 WORKDIR ..
 # Now we are using the right db, should use instead settings.cfg
@@ -93,7 +93,11 @@ WORKDIR ..
 
 # Build our frontend distribution
 #RUN ln -s /usr/bin/nodejs /usr/bin/node
-RUN node_modules/.bin/webpack
+#RUN node_modules/.bin/webpack
+RUN export PATH="$(yarn global bin):$PATH"
+RUN yarn add webpack --dev
+# We build the production version
+RUN ./node_modules/.bin/webpack --config webpack.config.prod.js
 
 # Set celery as being able to run as root => Can find a better way
 ENV C_FORCE_ROOT=true
