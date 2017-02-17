@@ -95,10 +95,10 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     }
 
     componentWillReceiveProps(nextProps) {
-        // We clean the filesStatus when we open this Upload Modal (isVisible is True)
-        if(nextProps.isVisible) {
+        // We clean the filesStatus when we open this Upload Modal (isVisible is True, and previously was False)
+        if(nextProps.isVisible && !this.props.isVisible) {
             // We clean the uploadedFileStatus
-            console.log("We openend!");
+            console.log("We opened!");
             this.setState({
                 filesStatus: new Array<FileUploadStatus>()
             });
@@ -431,6 +431,12 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             );
         }
 
+        let uploadButton = (
+            <button type="button" className="btn btn-primary" disabled={this.state.disableUpload}
+                    onClick={() => this.requestUpload()}>Upload
+            </button>
+        );
+
         // Show the uploaded files if we have some, otherwise say we have nothing yet
         // TODO: Use Colum Format to make a button on Remove boolean => http://allenfang.github.io/react-bootstrap-table/example.html#column-format -->
         let uploadedFiles = (
@@ -525,9 +531,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 </div>
                 <div className="modal-footer">
                     <button type="button" className="btn btn-default" onClick={() => this.requestClose()}>Close</button>
-                    <button type="button" className="btn btn-primary" disabled={this.state.disableUpload}
-                            onClick={() => this.requestUpload()}>Upload
-                    </button>
+                    { !this.state.newDatasetVersion && uploadButton }
 
                     { this.state.newDatasetVersion && newDatasetLink }
                 </div>
