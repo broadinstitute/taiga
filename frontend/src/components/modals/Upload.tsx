@@ -100,7 +100,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             // We clean the uploadedFileStatus
             console.log("We opened!");
             this.setState({
-                filesStatus: new Array<FileUploadStatus>()
+                filesStatus: new Array<FileUploadStatus>(),
+                newDatasetVersion: undefined
             });
         }
     }
