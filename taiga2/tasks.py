@@ -1,15 +1,15 @@
-import taiga2.controllers.models_controller as mc
-from taiga2.aws import aws
 from celery import Celery
-import taiga2.conv as conversion
-from taiga2.conv.util import Progress
+
 import tempfile
 import uuid
 import flask
 import logging
 
-from taiga2.aws import parse_s3_url
+from taiga2.aws import aws
+import taiga2.conv as conversion
+from taiga2.conv.util import Progress
 from taiga2.conv.util import make_temp_file_generator
+from taiga2.controllers import models_controller
 
 celery = Celery("taiga2")
 log = logging.getLogger()
@@ -18,6 +18,7 @@ log = logging.getLogger()
 def print_config():
     import flask
     print(flask.current_app.config)
+
 
 def _from_s3_convert_to_s3(progress, s3_object, download_dest, converted_dest, converted_s3_object, converter):
     progress.progress("Downloading the file from S3")
@@ -71,9 +72,14 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
             with tempfile.NamedTemporaryFile("w+b") as converted_dest:
                 _from_s3_convert_to_s3(progress, s3_object, download_dest, converted_dest, converted_s3_object, converter)
 
+
 # TODO: This is only for background_process_new_upload_session_file, how to get it generic for any Celery tasks?
 def taskstatus(task_id):
+    print("In task status of task_id {}".format(task_id))
     task = background_process_new_upload_session_file.AsyncResult(task_id)
+    print("Task {}".format(task))
+    print("The task is in state: {}".format(task.state))
+    print("Task info is {}".format(task.info))
     if task.state == 'PENDING':
         # job did not start yet
         response = {
@@ -108,13 +114,14 @@ def taskstatus(task_id):
         response = {
             'id': task.id,
             'state': task.state,
-            'message': 'No Message' if task.info else task.info.get('message', 'No message'),
+            'message': str(task.info),
             'current': 1,
             'total': -1,
             's3Key': 'TODO' if task.info else task.info.get('s3Key', 'TODO')
         }
 
     return response
+
 
 def get_converter(src_format, dst_format):
     from taiga2.models import DataFile
@@ -164,7 +171,7 @@ def _start_conversion_task(self, progress, bucket, key, src_format, dst_format, 
         models_controller.update_conversion_cache_entry(cache_entry_id, "Completed successfully", urls=urls)
 
 
-from taiga2.controllers import models_controller
+
 
 @celery.task(bind=True)
 def start_conversion_task(self, bucket, key, src_format, dst_format, cache_entry_id):

@@ -226,6 +226,7 @@ def _no_transform_needed(requested_format, datafile_type):
 
     return False
 
+
 def get_datafile(format, dataset_permaname=None, version=None, dataset_version_id=None, datafile_name=None, force=None):
     from taiga2.tasks import start_conversion_task
 
@@ -282,6 +283,7 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
         result['urls'] = urls
 
     return flask.jsonify(result)
+
 
 def entry_is_valid(entry):
     # while celery eager eval is enabled, we cannot use AsyncResult so just assume any existing

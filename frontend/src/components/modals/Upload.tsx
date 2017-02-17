@@ -103,7 +103,18 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 filesStatus: new Array<FileUploadStatus>(),
                 newDatasetVersion: undefined
             });
+
+            // We renew the s3_credentials
+            this.renew_s3_credentials();
         }
+    }
+
+    renew_s3_credentials() {
+        tapi.get_s3_credentials().then((_credentials: S3Credentials) => {
+            console.log("Received credentials! ");
+            console.log("- Access key id: " + _credentials.accessKeyId);
+            credentials = _credentials;
+        });
     }
 
     // When files are put in the drop zone
@@ -227,7 +238,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     this.saveFileStatus(updatedFileStatus);
 
                     return Promise.resolve(sid)
-                })
+                }).catch((err: any) => {
+                    return Promise.reject(err);
+                });
             }).catch((err: any) => {
                 console.log(err);
                 this.setState({
@@ -315,16 +328,20 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         // If status == SUCCESS, return the last check
         // If status != SUCCESS, wait 1 sec and check again
         // TODO: Make an enum from the task state
-        this.displayStatusUpdate(status, s3Key);
 
         if (status.state == 'SUCCESS') {
+            this.displayStatusUpdate(status, s3Key);
             console.log("Success of task: " + status.id);
             return Promise.resolve(status.id)
         }
         else if (status.state == 'FAILURE') {
-            return Promise.reject('Failure of task ' + status.id);
+            // TODO: Make an exception class to manage properly the message
+            status.message = "FAILURE: " + status.message;
+            this.displayStatusUpdate(status, s3Key);
+            return Promise.reject(status.message);
         }
         else {
+            this.displayStatusUpdate(status, s3Key);
             return tapi.get_task_status(status.id).then((new_status: TaskStatus) => {
                 // Wait one sec Async then check again
                 // setTimeout(() => {return this.checkOrContinue(status)}, 1000);
@@ -384,8 +401,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     }
 
     columnClassProgressUploadFormat(fieldValue: any, row: any, rowIdx: number, colIds: number) {
+        // TODO: This function handles both Upload Progress and Conversion Progress. Should merge into one column, or have two different functions
         if (row instanceof FileUploadStatus && row.conversionProgress == "Done") {
             return 'progressDownloadComplete';
+        }
+        // TODO: The test of failure should not be done against a string but an object
+        else if (row instanceof FileUploadStatus && row.conversionProgress.startsWith("FAILURE")) {
+            return 'conversionProgressFailure';
         }
         else {
             return '';
