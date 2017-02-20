@@ -111,6 +111,10 @@
             padding-left: 15px;
         }
 
+        .top-page-menu > span {
+            padding-right: 10px;
+        }
+
         .bottom-page-text {
             color: #90a5e0;
         }
@@ -123,37 +127,22 @@
             background-color: lightcoral;
         }
 
+        #taiga_logo {
+            content: url("{{ url_for('static', filename='taiga3.png') }}");
+            padding-right: 5px;
+        }
+
     </style>
 </head>
 
 <body>
-    <div id="header">
-        <div class="top-page-menu">
-            <img src="{{ url_for('static', filename='taiga3.png') }}" style="padding-right: 5px">Taiga
-            <a href="{{prefix}}">Home</a>
-        </div>
+    <div id="root"></div>
 
-        <div class="login-box pull-right">
-            <a href="/logout">Logout</a>
-        </div>
-    </div>
-
-    <div id="content">
-        <div id="root"></div>
-    </div>
-
-    <footer id="footer">
-        <div class="top-page-menu bottom-page-text">
-            Broad Institute, Cancer Program Data Science 2015
-        </div>
-        <div class="login-box pull-right bottom-page-text">
-            Rev DEV
-        </div>
-    </footer>
     <!-- TODO: Unfortunately, async attribute is giving an error on loading page. Chunking per page would be the best way to go -->
-    <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-with-addons.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-dom.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/react-router/2.7.0/ReactRouter.min.js"></script>
+    <!-- TODO: In production, use the minified libraries -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-with-addons.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-dom.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react-router/2.7.0/ReactRouter.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.7.17/aws-sdk.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/react-bootstrap/0.30.7/react-bootstrap.min.js"></script>

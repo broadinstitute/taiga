@@ -18,7 +18,35 @@ const App = React.createClass({
     },
     
     render() {
-        return <div>{this.props.children}</div>
+        return (
+            <div id="main_react">
+                <div id="header">
+                    <div className="top-page-menu">
+                        <img id="taiga_logo"/>
+                        <span>Taiga</span>
+                        <Link to={relativePath('')}>Home</Link>
+                    </div>
+
+                    <div className="login-box pull-right">
+                        {/*TODO: Change this a proper logout behavior*/}
+                        <Link to={relativePath('')}>Logout</Link>
+                    </div>
+                </div>
+
+                <div id="content">
+                    <div>{this.props.children}</div>
+                </div>
+
+                <footer id="footer">
+                    <div className="top-page-menu bottom-page-text">
+                        Broad Institute, Cancer Program Data Science 2015
+                    </div>
+                    <div className="login-box pull-right bottom-page-text">
+                        Rev DEV
+                    </div>
+                </footer>
+            </div>
+        )
     }
 });
 App.childContextTypes = {
