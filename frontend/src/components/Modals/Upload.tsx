@@ -1,23 +1,28 @@
 import * as React from "react";
+import { Link } from 'react-router';
 import * as Modal from "react-modal";
 
 import * as AWS from "aws-sdk";
 import * as Dropzone from "react-dropzone";
 import * as filesize from "filesize";
 
-import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit } from "react-bootstrap-table";
-import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row} from 'react-bootstrap';
+import { BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit } from "react-bootstrap-table";
+import { Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row, Glyphicon } from 'react-bootstrap';
 
-import {DialogProps, DialogState} from "../Dialogs";
+import { DialogProps, DialogState } from "../Dialogs";
 
 import { TypeEditorBootstrapTable } from "./TypeEditorBootstrapTable";
+
 import { getInitialFileTypeFromMimeType } from "../../Utilities/formats";
+import { relativePath } from "../../Utilities/route";
 
 import {
     S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,
-    S3UploadedFileMetadata, S3UploadedData
+    S3UploadedFileMetadata, S3UploadedData, DatasetVersion
 } from "../../models/models";
-import {TaigaApi} from "../../models/api";
+
+import { TaigaApi } from "../../models/api";
+import {isNullOrUndefined} from "util";
 
 
 interface DropzoneProps extends DialogProps {
@@ -31,6 +36,7 @@ interface DropzoneState extends DialogState {
     datasetFormDisabled?: boolean;
     nameValue?: string;
     descriptionValue?: string;
+    newDatasetVersion?: DatasetVersion;
 }
 
 // TODO: Duplication of modalStyles in Dialogs.tsx => Find a way to fix this
@@ -87,18 +93,40 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         });
     }
 
+    componentWillReceiveProps(nextProps) {
+        // We clean the filesStatus when we open this Upload Modal (isVisible is True, and previously was False)
+        if(nextProps.isVisible && !this.props.isVisible) {
+            // We clean the uploadedFileStatus
+            this.setState({
+                filesStatus: new Array<FileUploadStatus>(),
+                newDatasetVersion: undefined
+            });
+
+            // We renew the s3_credentials
+            this.renew_s3_credentials();
+        }
+    }
+
+    renew_s3_credentials() {
+        tapi.get_s3_credentials().then((_credentials: S3Credentials) => {
+            console.log("Received credentials! ");
+            console.log("- Access key id: " + _credentials.accessKeyId);
+            credentials = _credentials;
+        });
+    }
+
     // When files are put in the drop zone
     onDrop(acceptedFiles: Array<File>, rejectedFiles: Array<File>) {
-        console.log('Accepted files: ', acceptedFiles);
-
         // We construct the FileStatusUpload object for each accepted files
-        let filesUploadStatus = acceptedFiles.map((file) => {
+        let currentFilesUploadStatus = this.state.filesStatus;
+        let newFilesUploadStatus = acceptedFiles.map((file) => {
             return new FileUploadStatus(file, credentials.prefix);
         });
-        console.log('Files upload status: ', filesUploadStatus);
+        // We append to the existing files the new ones
+        Array.prototype.push.apply(currentFilesUploadStatus, newFilesUploadStatus);
 
         this.setState({
-            filesStatus: filesUploadStatus
+            filesStatus: currentFilesUploadStatus
         });
         this.setState({
             disableUpload: false,
@@ -109,12 +137,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     // Ask the credentials to be able to upload
     requestUpload() {
         // TODO: Use the form features to check the data
-        console.log("We are in requestUpload!");
-        console.log("Uploading through token:");
-
         // Request creation of Upload session => sid
         return tapi.get_upload_session().then((sid: string) => {
-            console.log("New upload session received: " + sid);
             // doUpload with this sid
             this.doUpload(credentials, this.state.filesStatus, sid);
         });
@@ -136,20 +160,16 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         // Looping through all the files
         let promises_fileUpload: Array<Promise<string>> = filesStatus.map((file: FileUploadStatus) => {
             // TODO: Find a better way to manage the prefix associated with the sid, since we currently receive them both separatly
-            console.log("Updating the s3 path with the session Id received");
             let fileUploadStatus: FileUploadStatus = this.retrieveFileStatus(file.s3Key);
             let newPrefix = credentials.prefix + sid + "/";
             fileUploadStatus.recreateS3Key(newPrefix);
 
             this.saveFileStatus(fileUploadStatus);
-
-            console.log("Uploading now: " + file.s3Key);
-
-                let params = {
-                    Bucket: s3_credentials.bucket,
-                    Key: file.s3Key,
-                    Body: file.file
-                };
+            let params = {
+                Bucket: s3_credentials.bucket,
+                Key: file.s3Key,
+                Body: file.file
+            };
 
             let upload = new AWS.S3.ManagedUpload({
                 params: params,
@@ -159,8 +179,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             // Subscribe to measure progress
             upload.on('httpUploadProgress', (evt : any) => {
                 // TODO: evt.key is not recognized in the DefinitelyType AWS, but it works. Raise an issue in Git
-                console.log('Progress:', evt.loaded, '/', evt.total, 'of ', evt.key);
-
                 let updatedFilesStatus = this.retrieveFileStatus(evt.key);
 
                 let progressPercentage = Math.floor(evt.loaded / evt.total * 100);
@@ -178,9 +196,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             let uploadPromise = upload.promise();
             // TODO: Manage all the errors that can come along the way
             return uploadPromise.then((s3uploadeData: S3UploadedData) => {
-                console.log('Success uploading to S3. Data received: ' + s3uploadeData);
-                console.log('Here is the url of the file: ' + s3uploadeData.Location);
-                console.log('Here is the Key of the file: ' + s3uploadeData.ETag);
                 // TODO: Send the signal the upload is done on the AWS side, so you can begin the conversion on the backend
                 // POST
                 // We need to retrieve the filetype and the filename to send it to the api too
@@ -192,19 +207,17 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
                 return tapi.create_datafile(sid, s3FileMetadata
                 ).then((taskStatusId) => {
-                    console.log("The new datafile " + s3FileMetadata.key + " has been sent!");
-                    console.log("We now check the task until we receive success");
-
                     return this.initRecurringCheckStatus(taskStatusId, s3FileMetadata.key);
                 }).then(() => {
-                    console.log("Task finished!");
                     // Get the file who received this progress notification
                     let updatedFileStatus = this.retrieveFileStatus(s3FileMetadata.key);
                     updatedFileStatus.conversionProgress = "Done";
                     this.saveFileStatus(updatedFileStatus);
 
                     return Promise.resolve(sid)
-                })
+                }).catch((err: any) => {
+                    return Promise.reject(err);
+                });
             }).catch((err: any) => {
                 console.log(err);
                 this.setState({
@@ -217,15 +230,19 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         // Then we create the dataset if all have been resolved
         Promise.all(promises_fileUpload).then((sids) => {
             // TODO: Check all sids are the same
-            console.log("All datafiles have been uploaded and converted successfully!");
-            console.log("Asking to create a dataset from session id " + sid[0]);
             return tapi.create_dataset(sids[0].toString(),
                 this.state.nameValue,
                 this.state.descriptionValue,
                 this.props.currentFolderId.toString());
         }).then((dataset_id) => {
-            console.log("Dataset " + dataset_id + " has been created!");
             this.props.onFileUploadedAndConverted()
+
+            // We fetch the datasetVersion of the newly created dataset and change the state of it
+            tapi.get_dataset_version_first(dataset_id).then((newDatasetVersion) => {
+                this.setState({
+                    newDatasetVersion: newDatasetVersion
+                });
+            });
         }).catch((err: any) => {
             console.log(err);
         });
@@ -263,13 +280,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     displayStatusUpdate(status: TaskStatus, s3Key: string) {
         let updatedFileStatus = this.retrieveFileStatus(s3Key);
 
-        console.log('The name of the file we are processing is: ' + s3Key);
-
-
         if (updatedFileStatus) {
             updatedFileStatus.conversionProgress = status.message;
-            console.log("We just updated " + updatedFileStatus.s3Key + " with this message '" + updatedFileStatus.conversionProgress + "'");
-
             this.saveFileStatus(updatedFileStatus)
         }
         console.log(status.message);
@@ -285,16 +297,20 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         // If status == SUCCESS, return the last check
         // If status != SUCCESS, wait 1 sec and check again
         // TODO: Make an enum from the task state
-        this.displayStatusUpdate(status, s3Key);
 
         if (status.state == 'SUCCESS') {
+            this.displayStatusUpdate(status, s3Key);
             console.log("Success of task: " + status.id);
             return Promise.resolve(status.id)
         }
         else if (status.state == 'FAILURE') {
-            return Promise.reject('Failure of task ' + status.id);
+            // TODO: Make an exception class to manage properly the message
+            status.message = "FAILURE: " + status.message;
+            this.displayStatusUpdate(status, s3Key);
+            return Promise.reject(status.message);
         }
         else {
+            this.displayStatusUpdate(status, s3Key);
             return tapi.get_task_status(status.id).then((new_status: TaskStatus) => {
                 // Wait one sec Async then check again
                 // setTimeout(() => {return this.checkOrContinue(status)}, 1000);
@@ -326,10 +342,26 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         })
     }
 
+    onRowMouseOver(row) {
+        // We wait 2 seconds and display the message
+    }
+
+    fileNameFormatter(cell: any, row: any) {
+        return (
+            <span title={ cell }>{ cell }</span>
+        )
+    }
+
     progressFormatter(cell: any, row: any) {
         return (
-            <span>{cell}%</span>
+            <span>{ cell }%</span>
         );
+    }
+
+    conversionProgressFormatter(cell: any, row: any) {
+        return (
+            <span title={ cell }>{ cell }</span>
+        )
     }
 
     sizeFormatter(cell: any, row: any) {
@@ -354,12 +386,21 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     }
 
     columnClassProgressUploadFormat(fieldValue: any, row: any, rowIdx: number, colIds: number) {
+        // TODO: This function handles both Upload Progress and Conversion Progress. Should merge into one column, or have two different functions
         if (row instanceof FileUploadStatus && row.conversionProgress == "Done") {
             return 'progressDownloadComplete';
+        }
+        // TODO: The test of failure should not be done against a string but an object
+        else if (row instanceof FileUploadStatus && row.conversionProgress.startsWith("FAILURE")) {
+            return 'conversionProgressFailure';
         }
         else {
             return '';
         }
+    }
+
+    requestClose() {
+        this.props.cancel();
     }
 
     render() {
@@ -373,7 +414,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         const options = {
             noDataText: 'Nothing uploaded yet',
-            afterDeleteRow: (rowKeys: Array<string>) => this.onAfterDeleteRow(rowKeys) // A hook for after droping rows.
+            afterDeleteRow: (rowKeys: Array<string>) => this.onAfterDeleteRow(rowKeys), // A hook for after droping rows.
+            onRowMouseOver: (row: any) => this.onRowMouseOver(row)
         };
 
         const cellEditProp: CellEdit = {
@@ -384,6 +426,26 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         const createTypeEditor = (onUpdate: any, props: any) => (<TypeEditorBootstrapTable onUpdate={ onUpdate } {...props}/>);
 
+        let newDatasetLink = undefined;
+        // If we have a new datasetVersion in the state, we can show the link button
+        if(!isNullOrUndefined(this.state.newDatasetVersion)) {
+            newDatasetLink = (
+                <Link className="btn btn-success"
+                      role="button"
+                      to={relativePath(
+                      "dataset/"+this.state.newDatasetVersion.dataset_id+"/"+this.state.newDatasetVersion.id
+                      )}>
+                    See my new Dataset
+                </Link>
+            );
+        }
+
+        let uploadButton = (
+            <button type="button" className="btn btn-primary" disabled={this.state.disableUpload}
+                    onClick={() => this.requestUpload()}>Upload
+            </button>
+        );
+
         // Show the uploaded files if we have some, otherwise say we have nothing yet
         // TODO: Use Colum Format to make a button on Remove boolean => http://allenfang.github.io/react-bootstrap-table/example.html#column-format -->
         let uploadedFiles = (
@@ -392,11 +454,18 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                                 selectRow={ selectRowProp }
                                 options={ options }
                                 cellEdit={ cellEditProp }>
-                    <TableHeaderColumn isKey dataField='fileName'>Name</TableHeaderColumn>
+                    <TableHeaderColumn isKey
+                                       dataField='fileName'
+                                       width="150"
+                                       dataFormat={ this.fileNameFormatter }>
+                        Name
+                    </TableHeaderColumn>
                     <TableHeaderColumn dataField='fileType'
                                        width={fileTypeWidth}
                                        dataFormat={ this.typeFormatter }
-                                       customEditor={ { getElement: createTypeEditor }}>Type</TableHeaderColumn>
+                                       customEditor={ { getElement: createTypeEditor }}>
+                        <Glyphicon glyph="pencil"/> Type (click to edit)
+                    </TableHeaderColumn>
                     <TableHeaderColumn dataField='fileSize'
                                        width="150"
                                        editable={ false }
@@ -411,6 +480,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     <TableHeaderColumn dataField='conversionProgress'
                                        width="300"
                                        editable={ false }
+                                       dataFormat={ this.conversionProgressFormatter }
                                        columnClassName={
                                            (fieldValue: any, row: any, rowIdx: any, colIds: any) =>
                                            this.columnClassProgressUploadFormat(fieldValue, row, rowIdx, colIds) }>Conversion Progress</TableHeaderColumn>
@@ -423,65 +493,52 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             style={modalStyles}
             closeTimeoutMS={150}
             isOpen={this.props.isVisible}
-            onRequestClose={this.props.cancel}
             contentLabel="Upload">
             <div className="modal-content">
                 <div className="modal-header">
                     <h2 ref="subtitle">New dataset</h2>
                 </div>
                 <div className="modal-body">
-                    <Grid>
-                        <Row>
-                            <Col>
-                                <div className="dataset-metadata">
-                                    <Form horizontal>
-                                        <FormGroup controlId="formName">
-                                            <Col componentClass={ControlLabel} sm={2}>
-                                                Name
-                                            </Col>
-                                            <Col sm={10}>
-                                                <FormControl value={this.state.nameValue}
-                                                             onChange={(evt) => {this.handleFormNameChange(evt)}}
-                                                             type="text"
-                                                             placeholder="Dataset name"/>
-                                            </Col>
-                                        </FormGroup>
-                                        <FormGroup controlId="formDescription">
-                                            <Col componentClass={ControlLabel} sm={2}>
-                                                Description
-                                            </Col>
-                                            <Col sm={10}>
-                                                <FormControl value={this.state.descriptionValue}
-                                                             onChange={(evt) => {this.handleFormDescriptionChange(evt)}}
-                                                             componentClass="textarea"
-                                                             placeholder="Dataset description"/>
-                                            </Col>
-                                        </FormGroup>
-                                    </Form>
-                                </div>
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col>
-                                <Dropzone style={dropZoneStyle} onDrop={(acceptedFiles: any, rejectedFiles: any) =>
-                                        this.onDrop(acceptedFiles, rejectedFiles)}
-                                >
-                                    <div>Try dropping some files here, or click to select files to upload.</div>
-                                </Dropzone>
-                            </Col>
-                        </Row>
-                        <Row style={rowUploadFiles}>
-                            <Col>
-                                {uploadedFiles}
-                            </Col>
-                        </Row>
-                    </Grid>
+                    <div className="dataset-metadata">
+                        <Form horizontal>
+                            <FormGroup controlId="formName">
+                                <Col componentClass={ControlLabel} sm={2}>
+                                    Name
+                                </Col>
+                                <Col sm={10}>
+                                    <FormControl value={this.state.nameValue}
+                                                 onChange={(evt) => {this.handleFormNameChange(evt)}}
+                                                 type="text"
+                                                 placeholder="Dataset name"/>
+                                </Col>
+                            </FormGroup>
+                            <FormGroup controlId="formDescription">
+                                <Col componentClass={ControlLabel} sm={2}>
+                                    Description
+                                </Col>
+                                <Col sm={10}>
+                                    <FormControl value={this.state.descriptionValue}
+                                                 onChange={(evt) => {this.handleFormDescriptionChange(evt)}}
+                                                 componentClass="textarea"
+                                                 placeholder="Dataset description"/>
+                                </Col>
+                            </FormGroup>
+                        </Form>
+                    </div>
+                    <Dropzone style={dropZoneStyle} onDrop={(acceptedFiles: any, rejectedFiles: any) =>
+                            this.onDrop(acceptedFiles, rejectedFiles)}
+                    >
+                        <div>Try dropping some files here, or click to select files to upload.</div>
+                    </Dropzone>
+                    <div style={rowUploadFiles}>
+                        {uploadedFiles}
+                    </div>
                 </div>
                 <div className="modal-footer">
-                    <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
-                    <button type="button" className="btn btn-primary" disabled={this.state.disableUpload}
-                            onClick={() => this.requestUpload()}>Upload
-                    </button>
+                    <button type="button" className="btn btn-default" onClick={() => this.requestClose()}>Close</button>
+                    { !this.state.newDatasetVersion && uploadButton }
+
+                    { this.state.newDatasetVersion && newDatasetLink }
                 </div>
             </div>
         </Modal>
