@@ -62,7 +62,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
                         <h1>Your token</h1>
                     </Row>
                     <Row>
-                        <OverlayTrigger trigger="click" placement="right" overlay={tooltipToken}>
+                        <OverlayTrigger trigger="click" placement="right" overlay={tooltipToken} rootClose="True">
                             <ClipboardButton className="btn btn-default" data-clipboard-text={this.state.token}>
                                 {this.state.token}
                             </ClipboardButton>
