@@ -1,6 +1,5 @@
 import * as React from "react";
 
-
 import { LeftNav } from "./LeftNav"
 
 import { Link } from 'react-router';

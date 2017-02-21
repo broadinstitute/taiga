@@ -7,6 +7,7 @@ import {
 
 import { currentUserToken } from '../Utilities/route';
 import {isUndefined} from "util";
+import {Token} from "../components/Token";
 
 export class TaigaApi {
     baseUrl: string;

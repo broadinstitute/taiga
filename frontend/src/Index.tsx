@@ -7,6 +7,7 @@ import { FolderView } from "./components/FolderView"
 import { DatasetView } from "./components/DatasetView"
 import { LeftNav } from "./components/LeftNav"
 import { TaigaApi } from "./models/api"
+import { Token } from "./components/Token"
 
 import { relativePath } from "./Utilities/route"
 
@@ -28,8 +29,9 @@ const App = React.createClass({
                     </div>
 
                     <div className="login-box pull-right">
+                        <Link className="tokenLink" to={relativePath('token/')}>My Token</Link>
                         {/*TODO: Change this a proper logout behavior*/}
-                        <Link to={relativePath('')}>Logout</Link>
+                        <Link className="logoutLink" to={relativePath('')}>Logout</Link>
                     </div>
                 </div>
 
@@ -184,6 +186,7 @@ ReactDOM.render((
         <Route path="dataset/:datasetId" component={DatasetView as any}/>
         <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any}/>
         <Route path="folder/:folderId" component={FolderView as any}/>
+        <Route path="token/" component={ Token as any }/>
     </Route>
     <Route path="*" component={NoMatch}/>
   </Router>

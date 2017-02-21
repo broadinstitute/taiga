@@ -4,7 +4,7 @@ const path = require("path");
 
 module.exports = {
     entry: {
-        frontend: "./frontend/src/index.tsx",
+        frontend: "./frontend/src/Index.tsx",
     },
     output: {
         filename: '[name].js',

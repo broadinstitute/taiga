@@ -14,7 +14,7 @@ import { DialogProps, DialogState } from "../Dialogs";
 import { TypeEditorBootstrapTable } from "./TypeEditorBootstrapTable";
 
 import { getInitialFileTypeFromMimeType } from "../../Utilities/formats";
-import { relativePath } from "../../Utilities/route.ts";
+import { relativePath } from "../../Utilities/route";
 
 import {
     S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,
@@ -22,7 +22,6 @@ import {
 } from "../../models/models";
 
 import { TaigaApi } from "../../models/api";
-import {isUndefined} from "util";
 import {isNullOrUndefined} from "util";
 
 

@@ -205,6 +205,7 @@ paths:
               - name
               - home_folder_id
               - trash_folder_id
+              - token
             properties:
               id:
                 type: string
@@ -213,6 +214,8 @@ paths:
               home_folder_id:
                 type: string
               trash_folder_id:
+                type: string
+              token:
                 type: string
 
   /credentials_s3:

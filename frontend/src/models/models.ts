@@ -44,6 +44,7 @@ export interface User {
     "name": string;
     "home_folder_id": string;
     "trash_folder_id": string;
+    "token": string;
 }
 
 export type StatusEnum = "deleted" | "valid" | "deprecated";

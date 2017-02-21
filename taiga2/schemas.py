@@ -9,7 +9,8 @@ ma = Marshmallow()
 class UserSchema(ma.ModelSchema):
     class Meta:
         fields = ('id', 'name',
-                  'home_folder_id', 'trash_folder_id')
+                  'home_folder_id', 'trash_folder_id',
+                  'token')
 
 
 class UserNamedIdSchema(ma.ModelSchema):
