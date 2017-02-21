@@ -139,5 +139,9 @@ export class TaigaApi {
             currentFolderId: currentFolderId
         })
     }
+
+    move_to_trash(entryIds: Array<string>) {
+        return this._post<void>("/trash", entryIds)
+    }
 }
 

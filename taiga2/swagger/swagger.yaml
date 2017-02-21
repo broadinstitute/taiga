@@ -710,6 +710,26 @@ paths:
               s3Key:
                 type: string
 
+  /trash:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: move_to_trash
+      description: Move the entries passed as parameter into the user's trash folder
+      consumes:
+        - application/json
+      parameters:
+        - name: entryIds
+          in: body
+          schema:
+            type: array
+            items:
+              title: entryId
+              type: string
+          required: true
+          description: "Ids of the entries to mnove to the user trash folder"
+      responses:
+        200:
+          description: Successfully updated
 
 #missing provenance
 

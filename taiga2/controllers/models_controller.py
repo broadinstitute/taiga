@@ -467,6 +467,27 @@ def get_entry(entry_id):
     return entry
 
 
+def move_to_trash(entry_ids):
+    """Remove the parents folder, and add the user Trash folder as the only parent folder
+    Input: Array of entry ids
+    """
+    # Get the current user's trash folder
+    current_user = get_current_session_user()
+    trash_folder = current_user.trash_folder
+
+    for entry_id in entry_ids:
+        print("The current entry to process is {}".format(entry_id))
+        entry = get_entry(entry_id)
+        # We replace all the previous parent folders by the trash folder
+        print("{} had previously these parents: {}".format(entry.name, entry.parents))
+        entry.parents = [trash_folder]
+        print("{} has now parents: {}".format(entry.name, entry.parents))
+        # TODO: Do a bulk commit instead
+        db.session.add(entry)
+        db.session.commit()
+
+    print("Done!")
+
 # </editor-fold>
 
 # <editor-fold desc="DataFile">

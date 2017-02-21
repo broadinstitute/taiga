@@ -302,3 +302,9 @@ def entry_is_valid(entry):
     task = start_conversion_task.AsyncResult(entry.task_id)
     return task.state == 'PENDING'
 
+
+def move_to_trash(entryIds):
+    print("Just received the entries to throw into the bin: {}".format(entryIds))
+    models_controller.move_to_trash(entryIds)
+
+    return flask.jsonify({})

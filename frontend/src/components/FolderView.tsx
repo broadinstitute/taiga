@@ -103,7 +103,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         const original_selection: any = this.state.selection;
 
         let updated_selection: Array<string>;
-        debugger;
+
         let index = original_selection.indexOf(select_key);
         if(index != -1) {
             updated_selection = update(original_selection, { $splice: [[index, 1]] };
@@ -111,22 +111,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         else {
             updated_selection = update(original_selection, { $push: [select_key] });
         }
-
-        // let s = this.state.selection;;
-        // if (!s) {
-        //     s = {};
-        // } else {
-        //     // ugh, there's got to be a better way.  Make a copy
-        //     // of the selection so we don't mutate the original
-        //     s = JSON.parse(JSON.stringify(s));
-        // }
-        //
-        // let isSetAfterToggle = !(s[select_key]);
-        // if (isSetAfterToggle) {
-        //     s[select_key] = true;
-        // } else {
-        //     delete s[select_key];
-        // }
 
         this.setState({selection: updated_selection});
     }
@@ -154,7 +138,11 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     moveToTrash() {
-
+        tapi.move_to_trash(this.state.selection).then(() => {
+            return this.doFetch();
+        }).catch((err: any) => {
+            console.log("Error when moving to trash :/ : " + err);
+        });
     }
 
     render() {
@@ -190,8 +178,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         })
 
         var folder_rows = subfolders.map((e, index) => {
-            let select_key = "folder." + e.id;
-            console.log("Value of "+select_key + " is " + this.state.selection[select_key]);
+            let select_key = e.id;
             return <tr key={e.id}>
                 <td><input type="checkbox" value={ select_key in this.state.selection }
                            onChange={ () => {this.selectRow(select_key)} }/></td>
@@ -239,7 +226,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 link = e.name;
             }
 
-            let select_key = "dataset." + e.id;
+            let select_key = e.id;
             return <tr key={e.id}>
                 <td><input type="checkbox" value={ this.state.selection[select_key] }
                            onChange={ () => {this.selectRow(select_key)} }/></td>
@@ -280,8 +267,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             ])
         } else {
             navItems.push({
-                label: "Move to trash", action: () => {
-                }
+                label: "Move to trash", action: () => this.moveToTrash()
             })
             navItems.push({
                 label: "Move to...", action: () => {
