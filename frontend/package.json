@@ -10,10 +10,12 @@
   "license": "ISC",
   "dependencies": {
     "@types/clipboard": "^1.5.31",
+    "@types/immutability-helper": "^2.0.15",
     "aws-sdk": "^2.7.17",
     "clipboard": "^1.6.0",
     "core-js": "^2.4.1",
     "filesize": "^3.3.0",
+    "immutability-helper": "^2.1.1",
     "react": "^15.4.1",
     "react-bootstrap": "^0.30.7",
     "react-bootstrap-table": "^2.7.1",

@@ -1,5 +1,6 @@
 import * as React from "react";
 import {Link} from 'react-router';
+import * as update from 'immutability-helper';
 
 import {LeftNav, MenuItem} from "./LeftNav";
 import * as Folder from "../models/models";
@@ -91,7 +92,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }).then(() => {
             this.setState({
                 folder: _folder,
-                selection: {},
+                selection: new Array<string>(),
                 datasetFirstDatasetVersion: datasetsFirstDv,
                 datasetsVersion: datasetsVersion
             });
@@ -99,23 +100,35 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     selectRow(select_key: string) {
-        var s: any = this.state.selection;
-        if (!s) {
-            s = {};
-        } else {
-            // ugh, there's got to be a better way.  Make a copy
-            // of the selection so we don't mutate the original
-            s = JSON.parse(JSON.stringify(s));
+        const original_selection: any = this.state.selection;
+
+        let updated_selection: Array<string>;
+        debugger;
+        let index = original_selection.indexOf(select_key);
+        if(index != -1) {
+            updated_selection = update(original_selection, { $splice: [[index, 1]] };
+        }
+        else {
+            updated_selection = update(original_selection, { $push: [select_key] });
         }
 
-        let isSetAfterToggle = !(s[select_key]);
-        if (isSetAfterToggle) {
-            s[select_key] = true;
-        } else {
-            delete s[select_key];
-        }
+        // let s = this.state.selection;;
+        // if (!s) {
+        //     s = {};
+        // } else {
+        //     // ugh, there's got to be a better way.  Make a copy
+        //     // of the selection so we don't mutate the original
+        //     s = JSON.parse(JSON.stringify(s));
+        // }
+        //
+        // let isSetAfterToggle = !(s[select_key]);
+        // if (isSetAfterToggle) {
+        //     s[select_key] = true;
+        // } else {
+        //     delete s[select_key];
+        // }
 
-        this.setState({selection: s});
+        this.setState({selection: updated_selection});
     }
 
     updateName(name: string) {
@@ -138,6 +151,10 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         tapi.create_folder(current_folder_id, current_creator_id, name, description).then(() => {
            return this.doFetch();
         });
+    }
+
+    moveToTrash() {
+
     }
 
     render() {
@@ -174,8 +191,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         var folder_rows = subfolders.map((e, index) => {
             let select_key = "folder." + e.id;
+            console.log("Value of "+select_key + " is " + this.state.selection[select_key]);
             return <tr key={e.id}>
-                <td><input type="checkbox" value={ this.state.selection[select_key] }
+                <td><input type="checkbox" value={ select_key in this.state.selection }
                            onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
                     <span> </span>
@@ -235,7 +253,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         console.log(this.props.params);
 
         let navItems: MenuItem[] = [];
-        let selectionCount = Object.keys(this.state.selection).length;
+        let selectionCount = this.state.selection.length;
 
         if (selectionCount == 0) {
             navItems = navItems.concat([
