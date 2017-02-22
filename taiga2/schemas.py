@@ -98,6 +98,9 @@ class DataFileSummarySchema(ma.ModelSchema):
 class DataFileSchema(ma.ModelSchema):
     class Meta:
         model = DataFile
+    type = EnumField(DataFile.DataFileType)
+    description = fields.fields.Function(lambda obj: 'TODO')
+    content_summary = fields.fields.Function(lambda obj: 'TODO')
 
 
 class DatasetVersionSchema(ma.ModelSchema):
@@ -106,7 +109,7 @@ class DatasetVersionSchema(ma.ModelSchema):
                       'creation_date', 'creator', 'datafiles',
                       'version', 'parents')
     creator = ma.Nested(UserNamedIdSchema)
-    datafiles = ma.Nested(DataFileSummarySchema, many=True)
+    datafiles = ma.Nested(DataFileSchema, many=True)
     # TODO: Consolidate the term between folders and parents
     parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
 

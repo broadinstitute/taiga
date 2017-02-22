@@ -69,6 +69,7 @@ export interface DatasetAndDatasetVersion {
 }
 
 export interface DatasetVersionDatafiles {
+    "id": string;
     "name": string;
     "url": string;
     "type": DataFileType;
@@ -176,7 +177,7 @@ export class FileUploadStatus {
 
         this.fileName = this.file.name;
         this.fileType = getInitialFileTypeFromMimeType(this.file.type);
-        this.fileSize = this.file.size
+        this.fileSize = this.file.size;
 
         this.progress = 0;
         this.conversionProgress = '';

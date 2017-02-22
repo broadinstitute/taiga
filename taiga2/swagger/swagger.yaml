@@ -434,12 +434,15 @@ paths:
                   title: DataFile
                   type: object
                   required:
+                    - id
                     - name
                     - url
                     - mime_type
                     - description
                     - content_summary
                   properties:
+                    id:
+                      type: string
                     name:
                       type: string
                     url:
@@ -815,12 +818,15 @@ definitions:
           title: DataFile
           type: object
           required:
+            - id
             - name
             - url
             - mime_type
             - description
             - content_summary
           properties:
+            id:
+              type: string
             name:
               type: string
             url:

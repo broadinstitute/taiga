@@ -18,7 +18,7 @@ import { relativePath } from "../../Utilities/route";
 
 import {
     S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,
-    S3UploadedFileMetadata, S3UploadedData, DatasetVersion
+    S3UploadedFileMetadata, S3UploadedData, DatasetVersion, DatasetVersionDatafiles
 } from "../../models/models";
 
 import { TaigaApi } from "../../models/api";
@@ -32,10 +32,19 @@ interface DropzoneProps extends DialogProps {
     title: string;
     readOnlyName?: string;
     readOnlyDescription?: string;
+
+    // Determines what is done when opening the modal/componentWillReceiveProps
+    onOpen?: Function;
+    // Parent gives the previous version files. If it exists, we display another Table
+    previousVersionFiles?: Array<DatasetVersionDatafiles>;
+    // Parent can give the previous version name. Need it if pass previousVersionFiles
+    // TODO: Only pass the previousVersion, so we can take the previous DataFiles from it too
+    previousVersionName?: string;
 }
 
 interface DropzoneState extends DialogState {
     filesStatus?: Array<FileUploadStatus>;
+    previousFilesStatus?: Array<FileUploadStatus>;
     disableUpload?: boolean;
     datasetFormDisabled?: boolean;
     nameValue?: string;
@@ -531,6 +540,20 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             </div>
         );
 
+        let previousFiles = null;
+        if(this.props.previousVersionFiles) {
+            previousFiles = (
+                <div style={rowUploadFiles}>
+                    <h3>Previous files in the version <bold>{ this.props.previousVersionName }</bold></h3>
+                    <BootstrapTable data={ this.props.previousVersionFiles }>
+                        <TableHeaderColumn isKey dataField='id' hidden>Id</TableHeaderColumn>
+                        <TableHeaderColumn dataField='name'>Name</TableHeaderColumn>
+                        <TableHeaderColumn dataField='type'>Type</TableHeaderColumn>
+                    </BootstrapTable>
+                </div>
+            );
+        }
+
         // Modal showing a Dropzone with Cancel and Upload button
         return <Modal
             style={modalStyles}
@@ -570,6 +593,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     <div style={rowUploadFiles}>
                         {uploadedFiles}
                     </div>
+                    { previousFiles }
                 </div>
                 <div className="modal-footer">
                     <button type="button" className="btn btn-default" onClick={() => this.requestClose()}>Close</button>

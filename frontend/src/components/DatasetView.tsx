@@ -81,7 +81,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     showUploadNewVersion(e: any) {
-        console.log("Clicked! " +  e);
         this.setState({
             showUploadDataset: true
         })
@@ -190,6 +189,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         title="New Dataset Version"
                         readOnlyName={ this.state.dataset.name }
                         readOnlyDescription={ this.state.dataset.description }
+                        previousVersionName={ this.state.datasetVersion.name }
+                        previousVersionFiles={ this.state.datasetVersion.datafiles }
                     />
 
                 <h1>{dataset.name} <small>{dataset.permanames[dataset.permanames.length-1]}</small></h1>
