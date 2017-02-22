@@ -1,12 +1,14 @@
 import * as React from "react";
+import { Link } from 'react-router';
+import { Button } from "react-bootstrap";
 
 import { LeftNav } from "./LeftNav"
 
-import { Link } from 'react-router';
-
 import * as Models from "../models/models"
 import { TaigaApi } from "../models/api"
+
 import * as Dialogs from "./Dialogs"
+import * as Upload from "./modals/Upload";
 
 import { toLocalDateString } from "../Utilities/formats";
 import { relativePath } from "../Utilities/route";
@@ -20,6 +22,7 @@ export interface DatasetViewState {
     datasetVersion?: Models.DatasetVersion;
     showEditName? : boolean;
     showEditDescription? : boolean;
+    showUploadDataset?: boolean;
 }
 
 let tapi: TaigaApi = null;
@@ -75,6 +78,13 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         else {
             return <Link to={relativePath("dataset/"+dataset.id+"/"+dataset_version.id)}>{dataset_version.name}</Link>
         }
+    }
+
+    showUploadNewVersion(e: any) {
+        console.log("Clicked! " +  e);
+        this.setState({
+            showUploadDataset: true
+        })
     }
 
     render() {
@@ -169,9 +179,27 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         this.updateDescription(description);
                     } } />
 
+                <Upload.UploadDataset
+                        isVisible={this.state.showUploadDataset}
+                        cancel={ () => { this.setState({showUploadDataset: false}) } }
+                        onFileUploadedAndConverted={ () => {
+                            // TODO: Navigate to the new dataset
+                            this.doFetch();
+                        }}
+                        currentFolderId={this.state.dataset.folders[0].id}
+                        title="New Dataset Version"
+                        readOnlyName={ this.state.dataset.name }
+                        readOnlyDescription={ this.state.dataset.description }
+                    />
+
                 <h1>{dataset.name} <small>{dataset.permanames[dataset.permanames.length-1]}</small></h1>
                 <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on {toLocalDateString(datasetVersion.creation_date)}</p>
                 <p>Versions: {versions} </p>
+
+                <Button bsStyle="link" onClick={(e) => this.showUploadNewVersion(e)}>
+                    Upload a new version
+                </Button>
+
                 <p>Contained within {folders}</p>
                 {ancestor_section}
 

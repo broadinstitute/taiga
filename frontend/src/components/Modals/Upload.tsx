@@ -28,6 +28,10 @@ import {isNullOrUndefined} from "util";
 interface DropzoneProps extends DialogProps {
     onFileUploadedAndConverted?: any;
     currentFolderId: string;
+
+    title: string;
+    readOnlyName?: string;
+    readOnlyDescription?: string;
 }
 
 interface DropzoneState extends DialogState {
@@ -426,6 +430,45 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         const createTypeEditor = (onUpdate: any, props: any) => (<TypeEditorBootstrapTable onUpdate={ onUpdate } {...props}/>);
 
+        // FormControl
+        // InputName => If populated with readOnlyName, we render a disabled FormControl.
+        // Otherwise, we render a regular one
+        let inputName = null;
+        if(this.props.readOnlyName) {
+            inputName = (
+                <FormControl value={this.props.readOnlyName}
+                             type="text"
+                             disabled='true'/>
+            );
+        }
+        else {
+            inputName = (
+                <FormControl value={this.state.nameValue}
+                         onChange={(evt) => {this.handleFormNameChange(evt)}}
+                         type="text"
+                         placeholder="Dataset name"/>
+            );
+        }
+
+        // InputDescription => If populated with readOnlyDescription, we render a disabled FormControler.
+        // Otherwise, we render a reguler one
+        let inputDescription = null;
+        if(this.props.readOnlyDescription) {
+            inputDescription = (
+                <FormControl value={ this.props.readOnlyDescription }
+                             componentClass="textarea"
+                             disabled="true"/>
+            )
+        }
+        else {
+            inputDescription = (
+                <FormControl value={this.state.descriptionValue}
+                             onChange={(evt) => {this.handleFormDescriptionChange(evt)}}
+                             componentClass="textarea"
+                             placeholder="Dataset description"/>
+            )
+        }
+
         let newDatasetLink = undefined;
         // If we have a new datasetVersion in the state, we can show the link button
         if(!isNullOrUndefined(this.state.newDatasetVersion)) {
@@ -496,7 +539,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             contentLabel="Upload">
             <div className="modal-content">
                 <div className="modal-header">
-                    <h2 ref="subtitle">New dataset</h2>
+                    <h2 ref="subtitle">{ this.props.title }</h2>
                 </div>
                 <div className="modal-body">
                     <div className="dataset-metadata">
@@ -506,10 +549,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                                     Name
                                 </Col>
                                 <Col sm={10}>
-                                    <FormControl value={this.state.nameValue}
-                                                 onChange={(evt) => {this.handleFormNameChange(evt)}}
-                                                 type="text"
-                                                 placeholder="Dataset name"/>
+                                    { inputName }
                                 </Col>
                             </FormGroup>
                             <FormGroup controlId="formDescription">
@@ -517,10 +557,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                                     Description
                                 </Col>
                                 <Col sm={10}>
-                                    <FormControl value={this.state.descriptionValue}
-                                                 onChange={(evt) => {this.handleFormDescriptionChange(evt)}}
-                                                 componentClass="textarea"
-                                                 placeholder="Dataset description"/>
+                                    { inputDescription }
                                 </Col>
                             </FormGroup>
                         </Form>

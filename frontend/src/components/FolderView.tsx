@@ -8,7 +8,6 @@ import {TaigaApi} from "../models/api";
 
 import * as Dialogs from "./Dialogs";
 import * as Upload from "./modals/Upload";
-import {DatasetVersion} from "../models/models";
 
 import {toLocalDateString} from "../Utilities/formats";
 import {relativePath} from "../Utilities/route";
@@ -308,6 +307,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             this.doFetch();
                         }}
                         currentFolderId={this.state.folder.id}
+                        title="New Dataset"
                     />
 
                     <Dialogs.CreateFolder
