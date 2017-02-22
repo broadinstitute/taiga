@@ -13,10 +13,12 @@ from taiga2 import aws
 from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.session import make_transient
 
 import logging
 
 log = logging.getLogger(__name__)
+
 
 # IMPORTANT:
 #   If you have this error "RuntimeError: application not registered on db instance and
@@ -208,17 +210,7 @@ def add_dataset(name,
 
 
 def add_dataset_from_session(session_id, dataset_name, dataset_description, current_folder_id):
-    # We retrieve all the upload_session_files related to the UploadSession
-    added_files = get_upload_session_files_from_session(session_id)
-
-    # Generate the datafiles from these files
-    added_datafiles = []
-    for file in added_files:
-        new_datafile = add_datafile(name=file.filename,
-                                    s3_bucket=file.s3_bucket,
-                                    s3_key=file.converted_s3_key,
-                                    type=file.converted_filetype)
-        added_datafiles.append(new_datafile)
+    added_datafiles = add_datafiles_from_session(session_id)
 
     # TODO: Get the user from the session
     user = get_user_from_upload_session(session_id)
@@ -406,6 +398,23 @@ def add_dataset_version(dataset_id,
     return new_dataset_version
 
 
+def create_new_dataset_version_from_session(session_id,
+                                            dataset_id,
+                                            existing_datafiles_id):
+    added_datafiles = add_datafiles_from_session(session_id)
+    added_datafile_ids = [datafile.id for datafile in added_datafiles]
+
+    copied_existing_datafiles_ids = [copy_datafile(original_datafile).id
+                                     for original_datafile in existing_datafiles_id]
+
+    all_datafile_ids = added_datafile_ids + copied_existing_datafiles_ids
+
+    new_dataset_version = add_dataset_version(dataset_id=dataset_id,
+                                              datafiles_ids=all_datafile_ids)
+
+    return new_dataset_version
+
+
 def get_dataset_version(dataset_version_id):
     dataset_version = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.id == dataset_version_id) \
@@ -436,6 +445,7 @@ def get_latest_dataset_version_by_permaname(permaname):
 
     return dataset_version
 
+
 def get_dataset_version_by_permaname_and_version(permaname,
                                                  version):
     """From the permaname of a dataset, retrieve the specific dataset version"""
@@ -450,7 +460,6 @@ def get_dataset_version_by_permaname_and_version(permaname,
 
 def get_dataset_version_by_dataset_id_and_dataset_version_id(dataset_id,
                                                              dataset_version_id):
-
     dataset_version = get_dataset_version(dataset_version_id)
 
     return dataset_version
@@ -487,6 +496,7 @@ def move_to_trash(entry_ids):
         db.session.commit()
 
     print("Done!")
+
 
 # </editor-fold>
 
@@ -528,6 +538,37 @@ def get_latest_version_datafiles_from_dataset(dataset_id):
     latest_dataset_version = dataset.dataset_versions[-1]
 
     return latest_dataset_version.datafiles
+
+
+def add_datafiles_from_session(session_id):
+    # We retrieve all the upload_session_files related to the UploadSession
+    added_files = get_upload_session_files_from_session(session_id)
+
+    # Generate the datafiles from these files
+    added_datafiles = []
+    for file in added_files:
+        new_datafile = add_datafile(name=file.filename,
+                                    s3_bucket=file.s3_bucket,
+                                    s3_key=file.converted_s3_key,
+                                    type=file.converted_filetype)
+        added_datafiles.append(new_datafile)
+
+    return added_datafiles
+
+
+def copy_datafile(original_datafile_id):
+    original_datafile = get_datafile(original_datafile_id)
+    # Creates a new object that has only the attributes of this very table. No foreign keys.
+    make_transient(original_datafile)
+    # Just to make it clear this is a new object
+    _copy_datafile = original_datafile
+    # Db will assign a new id
+    _copy_datafile.id = None
+
+    db.session.add(_copy_datafile)
+    db.session.commit()
+
+    return _copy_datafile
 
 
 # </editor-fold>
@@ -588,7 +629,8 @@ def add_upload_session_file(session_id, filename, initial_file_type, initial_s3_
                                             initial_s3_key=initial_s3_key,
                                             s3_bucket=s3_bucket,
                                             converted_s3_key=converted_s3_key,
-                                            converted_filetype=models.find_converted_type_by_initial_type(initial_file_type))
+                                            converted_filetype=models.find_converted_type_by_initial_type(
+                                                initial_file_type))
     db.session.add(upload_session_file)
     db.session.commit()
     return upload_session_file
@@ -598,6 +640,7 @@ def get_upload_session_file(upload_session_file_id):
     upload_session_file = db.session.query(UploadSessionFile) \
         .filter(UploadSessionFile.id == upload_session_file_id).one()
     return upload_session_file
+
 
 # </editor-fold>
 
@@ -653,11 +696,13 @@ def update_conversion_cache_entry(entry_id, status, urls=None):
     entry.status = status
     db.session.commit()
 
+
 def update_conversion_cache_entry_with_task_id(entry_id, task_id):
     db.session.query(ConversionCache). \
         filter(ConversionCache.id == entry_id). \
-        update({"task_id":task_id})
+        update({"task_id": task_id})
     db.session.commit()
+
 
 def delete_conversion_cache_entry(entry_id):
     db.session.query(ConversionCache). \
@@ -665,11 +710,13 @@ def delete_conversion_cache_entry(entry_id):
         delete()
     db.session.commit()
 
+
 def mark_conversion_cache_entry_as_failed(entry_id):
     db.session.query(ConversionCache). \
         filter(ConversionCache.id == entry_id). \
-        update({"state":models.ConversionEntryState.failed})
+        update({"state": models.ConversionEntryState.failed})
     db.session.commit()
+
 
 class IllegalArgumentError(ValueError):
     pass
@@ -714,7 +761,8 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
     if datafile_name is None:
         dataset_version = get_dataset_version(dataset_version_id)
         if len(dataset_version.datafiles) > 1:
-            raise IllegalArgumentError("The retrieved dataset version has more than one datafile so the name must be specified")
+            raise IllegalArgumentError(
+                "The retrieved dataset version has more than one datafile so the name must be specified")
         else:
             datafile = list(dataset_version.datafiles)[0]
     else:
@@ -725,4 +773,4 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
 
     return datafile
 
-#</editor-fold>
+# </editor-fold>

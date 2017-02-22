@@ -242,22 +242,18 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         });
         // Then we create the dataset if all have been resolved
         Promise.all(promises_fileUpload).then((sids) => {
-            // TODO: Check all sids are the same
-            return tapi.create_dataset(sids[0].toString(),
+            sid = sids[0].toString();
+            this.props.onFileUploadedAndConverted(
+                sid,
                 this.state.nameValue,
-                this.state.descriptionValue,
-                this.props.currentFolderId.toString());
-        }).then((dataset_id) => {
-            this.props.onFileUploadedAndConverted()
-
-            // We fetch the datasetVersion of the newly created dataset and change the state of it
-            tapi.get_dataset_version_first(dataset_id).then((newDatasetVersion) => {
+                this.state.descriptionValue
+            ).then((newDatasetVersion) => {
                 this.setState({
                     newDatasetVersion: newDatasetVersion
                 });
+            }).catch((err: any) => {
+                console.log(err);
             });
-        }).catch((err: any) => {
-            console.log(err);
         });
     }
 

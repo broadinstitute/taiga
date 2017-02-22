@@ -143,5 +143,13 @@ export class TaigaApi {
     move_to_trash(entryIds: Array<string>) {
         return this._post<void>("/trash", entryIds)
     }
+
+    create_new_dataset_version(sid: string, dataset_id: string, datafile_ids: Array<string>) {
+        return this._post<string>("/datasetVersion", {
+            sessionId: sid,
+            datasetId: dataset_id,
+            datafileIds: datafile_ids
+        })
+    }
 }
 

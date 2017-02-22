@@ -582,6 +582,40 @@ paths:
               provenance:
                 "$ref": "#/definitions/Provenance"
 
+  /datasetVersion:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: create_new_dataset_version
+      description: Create a new datasetVersion for the dataset id, with the previous selected datafiles ids
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetVersionMetadata
+          in: body
+          schema:
+            type: object
+            required:
+              - sessionId
+              - datasetId
+              - datafileIds
+            properties:
+              sessionId:
+                type: string
+              datasetId:
+                type: string
+              datafilesIds:
+                type: array
+                items:
+                  title: entryId
+                  type: string
+      responses:
+        200:
+          description: The info about the newly created dataset
+          schema:
+            title: DatasetId
+            type: string
+
+
   /datafile/{sid}:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint

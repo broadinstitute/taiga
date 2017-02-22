@@ -5,7 +5,6 @@ import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import DataFile
 
-
 import logging
 
 log = logging.getLogger(__name__)
@@ -37,7 +36,6 @@ def create_folder(metadata):
     folder_name = metadata['name']
     folder_description = metadata['description']
     parent_id = metadata['parentId']
-
 
     # TODO: Instead of the string 'folder', use the model.Folder.FolderType.folder
     new_folder = models_controller.add_folder(name=folder_name,
@@ -163,12 +161,12 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
 
 def create_upload_session_file(S3UploadedFileMetadata, sid):
-#      location:
-#      eTag:
-#      bucket:
-#      key:
-#      filename:
-#      filetype:
+    #      location:
+    #      eTag:
+    #      bucket:
+    #      key:
+    #      filename:
+    #      filetype:
 
     s3_bucket = S3UploadedFileMetadata['bucket']
 
@@ -184,7 +182,8 @@ def create_upload_session_file(S3UploadedFileMetadata, sid):
 
     # Launch a Celery process to convert and get back to populate the db + send finish to client
     from taiga2.tasks import background_process_new_upload_session_file
-    task = background_process_new_upload_session_file.delay(upload_session_file.id, initial_s3_key, initial_file_type, s3_bucket, upload_session_file.converted_s3_key)
+    task = background_process_new_upload_session_file.delay(upload_session_file.id, initial_s3_key, initial_file_type,
+                                                            s3_bucket, upload_session_file.converted_s3_key)
 
     return flask.jsonify(task.id)
 
@@ -206,6 +205,20 @@ def create_dataset(sessionDatasetInfo):
                                                                current_folder_id)
 
     return flask.jsonify(added_dataset.id)
+
+
+def create_new_dataset_version(datasetVersionMetadata):
+    print("We asked to create a new dataset with these informations {}!".format(datasetVersionMetadata))
+
+    session_id = datasetVersionMetadata['sessionId']
+    dataset_id = datasetVersionMetadata['datasetId']
+    existing_datafiles_id = datasetVersionMetadata['datafileIds']
+
+    new_dataset_version = models_controller.create_new_dataset_version_from_session(session_id,
+                                                                                    dataset_id,
+                                                                                    existing_datafiles_id)
+
+    return flask.jsonify(new_dataset_version.id)
 
 
 def task_status(taskStatusId):
@@ -256,7 +269,7 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
         from taiga2 import models
         if not is_new:
             if entry.state == models.ConversionEntryState.failed and not force_conversion:
-                flask.abort(500) # report internal error
+                flask.abort(500)  # report internal error
             elif not entry_is_valid(entry) or force_conversion:
                 log.warning("Cache entry not associated with a running task, deleting to try again")
                 models_controller.delete_conversion_cache_entry(entry.id)

@@ -12,7 +12,7 @@ import * as Upload from "./modals/Upload";
 import {toLocalDateString} from "../Utilities/formats";
 import {relativePath} from "../Utilities/route";
 
-import { Glyphicon } from "react-bootstrap";
+import {Glyphicon} from "react-bootstrap";
 import {Dataset} from "../models/models";
 
 export interface FolderViewProps {
@@ -104,11 +104,11 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         let updated_selection: Array<string>;
 
         let index = original_selection.indexOf(select_key);
-        if(index != -1) {
-            updated_selection = update(original_selection, { $splice: [[index, 1]] };
+        if (index != -1) {
+            updated_selection = update(original_selection, {$splice: [[index, 1]]};
         }
         else {
-            updated_selection = update(original_selection, { $push: [select_key] });
+            updated_selection = update(original_selection, {$push: [select_key]});
         }
 
         this.setState({selection: updated_selection});
@@ -132,7 +132,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         const current_creator_id: string = this.state.folder.creator.id;
 
         tapi.create_folder(current_folder_id, current_creator_id, name, description).then(() => {
-           return this.doFetch();
+            return this.doFetch();
         });
     }
 
@@ -141,6 +141,25 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             return this.doFetch();
         }).catch((err: any) => {
             console.log("Error when moving to trash :/ : " + err);
+        });
+    }
+
+    // Upload
+    filesUploadedAndConverted(sid: string, datasetName: string, datasetDescription: string) {
+        // We ask to create the dataset
+        return tapi.create_dataset(sid,
+            datasetName,
+            datasetDescription,
+            this.state.folder.id
+        ).then((dataset_id) => {
+            // We fetch the datasetVersion of the newly created dataset and change the state of it
+            return tapi.get_dataset_version_first(dataset_id).then((newDatasetVersion) => {
+                this.doFetch();
+                return Promise.resolve(newDatasetVersion);
+            });
+        }).catch((err: any) => {
+            console.log(err);
+            return Promise.reject(err);
         });
     }
 
@@ -201,8 +220,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 entryType = 'Dataset Version';
                 let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[e.id];
                 // Since we don't have the id of the dataset, we need to ask the api for it
-                   link =
-                        <span>
+                link =
+                    <span>
                             <Glyphicon glyph="glyphicon glyphicon-file"/>
                             <span> </span>
                             <Link key={index} to={relativePath("dataset/"+full_datasetVersion.dataset_id+"/"+e.id)}>
@@ -255,7 +274,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 },
                 {
                     label: "Create a subfolder", action: () => {
-                        this.setState({showCreateFolder: true})
+                    this.setState({showCreateFolder: true})
                 }
                 },
                 {
@@ -303,9 +322,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     <Upload.UploadDataset
                         isVisible={this.state.showUploadDataset}
                         cancel={ () => { this.setState({showUploadDataset: false}) } }
-                        onFileUploadedAndConverted={ () => {
-                            this.doFetch();
-                        }}
+
+                        onFileUploadedAndConverted={ (sid, name, description) =>
+                            this.filesUploadedAndConverted(sid, name, description) }
                         currentFolderId={this.state.folder.id}
                         title="New Dataset"
                     />
