@@ -25,6 +25,10 @@ export interface DatasetViewState {
     showUploadDataset?: boolean;
 }
 
+const buttonUploadNewVersionStyle = {
+    margin: '0 0 10px'
+}
+
 let tapi: TaigaApi = null;
 
 export class DatasetView extends React.Component<DatasetViewProps, DatasetViewState> {
@@ -33,7 +37,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     };
 
     componentDidUpdate(prevProps: DatasetViewProps) {
-        console.log("We updated!");
         // respond to parameter change in scenario 3
         let oldId = prevProps.params.datasetVersionId
         let newId = this.props.params.datasetVersionId
@@ -95,11 +98,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
 
-    filesUploadedAndConverted(sid: string, name: string, description: string) {
-        console.log("Hello!");
-        let datafileIds = this.state.datasetVersion.datafiles.map((datafile) => {
-            return datafile.id;
-        });
+    filesUploadedAndConverted(sid: string, name: string, description: string, previousDatafileIds: Array<string>) {
+        let datafileIds = previousDatafileIds;
         // We ask to create the dataset
         return tapi.create_new_dataset_version(sid,
             this.state.dataset.id,
@@ -227,8 +227,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <Upload.UploadDataset
                     isVisible={this.state.showUploadDataset}
                     cancel={ () => { this.setState({showUploadDataset: false}) } }
-                    onFileUploadedAndConverted={ (sid, name, description) =>
-                        this.filesUploadedAndConverted(sid, name, description)
+                    onFileUploadedAndConverted={ (sid, name, description, previousDatafileIds) =>
+                        this.filesUploadedAndConverted(sid, name, description, previousDatafileIds)
                     }
                     currentFolderId={this.state.dataset.folders[0].id}
                     title="New Dataset Version"
@@ -248,7 +248,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <p>Contained within {folders}</p>
                 {ancestor_section}
 
-                <Button onClick={(e) => this.showUploadNewVersion(e)}>
+                <Button onClick={(e) => this.showUploadNewVersion(e)} style={buttonUploadNewVersionStyle}>
                     Upload a new version
                 </Button>
 

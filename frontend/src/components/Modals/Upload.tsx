@@ -1,28 +1,29 @@
 import * as React from "react";
-import { Link } from 'react-router';
+import {Link} from 'react-router';
 import * as Modal from "react-modal";
 
 import * as AWS from "aws-sdk";
 import * as Dropzone from "react-dropzone";
 import * as filesize from "filesize";
 
-import { BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit } from "react-bootstrap-table";
-import { Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row, Glyphicon } from 'react-bootstrap';
+import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit} from "react-bootstrap-table";
+import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row, Glyphicon} from 'react-bootstrap';
 
-import { DialogProps, DialogState } from "../Dialogs";
+import {DialogProps, DialogState} from "../Dialogs";
 
-import { TypeEditorBootstrapTable } from "./TypeEditorBootstrapTable";
+import {TypeEditorBootstrapTable} from "./TypeEditorBootstrapTable";
 
-import { getInitialFileTypeFromMimeType } from "../../Utilities/formats";
-import { relativePath } from "../../Utilities/route";
+import {getInitialFileTypeFromMimeType} from "../../Utilities/formats";
+import {relativePath} from "../../Utilities/route";
 
 import {
     S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,
     S3UploadedFileMetadata, S3UploadedData, DatasetVersion, DatasetVersionDatafiles
 } from "../../models/models";
 
-import { TaigaApi } from "../../models/api";
+import {TaigaApi} from "../../models/api";
 import {isNullOrUndefined} from "util";
+import update = require("immutability-helper");
 
 
 interface DropzoneProps extends DialogProps {
@@ -50,6 +51,9 @@ interface DropzoneState extends DialogState {
     nameValue?: string;
     descriptionValue?: string;
     newDatasetVersion?: DatasetVersion;
+
+    // For Previous datafile selection
+    previousVersionFilesIdsSelected?: Array<DatasetVersionDatafiles>;
 }
 
 // TODO: Duplication of modalStyles in Dialogs.tsx => Find a way to fix this
@@ -90,7 +94,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             disableUpload: true,
             datasetFormDisabled: false,
             nameValue: '',
-            descriptionValue: ''
+            descriptionValue: '',
+            previousVersionFilesIdsSelected: []
         }
     }
 
@@ -106,9 +111,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         });
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentWillReceiveProps(nextProps: any) {
         // We clean the filesStatus when we open this Upload Modal (isVisible is True, and previously was False)
-        if(nextProps.isVisible && !this.props.isVisible) {
+        if (nextProps.isVisible && !this.props.isVisible) {
             // We clean the uploadedFileStatus
             this.setState({
                 filesStatus: new Array<FileUploadStatus>(),
@@ -190,7 +195,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             });
 
             // Subscribe to measure progress
-            upload.on('httpUploadProgress', (evt : any) => {
+            upload.on('httpUploadProgress', (evt: any) => {
                 // TODO: evt.key is not recognized in the DefinitelyType AWS, but it works. Raise an issue in Git
                 let updatedFilesStatus = this.retrieveFileStatus(evt.key);
 
@@ -243,11 +248,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         // Then we create the dataset if all have been resolved
         Promise.all(promises_fileUpload).then((sids) => {
             sid = sids[0].toString();
+
             this.props.onFileUploadedAndConverted(
                 sid,
                 this.state.nameValue,
-                this.state.descriptionValue
-            ).then((newDatasetVersion) => {
+                this.state.descriptionValue,
+                this.state.previousVersionFilesIdsSelected
+            ).then((newDatasetVersion: DatasetVersion) => {
                 this.setState({
                     newDatasetVersion: newDatasetVersion
                 });
@@ -302,7 +309,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         })
     }
 
-    checkOrContinue(status: TaskStatus, s3Key: string) : Promise<string> {
+    checkOrContinue(status: TaskStatus, s3Key: string): Promise<string> {
         // If status == SUCCESS, return the last check
         // If status != SUCCESS, wait 1 sec and check again
         // TODO: Make an enum from the task state
@@ -349,10 +356,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         this.setState({
             filesStatus: remaining_filesStatus
         })
-    }
-
-    onRowMouseOver(row) {
-        // We wait 2 seconds and display the message
     }
 
     fileNameFormatter(cell: any, row: any) {
@@ -408,6 +411,27 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         }
     }
 
+    onPreviousRowSelect(row: any, isSelected: Boolean, e: any): boolean {
+        alert("We got the Datafile id: " + row['id'] + '. It is now selected: ' + isSelected);
+        const previousVersionFilesIdsSelected = this.state.previousVersionFilesIdsSelected;
+        const clickedId = row['id'];
+
+        let newPreviousVersionFilesIdsSelected = null;
+        if (isSelected) {
+            newPreviousVersionFilesIdsSelected = update(previousVersionFilesIdsSelected,
+                {$push: [clickedId]});
+        }
+        else {
+            let idIndex = previousVersionFilesIdsSelected.indexOf(clickedId);
+            newPreviousVersionFilesIdsSelected = update(previousVersionFilesIdsSelected,
+                {$splice: [[idIndex, 1]]});
+        }
+        this.setState({
+           previousVersionFilesIdsSelected: newPreviousVersionFilesIdsSelected
+        });
+        return true;
+    }
+
     requestClose() {
         this.props.cancel();
     }
@@ -423,8 +447,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         const options = {
             noDataText: 'Nothing uploaded yet',
-            afterDeleteRow: (rowKeys: Array<string>) => this.onAfterDeleteRow(rowKeys), // A hook for after droping rows.
-            onRowMouseOver: (row: any) => this.onRowMouseOver(row)
+            afterDeleteRow: (rowKeys: Array<string>) => this.onAfterDeleteRow(rowKeys) // A hook for after droping rows.
         };
 
         const cellEditProp: CellEdit = {
@@ -433,36 +456,37 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         const fileTypeWidth = '170';
 
-        const createTypeEditor = (onUpdate: any, props: any) => (<TypeEditorBootstrapTable onUpdate={ onUpdate } {...props}/>);
+        const createTypeEditor = (onUpdate: any, props: any) => (
+            <TypeEditorBootstrapTable onUpdate={ onUpdate } {...props}/>);
 
         // FormControl
         // InputName => If populated with readOnlyName, we render a disabled FormControl.
         // Otherwise, we render a regular one
         let inputName = null;
-        if(this.props.readOnlyName) {
+        if (this.props.readOnlyName) {
             inputName = (
                 <FormControl value={this.props.readOnlyName}
                              type="text"
-                             disabled='true'/>
+                             disabled={true}/>
             );
         }
         else {
             inputName = (
                 <FormControl value={this.state.nameValue}
-                         onChange={(evt) => {this.handleFormNameChange(evt)}}
-                         type="text"
-                         placeholder="Dataset name"/>
+                             onChange={(evt) => {this.handleFormNameChange(evt)}}
+                             type="text"
+                             placeholder="Dataset name"/>
             );
         }
 
         // InputDescription => If populated with readOnlyDescription, we render a disabled FormControler.
         // Otherwise, we render a reguler one
         let inputDescription = null;
-        if(this.props.readOnlyDescription) {
+        if (this.props.readOnlyDescription) {
             inputDescription = (
                 <FormControl value={ this.props.readOnlyDescription }
                              componentClass="textarea"
-                             disabled="true"/>
+                             disabled={true}/>
             )
         }
         else {
@@ -476,7 +500,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         let newDatasetLink = undefined;
         // If we have a new datasetVersion in the state, we can show the link button
-        if(!isNullOrUndefined(this.state.newDatasetVersion)) {
+        if (!isNullOrUndefined(this.state.newDatasetVersion)) {
             newDatasetLink = (
                 <Link className="btn btn-success"
                       role="button"
@@ -536,12 +560,19 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             </div>
         );
 
+        const check_previous_mode: SelectRowMode = 'checkbox';
+        const selectRowPreviousProp = {
+            mode: check_previous_mode,
+            clickToSelect: true,
+            onSelect: (row: any, isSelected: Boolean, event: any) => this.onPreviousRowSelect(row, isSelected, event)
+        };
+
         let previousFiles = null;
-        if(this.props.previousVersionFiles) {
+        if (this.props.previousVersionFiles) {
             previousFiles = (
                 <div style={rowUploadFiles}>
-                    <h3>Previous files in the version <bold>{ this.props.previousVersionName }</bold></h3>
-                    <BootstrapTable data={ this.props.previousVersionFiles }>
+                    <h3>Previous files in the version { this.props.previousVersionName }</h3>
+                    <BootstrapTable data={ this.props.previousVersionFiles } selectRow={ selectRowPreviousProp }>
                         <TableHeaderColumn isKey dataField='id' hidden>Id</TableHeaderColumn>
                         <TableHeaderColumn dataField='name'>Name</TableHeaderColumn>
                         <TableHeaderColumn dataField='type'>Type</TableHeaderColumn>

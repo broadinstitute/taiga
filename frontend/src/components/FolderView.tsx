@@ -105,7 +105,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         let index = original_selection.indexOf(select_key);
         if (index != -1) {
-            updated_selection = update(original_selection, {$splice: [[index, 1]]};
+            updated_selection = update(original_selection, {$splice: [[index, 1]]});
         }
         else {
             updated_selection = update(original_selection, {$push: [select_key]});

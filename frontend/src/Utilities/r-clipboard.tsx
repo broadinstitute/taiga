@@ -1,32 +1,37 @@
 import * as React from 'react';
 import * as clipboard from 'clipboard';
 
+export interface ClipboardButtonProps {
+    options?: any,
+    type?: string,
+    className?: string,
+    style?: any,
+    component?: any;
+    children?: any;
+    onClick?: any;
+}
 
-export default class ClipboardButton extends React.Component<any, any> {
-    static propTypes = {
-        options: React.PropTypes.object,
-        type: React.PropTypes.string,
-        className: React.PropTypes.string,
-        style: React.PropTypes.object,
-        component: React.PropTypes.string,
-        children: React.PropTypes.oneOfType([
-            React.PropTypes.element,
-            React.PropTypes.string,
-            React.PropTypes.number,
-            React.PropTypes.object,
-        ]),
-    }
+export interface ClipboardButtonState {
 
+}
+
+export default class ClipboardButton extends React.Component<ClipboardButtonProps, ClipboardButtonState> {
     static defaultProps = {
         onClick: function () {
         },
-    }
+    };
 
     constructor(props: any){
         super(props);
 
         this.clipboard = clipboard;
     }
+
+    refs: {
+        element: any
+    };
+
+    clipboard: any;
 
     /* Returns a object with all props that fulfill a certain naming pattern
      *
