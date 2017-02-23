@@ -27,7 +27,7 @@ export interface DatasetViewState {
 
 const buttonUploadNewVersionStyle = {
     margin: '0 0 10px'
-}
+};
 
 let tapi: TaigaApi = null;
 

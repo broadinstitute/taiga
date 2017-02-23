@@ -117,7 +117,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             // We clean the uploadedFileStatus
             this.setState({
                 filesStatus: new Array<FileUploadStatus>(),
-                newDatasetVersion: undefined
+                newDatasetVersion: undefined,
+                previousVersionFilesIdsSelected: []
             });
 
             // We renew the s3_credentials
@@ -412,7 +413,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     }
 
     onPreviousRowSelect(row: any, isSelected: Boolean, e: any): boolean {
-        alert("We got the Datafile id: " + row['id'] + '. It is now selected: ' + isSelected);
         const previousVersionFilesIdsSelected = this.state.previousVersionFilesIdsSelected;
         const clickedId = row['id'];
 
@@ -571,7 +571,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         if (this.props.previousVersionFiles) {
             previousFiles = (
                 <div style={rowUploadFiles}>
-                    <h3>Previous files in the version { this.props.previousVersionName }</h3>
+                    <h3>Select the files you want from the version { this.props.previousVersionName }</h3>
                     <BootstrapTable data={ this.props.previousVersionFiles } selectRow={ selectRowPreviousProp }>
                         <TableHeaderColumn isKey dataField='id' hidden>Id</TableHeaderColumn>
                         <TableHeaderColumn dataField='name'>Name</TableHeaderColumn>
