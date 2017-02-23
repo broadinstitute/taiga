@@ -171,8 +171,6 @@ def _start_conversion_task(self, progress, bucket, key, src_format, dst_format, 
         models_controller.update_conversion_cache_entry(cache_entry_id, "Completed successfully", urls=urls)
 
 
-
-
 @celery.task(bind=True)
 def start_conversion_task(self, bucket, key, src_format, dst_format, cache_entry_id):
     try:

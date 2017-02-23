@@ -13,7 +13,7 @@ from taiga2.models import db
 from taiga2.models import User, Folder, Dataset, DatasetVersion
 from taiga2.models import generate_permaname
 
-# TODO: Remove the domain tests and bring them to test_domain.py
+# TODO: Remove the domain tests and bring them to test_endpoint.py
 #<editor-fold desc="User Tests">
 
 # TODO: These two tests generate Integrity error on the token. Why? Due to the way a uuid is generated during the tests?

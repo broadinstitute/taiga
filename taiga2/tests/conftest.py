@@ -21,6 +21,7 @@ TEST_USER_NAME = "username"
 TEST_USER_EMAIL = "username@broadinstitute.org"
 AUTH_HEADERS={'X-Forwarded-User': TEST_USER_NAME, 'X-Forwarded-Email': TEST_USER_EMAIL}
 
+
 @pytest.fixture(scope='function')
 def mock_s3(tmpdir):
     s3 = MockS3(str(tmpdir))
@@ -43,6 +44,7 @@ def app(request, mock_s3, mock_sts):
         'SQLALCHEMY_ECHO': False,
         'BROKER_URL': None,
         'CELERY_RESULT_BACKEND': None,
+        # TODO: Change this. http://docs.celeryproject.org/en/latest/userguide/testing.html
         'CELERY_ALWAYS_EAGER': True,
         'S3_BUCKET': 'Test_Bucket'
     }
@@ -64,6 +66,9 @@ def app(request, mock_s3, mock_sts):
     g._s3_client = MockS3Client()
 
     g._sts_client = mock_sts
+
+    # Celery of the app
+    g._celery_instance = celery
 
     # Return _app and teardown
     yield _app
@@ -99,6 +104,7 @@ def session(db, request):
     transaction.rollback()
     connection.close()
     _session.remove()
+
 
 @pytest.fixture(scope="function")
 def user_id(db):
