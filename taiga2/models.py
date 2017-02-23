@@ -151,6 +151,7 @@ class Dataset(Entry):
         'polymorphic_identity': "Dataset"
     }
 
+
 class InitialFileType(enum.Enum):
     NumericMatrixCSV = "NumericMatrixCSV"
     NumericMatrixTSV = "NumericMatrixTSV"
@@ -192,8 +193,11 @@ _INTIAL_TO_CONVERTED_MAPPING = {InitialFileType.NumericMatrixCSV: DataFile.DataF
                                 InitialFileType.Table : DataFile.DataFileType.Columnar,
                                 InitialFileType.Raw: DataFile.DataFileType.Raw,
                                 }
+
+
 def find_converted_type_by_initial_type(initial_type):
     return _INTIAL_TO_CONVERTED_MAPPING[initial_type]
+
 
 class DatasetVersion(Entry):
     # Missing the permaname of the DatasetVersion
@@ -258,6 +262,7 @@ class ConversionEntryState(enum.Enum):
     running = "Running"
     complete = "Complete"
 
+
 class ConversionCache(db.Model):
     __tablename__ = "conversion_cache"
 
@@ -276,7 +281,6 @@ class ConversionCache(db.Model):
     urls_as_json = db.Column(db.Text)
 
     state = db.Column(db.Enum(ConversionEntryState))
-
 
 
 class UploadSession(db.Model):
