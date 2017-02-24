@@ -1,4 +1,4 @@
-import { getInitialFileTypeFromMimeType } from "../Utilities/formats";
+import { getInitialFileTypeFromMimeType } from "../utilities/formats";
 
 export class Folder {
     id: string;

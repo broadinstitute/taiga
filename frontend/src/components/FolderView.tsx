@@ -9,8 +9,8 @@ import {TaigaApi} from "../models/api";
 import * as Dialogs from "./Dialogs";
 import * as Upload from "./modals/Upload";
 
-import {toLocalDateString} from "../Utilities/formats";
-import {relativePath} from "../Utilities/route";
+import {toLocalDateString} from "../utilities/formats";
+import {relativePath} from "../utilities/route";
 
 import {Glyphicon} from "react-bootstrap";
 import {Dataset} from "../models/models";

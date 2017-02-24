@@ -1,7 +1,7 @@
 import * as React from "react";
 import { FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
 import { InitialFileType } from "../../models/models";
-import { getInitialFileTypeFromMimeType } from "../../Utilities/formats";
+import { getInitialFileTypeFromMimeType } from "../../utilities/formats";
 
 interface TypeEditorProps {
     defaultValue: any;

@@ -1,10 +1,12 @@
 import * as React from "react";
-import { Grid, Row, OverlayTrigger, Tooltip } from 'react-bootstrap';
 
-import ClipboardButton from '../Utilities/r-clipboard';
-import { LeftNav } from "./LeftNav"
+import {Button, Col, Glyphicon, Grid, Row, OverlayTrigger, Tooltip, Well} from 'react-bootstrap';
+import {InputGroup, InputGroupButton, form, FormGroup, FormControl} from 'react-bootstrap';
 
-import { TaigaApi } from "../models/api"
+import ClipboardButton from '../utilities/r-clipboard';
+import {LeftNav} from "./LeftNav"
+
+import {TaigaApi} from "../models/api"
 import {User} from "../models/models";
 
 export interface TokenProps {
@@ -14,6 +16,12 @@ export interface TokenProps {
 export interface TokenState {
     token?: string;
 }
+
+const inputTokenStyle = {
+    width: '100%'
+};
+
+const clipboardButtonStyle = {};
 
 let tapi: TaigaApi = null;
 
@@ -62,11 +70,29 @@ export class Token extends React.Component<TokenProps, TokenState> {
                         <h1>Your token</h1>
                     </Row>
                     <Row>
-                        <OverlayTrigger trigger="click" placement="right" overlay={tooltipToken} rootClose={true}>
-                            <ClipboardButton className="btn btn-default" data-clipboard-text={this.state.token}>
-                                {this.state.token}
-                            </ClipboardButton>
-                        </OverlayTrigger>
+                        <form>
+                            <FormGroup>
+                                <Col xs={6} md={6}>
+                                    <InputGroup>
+                                        <FormControl
+                                            type="text"
+                                            disabled={true}
+                                            placeholder={this.state.token}/>
+                                        <InputGroup.Button>
+                                            <OverlayTrigger trigger="click" placement="right" overlay={tooltipToken}
+                                                            rootClose={true}>
+                                                <ClipboardButton className="btn btn-default"
+                                                                 style={clipboardButtonStyle}
+                                                                 data-clipboard-text={this.state.token}>
+                                                    {/*TODO: Clipboard Button breaks Glyphicon by not adding ::before...find a way to counter this*/}
+                                                    <span>Copy</span>
+                                                </ClipboardButton>
+                                            </OverlayTrigger>
+                                        </InputGroup.Button>
+                                    </InputGroup>
+                                </Col>
+                            </FormGroup>
+                        </form>
                     </Row>
                 </Grid>
             </div>

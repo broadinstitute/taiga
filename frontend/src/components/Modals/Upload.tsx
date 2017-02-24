@@ -13,8 +13,8 @@ import {DialogProps, DialogState} from "../Dialogs";
 
 import {TypeEditorBootstrapTable} from "./TypeEditorBootstrapTable";
 
-import {getInitialFileTypeFromMimeType} from "../../Utilities/formats";
-import {relativePath} from "../../Utilities/route";
+import {getInitialFileTypeFromMimeType} from "../../utilities/formats";
+import {relativePath} from "../../utilities/route";
 
 import {
     S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,

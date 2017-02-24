@@ -73,6 +73,7 @@ def new_upload_session_file(session: SessionBase, new_upload_session):
         'filename': file_name
     }
 
+
     sid = new_upload_session.id
 
     endpoint.create_upload_session_file(S3UploadedFileMetadata=S3UploadedFileMetadata,

@@ -5,7 +5,7 @@ import {
     TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId
 } from './models';
 
-import { currentUserToken } from '../Utilities/route';
+import { currentUserToken } from '../utilities/route';
 import {isUndefined} from "util";
 import {Token} from "../components/Token";
 
