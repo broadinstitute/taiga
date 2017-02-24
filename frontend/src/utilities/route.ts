@@ -1,5 +1,5 @@
-declare let taigaPrefix;
-declare let taigaUserToken;
+declare let taigaPrefix: string;
+declare let taigaUserToken: string;
 
 function fetchPrefix(){
     // If taigaPrefix exists in the global scope

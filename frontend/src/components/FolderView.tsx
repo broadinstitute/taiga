@@ -323,7 +323,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         isVisible={this.state.showUploadDataset}
                         cancel={ () => { this.setState({showUploadDataset: false}) } }
 
-                        onFileUploadedAndConverted={ (sid, name, description) =>
+                        onFileUploadedAndConverted={ (sid: string, name: string , description: string) =>
                             this.filesUploadedAndConverted(sid, name, description) }
                         currentFolderId={this.state.folder.id}
                         title="New Dataset"

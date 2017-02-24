@@ -324,7 +324,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             // TODO: Make an exception class to manage properly the message
             status.message = "FAILURE: " + status.message;
             this.displayStatusUpdate(status, s3Key);
-            return Promise.reject(status.message);
+            return Promise.reject<string>(status.message);
         }
         else {
             this.displayStatusUpdate(status, s3Key);

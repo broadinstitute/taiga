@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import {Button, Col, Glyphicon, Grid, Row, OverlayTrigger, Tooltip, Well} from 'react-bootstrap';
-import {InputGroup, InputGroupButton, form, FormGroup, FormControl} from 'react-bootstrap';
+import {InputGroup, InputGroupButton, FormGroup, FormControl} from 'react-bootstrap';
 
 import ClipboardButton from '../utilities/r-clipboard';
 import {LeftNav} from "./LeftNav"
@@ -55,7 +55,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
     }
 
     render() {
-        let navItems = [];
+        let navItems: Array<any> = [];
 
         const tooltipToken = (
             <Tooltip id="token_copy_confirmation"><strong>Copied!</strong></Tooltip>

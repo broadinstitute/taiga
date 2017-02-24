@@ -227,7 +227,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <Upload.UploadDataset
                     isVisible={this.state.showUploadDataset}
                     cancel={ () => { this.setState({showUploadDataset: false}) } }
-                    onFileUploadedAndConverted={ (sid, name, description, previousDatafileIds) =>
+                    onFileUploadedAndConverted={ (sid: string, name: string, description: string, previousDatafileIds: Array<string>) =>
                         this.filesUploadedAndConverted(sid, name, description, previousDatafileIds)
                     }
                     currentFolderId={this.state.dataset.folders[0].id}

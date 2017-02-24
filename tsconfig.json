@@ -6,7 +6,10 @@
         "removeComments": true,
         "module": "commonjs",
         "target": "es6",
-        "jsx": "react"
+        "jsx": "react",
+        "typeRoots": ["frontend/@types", "frontend/node_modules/@types"],
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true
     },
     "include": [
         "frontend/**/*"

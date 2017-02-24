@@ -51,12 +51,12 @@ export default class ClipboardButton extends React.Component<ClipboardButtonProp
      * this.propsWith(on*, true); // returns {Bar: 2}
      * this.propsWith(data-*); // returns {data-foobar: 1, data-baz: 4}
      */
-    propsWith(regexp, remove = false) {
-        const object = {};
+    propsWith(regexp: any, remove = false): Object {
+        let object: any = Object;
 
         Object.keys(this.props).forEach(function (key) {
             if (key.search(regexp) !== -1) {
-                const objectKey = remove ? key.replace(regexp, '') : key;
+                const objectKey: any = remove ? key.replace(regexp, '') : key;
                 object[objectKey] = this.props[key];
             }
         }, this);
