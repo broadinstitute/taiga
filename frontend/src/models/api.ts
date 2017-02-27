@@ -144,6 +144,13 @@ export class TaigaApi {
         return this._post<void>("/trash", entryIds)
     }
 
+    move_to_folder(entryIds: Array<string>, folderId: string) {
+        return this._post<void>("/move", {
+            entryIds: entryIds,
+            folderId: folderId
+        })
+    }
+
     create_new_dataset_version(sid: string, dataset_id: string, datafile_ids: Array<string>) {
         return this._post<string>("/datasetVersion", {
             sessionId: sid,

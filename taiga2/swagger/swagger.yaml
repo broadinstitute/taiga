@@ -603,7 +603,7 @@ paths:
                 type: string
               datasetId:
                 type: string
-              datafilesIds:
+              datafileIds:
                 type: array
                 items:
                   title: entryId
@@ -767,6 +767,37 @@ paths:
       responses:
         200:
           description: Successfully updated
+
+  /move:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: move_to_folder
+      description: Move the entries passed as parameter into the user's trash folder
+      consumes:
+        - application/json
+      parameters:
+        - name: moveMetadata
+          in: body
+          schema:
+            type: object
+            required:
+              - entryIds
+              - folderId
+            properties:
+              entryIds:
+                type: array
+                items:
+                  title: entryId
+                  type: string
+              folderId:
+                type: string
+          required: true
+          description: "Ids of the entries to move to the folder"
+      responses:
+        200:
+          description: Successfully updated
+        422:
+          description: Folder Id does not exist
 
 #missing provenance
 

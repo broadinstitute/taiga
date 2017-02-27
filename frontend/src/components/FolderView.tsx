@@ -30,6 +30,11 @@ export interface FolderViewState {
     showCreateFolder?: boolean;
     error?: string;
     selection?: any;
+    showInputFolderId?: boolean;
+
+    moveIntoFolderValidation?: string;
+    moveIntoFolderHelp?: string;
+
 }
 
 export class Conditional extends React.Component<any, any> {
@@ -141,6 +146,29 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             return this.doFetch();
         }).catch((err: any) => {
             console.log("Error when moving to trash :/ : " + err);
+        });
+    }
+
+    moveIntoFolder(folderId) {
+        // TODO: Call to move the files
+        tapi.move_to_folder(this.state.selection, folderId).then(() => {
+            return this.doFetch();
+        }).then(() => {
+            this.setState({
+                showInputFolderId: false
+            });
+        }).catch((err) => {
+            console.log(err);
+
+            // If we receive 422 error
+            if(err.message == "UNPROCESSABLE ENTITY") {
+                let err_message_user = "Folder id is not valid. Please check it and retry :)";
+                this.setState({
+                    moveIntoFolderValidation: 'error',
+                    moveIntoFolderHelp: err_message_user
+                });
+            }
+            // return Promise.reject(err);
         });
     }
 
@@ -289,6 +317,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             })
             navItems.push({
                 label: "Move to...", action: () => {
+                    this.setState({showInputFolderId: true})
                 }
             })
             navItems.push({
@@ -336,6 +365,15 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             this.setState({showCreateFolder: false});
                             this.createFolder(name, description);
                         }}
+                    />
+
+                    <Dialogs.InputFolderId
+                        actionDescription="move the selected file(s) into it"
+                        isVisible={this.state.showInputFolderId}
+                        cancel={ () => { this.setState({showInputFolderId: false}) }}
+                        save={ (folderId) => { this.moveIntoFolder(folderId) }}
+                        validationState={this.state.moveIntoFolderValidation}
+                        help={this.state.moveIntoFolderHelp}
                     />
 
                     <h1>{folder.name}</h1>

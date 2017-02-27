@@ -38,7 +38,7 @@
     "@types/react": "^0.14.55",
     "@types/react-addons-test-utils": "^0.14.17",
     "@types/react-bootstrap": "^0.0.43",
-    "@types/react-bootstrap-table": "^2.3.33",
+    "@types/react-bootstrap-table": "^2.6.1",
     "@types/react-dom": "^0.14.19",
     "@types/react-dropzone": "^0.0.29",
     "@types/react-modal": "^1.3.6",

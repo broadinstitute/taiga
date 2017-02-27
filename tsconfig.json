@@ -16,6 +16,7 @@
     ],
     "exclude": [
         "node_modules",
-        "frontend/node_modules"
+        "frontend/node_modules",
+        "frontend/src/components/modals/TreeView.tsx"
     ]
 }

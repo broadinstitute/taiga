@@ -43,7 +43,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-bootstrap-table@^2.3.33":
+"@types/react-bootstrap-table@^2.6.1":
   version "2.6.1"
   resolved "https://registry.yarnpkg.com/@types/react-bootstrap-table/-/react-bootstrap-table-2.6.1.tgz#d5246ac4c392ad3f07f920ba7fdb240f2bffe43a"
   dependencies:

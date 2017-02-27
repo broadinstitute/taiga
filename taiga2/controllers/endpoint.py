@@ -5,6 +5,8 @@ import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import DataFile
 
+from sqlalchemy.orm.exc import NoResultFound
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -322,3 +324,18 @@ def move_to_trash(entryIds):
     models_controller.move_to_trash(entryIds)
 
     return flask.jsonify({})
+
+
+def move_to_folder(moveMetadata):
+    entryIds = moveMetadata["entryIds"]
+    folderId = moveMetadata["folderId"]
+    print("Just received the entries {} to move to the folder id {}".format(entryIds, folderId))
+
+    return_data = {}
+
+    try:
+        models_controller.move_to_folder(entry_ids=entryIds, folder_id=folderId)
+    except NoResultFound:
+        flask.abort(422)
+
+    return flask.jsonify(return_data)

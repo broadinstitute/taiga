@@ -102,7 +102,7 @@ def add_folder(name,
 
 
 def get_folder(folder_id):
-    return db.session.query(Folder).filter(Folder.id == folder_id).first()
+    return db.session.query(Folder).filter(Folder.id == folder_id).one()
 
 
 def update_folder_name(folder_id, new_name):
@@ -485,18 +485,29 @@ def move_to_trash(entry_ids):
     trash_folder = current_user.trash_folder
 
     for entry_id in entry_ids:
-        print("The current entry to process is {}".format(entry_id))
         entry = get_entry(entry_id)
         # We replace all the previous parent folders by the trash folder
-        print("{} had previously these parents: {}".format(entry.name, entry.parents))
         entry.parents = [trash_folder]
-        print("{} has now parents: {}".format(entry.name, entry.parents))
         # TODO: Do a bulk commit instead
         db.session.add(entry)
-        db.session.commit()
 
+    db.session.commit()
+
+
+def move_to_folder(entry_ids, folder_id):
+    # TODO: Check if the user is allowed to do this?
+    selected_folder = get_folder(folder_id)
+
+    for entry_id in entry_ids:
+        print("The current entry to process is {}".format(entry_id))
+        entry = get_entry(entry_id)
+        print("{} had previously these parents: {}".format(entry.name, entry.parents))
+        entry.parents = [selected_folder]
+        print("{} has now parents: {}".format(entry.name, entry.parents))
+        db.session.add(entry)
+
+    db.session.commit()
     print("Done!")
-
 
 # </editor-fold>
 
