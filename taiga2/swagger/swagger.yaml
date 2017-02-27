@@ -772,7 +772,7 @@ paths:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: move_to_folder
-      description: Move the entries passed as parameter into the user's trash folder
+      description: Move the entries passed as parameter into the requested folder (id)
       consumes:
         - application/json
       parameters:
@@ -792,7 +792,38 @@ paths:
               folderId:
                 type: string
           required: true
-          description: "Ids of the entries to move to the folder"
+          description: "Ids of the entries to move to the folder (id)"
+      responses:
+        200:
+          description: Successfully updated
+        422:
+          description: Folder Id does not exist
+
+  /copy:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: copy_to_folder
+      description: Copy the entries passed as parameter into the requested folder (id)
+      consumes:
+        - application/json
+      parameters:
+        - name: copyMetadata
+          in: body
+          schema:
+            type: object
+            required:
+              - entryIds
+              - folderId
+            properties:
+              entryIds:
+                type: array
+                items:
+                  title: entryId
+                  type: string
+              folderId:
+                type: string
+          required: true
+          description: "Ids of the entries to move to the folder (id)"
       responses:
         200:
           description: Successfully updated

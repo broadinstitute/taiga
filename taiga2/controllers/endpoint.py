@@ -327,15 +327,31 @@ def move_to_trash(entryIds):
 
 
 def move_to_folder(moveMetadata):
-    entryIds = moveMetadata["entryIds"]
-    folderId = moveMetadata["folderId"]
-    print("Just received the entries {} to move to the folder id {}".format(entryIds, folderId))
+    entry_ids = moveMetadata["entryIds"]
+    folder_id = moveMetadata["folderId"]
+    print("Just received the entries {} to move to the folder id {}".format(entry_ids, folder_id))
 
     return_data = {}
 
     try:
-        models_controller.move_to_folder(entry_ids=entryIds, folder_id=folderId)
+        models_controller.move_to_folder(entry_ids=entry_ids, folder_id=folder_id)
     except NoResultFound:
-        flask.abort(422)
+        # TODO: Return an object with Success/Failure code + message to display
+        return flask.abort(422)
+
+    return flask.jsonify(return_data)
+
+
+def copy_to_folder(copyMetadata):
+    entry_ids = copyMetadata["entryIds"]
+    folder_id = copyMetadata["folderId"]
+
+    return_data = {}
+
+    try:
+        models_controller.copy_to_folder(entry_ids=entry_ids, folder_id=folder_id)
+    except NoResultFound:
+        # TODO: Return an object with Success/Failure code + message to display
+        return flask.abort(422)
 
     return flask.jsonify(return_data)

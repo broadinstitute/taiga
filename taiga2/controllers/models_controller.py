@@ -476,6 +476,29 @@ def get_entry(entry_id):
     return entry
 
 
+class EntryAction(enum.Enum):
+    move = 1
+    copy = 2
+
+
+def _action_to_folder(entry_ids, folder_id, entry_action):
+    folder_to_action = get_entry(folder_id)
+    for entry_id in entry_ids:
+        entry = get_entry(entry_id)
+        # If the requested action is EntryAction.move => We replace all the previous parent folders by the trash folder
+        if entry_action == EntryAction.move:
+            entry.parents = [folder_to_action]
+        # If the requestion action is EntryAction.copy => We append the folder_to_action to the list of existing parents
+        elif entry_action == EntryAction.copy:
+            # We check it is not already in
+            if folder_to_action not in entry.parents:
+                entry.parents.append(folder_to_action)
+        # TODO: Do a bulk commit instead
+        db.session.add(entry)
+
+    db.session.commit()
+
+
 def move_to_trash(entry_ids):
     """Remove the parents folder, and add the user Trash folder as the only parent folder
     Input: Array of entry ids
@@ -484,30 +507,16 @@ def move_to_trash(entry_ids):
     current_user = get_current_session_user()
     trash_folder = current_user.trash_folder
 
-    for entry_id in entry_ids:
-        entry = get_entry(entry_id)
-        # We replace all the previous parent folders by the trash folder
-        entry.parents = [trash_folder]
-        # TODO: Do a bulk commit instead
-        db.session.add(entry)
-
-    db.session.commit()
+    _action_to_folder(entry_ids=entry_ids, folder_id=trash_folder.id, entry_action=EntryAction.move)
 
 
 def move_to_folder(entry_ids, folder_id):
     # TODO: Check if the user is allowed to do this?
-    selected_folder = get_folder(folder_id)
+    _action_to_folder(entry_ids=entry_ids, folder_id=folder_id, entry_action=EntryAction.move)
 
-    for entry_id in entry_ids:
-        print("The current entry to process is {}".format(entry_id))
-        entry = get_entry(entry_id)
-        print("{} had previously these parents: {}".format(entry.name, entry.parents))
-        entry.parents = [selected_folder]
-        print("{} has now parents: {}".format(entry.name, entry.parents))
-        db.session.add(entry)
 
-    db.session.commit()
-    print("Done!")
+def copy_to_folder(entry_ids, folder_id):
+    _action_to_folder(entry_ids=entry_ids, folder_id=folder_id, entry_action=EntryAction.copy)
 
 # </editor-fold>
 

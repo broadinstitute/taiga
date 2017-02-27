@@ -30,10 +30,15 @@ export interface FolderViewState {
     showCreateFolder?: boolean;
     error?: string;
     selection?: any;
-    showInputFolderId?: boolean;
 
-    moveIntoFolderValidation?: string;
-    moveIntoFolderHelp?: string;
+    callbackIntoFolderAction?: Function;
+    actionName?: string;
+
+    showInputFolderId?: boolean;
+    inputFolderIdActionDescription?: string;
+
+    actionIntoFolderValidation?: string;
+    actionIntoFolderHelp?: string;
 
 }
 
@@ -73,7 +78,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         let datasetsFirstDv: {[dataset_id: string]: Folder.DatasetVersion} = {};
         let datasetsVersion: {[datasetVersion_id: string]: Folder.DatasetVersion} = {};
         let _folder: Folder.Folder = null;
-        tapi.get_folder(this.props.params.folderId).then(folder => {
+        return tapi.get_folder(this.props.params.folderId).then(folder => {
                 _folder = folder;
                 console.log("FolderView: complete");
                 return folder.entries
@@ -149,6 +154,14 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         });
     }
 
+    openMoveTo() {
+        this.setState({
+            callbackIntoFolderAction: (folderId) => this.moveIntoFolder(folderId),
+            inputFolderIdActionDescription: "move the selected file(s) into it",
+            showInputFolderId: true
+        });
+    }
+
     moveIntoFolder(folderId) {
         // TODO: Call to move the files
         tapi.move_to_folder(this.state.selection, folderId).then(() => {
@@ -161,15 +174,69 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             console.log(err);
 
             // If we receive 422 error
-            if(err.message == "UNPROCESSABLE ENTITY") {
+            if (err.message == "UNPROCESSABLE ENTITY") {
                 let err_message_user = "Folder id is not valid. Please check it and retry :)";
                 this.setState({
-                    moveIntoFolderValidation: 'error',
-                    moveIntoFolderHelp: err_message_user
+                    actionIntoFolderValidation: 'error',
+                    actionIntoFolderHelp: err_message_user
                 });
             }
             // return Promise.reject(err);
         });
+    }
+
+    openActionTo(actionName: string) {
+        // TODO: Change the string telling the action to an enum, like in the backend
+
+        let actionDescription = "";
+
+        if (actionName == "move") {
+            actionDescription = "move the selected file(s) into it";
+        }
+        else if (actionName == "copy") {
+            actionDescription = "copy the selected file(s) into it";
+        }
+
+        this.setState({
+            callbackIntoFolderAction: (folderId) => this.actionIntoFolder(folderId),
+            actionName: actionName,
+            inputFolderIdActionDescription: actionDescription,
+            showInputFolderId: true,
+            actionIntoFolderValidation: null,
+            actionIntoFolderHelp: null
+        });
+    }
+
+    actionIntoFolder(folderId: string) {
+        // TODO: Call to move the files
+
+        // TODO: Find the right way to put the function in a variable but not carry this into tapi
+        if (this.state.actionName == "move") {
+            tapi.move_to_folder(this.state.selection, folderId).then(() => this.afterAction());
+        }
+        else if (this.state.actionName == "copy") {
+            tapi.copy_to_folder(this.state.selection, folderId).then(() => this.afterAction());
+        }
+    }
+
+    afterAction() {
+        // TODO: We don't need to do that if we are copying
+        this.doFetch().then(() => {
+            this.setState({
+                showInputFolderId: false
+            });
+        }).catch((err) => {
+            console.log(err);
+
+            // If we receive 422 error
+            if (err.message == "UNPROCESSABLE ENTITY") {
+                let err_message_user = "Folder id is not valid. Please check it and retry :)";
+                this.setState({
+                    actionIntoFolderValidation: 'error',
+                    actionIntoFolderHelp: err_message_user
+                });
+            }
+        })
     }
 
     // Upload
@@ -317,11 +384,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             })
             navItems.push({
                 label: "Move to...", action: () => {
-                    this.setState({showInputFolderId: true})
+                    this.openActionTo("move");
                 }
             })
             navItems.push({
                 label: "Copy to...", action: () => {
+                    this.openActionTo("copy");
                 }
             })
         }
@@ -368,12 +436,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     />
 
                     <Dialogs.InputFolderId
-                        actionDescription="move the selected file(s) into it"
-                        isVisible={this.state.showInputFolderId}
+                        actionDescription={ this.state.inputFolderIdActionDescription }
+                        isVisible={ this.state.showInputFolderId }
                         cancel={ () => { this.setState({showInputFolderId: false}) }}
-                        save={ (folderId) => { this.moveIntoFolder(folderId) }}
-                        validationState={this.state.moveIntoFolderValidation}
-                        help={this.state.moveIntoFolderHelp}
+                        save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
+                        validationState={this.state.actionIntoFolderValidation}
+                        help={this.state.actionIntoFolderHelp}
                     />
 
                     <h1>{folder.name}</h1>
