@@ -8,6 +8,7 @@ import {TaigaApi} from "../models/api";
 
 import * as Dialogs from "./Dialogs";
 import * as Upload from "./modals/Upload";
+import {TreeView} from "./modals/TreeView";
 
 import {toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
@@ -62,7 +63,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     doFetch() {
-
         console.log("FolderView: componentDidMount");
         // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
         let datasetsFirstDv: {[dataset_id: string]: Folder.DatasetVersion} = {};

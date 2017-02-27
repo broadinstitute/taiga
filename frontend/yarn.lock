@@ -573,7 +573,7 @@ querystring@0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/querystring/-/querystring-0.2.0.tgz#b209849203bb25df820da756e747005878521620"
 
-radium@^0.18.0:
+radium@^0.18.0, radium@^0.18.1:
   version "0.18.1"
   resolved "https://registry.yarnpkg.com/radium/-/radium-0.18.1.tgz#a01db9b4c6e6364de3b02d5976adf28d0b98351d"
   dependencies:
@@ -841,7 +841,7 @@ velocity-animate@^1.4.0:
   version "1.4.3"
   resolved "https://registry.yarnpkg.com/velocity-animate/-/velocity-animate-1.4.3.tgz#1d27a66afcc0cef73f8807b8c6253b94d214ad5a"
 
-velocity-react@^1.1.2:
+velocity-react@^1.1.2, velocity-react@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/velocity-react/-/velocity-react-1.2.1.tgz#d0cb59289a3b666c596da109d5f541d6e6f8ad98"
   dependencies:

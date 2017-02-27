@@ -2,7 +2,10 @@ import * as React from "react";
 import {Link} from 'react-router';
 import * as Modal from "react-modal";
 
-import * as TreeBeard from 'react-treebeard';
+// import { TreeBeard } from '../treebeard/components/treebeard';
+// import * as Treebeard from 'react-treebeard';
+// import * as Treebeard from 'react-treebeard';
+let Treebeard = require("react-treebeard");
 
 interface TreeViewProps {
 
@@ -11,6 +14,14 @@ interface TreeViewProps {
 interface TreeViewState {
 
 }
+
+// Don't forget to modify modalStyles in Upload.tsx if you change the code of modalStyles
+const modalStyles : any = {
+  content : {
+    background: null,
+    border: null
+  }
+};
 
 const data = {
     name: 'root',
@@ -56,9 +67,9 @@ export class TreeView extends React.Component<any, any> {
     }
 
     render () {
-        return <TreeBeard
-            data={data}
-            onToggle={this.onToggle}
-        />
+        return <Treebeard.Treebeard
+                data={data}
+                onToggle={this.onToggle}
+            />
     }
 }
