@@ -9,7 +9,7 @@ import * as filesize from "filesize";
 import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit} from "react-bootstrap-table";
 import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row, Glyphicon} from 'react-bootstrap';
 
-import {DialogProps, DialogState} from "../Dialogs";
+import { DialogProps, DialogState } from "../Dialogs";
 
 import {TypeEditorBootstrapTable} from "./TypeEditorBootstrapTable";
 
@@ -159,7 +159,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         // Request creation of Upload session => sid
         return tapi.get_upload_session().then((sid: string) => {
             // doUpload with this sid
-            this.doUpload(credentials, this.state.filesStatus, sid);
+            return this.doUpload(credentials, this.state.filesStatus, sid);
         });
     }
 
@@ -233,9 +233,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     updatedFileStatus.conversionProgress = "Done";
                     this.saveFileStatus(updatedFileStatus);
 
-                    return Promise.resolve(sid)
+                    return Promise.resolve<string>(sid)
                 }).catch((err: any) => {
-                    return Promise.reject(err);
+                    return Promise.reject<string>(err);
                 });
             }).catch((err: any) => {
                 console.log(err);
@@ -243,7 +243,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     disableUpload: false,
                     datasetFormDisabled: false
                 });
-                return Promise.reject(err);
+                return Promise.reject<string>(err);
             });
         });
         // Then we create the dataset if all have been resolved
@@ -427,7 +427,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 {$splice: [[idIndex, 1]]});
         }
         this.setState({
-           previousVersionFilesIdsSelected: newPreviousVersionFilesIdsSelected
+            previousVersionFilesIdsSelected: newPreviousVersionFilesIdsSelected
         });
         return true;
     }
@@ -503,7 +503,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         if (!isNullOrUndefined(this.state.newDatasetVersion)) {
             newDatasetLink = (
                 <Link className="btn btn-success"
-                      role="button"
+                      role="submit"
                       to={relativePath(
                       "dataset/"+this.state.newDatasetVersion.dataset_id+"/"+this.state.newDatasetVersion.id
                       )}>
@@ -513,8 +513,16 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         }
 
         let uploadButton = (
-            <button type="button" className="btn btn-primary" disabled={this.state.disableUpload}
-                    onClick={() => this.requestUpload()}>Upload
+            <button type="submit" className="btn btn-primary" disabled={this.state.disableUpload}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        this.requestUpload().then(() => {
+                            console.log("Ok upload");
+                        }).catch((err:any) => {
+                            console.log("Error received: "+err);
+                        });
+                    }}>
+                Upload
             </button>
         );
 
@@ -591,9 +599,10 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 <div className="modal-header">
                     <h2 ref="subtitle">{ this.props.title }</h2>
                 </div>
-                <div className="modal-body">
-                    <div className="dataset-metadata">
-                        <Form horizontal>
+                <Form horizontal>
+                    <div className="modal-body">
+                        <div className="dataset-metadata">
+
                             <FormGroup controlId="formName">
                                 <Col componentClass={ControlLabel} sm={2}>
                                     Name
@@ -610,24 +619,29 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                                     { inputDescription }
                                 </Col>
                             </FormGroup>
-                        </Form>
-                    </div>
-                    <Dropzone style={dropZoneStyle} onDrop={(acceptedFiles: any, rejectedFiles: any) =>
-                            this.onDrop(acceptedFiles, rejectedFiles)}
-                    >
-                        <div>Try dropping some files here, or click to select files to upload.</div>
-                    </Dropzone>
-                    <div style={rowUploadFiles}>
-                        {uploadedFiles}
-                    </div>
-                    { previousFiles }
-                </div>
-                <div className="modal-footer">
-                    <button type="button" className="btn btn-default" onClick={() => this.requestClose()}>Close</button>
-                    { !this.state.newDatasetVersion && uploadButton }
 
-                    { this.state.newDatasetVersion && newDatasetLink }
-                </div>
+                        </div>
+                        <Dropzone style={dropZoneStyle} onDrop={(acceptedFiles: any, rejectedFiles: any) =>
+                            this.onDrop(acceptedFiles, rejectedFiles)}
+                        >
+                            <div>Try dropping some files here, or click to select files to upload.</div>
+                        </Dropzone>
+                        <div style={rowUploadFiles}>
+                            {uploadedFiles}
+                        </div>
+                        { previousFiles }
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-default" onClick={(e) => {
+                            this.requestClose();
+                        }}>
+                            Close
+                        </button>
+                        { !this.state.newDatasetVersion && uploadButton }
+
+                        { this.state.newDatasetVersion && newDatasetLink }
+                    </div>
+                </Form>
             </div>
         </Modal>
     }
