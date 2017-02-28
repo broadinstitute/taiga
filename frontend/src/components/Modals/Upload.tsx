@@ -7,9 +7,9 @@ import * as Dropzone from "react-dropzone";
 import * as filesize from "filesize";
 
 import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit} from "react-bootstrap-table";
-import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row, Glyphicon} from 'react-bootstrap';
+import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row, Glyphicon, HelpBlock} from 'react-bootstrap';
 
-import { DialogProps, DialogState } from "../Dialogs";
+import {DialogProps, DialogState} from "../Dialogs";
 
 import {TypeEditorBootstrapTable} from "./TypeEditorBootstrapTable";
 
@@ -41,6 +41,9 @@ interface DropzoneProps extends DialogProps {
     // Parent can give the previous version name. Need it if pass previousVersionFiles
     // TODO: Only pass the previousVersion, so we can take the previous DataFiles from it too
     previousVersionName?: string;
+
+    validationState?: string;
+    help?: string;
 }
 
 interface DropzoneState extends DialogState {
@@ -54,6 +57,9 @@ interface DropzoneState extends DialogState {
 
     // For Previous datafile selection
     previousVersionFilesIdsSelected?: Array<DatasetVersionDatafiles>;
+
+    validationState?: string;
+    help?: string;
 }
 
 // TODO: Duplication of modalStyles in Dialogs.tsx => Find a way to fix this
@@ -95,7 +101,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             datasetFormDisabled: false,
             nameValue: '',
             descriptionValue: '',
-            previousVersionFilesIdsSelected: []
+            previousVersionFilesIdsSelected: [],
+            validationState: null,
+            help: null
         }
     }
 
@@ -118,7 +126,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             this.setState({
                 filesStatus: new Array<FileUploadStatus>(),
                 newDatasetVersion: undefined,
-                previousVersionFilesIdsSelected: []
+                previousVersionFilesIdsSelected: [],
+                validationState: null,
+                help: null
             });
 
             // We renew the s3_credentials
@@ -155,12 +165,26 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     // Ask the credentials to be able to upload
     requestUpload() {
-        // TODO: Use the form features to check the data
-        // Request creation of Upload session => sid
-        return tapi.get_upload_session().then((sid: string) => {
-            // doUpload with this sid
-            return this.doUpload(credentials, this.state.filesStatus, sid);
-        });
+        // We check the name is not empty
+        if (isNullOrUndefined(this.state.nameValue) || !this.state.nameValue) {
+            // We set the form as error and we don't trigger the rest
+            this.setState({
+                validationState: "error",
+                help: "Please enter a name for your dataset"
+            });
+            return Promise.reject("Dataset is not named");
+        }
+        else {
+            this.setState({
+                validationState: null,
+                help: null
+            });
+            // Request creation of Upload session => sid
+            return tapi.get_upload_session().then((sid: string) => {
+                // doUpload with this sid
+                return this.doUpload(credentials, this.state.filesStatus, sid);
+            });
+        }
     }
 
     // Use the credentials received to upload the files dropped in the module
@@ -603,12 +627,15 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     <div className="modal-body">
                         <div className="dataset-metadata">
 
-                            <FormGroup controlId="formName">
-                                <Col componentClass={ControlLabel} sm={2}>
+                            <FormGroup controlId="formName" validationState={this.state.validationState}>
+                                <Col componentClass={ ControlLabel } sm={2}>
                                     Name
                                 </Col>
                                 <Col sm={10}>
                                     { inputName }
+                                </Col>
+                                <Col sm={10} smOffset={2}>
+                                    { this.state.help && <HelpBlock>{this.state.help}</HelpBlock> }
                                 </Col>
                             </FormGroup>
                             <FormGroup controlId="formDescription">

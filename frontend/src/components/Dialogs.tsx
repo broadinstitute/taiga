@@ -47,7 +47,7 @@ const modalStyles: any = {
     }
 };
 
-export function formSubmitSave(reactComponent: React.Component, event: any, argOne: any, argTwo: any) {
+export function formSubmitSave(reactComponent: React.Component<any, any>, event: any, argOne: any, argTwo: any) {
     event.preventDefault();
     if(isNullOrUndefined(argTwo)) {
         reactComponent.props.save(argOne);
