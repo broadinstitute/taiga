@@ -488,13 +488,47 @@ def _action_to_folder(entry_ids, folder_id, entry_action):
         # If the requested action is EntryAction.move => We replace all the previous parent folders by the trash folder
         if entry_action == EntryAction.move:
             entry.parents = [folder_to_action]
-        # If the requestion action is EntryAction.copy => We append the folder_to_action to the list of existing parents
+            db.session.add(entry)
+        # If the request action is EntryAction.copy:
+        # We create a new dataset, and we populate it with the datasetVersions and the datafiles
         elif entry_action == EntryAction.copy:
             # We check it is not already in
-            if folder_to_action not in entry.parents:
-                entry.parents.append(folder_to_action)
-        # TODO: Do a bulk commit instead
-        db.session.add(entry)
+            # TODO: This behavior should be managed, as abstract, in Entry, and overriden in the sub-classes, so the copy mechanism is handled by the class and not here
+            if isinstance(entry, Folder):
+                original_folder = entry
+
+                new_folder = add_folder(name=original_folder.name,
+                                        folder_type=Folder.FolderType.folder, # We only copy it as a regular folder
+                                        description=original_folder.description)
+                new_folder.parents = [folder_to_action]
+
+                db.session.add(new_folder)
+
+                # Recurvive for each element in folder
+                original_folder_entries_ids = [_entry.id for _entry in original_folder.entries]
+                _action_to_folder(entry_ids=original_folder_entries_ids, folder_id=new_folder.id, entry_action=entry_action)
+
+            elif isinstance(entry, Dataset):
+                original_dataset = entry
+
+                new_dataset = None
+                for current_dataset_version in original_dataset.dataset_versions:
+                    datafiles_ids_copy = []
+                    for original_datafile in current_dataset_version.datafiles:
+                        _copy_datafile = copy_datafile(original_datafile.id)
+                        datafiles_ids_copy.append(_copy_datafile.id)
+
+                    if current_dataset_version.version == 1:
+                        new_dataset = add_dataset(name=original_dataset.name,
+                                                  description=original_dataset.description,
+                                                  datafiles_ids=datafiles_ids_copy)
+                    else:
+                        add_dataset_version(dataset_id=new_dataset.id,
+                                            datafiles_ids=datafiles_ids_copy)
+
+                new_dataset.parents = [folder_to_action]
+
+                db.session.add(new_dataset)
 
     db.session.commit()
 
@@ -517,6 +551,7 @@ def move_to_folder(entry_ids, folder_id):
 
 def copy_to_folder(entry_ids, folder_id):
     _action_to_folder(entry_ids=entry_ids, folder_id=folder_id, entry_action=EntryAction.copy)
+
 
 # </editor-fold>
 
