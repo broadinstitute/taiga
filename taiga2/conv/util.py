@@ -44,3 +44,25 @@ def _to_string_with_nan_mask(x):
 
 
 r_escape_str = lambda x: '"' + x.replace("\"", "\\\"") + '"'
+
+
+def shortened_list(l):
+    if len(l) > 30:
+        return ", ".join(l[:15]) + " ... " + ", ".join(l[15:])
+    else:
+        return ", ".join(l)
+
+import hashlib
+
+from collections import namedtuple
+ImportResult = namedtuple("ImportResult", "sha256 short_summary long_summary")
+
+def get_file_sha256(filename):
+    hash = hashlib.sha256()
+    with open(filename, "rb") as fd:
+        while True:
+            buffer = fd.read(1024*1024)
+            if len(buffer) == 0:
+                break
+            hash.update(buffer)
+    return hash.hexdigest()

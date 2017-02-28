@@ -14,7 +14,6 @@ def columnar_to_csv(progress, src, temp_file_generator):
     columnar.convert_tabular_to_csv(src, dst, ",")
     return [dst]
 
-
 CSV_FORMAT = "csv"
 RAW_FORMAT = "raw"
 RDS_FORMAT = "rds"

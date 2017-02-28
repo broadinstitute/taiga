@@ -10,6 +10,7 @@ import taiga2.conv as conversion
 from taiga2.conv.util import Progress
 from taiga2.conv.util import make_temp_file_generator
 from taiga2.controllers import models_controller
+from taiga2.conv.imp import ImportResult
 
 celery = Celery("taiga2")
 log = logging.getLogger()
@@ -19,13 +20,14 @@ def print_config():
     import flask
     print(flask.current_app.config)
 
-
-def _from_s3_convert_to_s3(progress, s3_object, download_dest, converted_dest, converted_s3_object, converter):
+def _from_s3_convert_to_s3(progress, upload_session_file_id, s3_object, download_dest, converted_dest, converted_s3_object, converter):
     progress.progress("Downloading the file from S3")
     s3_object.download_fileobj(download_dest)
     download_dest.flush()
 
-    converter(progress, download_dest.name, converted_dest.name)
+    import_result = converter(progress, download_dest.name, converted_dest.name)
+    assert isinstance(import_result, ImportResult)
+    models_controller.update_upload_session_file_summaries(upload_session_file_id, import_result.short_summary, import_result.long_summary)
 
     # Create a new converted object to upload
     progress.progress("Uploading to S3")
@@ -59,7 +61,7 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
         if file_type == models.InitialFileType.NumericMatrixCSV.value:
             converter = conversion.csv_to_hdf5
         elif file_type == models.InitialFileType.NumericMatrixTSV.value:
-                converter = conversion.tsv_to_hdf5
+            converter = conversion.tsv_to_hdf5
         elif file_type == models.InitialFileType.Table.value:
             converter = conversion.csv_to_columnar
         else:
@@ -70,7 +72,7 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
 
         with tempfile.NamedTemporaryFile("w+b") as download_dest:
             with tempfile.NamedTemporaryFile("w+b") as converted_dest:
-                _from_s3_convert_to_s3(progress, s3_object, download_dest, converted_dest, converted_s3_object, converter)
+                _from_s3_convert_to_s3(progress, upload_session_file_id, s3_object, download_dest, converted_dest, converted_s3_object, converter)
 
 
 # TODO: This is only for background_process_new_upload_session_file, how to get it generic for any Celery tasks?
@@ -157,7 +159,6 @@ def _start_conversion_task(self, progress, bucket, key, src_format, dst_format, 
             converter = get_converter(src_format, dst_format)
             converted_files = converter(progress, raw_t.name, temp_file_generator)
             assert isinstance(converted_files, list)
-            print("Converted", converted_files)
 
             urls = []
             for converted_file in converted_files:
@@ -174,11 +175,8 @@ def _start_conversion_task(self, progress, bucket, key, src_format, dst_format, 
 @celery.task(bind=True)
 def start_conversion_task(self, bucket, key, src_format, dst_format, cache_entry_id):
     try:
-        log.error("start, %s %s", id(flask.g), dir(flask.g))
         return _start_conversion_task(self, Progress(self), bucket, key, src_format, dst_format, cache_entry_id)
-        log.error("end")
     except:
         models_controller.mark_conversion_cache_entry_as_failed(cache_entry_id)
-        log.exception("exception")
         raise
 

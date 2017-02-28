@@ -1,24 +1,57 @@
 import csv
 import numpy as np
-from taiga2.conv import columnar
+from taiga2.conv.util import ImportResult, shortened_list, get_file_sha256
 
 DEFAULT_MAX_ELEMENTS_PER_BLOCK=1e6*50/8
 
-def _get_csv_dims(progress, tcsv, dialect):
-    r = csv.reader(tcsv, dialect)
-    row_count = 0
-    col_header = next(r)
-    first_row = None
+# class ReadTextWithHash:
+#     def __init__(self, file):
+#         self.hash = hashlib.sha256()
+#         self.file = file
+#         self.line_generator = self._make_generator()
+#
+#     def _make_generator(self):
+#         while True:
+#             buffer = self.read(1024*1024)
+#             if len(buffer) == 0:
+#                 break
+#
+#
+#     def __iter__(self):
+#         return self
+#
+#     def __next__(self):
+#         return next(self.textfile)
+#
+#     def readline(self):
+#         return next(self.line_generator)
+#
+#     def read(self, length):
+#         b = self.file.read(length)
+#         assert isinstance(b, bytes)
+#         self.hash.update(b)
+#         return b.decode("utf8")
+#
+#     def sha256(self):
+#         return self.hash.hexdigest()
 
-    for row in r:
-        if first_row is None:
-           first_row = row
-        row_count += 1
-        if row_count % 1000 == 0:
-            message = "Scanning through file to determine size (line {})".format(row_count+1)
-            progress.progress(message, None, row_count+1)
+def _get_csv_dims(progress, filename, dialect):
+    hash = get_file_sha256(filename)
+    with open(filename, "rU") as fd:
+        r = csv.reader(fd, dialect)
+        row_count = 0
+        col_header = next(r)
+        first_row = None
 
-    return row_count, len(first_row) - 1
+        for row in r:
+            if first_row is None:
+               first_row = row
+            row_count += 1
+            if row_count % 1000 == 0:
+                message = "Scanning through file to determine size (line {})".format(row_count+1)
+                progress.progress(message, None, row_count+1)
+
+    return row_count, len(first_row) - 1, hash
 
 def csv_to_hdf5(progress, src_csv_file, dst_hdf5_file, **kwargs):
     return tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, csv.excel, **kwargs)
@@ -33,7 +66,7 @@ def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=
 
     with open(src_csv_file, 'rt') as tcsv:
         tcsv.seek(0)
-        row_count, col_count = _get_csv_dims(progress, tcsv, dialect)
+        row_count, col_count, sha256 = _get_csv_dims(progress, src_csv_file, dialect)
 
         if rows_per_block is None:
             rows_per_block = int(max_size_per_block / col_count)
@@ -61,17 +94,21 @@ def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=
 
             row_index = 0
             row_header = []
+            na_count = 0
             for block_row_header, block_data in _read_rows_in_chunks(row_index+1, progress, dst_hdf5_file, col_header, r, rows_per_block, dialect):
                 row_header.extend(block_row_header)
 
                 # update data (the hdf5 matrix we're writing to) with the latest block
                 block_end = row_index + len(block_row_header)
 
-                print("block_row_header", len(block_row_header))
-                print("block_data", np.array(block_data))
-                print("target", np.array(data[row_index:block_end,:]))
+                # print("block_row_header", len(block_row_header))
+                # print("block_data", np.array(block_data))
+                # print("target", np.array(data[row_index:block_end,:]))
 
-                data[row_index:block_end,:] = np.array(block_data)
+                block_data_array = np.array(block_data)
+                na_count += np.count_nonzero(np.isnan(block_data_array))
+
+                data[row_index:block_end,:] = block_data_array
 
                 row_index = block_end
 
@@ -86,6 +123,9 @@ def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=
             dim_1[:] = col_header
             dim_1.attrs['name'] = "col_axis"
 
+    long_summary="Column names: {}\nRow names: {}\n".format(shortened_list(col_header), shortened_list(row_header))
+
+    return ImportResult(sha256=sha256, short_summary="{}x{} matrix, {} NAs".format(row_count, col_count, na_count), long_summary=long_summary)
 
 def _pack_into_matrix(rows):
     data = np.empty((len(rows), len(rows[0])), 'd')
@@ -132,6 +172,3 @@ def _read_rows_in_chunks(line, progress, dst_hdf5_file, col_header, r, rows_per_
     if len(rows) > 0:
         yield row_header, _pack_into_matrix(rows)
 
-
-def tcsv_to_columnar(self, input_file, output_file, delimiter):
-    columnar.convert_csv_to_tabular(input_file, output_file, delimiter)

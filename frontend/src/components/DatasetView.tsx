@@ -139,11 +139,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
         let entries = datasetVersion.datafiles.map((df, index) => {
             return <tr key={index}>
-                <td>{df.name}</td>
-                {/*<td>{df.description}</td>*/}
-                <td>{df.content_summary}</td>
-                <td><a href={df.url} download={true}>{df.type}</a></td>
-            </tr>
+                    <td>{df.name}</td>
+                    <td>{df.short_summary}</td>
+                    <td><a href={df.url} download={true}>{df.type}</a></td>
+                </tr>
         });
 
         let folders = dataset.folders.map((f, index) => {
@@ -260,7 +259,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     <tr>
                         <th>Name</th>
                         {/*<th>Description</th>*/}
-                        <th>Contains</th>
+                        <th>Summary</th>
                         <th>Download</th>
                     </tr>
                     </thead>

@@ -5,7 +5,7 @@ import os
 
 import json
 
-from sqlalchemy import and_
+from sqlalchemy import and_, update
 
 import taiga2.models as models
 from taiga2.models import db
@@ -559,14 +559,18 @@ def copy_to_folder(entry_ids, folder_id):
 def add_datafile(s3_bucket,
                  s3_key,
                  name,
-                 type):
+                 type,
+                 short_summary,
+                 long_summary):
     # TODO: See register_datafile_id
     new_datafile_name = name
 
     new_datafile = DataFile(name=new_datafile_name,
                             s3_bucket=s3_bucket,
                             s3_key=s3_key,
-                            type=type)
+                            type=type,
+                            short_summary=short_summary,
+                            long_summary=long_summary)
 
     db.session.add(new_datafile)
     db.session.commit()
@@ -605,7 +609,9 @@ def add_datafiles_from_session(session_id):
         new_datafile = add_datafile(name=file.filename,
                                     s3_bucket=file.s3_bucket,
                                     s3_key=file.converted_s3_key,
-                                    type=file.converted_filetype)
+                                    type=file.converted_filetype,
+                                    short_summary=file.short_summary,
+                                    long_summary=file.long_summary)
         added_datafiles.append(new_datafile)
 
     return added_datafiles
@@ -658,6 +664,7 @@ def get_upload_session_files_from_session(session_id):
     return upload_session_files
 
 
+
 # </editor-fold>
 
 # <editor-fold desc="Upload Session File">
@@ -671,6 +678,8 @@ class EnumS3FolderPath(enum.Enum):
 def generate_convert_key():
     enumed_convert_path = EnumS3FolderPath.Convert.value
     return os.path.join(enumed_convert_path + str(uuid.uuid4()))
+
+
 
 
 def add_upload_session_file(session_id, filename, initial_file_type, initial_s3_key, s3_bucket):
@@ -696,6 +705,9 @@ def get_upload_session_file(upload_session_file_id):
         .filter(UploadSessionFile.id == upload_session_file_id).one()
     return upload_session_file
 
+def update_upload_session_file_summaries(file_id, short_summary, long_summary):
+    db.session.query(UploadSessionFile).filter(UploadSessionFile.id == file_id).update(dict(short_summary=short_summary, long_summary=long_summary))
+    db.session.commit()
 
 # </editor-fold>
 

@@ -318,7 +318,9 @@ def test_add_dataset_version(session: SessionBase):
     _new_datafile = mc.add_datafile(name="Datafile for test_add_dataset_version",
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=mc.generate_convert_key(),
-                                    type=mc.DataFile.DataFileType.Raw)
+                                    type=mc.DataFile.DataFileType.Raw,
+                                    short_summary='short',
+                                    long_summary='long')
 
     _new_dataset = mc.add_dataset(name=new_dataset_version_name,
                                   description=new_dataset_description,
@@ -384,7 +386,9 @@ def new_datafile():
     _new_datafile = mc.add_datafile(name=new_datafile_name,
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=mc.generate_convert_key(),
-                                    type=DataFile.DataFileType.Raw)
+                                    type=DataFile.DataFileType.Raw,
+                                    short_summary="short",
+                                    long_summary="long")
 
     return _new_datafile
 #</editor-fold>

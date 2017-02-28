@@ -85,6 +85,8 @@ def new_upload_session_file(session: SessionBase, new_upload_session):
 def test_create_dataset(session: SessionBase, new_upload_session_file):
     _new_upload_session_id = new_upload_session_file.session.id
 
+    models_controller.update_upload_session_file_summaries(new_upload_session_file.id, "short_summary_test", "long_summary_test")
+
     dataset_name = 'Dataset Name'
     dataset_description = 'Dataset Description'
 
@@ -104,7 +106,10 @@ def test_create_dataset(session: SessionBase, new_upload_session_file):
     _new_dataset = models_controller.get_dataset(_new_dataset_id)
 
     assert _new_dataset.name == dataset_name
-    assert _new_dataset.dataset_versions[0].datafiles[0].name == new_upload_session_file.filename
+    datafile = _new_dataset.dataset_versions[0].datafiles[0]
+    assert datafile.name == new_upload_session_file.filename
+    assert datafile.short_summary == "short_summary_test"
+    assert datafile.long_summary == "long_summary_test"
 
 
 @pytest.fixture

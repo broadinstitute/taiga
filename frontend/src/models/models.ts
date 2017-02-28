@@ -73,8 +73,7 @@ export interface DatasetVersionDatafiles {
     "name": string;
     "url": string;
     "type": DataFileType;
-    "description": string;
-    "content_summary": string;
+    "short_summary": string;
 }
 
 export interface DatasetVersions {

@@ -8,7 +8,7 @@ from io import StringIO
 from io import BytesIO
 import logging
 import subprocess
-from taiga2.conv.util import r_escape_str
+from taiga2.conv.util import r_escape_str, shortened_list, ImportResult, get_file_sha256
 
 log = logging.getLogger(__name__)
 
@@ -423,8 +423,8 @@ def get_long_summary(input_file):
             b.write("\t\"{}\" {}\n".format(c.name, c.persister.type_name))
         return b.getvalue()
 
-
 def convert_csv_to_tabular(input_file, output_file, delimiter):
+    sha256 = get_file_sha256(input_file)
     hasRowNames, datafile_columns = sniff.sniff(input_file, delimiter=delimiter)
 
     with open(input_file, 'rU') as fd:
@@ -446,6 +446,9 @@ def convert_csv_to_tabular(input_file, output_file, delimiter):
             w.append(row)
         w.close()
 
+    long_summary="Column names: {}\n".format(shortened_list([c.name for c in datafile_columns]))
+
+    return ImportResult(sha256=sha256, short_summary="{} rows, {} columns".format(line_number, len(datafile_columns)), long_summary=long_summary)
 
 def convert_tabular_to_csv(input_file, output_file, delimiter, select_names=None, predicate=None):
     log.info("convert_tabular_to_csv %s -> %s", input_file, output_file)

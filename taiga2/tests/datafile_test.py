@@ -31,7 +31,9 @@ def create_matrix_dataset_version(tmpdir, mock_s3):
     df = mc.add_datafile(name="dfname",
                          s3_bucket='bucket',
                          s3_key='key',
-                         type=models.DataFile.DataFileType.HDF5)
+                         type=models.DataFile.DataFileType.HDF5,
+                         short_summary="short",
+                         long_summary="long")
 
     ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
@@ -54,7 +56,9 @@ def create_table_dataset_version(tmpdir, mock_s3):
     df = mc.add_datafile(name="dfname",
                          s3_bucket='bucket',
                          s3_key='key',
-                         type=models.DataFile.DataFileType.Columnar)
+                         type=models.DataFile.DataFileType.Columnar,
+                         short_summary="short",
+                         long_summary="long")
 
     ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
@@ -86,7 +90,7 @@ def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, 
             for prop in ['dataset_id', 'dataset_version_id', 'datafile_name', 'status']:
                 assert response[prop] is not None
 
-            print("status:", response['status'])
+            print("status:", response)
 
             if 'urls' in response:
                 resulting_urls = response['urls']
@@ -108,7 +112,9 @@ def create_simple_dataset():
     df = mc.add_datafile(name="df",
                         s3_bucket="bucket",
                         s3_key="converted/key",
-                        type=models.DataFile.DataFileType.Raw)
+                        type=models.DataFile.DataFileType.Raw,
+                        short_summary="short",
+                         long_summary="long")
 
     ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return ds.permaname, ds.dataset_versions[0].id, "df"

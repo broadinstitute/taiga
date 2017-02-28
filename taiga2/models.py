@@ -186,6 +186,9 @@ class DataFile(db.Model):
                               backref=db.backref(__tablename__,
                               cascade="all, delete-orphan"))
 
+    short_summary = db.Column(db.Text)
+    long_summary = db.Column(db.Text)
+
 
 _INTIAL_TO_CONVERTED_MAPPING = {InitialFileType.NumericMatrixCSV: DataFile.DataFileType.HDF5,
                                 InitialFileType.NumericMatrixTSV: DataFile.DataFileType.HDF5,
@@ -316,3 +319,5 @@ class UploadSessionFile(db.Model):
 
     s3_bucket = db.Column(db.Text)
 
+    short_summary = db.Column(db.Text)
+    long_summary = db.Column(db.Text)

@@ -93,7 +93,9 @@ def drop_and_create_db():
                 loop_datafile = models_controller.add_datafile(name=datafile.name + 'v' + str(i),
                                                                s3_bucket=bucket_name,
                                                                s3_key=models_controller.generate_convert_key(),
-                                                               type=datafile.type)
+                                                               type=datafile.type,
+                                                               short_summary="short summary",
+                                                               long_summary="long_summary")
                 loop_datafiles.append(loop_datafile)
             temp_data_datafiles = loop_datafiles
         datafiles_id = [datafile.id for datafile in temp_data_datafiles]

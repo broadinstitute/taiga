@@ -84,6 +84,7 @@ def db(app, request):
     yield _db
 
 
+# Note: this is pretty much completely useless until _all_ calls to db.commit are removed from model_controller.
 @pytest.fixture(scope='function')
 def session(db, request):
     """Creates a new database session for a test."""
