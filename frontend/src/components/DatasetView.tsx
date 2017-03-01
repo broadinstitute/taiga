@@ -151,7 +151,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     <Link to={relativePath("folder/"+f.id)}>
                         {f.name}
                     </Link>
-                    {dataset.versions.length != index + 1 &&
+                    {dataset.folders.length != index + 1 &&
                         <span>, </span>
                     }
                 </span>
