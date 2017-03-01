@@ -71,6 +71,7 @@ def set_current_user_from_x_forwarded():
 def init_backend_auth(app):
     app.before_request(set_current_user_from_bearer_token)
 
+
 def set_current_user_from_bearer_token():
     import taiga2.controllers.models_controller as mc
     request = flask.request

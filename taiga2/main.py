@@ -10,6 +10,7 @@ from taiga2.celery_init import configure_celery, celery
 
 log = logging.getLogger(__name__)
 
+
 def run_celery_worker():
     if len(sys.argv) != 2:
         log.error("Needs config file")
@@ -21,6 +22,7 @@ def run_celery_worker():
 
     configure_celery(flask_api_app)
     celery.worker_main(['', '-B'])
+
 
 def main():
     if len(sys.argv) != 2:
@@ -38,7 +40,7 @@ def main():
 
     # Init frontend app
     # ui_create_app uses also default_settings.py
-    ui_app = ui_create_app()
+    ui_app = ui_create_app(settings_file=settings_file)
 
     prefix = flask_api_app.config["PREFIX"]
     assert prefix.startswith("/")
