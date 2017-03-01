@@ -91,7 +91,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     // Upload
-    showUploadNewVersion(e: any) {
+    showUploadNewVersion() {
         this.setState({
             showUploadDataset: true
         })
@@ -160,22 +160,23 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 this.setState({showEditDescription: true})
             }
             },
+            // {
+            //     label: "Add permaname", action: function () {
+            // }
+            // },
             {
-                label: "Add permaname", action: function () {
-            }
+                label: "Create new version", action: () => {
+                    this.showUploadNewVersion();
+                }
             },
-            {
-                label: "Create new version", action: function () {
-            }
-            },
-            {
-                label: "Deprecate version", action: function () {
-            }
-            },
-            {
-                label: "Show History", action: function () {
-            }
-            }
+            // {
+            //     label: "Deprecate version", action: function () {
+            // }
+            // },
+            // {
+            //     label: "Show History", action: function () {
+            // }
+            // }
         ];
 
         let ancestor_section: any = null;
@@ -246,10 +247,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
                 <p>Contained within {folders}</p>
                 {ancestor_section}
-
-                <Button onClick={(e) => this.showUploadNewVersion(e)} style={buttonUploadNewVersionStyle}>
-                    Upload a new version
-                </Button>
 
                 {Dialogs.renderDescription(this.state.dataset.description)}
 
