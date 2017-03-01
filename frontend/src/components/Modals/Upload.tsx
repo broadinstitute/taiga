@@ -166,7 +166,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     // Ask the credentials to be able to upload
     requestUpload() {
         // We check the name is not empty
-        if (isNullOrUndefined(this.state.nameValue) || !this.state.nameValue) {
+        if (isNullOrUndefined(this.props.readOnlyName) && (isNullOrUndefined(this.state.nameValue) || !this.state.nameValue)) {
             // We set the form as error and we don't trigger the rest
             this.setState({
                 validationState: "error",

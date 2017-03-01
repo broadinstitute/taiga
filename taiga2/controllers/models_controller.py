@@ -383,7 +383,8 @@ def add_dataset_version(dataset_id,
 
     # If we did not set a name for the dataset_version, we take one by default
     if not name:
-        name = "".join([dataset.name, "_v", str(version)])
+        name = str(version)
+        # name = "".join([dataset.name, "_v", str(version)])
 
     # Create the DatasetVersion object
     new_dataset_version = DatasetVersion(name=name,
