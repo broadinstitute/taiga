@@ -504,22 +504,19 @@ def _action_to_folder(entry_ids, target_folder_id, entry_action, current_folder_
         elif entry_action == EntryAction.copy:
             # We check it is not already in
             # TODO: This behavior should be managed, as abstract, in Entry, and overriden in the sub-classes, so the copy mechanism is handled by the class and not here
-            if isinstance(entry, Folder):
-                original_folder = entry
+                # original_folder = entry
+                #
+                # new_folder = add_folder(name=original_folder.name,
+                #                         folder_type=Folder.FolderType.folder, # We only copy it as a regular folder
+                #                         description=original_folder.description)
+                # new_folder.parents = [folder_to_action]
+                #
+                # db.session.add(new_folder)
+                #
+                # # Recurvive for each element in folder
+                # original_folder_entries_ids = [_entry.id for _entry in original_folder.entries]
+                # _action_to_folder(entry_ids=original_folder_entries_ids, folder_id=new_folder.id, entry_action=entry_action)
 
-                new_folder = add_folder(name=original_folder.name,
-                                        folder_type=Folder.FolderType.folder, # We only copy it as a regular folder
-                                        description=original_folder.description)
-                new_folder.parents = [folder_to_action]
-
-                db.session.add(new_folder)
-
-                # Recurvive for each element in folder
-                original_folder_entries_ids = [_entry.id for _entry in original_folder.entries]
-                _action_to_folder(entry_ids=original_folder_entries_ids, folder_id=new_folder.id, entry_action=entry_action)
-
-            elif isinstance(entry, Dataset):
-                original_dataset = entry
                 #
                 # new_dataset = None
                 # for current_dataset_version in original_dataset.dataset_versions:
@@ -536,10 +533,10 @@ def _action_to_folder(entry_ids, target_folder_id, entry_action, current_folder_
                 #         add_dataset_version(dataset_id=new_dataset.id,
                 #                             datafiles_ids=datafiles_ids_copy)
                 # TODO: Think about changing the parents to a set instead of a simple array
-                if folder_to_action not in original_dataset.parents:
-                    original_dataset.parents.append(folder_to_action)
+                if folder_to_action not in entry.parents:
+                    entry.parents.append(folder_to_action)
 
-                db.session.add(original_dataset)
+                db.session.add(entry)
 
     db.session.commit()
 
