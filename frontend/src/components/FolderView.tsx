@@ -264,8 +264,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         var folder_rows = subfolders.map((e, index) => {
             let select_key = e.id;
-            return <tr key={this.state.folder.id + e.id}>
-                <td><input type="checkbox" checked={ this.state.selection[select_key] }
+            return <tr key={e.id}>
+                <td><input type="checkbox" checked={ this.state.selection.includes(select_key) }
                            onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
                     <span> </span>
@@ -312,8 +312,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             }
 
             let select_key = e.id;
-            return <tr key={this.state.folder.id + e.id}>
-                <td><input type="checkbox" checked={ this.state.selection[select_key] }
+            return <tr key={e.id}>
+                <td><input type="checkbox" checked={ this.state.selection.includes(select_key) }
                            onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td>{link}</td>
                 <td>{toLocalDateString(e.creation_date)}</td>

@@ -146,7 +146,16 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         });
 
         let folders = dataset.folders.map((f, index) => {
-            return <Link key={index} to={relativePath("folder/"+f.id)}>{f.name}</Link>
+            return (
+                <span key={index}>
+                    <Link to={relativePath("folder/"+f.id)}>
+                        {f.name}
+                    </Link>
+                    {dataset.versions.length != index + 1 &&
+                        <span>, </span>
+                    }
+                </span>
+            )
         })
 
         let navItems = [
@@ -241,8 +250,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <h1>{dataset.name}
                     <small>{dataset.permanames[dataset.permanames.length - 1]}</small>
                 </h1>
-                <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
-                    on the {toLocalDateString(datasetVersion.creation_date)}</p>
+                <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on the {toLocalDateString(datasetVersion.creation_date)}</p>
                 <p>Versions: {versions} </p>
 
                 <p>Contained within {folders}</p>
