@@ -7,6 +7,7 @@ from taiga2.auth import init_front_auth
 
 log = logging.getLogger(__name__)
 
+
 def create_app(settings_override=None, settings_file=None):
     from taiga2.models import db
 

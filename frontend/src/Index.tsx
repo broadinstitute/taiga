@@ -10,6 +10,7 @@ import { TaigaApi } from "./models/api"
 import { Token } from "./components/Token"
 
 import { relativePath } from "./utilities/route"
+import {isNullOrUndefined} from "util";
 
 const tapi = new TaigaApi(relativePath("api"));
 
@@ -69,14 +70,16 @@ const Home = React.createClass({
 
         console.log("get_user start in React");
         tapi.get_user().then(user => {
-            this.setState({user: user})
+            this.setState({user: user}, () => {
+                browserHistory.push(relativePath("folder/"+this.state.user.home_folder_id));
+            });
             console.log("get_user complete, complete");
             }
         );
     },
 
     render() {
-        if(this.state.user == null) {
+        if(isNullOrUndefined(this.state.user)) {
             return <div id="main-content">Loading</div>
         } else {
             return (

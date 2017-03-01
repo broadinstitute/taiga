@@ -39,7 +39,6 @@ export interface FolderViewState {
 
     actionIntoFolderValidation?: string;
     actionIntoFolderHelp?: string;
-
 }
 
 export class Conditional extends React.Component<any, any> {
@@ -151,37 +150,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             return this.doFetch();
         }).catch((err: any) => {
             console.log("Error when moving to trash :/ : " + err);
-        });
-    }
-
-    openMoveTo() {
-        this.setState({
-            callbackIntoFolderAction: (folderId) => this.moveIntoFolder(folderId),
-            inputFolderIdActionDescription: "move the selected file(s) into it",
-            showInputFolderId: true
-        });
-    }
-
-    moveIntoFolder(folderId) {
-        // TODO: Call to move the files
-        tapi.move_to_folder(this.state.selection, folderId).then(() => {
-            return this.doFetch();
-        }).then(() => {
-            this.setState({
-                showInputFolderId: false
-            });
-        }).catch((err) => {
-            console.log(err);
-
-            // If we receive 422 error
-            if (err.message == "UNPROCESSABLE ENTITY") {
-                let err_message_user = "Folder id is not valid. Please check it and retry :)";
-                this.setState({
-                    actionIntoFolderValidation: 'error',
-                    actionIntoFolderHelp: err_message_user
-                });
-            }
-            // return Promise.reject(err);
         });
     }
 
@@ -440,8 +408,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         isVisible={ this.state.showInputFolderId }
                         cancel={ () => { this.setState({showInputFolderId: false}) }}
                         save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
-                        validationState={this.state.actionIntoFolderValidation}
-                        help={this.state.actionIntoFolderHelp}
                     />
 
                     <h1>{folder.name}</h1>

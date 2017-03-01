@@ -3,6 +3,8 @@ import * as Modal from "react-modal";
 import * as Showdown from "showdown";
 
 import {ControlLabel, FormControl, FormGroup, HelpBlock} from "react-bootstrap";
+import {isUndefined} from "util";
+import {isNullOrUndefined} from "util";
 
 interface InputFolderIdProps extends DialogProps {
     cancel: () => void;
@@ -45,6 +47,16 @@ const modalStyles: any = {
     }
 };
 
+export function formSubmitSave(reactComponent: React.Component<any, any>, event: any, argOne: any, argTwo: any) {
+    event.preventDefault();
+    if(isNullOrUndefined(argTwo)) {
+        reactComponent.props.save(argOne);
+    }
+    else {
+        reactComponent.props.save(argOne, argTwo);
+    }
+}
+
 export class EditName extends React.Component<EditStringProps, any> {
     textInput: any;
 
@@ -67,8 +79,11 @@ export class EditName extends React.Component<EditStringProps, any> {
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
-                        <button type="button" className="btn btn-primary"
-                                onClick={ () => { this.props.save(this.textInput.value) } }>Save changes
+                        <button type="submit" className="btn btn-primary"
+                                onClick={ (e) => {
+                                    formSubmitSave(this, e, this.textInput.value, null);
+                                }}>
+                            Save changes
                         </button>
                     </div>
                 </div>
@@ -100,8 +115,11 @@ export class EditDescription extends React.Component<EditStringProps, any> {
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
-                        <button type="button" className="btn btn-primary"
-                                onClick={() => { this.props.save(this.textArea.value) } }>Save changes
+                        <button type="submit" className="btn btn-primary"
+                                onClick={(e) => {
+                                    formSubmitSave(this, e, this.textArea.value, null);
+                                }}>
+                            Save changes
                         </button>
                     </div>
                 </div>
@@ -142,9 +160,11 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
-                        <button type="button" className="btn btn-primary" onClick={() => {
-                  this.props.save(this.textInput.value, this.textArea.value)
-              } }>Save changes
+                        <button type="submit" className="btn btn-primary" onClick={
+                            (e) => {
+                                formSubmitSave(this, e, this.textInput.value, this.textArea.value);
+                            }}>
+                            Save changes
                         </button>
                     </div>
                 </div>
@@ -153,7 +173,7 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
     }
 }
 
-let converter = new Showdown.Converter()
+let converter = new Showdown.Converter();
 
 export function renderDescription(description: string) {
     let description_section: any = null;
@@ -222,9 +242,9 @@ export class InputFolderId extends React.Component<InputFolderIdProps, InputFold
                             <button type="button" className="btn btn-default" onClick={ () => this.props.cancel() }>
                                 Close
                             </button>
-                            <button type="button" className="btn btn-primary" onClick={ () => {
-                                this.props.save(this.state.folderId)}
-                            }>
+                            <button type="button" className="btn btn-primary" onClick={ (e) => {
+                                formSubmitSave(this, e, this.state.folderId, null);
+                            }}>
                                 Save changes
                             </button>
                         </div>
