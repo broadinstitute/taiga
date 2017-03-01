@@ -8,6 +8,7 @@ import {
 import { currentUserToken } from '../utilities/route';
 import {isUndefined} from "util";
 import {Token} from "../components/Token";
+import {isNullOrUndefined} from "util";
 
 export class TaigaApi {
     baseUrl: string;
@@ -140,14 +141,22 @@ export class TaigaApi {
         })
     }
 
-    move_to_trash(entryIds: Array<string>) {
-        return this._post<void>("/trash", entryIds)
+    move_to_trash(entryIds: Array<string>, currentFolderId: string) {
+        return this._post<void>("/trash", {
+            entryIds: entryIds,
+            currentFolderId: currentFolderId
+        })
     }
 
-    move_to_folder(entryIds: Array<string>, folderId: string) {
+    move_to_folder(entryIds: Array<string>, currentFolderId: string, targetFolderId: string) {
+        if(isNullOrUndefined(targetFolderId)) {
+            targetFolderId = "";
+        }
+
         return this._post<void>("/move", {
             entryIds: entryIds,
-            folderId: folderId
+            currentFolderId: currentFolderId,
+            targetFolderId: targetFolderId
         })
     }
 

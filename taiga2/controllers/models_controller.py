@@ -482,13 +482,22 @@ class EntryAction(enum.Enum):
     copy = 2
 
 
-def _action_to_folder(entry_ids, folder_id, entry_action):
-    folder_to_action = get_entry(folder_id)
+def _action_to_folder(entry_ids, target_folder_id, entry_action, current_folder_id=None):
+    if current_folder_id:
+        folder_from_action = get_entry(current_folder_id)
+    folder_to_action = get_entry(target_folder_id)
+
     for entry_id in entry_ids:
         entry = get_entry(entry_id)
-        # If the requested action is EntryAction.move => We replace all the previous parent folders by the trash folder
+        # If the requested action is EntryAction.move => We replace the current parent to the target one
         if entry_action == EntryAction.move:
-            entry.parents = [folder_to_action]
+            # entry.parents = [folder_to_action]
+            # TODO: Catch the exception for ValueError
+            entry.parents.remove(folder_from_action)
+
+            if folder_to_action not in entry.parents:
+                entry.parents.append(folder_to_action)
+
             db.session.add(entry)
         # If the request action is EntryAction.copy:
         # We create a new dataset, and we populate it with the datasetVersions and the datafiles
@@ -511,25 +520,26 @@ def _action_to_folder(entry_ids, folder_id, entry_action):
 
             elif isinstance(entry, Dataset):
                 original_dataset = entry
+                #
+                # new_dataset = None
+                # for current_dataset_version in original_dataset.dataset_versions:
+                #     datafiles_ids_copy = []
+                #     for original_datafile in current_dataset_version.datafiles:
+                #         _copy_datafile = copy_datafile(original_datafile.id)
+                #         datafiles_ids_copy.append(_copy_datafile.id)
+                #
+                #     if current_dataset_version.version == 1:
+                #         new_dataset = add_dataset(name=original_dataset.name,
+                #                                   description=original_dataset.description,
+                #                                   datafiles_ids=datafiles_ids_copy)
+                #     else:
+                #         add_dataset_version(dataset_id=new_dataset.id,
+                #                             datafiles_ids=datafiles_ids_copy)
+                # TODO: Think about changing the parents to a set instead of a simple array
+                if folder_to_action not in original_dataset.parents:
+                    original_dataset.parents.append(folder_to_action)
 
-                new_dataset = None
-                for current_dataset_version in original_dataset.dataset_versions:
-                    datafiles_ids_copy = []
-                    for original_datafile in current_dataset_version.datafiles:
-                        _copy_datafile = copy_datafile(original_datafile.id)
-                        datafiles_ids_copy.append(_copy_datafile.id)
-
-                    if current_dataset_version.version == 1:
-                        new_dataset = add_dataset(name=original_dataset.name,
-                                                  description=original_dataset.description,
-                                                  datafiles_ids=datafiles_ids_copy)
-                    else:
-                        add_dataset_version(dataset_id=new_dataset.id,
-                                            datafiles_ids=datafiles_ids_copy)
-
-                new_dataset.parents = [folder_to_action]
-
-                db.session.add(new_dataset)
+                db.session.add(original_dataset)
 
     db.session.commit()
 
@@ -545,13 +555,26 @@ def move_to_trash(entry_ids):
     _action_to_folder(entry_ids=entry_ids, folder_id=trash_folder.id, entry_action=EntryAction.move)
 
 
-def move_to_folder(entry_ids, folder_id):
+def move_to_folder(entry_ids, current_folder_id, target_folder_id):
+    # If we don't get a target_folder_id, it means we want to put it into the trash
+    if not target_folder_id:
+        # Get the current user's trash folder
+        current_user = get_current_session_user()
+        trash_folder = current_user.trash_folder
+
+        target_folder_id = trash_folder.id
+
     # TODO: Check if the user is allowed to do this?
-    _action_to_folder(entry_ids=entry_ids, folder_id=folder_id, entry_action=EntryAction.move)
+    _action_to_folder(entry_ids=entry_ids,
+                      current_folder_id=current_folder_id,
+                      target_folder_id=target_folder_id,
+                      entry_action=EntryAction.move)
 
 
-def copy_to_folder(entry_ids, folder_id):
-    _action_to_folder(entry_ids=entry_ids, folder_id=folder_id, entry_action=EntryAction.copy)
+def copy_to_folder(entry_ids, target_folder_id):
+    _action_to_folder(entry_ids=entry_ids,
+                      target_folder_id=target_folder_id,
+                      entry_action=EntryAction.copy)
 
 
 # </editor-fold>

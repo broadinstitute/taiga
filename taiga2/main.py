@@ -55,4 +55,5 @@ def main():
 
     # TODO: Should use the config file for the port and the ip address
     run_simple('0.0.0.0', 8080, parent_app,
-               use_reloader=True, use_debugger=debug, use_evalex=True)
+               use_reloader=True, use_debugger=debug, use_evalex=True,
+               threaded=True)

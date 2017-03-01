@@ -59,6 +59,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     };
 
     componentDidUpdate(prevProps: FolderViewProps) {
+        console.log("We updated folderView");
         // respond to parameter change in scenario 3
         let oldId = prevProps.params.folderId
         let newId = this.props.params.folderId
@@ -98,6 +99,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             });
             return Promise.all(all_dataset_versions);
         }).then(() => {
+            console.log("We reset the states");
             this.setState({
                 folder: _folder,
                 selection: new Array<string>(),
@@ -146,7 +148,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     moveToTrash() {
-        tapi.move_to_trash(this.state.selection).then(() => {
+        // move_to_folder takes the entryIds, the current folder id and the target folder id as parameters
+        // If the target folder is null, the backend will move this symbolic link to the trash
+        tapi.move_to_folder(this.state.selection, this.state.folder.id, null).then(() => {
             return this.doFetch();
         }).catch((err: any) => {
             console.log("Error when moving to trash :/ : " + err);
@@ -180,7 +184,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         // TODO: Find the right way to put the function in a variable but not carry this into tapi
         if (this.state.actionName == "move") {
-            tapi.move_to_folder(this.state.selection, folderId).then(() => this.afterAction());
+            tapi.move_to_folder(this.state.selection, this.state.folder.id, folderId).then(() => this.afterAction());
         }
         else if (this.state.actionName == "copy") {
             tapi.copy_to_folder(this.state.selection, folderId).then(() => this.afterAction());
@@ -256,12 +260,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             } else {
                 others.push(e);
             }
-        })
+        });
 
         var folder_rows = subfolders.map((e, index) => {
             let select_key = e.id;
-            return <tr key={e.id}>
-                <td><input type="checkbox" value={ select_key in this.state.selection }
+            return <tr key={this.state.folder.id + e.id}>
+                <td><input type="checkbox" checked={ this.state.selection[select_key] }
                            onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
                     <span> </span>
@@ -308,8 +312,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             }
 
             let select_key = e.id;
-            return <tr key={e.id}>
-                <td><input type="checkbox" value={ this.state.selection[select_key] }
+            return <tr key={this.state.folder.id + e.id}>
+                <td><input type="checkbox" checked={ this.state.selection[select_key] }
                            onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td>{link}</td>
                 <td>{toLocalDateString(e.creation_date)}</td>
