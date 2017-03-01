@@ -296,7 +296,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             </Link>
                         </span>
             } else if (e.type == Folder.FolderEntries.TypeEnum.Dataset) {
-                entryType = 'Dataset'
+                entryType = 'Dataset';
                 // TODO: Be careful about this add, not sure if we should access Dataset data like this
                 // TODO: We need to get the latest datasetVersion from this dataset
                 let firstDatasetVersion = this.state.datasetFirstDatasetVersion[e.id];

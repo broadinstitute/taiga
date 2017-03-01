@@ -141,13 +141,6 @@ export class TaigaApi {
         })
     }
 
-    move_to_trash(entryIds: Array<string>, currentFolderId: string) {
-        return this._post<void>("/trash", {
-            entryIds: entryIds,
-            currentFolderId: currentFolderId
-        })
-    }
-
     move_to_folder(entryIds: Array<string>, currentFolderId: string, targetFolderId: string) {
         if(isNullOrUndefined(targetFolderId)) {
             targetFolderId = "";
