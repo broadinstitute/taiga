@@ -100,8 +100,7 @@ def drop_and_create_db():
                 loop_datafiles.append(loop_datafile)
             temp_data_datafiles = loop_datafiles
         datafiles_id = [datafile.id for datafile in temp_data_datafiles]
-        dataAX = models_controller.add_dataset_version(name=name,
-                                                       dataset_id=origin_dataset.id,
+        dataAX = models_controller.add_dataset_version(dataset_id=origin_dataset.id,
                                                        datafiles_ids=datafiles_id)
 
 
