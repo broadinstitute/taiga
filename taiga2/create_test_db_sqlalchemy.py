@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 # TODO: Should use the settings.cfg for the bucket name
 bucket_name = "broadtaiga2prototype"
 
+
 def drop_and_create_db():
     models_controller.db.drop_all()
     print("Recreating it")

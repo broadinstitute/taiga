@@ -364,7 +364,8 @@ def delete_dataset(dataset_id):
 # <editor-fold desc="DatasetVersion">
 def add_dataset_version(dataset_id,
                         datafiles_ids=None,
-                        name=None):
+                        name=None,
+                        permaname=None):
     assert len(datafiles_ids) > 0
 
     # Fetch the object from the database
@@ -386,8 +387,13 @@ def add_dataset_version(dataset_id,
         name = str(version)
         # name = "".join([dataset.name, "_v", str(version)])
 
+    # Permaname is generated from dataset_name + _v + name of the dataset version (usually the version)
+    if not permaname:
+        permaname = models.generate_permaname("".join([dataset.name, "_v", name]))
+
     # Create the DatasetVersion object
     new_dataset_version = DatasetVersion(name=name,
+                                         permaname=permaname,
                                          creator=creator,
                                          dataset=dataset,
                                          datafiles=datafiles,

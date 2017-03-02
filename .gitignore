@@ -38,3 +38,6 @@ docker/taiga.tar.gz
 
 # Don't ignore travis.yml
 !.travis.yml
+
+# Ignore the migration data of taiga
+taiga2/tests/test_files/migration/*
