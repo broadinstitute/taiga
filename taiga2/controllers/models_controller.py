@@ -364,7 +364,6 @@ def delete_dataset(dataset_id):
 # <editor-fold desc="DatasetVersion">
 def add_dataset_version(dataset_id,
                         datafiles_ids=None,
-                        name=None,
                         permaname=None):
     assert len(datafiles_ids) > 0
 
@@ -382,10 +381,7 @@ def add_dataset_version(dataset_id,
     else:
         version = 1
 
-    # If we did not set a name for the dataset_version, we take one by default
-    if not name:
-        name = str(version)
-        # name = "".join([dataset.name, "_v", str(version)])
+    name = str(version)
 
     # Permaname is generated from dataset_name + _v + name of the dataset version (usually the version)
     if not permaname:
