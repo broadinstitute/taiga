@@ -31,6 +31,46 @@ Taiga 2 is built on the following stack:
 - Yarn
 - Node/NPM
 
+### Configuring AWS users
+
+We need two users: One IAM account (main) is used in general by the app to read/write to S3.   The second (uploader) has it's rights delegated via STS on a short term basis.  However, this user should 
+only have access to upload to a single location within S3.
+
+Permissions for the main user:
+```{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "s3:*",
+            "Resource": [
+                "arn:aws:s3:::taiga2",
+                "arn:aws:s3:::taiga2/*"
+            ]
+        }
+    ]
+}
+```
+
+Permissions for the "upload" user:
+```{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Stmt1482441362000",
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:HeadObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::taiga2/upload/*"
+            ]
+        }
+    ]
+}
+```
+
 ### Configuring S3
 
 Because we are using S3 to store the files, we need to correctly configure the S3 service, and its buckets.
