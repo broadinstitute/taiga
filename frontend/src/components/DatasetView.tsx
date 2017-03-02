@@ -214,6 +214,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             }
         }
 
+        let permaname = dataset.permanames[dataset.permanames.length - 1];
+        let r_block = "library(taigr);\n" +
+                `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
+
         return <div>
             <LeftNav items={navItems}/>
             <div id="main-content">
@@ -247,9 +251,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     previousVersionFiles={ this.state.datasetVersion.datafiles }
                 />
 
-                <h1>{dataset.name}
-                    <small>{dataset.permanames[dataset.permanames.length - 1]}</small>
-                </h1>
+                <h1>{dataset.name} <small>{permaname}</small></h1>
                 <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on the {toLocalDateString(datasetVersion.creation_date)}</p>
                 <p>Versions: {versions} </p>
 
@@ -272,6 +274,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     {entries}
                     </tbody>
                 </table>
+                <h2>Reading from R</h2>
+                <pre>{r_block}</pre>
             </div>
         </div>
     }
