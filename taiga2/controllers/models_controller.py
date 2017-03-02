@@ -1,3 +1,4 @@
+from datetime import datetime
 import enum
 import flask
 import uuid
@@ -105,6 +106,20 @@ def get_folder(folder_id):
     return db.session.query(Folder).filter(Folder.id == folder_id).one()
 
 
+def get_folder_by_name(folder_name):
+    """Get the folder by name of the current_user in the session. If multiple folders with the same name exist,
+    returns the first one"""
+    current_user = get_current_session_user()
+    folder = db.session.query(Folder).filter(Folder.creator_id == current_user.id) \
+        .filter(Folder.name == folder_name) \
+        .first()
+
+    if folder is None:
+        raise NoResultFound
+    else:
+        return folder
+
+
 def update_folder_name(folder_id, new_name):
     folder = get_folder(folder_id)
 
@@ -177,30 +192,40 @@ def get_parent_folders(entry_id):
 # <editor-fold desc="Dataset">
 def add_dataset(name,
                 description,
-                datafiles_ids,
-                permaname=None):
-    assert len(datafiles_ids) > 0
+                datafiles_ids=None,
+                permaname=None,
+                anterior_creation_date=None):
+    # assert len(datafiles_ids) > 0
 
     if not permaname:
         permaname = models.generate_permaname(name)
 
     creator = get_current_session_user()
+
+    creation_date = None
+    if anterior_creation_date:
+        creation_date = anterior_creation_date
+
     new_dataset = Dataset(name=name,
                           permaname=permaname,
                           description=description,
-                          creator=creator)
+                          creator=creator,
+                          creation_date=creation_date)
 
     db.session.add(new_dataset)
-    db.session.flush()
 
     # It means we would want to create a first dataset with a DatasetVersion
     # containing DataFiles
 
     # TODO: Think about a meaningful name
-    new_dataset_version = add_dataset_version(dataset_id=new_dataset.id,
-                                              datafiles_ids=datafiles_ids)
+    if datafiles_ids is not None:
+        db.session.flush()
+        new_dataset_version = add_dataset_version(dataset_id=new_dataset.id,
+                                                  datafiles_ids=datafiles_ids,
+                                                  anterior_creation_date=creation_date)
 
-    db.session.add(new_dataset_version)
+        db.session.add(new_dataset_version)
+
     db.session.commit()
 
     # Add the related activity
@@ -281,6 +306,16 @@ def update_dataset_description(dataset_id, description):
 
     return dataset
 
+
+def update_dataset_creation_date(dataset_id, new_date):
+    """Update the creation date of a dataset. The format of the string new_date should be: %Y-%m-%d %H:%M:%S.%f
+    (see https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior)"""
+    dataset = get_entry(dataset_id)
+
+    dataset.creation_date = _get_datetime_from_string(new_date)
+
+    db.session.add(dataset)
+    db.session.commit()
 
 # TODO: update_datafile_summaries
 # def update_datafile_summaries
@@ -364,7 +399,8 @@ def delete_dataset(dataset_id):
 # <editor-fold desc="DatasetVersion">
 def add_dataset_version(dataset_id,
                         datafiles_ids=None,
-                        permaname=None):
+                        permaname=None,
+                        anterior_creation_date=None):
     assert len(datafiles_ids) > 0
 
     # Fetch the object from the database
@@ -381,19 +417,20 @@ def add_dataset_version(dataset_id,
     else:
         version = 1
 
+    # If we did not set a name for the dataset_version, we take one by default
     name = str(version)
 
-    # Permaname is generated from dataset_name + _v + name of the dataset version (usually the version)
-    if not permaname:
-        permaname = models.generate_permaname("".join([dataset.name, "_v", name]))
+    creation_date = None
+    if anterior_creation_date:
+        creation_date = _get_datetime_from_string(anterior_creation_date)
 
     # Create the DatasetVersion object
     new_dataset_version = DatasetVersion(name=name,
-                                         permaname=permaname,
                                          creator=creator,
                                          dataset=dataset,
                                          datafiles=datafiles,
-                                         version=version)
+                                         version=version,
+                                         creation_date=creation_date)
 
     db.session.add(new_dataset_version)
     db.session.commit()
@@ -495,7 +532,16 @@ def _action_to_folder(entry_ids, target_folder_id, entry_action, current_folder_
         if entry_action == EntryAction.move:
             # entry.parents = [folder_to_action]
             # TODO: Catch the exception for ValueError
-            entry.parents.remove(folder_from_action)
+
+            # If we don't have a current_folder, then we don't remove it, but we log there is something strange
+            if current_folder_id is None:
+                # TODO: Reactivate this when migration is done
+                # log.warn("The move action for the entry {} did not receive a current folder id as parameter. "
+                #          "Just adding to the target folder {} (id {}).".format(entry_ids, folder_to_action,
+                #                                                                folder_to_action.id))
+                pass
+            else:
+                entry.parents.remove(folder_from_action)
 
             if folder_to_action not in entry.parents:
                 entry.parents.append(folder_to_action)
@@ -506,39 +552,39 @@ def _action_to_folder(entry_ids, target_folder_id, entry_action, current_folder_
         elif entry_action == EntryAction.copy:
             # We check it is not already in
             # TODO: This behavior should be managed, as abstract, in Entry, and overriden in the sub-classes, so the copy mechanism is handled by the class and not here
-                # original_folder = entry
-                #
-                # new_folder = add_folder(name=original_folder.name,
-                #                         folder_type=Folder.FolderType.folder, # We only copy it as a regular folder
-                #                         description=original_folder.description)
-                # new_folder.parents = [folder_to_action]
-                #
-                # db.session.add(new_folder)
-                #
-                # # Recurvive for each element in folder
-                # original_folder_entries_ids = [_entry.id for _entry in original_folder.entries]
-                # _action_to_folder(entry_ids=original_folder_entries_ids, folder_id=new_folder.id, entry_action=entry_action)
+            # original_folder = entry
+            #
+            # new_folder = add_folder(name=original_folder.name,
+            #                         folder_type=Folder.FolderType.folder, # We only copy it as a regular folder
+            #                         description=original_folder.description)
+            # new_folder.parents = [folder_to_action]
+            #
+            # db.session.add(new_folder)
+            #
+            # # Recurvive for each element in folder
+            # original_folder_entries_ids = [_entry.id for _entry in original_folder.entries]
+            # _action_to_folder(entry_ids=original_folder_entries_ids, folder_id=new_folder.id, entry_action=entry_action)
 
-                #
-                # new_dataset = None
-                # for current_dataset_version in original_dataset.dataset_versions:
-                #     datafiles_ids_copy = []
-                #     for original_datafile in current_dataset_version.datafiles:
-                #         _copy_datafile = copy_datafile(original_datafile.id)
-                #         datafiles_ids_copy.append(_copy_datafile.id)
-                #
-                #     if current_dataset_version.version == 1:
-                #         new_dataset = add_dataset(name=original_dataset.name,
-                #                                   description=original_dataset.description,
-                #                                   datafiles_ids=datafiles_ids_copy)
-                #     else:
-                #         add_dataset_version(dataset_id=new_dataset.id,
-                #                             datafiles_ids=datafiles_ids_copy)
-                # TODO: Think about changing the parents to a set instead of a simple array
-                if folder_to_action not in entry.parents:
-                    entry.parents.append(folder_to_action)
+            #
+            # new_dataset = None
+            # for current_dataset_version in original_dataset.dataset_versions:
+            #     datafiles_ids_copy = []
+            #     for original_datafile in current_dataset_version.datafiles:
+            #         _copy_datafile = copy_datafile(original_datafile.id)
+            #         datafiles_ids_copy.append(_copy_datafile.id)
+            #
+            #     if current_dataset_version.version == 1:
+            #         new_dataset = add_dataset(name=original_dataset.name,
+            #                                   description=original_dataset.description,
+            #                                   datafiles_ids=datafiles_ids_copy)
+            #     else:
+            #         add_dataset_version(dataset_id=new_dataset.id,
+            #                             datafiles_ids=datafiles_ids_copy)
+            # TODO: Think about changing the parents to a set instead of a simple array
+            if folder_to_action not in entry.parents:
+                entry.parents.append(folder_to_action)
 
-                db.session.add(entry)
+            db.session.add(entry)
 
     db.session.commit()
 
@@ -576,6 +622,13 @@ def copy_to_folder(entry_ids, target_folder_id):
                       entry_action=EntryAction.copy)
 
 
+def changer_owner(entry_id, new_creator_id):
+    entry = get_entry(entry_id)
+    entry.creator_id = new_creator_id
+
+    db.session.add(entry)
+    db.session.commit()
+
 # </editor-fold>
 
 # <editor-fold desc="DataFile">
@@ -584,16 +637,29 @@ def add_datafile(s3_bucket,
                  name,
                  type,
                  short_summary,
-                 long_summary):
+                 long_summary,
+                 forced_id=None):
+    received_type = type
     # TODO: See register_datafile_id
     new_datafile_name = name
+    # We try to manage properly the type
+    if not isinstance(received_type, models.DataFile.DataFileType):
+        for data_file_type in models.DataFile.DataFileType:
+            if str.lower(data_file_type.value) == str.lower(type):
+                received_type = data_file_type
+
+    if not isinstance(received_type, models.DataFile.DataFileType):
+        message = "The type does not match an allowed one"
+        log.error(message)
+        raise Exception(message)
 
     new_datafile = DataFile(name=new_datafile_name,
                             s3_bucket=s3_bucket,
                             s3_key=s3_key,
-                            type=type,
+                            type=received_type,
                             short_summary=short_summary,
-                            long_summary=long_summary)
+                            long_summary=long_summary,
+                            id=forced_id)
 
     db.session.add(new_datafile)
     db.session.commit()
@@ -687,7 +753,6 @@ def get_upload_session_files_from_session(session_id):
     return upload_session_files
 
 
-
 # </editor-fold>
 
 # <editor-fold desc="Upload Session File">
@@ -701,8 +766,6 @@ class EnumS3FolderPath(enum.Enum):
 def generate_convert_key():
     enumed_convert_path = EnumS3FolderPath.Convert.value
     return os.path.join(enumed_convert_path + str(uuid.uuid4()))
-
-
 
 
 def add_upload_session_file(session_id, filename, initial_file_type, initial_s3_key, s3_bucket):
@@ -728,9 +791,12 @@ def get_upload_session_file(upload_session_file_id):
         .filter(UploadSessionFile.id == upload_session_file_id).one()
     return upload_session_file
 
+
 def update_upload_session_file_summaries(file_id, short_summary, long_summary):
-    db.session.query(UploadSessionFile).filter(UploadSessionFile.id == file_id).update(dict(short_summary=short_summary, long_summary=long_summary))
+    db.session.query(UploadSessionFile).filter(UploadSessionFile.id == file_id).update(
+        dict(short_summary=short_summary, long_summary=long_summary))
     db.session.commit()
+
 
 # </editor-fold>
 
@@ -862,5 +928,14 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
             return None
 
     return datafile
+
+# </editor-fold>
+
+# <editor-fold desc="Utils">
+
+
+def _get_datetime_from_string(string_datetime):
+    return datetime.strptime(string_datetime, "%Y-%m-%d %H:%M:%S.%f")
+
 
 # </editor-fold>
