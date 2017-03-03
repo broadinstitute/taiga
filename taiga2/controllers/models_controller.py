@@ -13,8 +13,10 @@ from taiga2.models import db
 from taiga2 import aws
 from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
+
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import make_transient
+from sqlalchemy.sql.expression import func
 
 import logging
 
@@ -270,6 +272,14 @@ def get_first_dataset_version(dataset_id):
         .filter(DatasetVersion.dataset_id == dataset_id, DatasetVersion.version == 1).one()
 
     return dataset_version_first
+
+
+def get_latest_dataset_version(dataset_id):
+    max_version_subquery = db.session.query(func.max(DatasetVersion.counter)).filter(DatasetVersion.dataset_id == dataset_id)
+    dataset_version_latest = db.session.query(DatasetVersion).filter(DatasetVersion.dataset_id,
+                                                                     DatasetVersion.counter == max_version_subquery)
+
+    return dataset_version_latest
 
 
 def get_latest_dataset_version(dataset_id):
