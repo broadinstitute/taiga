@@ -7,11 +7,13 @@ from taiga2.conf import load_config
 
 log = logging.getLogger(__name__)
 
+
 def create_db():
     """Create the database, based on the app configuration,
     if it does not exist already"""
     from taiga2.models import db as _db
     _db.create_all()
+
 
 def create_app(settings_override=None, settings_file=None):
     # create the flask app which handles api requests.  If settings_override is set, then settings

@@ -223,8 +223,6 @@ class DatasetVersion(Entry):
                               single_parent=True,
                               cascade="all, delete-orphan")
 
-    permaname = db.Column(db.Text)
-
     # Filled out by the server
     version = db.Column(db.Integer)
 
