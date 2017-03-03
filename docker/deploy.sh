@@ -5,4 +5,4 @@ docker_login=`aws ecr get-login --region us-east-1`
 ${docker_login}
 docker tag taiga:latest ${docker_image}
 docker push ${docker_image}
-ssh ubuntu@depmap.org  "${docker_login} && docker pull ${docker_image} && docker run -d -p 8888:8080 ${docker_image}"
+ssh ubuntu@depmap.org  "${docker_login} && docker pull ${docker_image} && docker run -d -v /var/lib/taiga/taiga_settings.cfg:/taiga/settings.cfg -p 8888:8080 ${docker_image}"
