@@ -193,7 +193,7 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
         for datafile_info in array_data_file_info:
             flask.g.current_user = models_controller.get_user_by_email(datafile_info.owner_email)
             dataset_version = models_controller.add_dataset_version(dataset_id=dataset.id,
-                                                                    datafiles_ids=datafile_info.id,
+                                                                    datafiles_ids=[datafile_info.id],
                                                                     anterior_creation_date=datafile_info.creation_date)
 
             # Then we edit the dataset version creation_date to the
