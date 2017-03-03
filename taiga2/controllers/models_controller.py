@@ -402,6 +402,7 @@ def add_dataset_version(dataset_id,
                         permaname=None,
                         anterior_creation_date=None):
     assert len(datafiles_ids) > 0
+    assert isinstance(datafiles_ids, list)
 
     # Fetch the object from the database
     creator = get_current_session_user()
