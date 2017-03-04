@@ -86,6 +86,7 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
 
             flask.g.current_user = dataset_current_user
 
+            # TODO: We should not create the dataset if it is already existing
             new_dataset = models_controller.add_dataset(name=dataset_name,
                                                         permaname=dataset_permaname,
                                                         description=dataset_description)
@@ -159,6 +160,7 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
 
             flask.g.current_user = current_user
 
+            # TODO: We should not create the datafile if it already exists: ie s3_bucket/s3_key exists
             new_datafile = models_controller.add_datafile(s3_bucket=datafile_s3_bucket,
                                                           s3_key=datafile_s3_key,
                                                           name=datafile_name,
@@ -192,8 +194,9 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
         # Get the creation date from the first dataset_version
         for datafile_info in array_data_file_info:
             flask.g.current_user = models_controller.get_user_by_email(datafile_info.owner_email)
+            # TODO: We should not create the dataset_version if it already exists. ie version already exists for this dataset
             dataset_version = models_controller.add_dataset_version(dataset_id=dataset.id,
-                                                                    datafiles_ids=datafile_info.id,
+                                                                    datafiles_ids=[datafile_info.id],
                                                                     anterior_creation_date=datafile_info.creation_date)
 
             # Then we edit the dataset version creation_date to the
@@ -239,7 +242,7 @@ if __name__ == "__main__":
     api_app, backend_app = create_app(settings_file=settings_path)
 
     with backend_app.app_context():
-        # TODO: REMOVE the next line!
-        models_controller.db.drop_all()
+        # Use the next line only when you are sure you want to drop the db
+        # models_controller.db.drop_all()
         create_db()
         populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path)

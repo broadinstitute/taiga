@@ -27,16 +27,18 @@ install:
   # Add the aws cli for docker build/push
   - pip install awscli
 
-# Command to run tests
-script: pytest
-
-# After success we build a new docker image and push it to ECR
 services:
   - docker
-after_success:
+
+# Command to run tests
+script:
+  - pytest
+  # After tests have been successful, we build a new docker image and push it to ECR
   - if [ "$TRAVIS_BRANCH" == "taiga2" ]; then
-    chmod ugo+x build_docker.sh;
-    ./build_docker.sh;
-    chmod ugo+x travis/push_docker.sh;
-    travis/push_docker.sh;
+      chmod ugo+x build_docker.sh;
+      ./build_docker.sh;
+      chmod ugo+x travis/push_docker.sh;
+      travis/push_docker.sh;
     fi
+
+

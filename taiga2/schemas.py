@@ -92,6 +92,7 @@ class DataFileSummarySchema(ma.ModelSchema):
     # TODO: Manage the other fields in the model/db too
     type = EnumField(DataFile.DataFileType)
 
+
 class DataFileSchema(ma.ModelSchema):
     class Meta:
         model = DataFile

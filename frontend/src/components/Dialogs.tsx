@@ -11,7 +11,7 @@ interface InputFolderIdProps extends DialogProps {
     save: (folderId: string) => void;
     actionDescription: string;
 
-    validationState?: string;
+    validationState?: "success" | "warning" | "error";
     help?: string;
 }
 

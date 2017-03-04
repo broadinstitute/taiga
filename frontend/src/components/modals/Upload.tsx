@@ -58,7 +58,7 @@ interface DropzoneState extends DialogState {
     // For Previous datafile selection
     previousVersionFilesIdsSelected?: Array<DatasetVersionDatafiles>;
 
-    validationState?: string;
+    validationState?: "success" | "warning" | "error";
     help?: string;
 }
 

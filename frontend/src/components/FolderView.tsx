@@ -22,7 +22,7 @@ export interface FolderViewProps {
 
 export interface FolderViewState {
     folder?: Folder.Folder;
-    datasetFirstDatasetVersion?: {[dataset_id: string]: Folder.DatasetVersion}
+    datasetLastDatasetVersion?: {[dataset_id: string]: Folder.DatasetVersion}
     datasetsVersion?: {[datasetVersion_id: string]: Folder.DatasetVersion}
     showEditName?: boolean;
     showEditDescription?: boolean;
@@ -75,7 +75,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     doFetch() {
         console.log("FolderView: componentDidMount");
         // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
-        let datasetsFirstDv: {[dataset_id: string]: Folder.DatasetVersion} = {};
+        let datasetsLatestDv: {[dataset_id: string]: Folder.DatasetVersion} = {};
         let datasetsVersion: {[datasetVersion_id: string]: Folder.DatasetVersion} = {};
         let _folder: Folder.Folder = null;
         return tapi.get_folder(this.props.params.folderId).then(folder => {
@@ -87,8 +87,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             let all_dataset_versions: Array<Promise<void>> = null;
             all_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
                 if (entry.type == Folder.FolderEntries.TypeEnum.Dataset) {
-                    return tapi.get_dataset_version_first(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
-                        datasetsFirstDv[entry.id] = datasetVersion;
+                    return tapi.get_dataset_version_last(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
+                        datasetsLatestDv[entry.id] = datasetVersion;
                     });
                 }
                 else if (entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
@@ -103,7 +103,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             this.setState({
                 folder: _folder,
                 selection: new Array<string>(),
-                datasetFirstDatasetVersion: datasetsFirstDv,
+                datasetLastDatasetVersion: datasetsLatestDv,
                 datasetsVersion: datasetsVersion
             });
         });
@@ -282,6 +282,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         var other_rows = others.map((e, index) => {
             var link: any;
             let entryType: any;
+            let creation_date: string = toLocalDateString(e.creation_date);
 
             if (e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
                 entryType = 'Dataset Version';
@@ -299,13 +300,14 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 entryType = 'Dataset';
                 // TODO: Be careful about this add, not sure if we should access Dataset data like this
                 // TODO: We need to get the latest datasetVersion from this dataset
-                let firstDatasetVersion = this.state.datasetFirstDatasetVersion[e.id];
+                let latestDatasetVersion = this.state.datasetLastDatasetVersion[e.id];
                 link =
                     <span>
                         <Glyphicon glyph="glyphicon glyphicon-inbox"/>
                         <span> </span>
-                        <Link key={index} to={relativePath("dataset/"+e.id+"/"+firstDatasetVersion.id)}>{e.name}</Link>
-                    </span>
+                        <Link key={index} to={relativePath("dataset/"+e.id+"/"+latestDatasetVersion.id)}>{e.name}</Link>
+                    </span>;
+                creation_date = toLocalDateString(latestDatasetVersion.creation_date);
             }
             else {
                 link = e.name;
@@ -316,7 +318,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 <td><input type="checkbox" checked={ this.state.selection.includes(select_key) }
                            onChange={ () => {this.selectRow(select_key)} }/></td>
                 <td>{link}</td>
-                <td>{toLocalDateString(e.creation_date)}</td>
+                <td>{creation_date}</td>
                 <td>{entryType}</td>
                 <td>{e.creator.name}</td>
             </tr>

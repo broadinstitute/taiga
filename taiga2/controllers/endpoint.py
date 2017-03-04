@@ -116,8 +116,16 @@ def get_s3_credentials():
 def get_dataset_first(dataset_id):
     first_dataset_version = models_controller.get_first_dataset_version(dataset_id)
 
-    dataset_version_schema = schemas.DatasetVersionSummarySchema()
+    dataset_version_schema = schemas.DatasetVersionSchema()
     json_data_first_dataset_version = dataset_version_schema.dump(first_dataset_version).data
+    return flask.jsonify(json_data_first_dataset_version)
+
+
+def get_dataset_last(dataset_id):
+    last_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
+
+    dataset_version_schema = schemas.DatasetVersionSchema()
+    json_data_first_dataset_version = dataset_version_schema.dump(last_dataset_version).data
     return flask.jsonify(json_data_first_dataset_version)
 
 

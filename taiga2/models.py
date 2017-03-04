@@ -90,14 +90,14 @@ class Entry(db.Model):
     __tablename__ = 'entries'
 
     id = db.Column(GUID, primary_key=True, default=generate_uuid)
-    name = db.Column(db.String(80), nullable=False)
+    name = db.Column(db.Text, nullable=False)
     type = db.Column(db.String(50))
     creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     creator_id = db.Column(GUID, db.ForeignKey("users.id"))
 
     creator = db.relationship("User",
-                              foreign_keys="Folder.creator_id",
+                              foreign_keys="Entry.creator_id",
                               backref=__tablename__)
     __mapper_args__ = {
         'polymorphic_identity': classmethod.__class__.__name__,
@@ -209,11 +209,6 @@ class DatasetVersion(Entry):
     id = db.Column(GUID,
                    db.ForeignKey('entries.id'),
                    primary_key=True)
-
-    creator_id = db.Column(GUID, db.ForeignKey("users.id"))
-
-    creator = db.relationship("User",
-                              backref=__tablename__)
 
     dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
 
