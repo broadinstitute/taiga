@@ -7,7 +7,6 @@
         "module": "commonjs",
         "target": "es6",
         "jsx": "react",
-        "typeRoots": ["frontend/@types", "frontend/node_modules/@types"],
         "skipLibCheck": true,
         "skipDefaultLibCheck": true
     },
