@@ -97,8 +97,7 @@ WORKDIR ..
 RUN export PATH="$(yarn global bin):$PATH"
 RUN yarn add webpack --dev
 # We build the production version
-# TODO: Currently, there are errors that can't be removed (@types/ errors mainly). So we ignore but we should fix that
-RUN ./node_modules/.bin/webpack --config webpack.config.prod.js; exit 0
+RUN ./node_modules/.bin/webpack --config webpack.config.prod.js
 
 # Set celery as being able to run as root => Can find a better way
 ENV C_FORCE_ROOT=true
