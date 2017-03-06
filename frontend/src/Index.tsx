@@ -1,28 +1,29 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import { Router, Route, Link, IndexRoute, browserHistory } from 'react-router';
+import { RouteProps, Router, Route, Link, IndexRoute, browserHistory } from 'react-router';
 
-import { FolderView } from "./components/FolderView"
-import { DatasetView } from "./components/DatasetView"
+import {FolderView} from "./components/FolderView"
+import {DatasetView} from "./components/DatasetView"
 
-import { TaigaApi } from "./models/api"
-import { User } from "./models/models"
+import {TaigaApi} from "./models/api"
+import {User} from "./models/models"
 
-import { Token } from "./components/Token"
+import {Token} from "./components/Token"
 
-import { relativePath } from "./utilities/route"
+import {relativePath} from "./utilities/route"
 import {isNullOrUndefined} from "util";
 
-interface AppState {
-    user?: User;
+interface AppProps {
+    route?: any;
 }
 
 const tapi = new TaigaApi(relativePath("api"));
 
-class App extends React.Component<any, AppState>{
+class App extends React.Component<AppProps, any> {
     static childContextTypes = {
-        tapi: React.PropTypes.object
+        tapi: React.PropTypes.object,
+        currentUser: React.PropTypes.string
     };
 
     constructor(props: any) {
@@ -30,21 +31,19 @@ class App extends React.Component<any, AppState>{
     }
 
     getChildContext() {
-        return {tapi: tapi};
+        return {
+            tapi: tapi,
+            currentUser: this.props.route.user.id
+        };
     };
 
     componentDidMount() {
         // TODO: We should find a way to only get_user once, instead of in Home and in App
-        tapi.get_user().then((user: User) => {
-            this.setState({
-                user: user
-            });
-        });
     }
 
     render() {
-        const trash_link: any = (this.state && this.state.user &&
-            <Link to={relativePath('folder/'+this.state.user.trash_folder_id)}>Trash</Link>
+        const trash_link: any = (this.props.route.user &&
+            <Link to={relativePath('folder/'+this.props.route.user.trash_folder_id)}>Trash</Link>
         );
 
         return (
@@ -95,20 +94,20 @@ const Home = React.createClass({
     },
 
     componentDidMount() {
-        let tapi : TaigaApi = this.context.tapi;
+        let tapi: TaigaApi = this.context.tapi;
 
         console.log("get_user start in React");
         tapi.get_user().then(user => {
-            this.setState({user: user}, () => {
-                browserHistory.push(relativePath("folder/"+this.state.user.home_folder_id));
-            });
-            console.log("get_user complete, complete");
+                this.setState({user: user}, () => {
+                    browserHistory.push(relativePath("folder/" + this.state.user.home_folder_id));
+                });
+                console.log("get_user complete, complete");
             }
         );
     },
 
     render() {
-        if(isNullOrUndefined(this.state.user)) {
+        if (isNullOrUndefined(this.state.user)) {
             return <div id="main-content">Loading</div>
         } else {
             return (
@@ -128,75 +127,75 @@ Home.contextTypes = {
 
 const ActivityView = React.createClass({
     render() {
-        var rows : any = [];
+        var rows: any = [];
         return (
             <table>
                 <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Who</th>
-                        <th>Change</th>
-                        <th>Comments</th>
-                    </tr>
+                <tr>
+                    <th>Date</th>
+                    <th>Who</th>
+                    <th>Change</th>
+                    <th>Comments</th>
+                </tr>
                 </thead>
                 <tbody>
-                    {rows}
+                {rows}
                 </tbody>
             </table>
-            )
-        }
+        )
+    }
 });
 
 const ProvenanceView = React.createClass({
     render() {
-        var rows : any = [];
+        var rows: any = [];
         return (
             <div>
-            <h2>This derived from</h2>
-            <p>Method: ...</p>
-            <table>
-                <thead>
+                <h2>This derived from</h2>
+                <p>Method: ...</p>
+                <table>
+                    <thead>
                     <tr>
                         <th>Label</th>
                         <th>Dateset</th>
                         <th>Version</th>
                         <th>Filename</th>
                     </tr>
-                </thead>
-                <tbody>
+                    </thead>
+                    <tbody>
                     {rows}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
 
-            <h2>Derived from this</h2>
-            <table>
-                <thead>
+                <h2>Derived from this</h2>
+                <table>
+                    <thead>
                     <tr>
                         <th>Filenames</th>
                         <th>Dateset</th>
                         <th>Version</th>
                     </tr>
-                </thead>
-                <tbody>
+                    </thead>
+                    <tbody>
                     {rows}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
 
             </div>
-            )
-        }
+        )
+    }
 });
 
 
 const NoMatch = React.createClass({
     render() {
-    return (
-        <div>
-        No such page
-        </div>
+        return (
+            <div>
+                No such page
+            </div>
         )
     }
-})
+});
 
 
 // tapi.get_user().then(user => {
@@ -206,21 +205,21 @@ const NoMatch = React.createClass({
 //     console.log("Folder:", folder);
 // })
 
-            // <IndexRoute component={DatasetDetails}/>
-            // <Route path="activity" component={ActivityView}/>
-            // <Route path="provenance" component={ProvenanceView}/>
+// <IndexRoute component={DatasetDetails}/>
+// <Route path="activity" component={ActivityView}/>
+// <Route path="provenance" component={ProvenanceView}/>
 
-
-ReactDOM.render((
-  <Router history={browserHistory}>
-    <Route path={relativePath('')} component={App}>
-        <IndexRoute component={Home} />
-        <Route path="dataset/:datasetId" component={DatasetView as any}/>
-        <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any}/>
-        <Route path="folder/:folderId" component={FolderView as any}/>
-        <Route path="token/" component={ Token as any }/>
-    </Route>
-    <Route path="*" component={NoMatch}/>
-  </Router>
-), document.getElementById('root'))
-
+tapi.get_user().then((user: User) => {
+    ReactDOM.render((
+        <Router history={browserHistory}>
+            <Route path={relativePath('')} component={App} user={user}>
+                <IndexRoute component={Home}/>
+                <Route path="dataset/:datasetId" component={DatasetView as any}/>
+                <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any}/>
+                <Route path="folder/:folderId" component={FolderView as any}/>
+                <Route path="token/" component={ Token as any }/>
+            </Route>
+            <Route path="*" component={NoMatch}/>
+        </Router>
+    ), document.getElementById('root'));
+});

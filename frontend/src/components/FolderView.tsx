@@ -52,10 +52,12 @@ export class Conditional extends React.Component<any, any> {
 }
 
 let tapi: TaigaApi = null;
+let currentUser: string = null;
 
 export class FolderView extends React.Component<FolderViewProps, FolderViewState> {
     static contextTypes = {
-        tapi: React.PropTypes.object
+        tapi: React.PropTypes.object,
+        currentUser: React.PropTypes.string
     };
 
     componentDidUpdate(prevProps: FolderViewProps) {
@@ -69,6 +71,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     componentDidMount() {
         tapi = (this.context as any).tapi;
+        currentUser = (this.context as any).currentUser;
         this.doFetch();
     }
 
@@ -140,7 +143,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     createFolder(name: string, description: string) {
         const current_folder_id: string = this.state.folder.id;
         // TODO: To fetch instead the current user once we have the authentication
-        const current_creator_id: string = this.state.folder.creator.id;
+        const current_creator_id: string = currentUser;
 
         tapi.create_folder(current_folder_id, current_creator_id, name, description).then(() => {
             return this.doFetch();

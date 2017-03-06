@@ -6,9 +6,9 @@ import datetime
 from sqlalchemy import MetaData
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import event
 
 from flask_sqlalchemy import SQLAlchemy
-
 
 convention = {
     "ix": 'ix_%(column_0_label)s',
@@ -33,6 +33,7 @@ def generate_uuid():
 def generate_str_uuid():
     return str(uuid.uuid4())
 
+
 # Associations #
 
 # Association table for Many to Many relationship between folder and entries
@@ -41,6 +42,7 @@ folder_entry_association_table = db.Table('folder_entry_association',
                                           db.Column('folder_id', GUID, db.ForeignKey('folders.id')),
                                           db.Column('entry_id', GUID, db.ForeignKey('entries.id'))
                                           )
+
 
 # End Associations #
 
@@ -114,7 +116,6 @@ class Entry(db.Model):
 
 
 class Folder(Entry):
-
     # Enum Folder types
     # TODO: Could be a good idea to transform these enums into Classes. So they can have different behaviors if needed
     class FolderType(enum.Enum):
@@ -136,6 +137,17 @@ class Folder(Entry):
     __mapper_args__ = {
         'polymorphic_identity': "Folder"
     }
+
+
+@event.listens_for(Folder.__table__, 'after_create')
+def public_folder_creation(*args, **kwargs):
+    """After we create the table Folder, we also add the folder `public`"""
+    public_folder = Folder(name="Public",
+                           folder_type="folder",
+                           description="Public folder accessible by everybody having access to Taiga",
+                           id="public")
+    db.session.add(public_folder)
+    db.session.commit()
 
 
 class Dataset(Entry):
@@ -181,9 +193,9 @@ class DataFile(db.Model):
     dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
 
     dataset_version = db.relationship("DatasetVersion",
-                              foreign_keys=[dataset_version_id],
-                              backref=db.backref(__tablename__,
-                              cascade="all, delete-orphan"))
+                                      foreign_keys=[dataset_version_id],
+                                      backref=db.backref(__tablename__,
+                                                         cascade="all, delete-orphan"))
 
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)
@@ -192,7 +204,7 @@ class DataFile(db.Model):
 _INTIAL_TO_CONVERTED_MAPPING = {InitialFileType.NumericMatrixCSV: DataFile.DataFileType.HDF5,
                                 InitialFileType.NumericMatrixTSV: DataFile.DataFileType.HDF5,
                                 InitialFileType.GCT: DataFile.DataFileType.HDF5,
-                                InitialFileType.Table : DataFile.DataFileType.Columnar,
+                                InitialFileType.Table: DataFile.DataFileType.Columnar,
                                 InitialFileType.Raw: DataFile.DataFileType.Raw,
                                 }
 
