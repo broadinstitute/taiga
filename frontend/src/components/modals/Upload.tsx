@@ -124,6 +124,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     }
 
     componentWillReceiveProps(nextProps: any) {
+        // TODO: Some of the behavior should be on the calling side
         // We clean the filesStatus when we open this Upload Modal (isVisible is True, and previously was False)
         if (nextProps.isVisible && !this.props.isVisible) {
             // We clean the uploadedFileStatus
@@ -134,6 +135,14 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 validationState: null,
                 help: null
             });
+
+            // If we are called on a new Dataset Version => Should be set on the calling side
+            if (isNullOrUndefined(nextProps.readOnlyName)) {
+                this.setState({
+                    nameValue: "",
+                    descriptionValue: ""
+                });
+            }
 
             // We renew the s3_credentials
             this.renew_s3_credentials();

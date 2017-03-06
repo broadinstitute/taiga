@@ -61,8 +61,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     componentDidUpdate(prevProps: FolderViewProps) {
         console.log("We updated folderView");
         // respond to parameter change in scenario 3
-        let oldId = prevProps.params.folderId
-        let newId = this.props.params.folderId
+        let oldId = prevProps.params.folderId;
+        let newId = this.props.params.folderId;
         if (newId !== oldId)
             this.doFetch();
     }
