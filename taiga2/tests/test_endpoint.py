@@ -134,6 +134,8 @@ def new_dataset(session: SessionBase, new_upload_session_file):
 
 
 def test_create_new_dataset_version(session: SessionBase, new_dataset, new_upload_session_file):
+    new_description = "My new description!"
+
     session_id = new_upload_session_file.session.id
 
     # TODO: Get instead the last datasetVersion
@@ -146,6 +148,7 @@ def test_create_new_dataset_version(session: SessionBase, new_dataset, new_uploa
     datasetVersionMetadata = {
         'sessionId': session_id,
         'datasetId': new_dataset.id,
+        'newDescription': new_description,
         'datafileIds': datafile_ids
     }
 
@@ -158,4 +161,5 @@ def test_create_new_dataset_version(session: SessionBase, new_dataset, new_uploa
     # TODO: Test the number of uploaded files in the session + the number of datafile_ids instead
     assert len(_new_dataset_version.datafiles) == len(datafile_ids) + 1
 
+    assert _new_dataset_version.description == new_description
     # TODO: Check if the datafiles in the new dataset_version are the same (filename/name) than in the new_upload_session_file + in the previous_dataset_version_datafiles

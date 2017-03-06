@@ -25,6 +25,7 @@ db = SQLAlchemy(metadata=metadata)
 
 GUID = db.String(80)
 
+
 def generate_uuid():
     return uuid.uuid4().hex
 
@@ -99,6 +100,9 @@ class Entry(db.Model):
     creator = db.relationship("User",
                               foreign_keys="Entry.creator_id",
                               backref=__tablename__)
+
+    description = db.Column(db.Text)
+
     __mapper_args__ = {
         'polymorphic_identity': classmethod.__class__.__name__,
         'polymorphic_on': type,
@@ -124,7 +128,6 @@ class Folder(Entry):
     id = db.Column(GUID, db.ForeignKey('entries.id'), primary_key=True)
 
     folder_type = db.Column(db.Enum(FolderType))
-    description = db.Column(db.Text)
 
     entries = db.relationship("Entry",
                               secondary=folder_entry_association_table,
@@ -141,8 +144,6 @@ class Dataset(Entry):
     __tablename__ = 'datasets'
 
     id = db.Column(GUID, db.ForeignKey('entries.id'), primary_key=True)
-
-    description = db.Column(db.Text, default="No description provided")
 
     # TODO: Use the name/key of the dataset and add behind the uuid?
     permaname = db.Column(db.Text)

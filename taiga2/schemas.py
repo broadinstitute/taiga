@@ -6,12 +6,12 @@ from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile
 
 ma = Marshmallow()
 
+
 class UserSchema(ma.ModelSchema):
     class Meta:
         fields = ('id', 'name',
                   'home_folder_id', 'trash_folder_id',
                   'token')
-
 
 class UserNamedIdSchema(ma.ModelSchema):
     class Meta:
@@ -105,7 +105,7 @@ class DatasetVersionSchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'name', 'dataset_id',
                       'creation_date', 'creator', 'datafiles',
-                      'version', 'parents')
+                      'description', 'version', 'parents')
     creator = ma.Nested(UserNamedIdSchema)
     datafiles = ma.Nested(DataFileSchema, many=True)
     # TODO: Consolidate the term between folders and parents
@@ -116,7 +116,7 @@ class DatasetVersionFullDatasetSchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'name', 'dataset',
                       'creation_date', 'creator', 'datafiles',
-                      'version', 'parents')
+                      'description', 'version', 'parents')
     dataset = ma.Nested(DatasetSchema)
     creator = ma.Nested(UserNamedIdSchema)
     datafiles = ma.Nested(DataFileSummarySchema, many=True)

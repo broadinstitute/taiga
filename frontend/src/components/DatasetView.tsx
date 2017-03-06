@@ -1,6 +1,6 @@
 import * as React from "react";
 import {Link} from 'react-router';
-import {Button} from "react-bootstrap";
+import {Well} from "react-bootstrap";
 
 import {LeftNav} from "./LeftNav"
 
@@ -103,6 +103,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         // We ask to create the dataset
         return tapi.create_new_dataset_version(sid,
             this.state.dataset.id,
+            description,
             datafileIds
         ).then((dataset_version_id) => {
             // We fetch the datasetVersion of the newly created dataset and change the state of it
@@ -246,7 +247,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     currentFolderId={this.state.dataset.folders[0].id}
                     title="New Dataset Version"
                     readOnlyName={ this.state.dataset.name }
-                    readOnlyDescription={ this.state.dataset.description }
+                    previousDescription={ this.state.datasetVersion.description }
                     previousVersionName={ this.state.datasetVersion.name }
                     previousVersionFiles={ this.state.datasetVersion.datafiles }
                 />
@@ -258,7 +259,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <p>Contained within {folders}</p>
                 {ancestor_section}
 
-                {Dialogs.renderDescription(this.state.dataset.description)}
+                <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
+                {/*{Dialogs.renderDescription(this.state.dataset.description)}*/}
 
                 <h2>Contents</h2>
                 <table className="table">

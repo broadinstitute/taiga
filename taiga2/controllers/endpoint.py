@@ -207,7 +207,7 @@ def create_new_upload_session():
 def create_dataset(sessionDatasetInfo):
     session_id = sessionDatasetInfo['sessionId']
     dataset_name = sessionDatasetInfo['datasetName']
-    dataset_description = sessionDatasetInfo['datasetDescription']
+    dataset_description = sessionDatasetInfo.get('datasetDescription', None)
     current_folder_id = sessionDatasetInfo['currentFolderId']
 
     added_dataset = models_controller.add_dataset_from_session(session_id,
@@ -223,11 +223,13 @@ def create_new_dataset_version(datasetVersionMetadata):
 
     session_id = datasetVersionMetadata['sessionId']
     dataset_id = datasetVersionMetadata['datasetId']
+    new_description = datasetVersionMetadata['newDescription']
     existing_datafiles_id = datasetVersionMetadata['datafileIds']
 
     new_dataset_version = models_controller.create_new_dataset_version_from_session(session_id,
                                                                                     dataset_id,
-                                                                                    existing_datafiles_id)
+                                                                                    existing_datafiles_id,
+                                                                                    new_description=new_description)
 
     return flask.jsonify(new_dataset_version.id)
 

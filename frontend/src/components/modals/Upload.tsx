@@ -42,6 +42,10 @@ interface DropzoneProps extends DialogProps {
     // TODO: Only pass the previousVersion, so we can take the previous DataFiles from it too
     previousVersionName?: string;
 
+    // If we want to change the description, we can use this to pass the previous description
+    // It can't be compatible with readOnlyDescription
+    previousDescription?: string;
+
     validationState?: string;
     help?: string;
 }
@@ -100,7 +104,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             disableUpload: true,
             datasetFormDisabled: false,
             nameValue: '',
-            descriptionValue: '',
+            descriptionValue: this.props.previousDescription,
             previousVersionFilesIdsSelected: [],
             validationState: null,
             help: null

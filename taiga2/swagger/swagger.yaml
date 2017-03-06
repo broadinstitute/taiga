@@ -284,14 +284,11 @@ paths:
             required:
               - sessionId
               - datasetName
-              - datasetDescription
               - currentFolderId
             properties:
               sessionId:
                 type: string
               datasetName:
-                type: string
-              datasetDescription:
                 type: string
               currentFolderId:
                 type: string
@@ -409,6 +406,7 @@ paths:
               - name
               - creation_date
               - creator
+              - description
               - datafiles
               - version
             properties:
@@ -428,6 +426,8 @@ paths:
                 type: string
               creator:
                 "$ref": "#/definitions/NamedId"
+              description:
+                type: string
               datafiles:
                 type: array
                 items:
@@ -481,6 +481,7 @@ paths:
               - creation_date
               - creator
               - datafiles
+              - description
               - version
             properties:
               id:
@@ -525,6 +526,8 @@ paths:
                     content_summary:
                       description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
                       type: string
+              description:
+                type: string
               provenance:
                 "$ref": "#/definitions/Provenance"
 
@@ -604,6 +607,7 @@ paths:
               - creation_date
               - creator
               - datafiles
+              - description
               - version
               - folders
             properties:
@@ -650,6 +654,8 @@ paths:
                     content_summary:
                       description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
                       type: string
+              description:
+                type: string
               provenance:
                 "$ref": "#/definitions/Provenance"
 
@@ -668,11 +674,14 @@ paths:
             required:
               - sessionId
               - datasetId
+              - newDescription
               - datafileIds
             properties:
               sessionId:
                 type: string
               datasetId:
+                type: string
+              newDescription:
                 type: string
               datafileIds:
                 type: array

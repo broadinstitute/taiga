@@ -224,6 +224,7 @@ def add_dataset(name,
         db.session.flush()
         new_dataset_version = add_dataset_version(dataset_id=new_dataset.id,
                                                   datafiles_ids=datafiles_ids,
+                                                  new_description=description,
                                                   anterior_creation_date=creation_date)
 
         db.session.add(new_dataset_version)
@@ -334,6 +335,7 @@ def update_dataset_creation_date(dataset_id, new_date):
 def update_dataset_contents(dataset_id,
                             datafiles_id_to_remove=None,
                             datafiles_id_to_add=None,
+                            new_description=None,
                             comments="No comments"):
     # TODO: Does it make sense to have a "add datafiles?". Each datafile belongs to a dataset_version
     if not datafiles_id_to_remove:
@@ -360,6 +362,11 @@ def update_dataset_contents(dataset_id,
         if dataset_version.version > max_version:
             dataset_version_latest_version = dataset_version
 
+    _description = dataset.description
+
+    if new_description is not None:
+        _description = new_description
+
     # latest_version_datafiles = dataset_version_latest_version.datafiles
 
     # Create the new dataset_version from the latest and update its version
@@ -367,7 +374,8 @@ def update_dataset_contents(dataset_id,
     new_updated_dataset_version = add_dataset_version(dataset_id=dataset_version_latest_version.dataset.id,
                                                       datafiles_ids=[datafile.id
                                                                      for datafile in
-                                                                     dataset_version_latest_version.datafiles])
+                                                                     dataset_version_latest_version.datafiles],
+                                                      new_description=_description)
 
     new_updated_version_datafiles = new_updated_dataset_version.datafiles
 
@@ -409,6 +417,7 @@ def delete_dataset(dataset_id):
 # <editor-fold desc="DatasetVersion">
 def add_dataset_version(dataset_id,
                         datafiles_ids=None,
+                        new_description=None,
                         permaname=None,
                         anterior_creation_date=None):
     assert len(datafiles_ids) > 0
@@ -435,15 +444,27 @@ def add_dataset_version(dataset_id,
     if anterior_creation_date:
         creation_date = _get_datetime_from_string(anterior_creation_date)
 
+    _description = new_description
+
+    if _description is None:
+        _description = dataset.description
+
     # Create the DatasetVersion object
     new_dataset_version = DatasetVersion(name=name,
                                          creator=creator,
                                          dataset=dataset,
                                          datafiles=datafiles,
+                                         description=new_description,
                                          version=version,
                                          creation_date=creation_date)
 
-    db.session.add(new_dataset_version)
+    # We now update the dataset description with the latest datasetVersion description
+    # TODO: We should probably remove the description of a dataset, to use only the DatasetVersion one
+    if new_description is not None:
+        dataset.description = _description
+        db.session.add(new_dataset_version)
+
+    db.session.add(dataset)
     db.session.commit()
 
     return new_dataset_version
@@ -451,7 +472,9 @@ def add_dataset_version(dataset_id,
 
 def create_new_dataset_version_from_session(session_id,
                                             dataset_id,
-                                            existing_datafiles_id):
+                                            existing_datafiles_id,
+                                            new_description=None):
+
     added_datafiles = add_datafiles_from_session(session_id)
     added_datafile_ids = [datafile.id for datafile in added_datafiles]
 
@@ -460,8 +483,18 @@ def create_new_dataset_version_from_session(session_id,
 
     all_datafile_ids = added_datafile_ids + copied_existing_datafiles_ids
 
+    _description = None
+
+    # If the description if filled it means we want to change it, otherwise we take the dataset one
+    # TODO: It would be less dangerous to take the latest datasetVersion description
+    if new_description is not None:
+        _description = new_description
+    else:
+        _description = get_entry(dataset_id).description
+
     new_dataset_version = add_dataset_version(dataset_id=dataset_id,
-                                              datafiles_ids=all_datafile_ids)
+                                              datafiles_ids=all_datafile_ids,
+                                              new_description=_description)
 
     return new_dataset_version
 
@@ -639,8 +672,8 @@ def changer_owner(entry_id, new_creator_id):
 
     db.session.add(entry)
     db.session.commit()
-
 # </editor-fold>
+
 
 # <editor-fold desc="DataFile">
 def add_datafile(s3_bucket,
