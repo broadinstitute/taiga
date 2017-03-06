@@ -51,7 +51,8 @@ for name, permaname, is_public, latest_version in conn.execute("select name, per
 
     w_ds_csv.writerow([name, permaname, description, folder])
 
-    for dataset_id, version, hdf5_path, columnar_path, created_by, created_timestamp in conn.execute("select dataset_id, version, hdf5_path, columnar_path, u.email, created_timestamp from data_version v join named_data nd on nd.named_data_id = v.named_data_id join user u on u.user_id = v.created_by_user_id where nd.permaname = ? order by v.version", [permaname]).fetchall():
+    dv_count = 0
+    for dataset_id, version, hdf5_path, columnar_path, created_by, created_timestamp in conn.execute("select dataset_id, version, hdf5_path, columnar_path, u.email, created_timestamp from data_version v join named_data nd on nd.named_data_id = v.named_data_id left outer join user u on u.user_id = v.created_by_user_id where nd.permaname = ? order by v.version", [permaname]).fetchall():
         if hdf5_path is not None:
             df_type = "hdf5"
             filename = dataset_id+".hdf5"
@@ -59,7 +60,11 @@ for name, permaname, is_public, latest_version in conn.execute("select name, per
             df_type = "columnar"
             filename = dataset_id+".columnar"
         short_desc = get_summary(filename)
+        if created_by is None:
+            created_by = "unowned-from-taiga1@broadinstitute.org"
         w_dv_csv.writerow([permaname, dataset_id, version, df_type, short_desc, created_by, created_timestamp, "s3://taiga2/migrated/"+filename])
+        dv_count += 1
+    assert dv_count > 0, "{} has no versions".format(permaname) 
 
 w_ds.close()
 w_dv.close()
