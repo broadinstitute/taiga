@@ -107,6 +107,8 @@ For our case, it is pretty simple:
   
 ***Warning: Be careful to not override your existing configuration!***
 
+Then create the folder `upload` and the folder `convert`.
+
 #### Configure Taiga to use your Bucket
 
 ***Coming soon***

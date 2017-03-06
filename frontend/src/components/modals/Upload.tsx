@@ -251,13 +251,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             // Create an upload promise via the aws sdk and launch it
             let uploadPromise = upload.promise();
             // TODO: Manage all the errors that can come along the way
-            return uploadPromise.then((s3uploadeData: S3UploadedData) => {
+            return uploadPromise.then((s3uploadData: S3UploadedData) => {
                 // TODO: Send the signal the upload is done on the AWS side, so you can begin the conversion on the backend
                 // POST
                 // We need to retrieve the filetype and the filename to send it to the api too
-                let uploadedFileStatus = this.retrieveFileStatus(s3uploadeData.Key);
+                let uploadedFileStatus = this.retrieveFileStatus(s3uploadData.Key);
 
-                let s3FileMetadata = new S3UploadedFileMetadata(s3uploadeData,
+                let s3FileMetadata = new S3UploadedFileMetadata(s3uploadData,
                     uploadedFileStatus.fileName,
                     uploadedFileStatus.fileType);
 

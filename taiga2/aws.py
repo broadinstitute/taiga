@@ -56,6 +56,7 @@ class AWSClients:
 
 aws = AWSClients()
 
+
 def parse_s3_url(url):
     g = re.match("s3://([^/]+)/(.*)", url)
 
@@ -66,6 +67,7 @@ def parse_s3_url(url):
     assert g is not None, "Could not parse {} into bucket and key".format(repr(url))
 
     return g.group(1), g.group(2)
+
 
 def sign_url(url):
     # TODO: Set expiry on signing url
