@@ -105,6 +105,8 @@ def add_folder(name,
 
 
 def get_folder(folder_id):
+    all_folders = db.session.query(Folder).all()
+    print("All folders in db: {}".format([folder.id for folder in all_folders]))
     return db.session.query(Folder).filter(Folder.id == folder_id).one()
 
 
@@ -673,7 +675,6 @@ def changer_owner(entry_id, new_creator_id):
     db.session.add(entry)
     db.session.commit()
 # </editor-fold>
-
 
 # <editor-fold desc="DataFile">
 def add_datafile(s3_bucket,

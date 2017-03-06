@@ -133,8 +133,6 @@ class Folder(Entry):
                               secondary=folder_entry_association_table,
                               backref="parents")
 
-
-
     __mapper_args__ = {
         'polymorphic_identity': "Folder"
     }

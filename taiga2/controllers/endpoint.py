@@ -1,13 +1,16 @@
-from flask import current_app, json
+import flask
+import logging
+
+from sqlalchemy.orm.exc import NoResultFound
+
 # TODO: Change the app containing db to api_app => current_app
 import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import DataFile
 
-from sqlalchemy.orm.exc import NoResultFound
-
-import logging
+from taiga2.aws import aws
+from taiga2.aws import sign_url as aws_sign_url
 
 log = logging.getLogger(__name__)
 
@@ -15,10 +18,6 @@ log = logging.getLogger(__name__)
 from flask import render_template, request, redirect, url_for
 import os, json
 
-from taiga2.aws import aws
-from taiga2.aws import sign_url as aws_sign_url
-
-import flask
 
 ADMIN_USER_ID = "admin"
 
@@ -52,6 +51,7 @@ def create_folder(metadata):
 
 
 def get_folder(folder_id):
+    print("We received the request of this folder id: {}".format(folder_id))
     folder = models_controller.get_folder(folder_id)
     if folder is None:
         flask.abort(404)

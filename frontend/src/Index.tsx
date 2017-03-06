@@ -7,26 +7,58 @@ import { FolderView } from "./components/FolderView"
 import { DatasetView } from "./components/DatasetView"
 
 import { TaigaApi } from "./models/api"
+import { User } from "./models/models"
+
 import { Token } from "./components/Token"
 
 import { relativePath } from "./utilities/route"
 import {isNullOrUndefined} from "util";
 
+interface AppState {
+    user?: User;
+}
+
 const tapi = new TaigaApi(relativePath("api"));
 
-const App = React.createClass({
+class App extends React.Component<any, AppState>{
+    static childContextTypes = {
+        tapi: React.PropTypes.object
+    };
+
+    constructor(props: any) {
+        super(props);
+    }
+
     getChildContext() {
         return {tapi: tapi};
-    },
-    
+    };
+
+    componentDidMount() {
+        // TODO: We should find a way to only get_user once, instead of in Home and in App
+        tapi.get_user().then((user: User) => {
+            this.setState({
+                user: user
+            });
+        });
+    }
+
     render() {
+        const trash_link: any = (this.state && this.state.user &&
+            <Link to={relativePath('folder/'+this.state.user.trash_folder_id)}>Trash</Link>
+        );
+
         return (
             <div id="main_react">
                 <div id="header">
                     <div className="top-page-menu">
                         <img id="taiga_logo"/>
+                        {/*TODO: Change the way we manage spaces*/}
                         <span>Taiga</span>
                         <Link to={relativePath('')}>Home</Link>
+                        <span></span>
+                        <Link to={relativePath('folder/public')}>Public</Link>
+                        <span></span>
+                        {trash_link}
                     </div>
 
                     <div className="login-box pull-right">
@@ -51,10 +83,7 @@ const App = React.createClass({
             </div>
         )
     }
-});
-App.childContextTypes = {
-    tapi: React.PropTypes.object
-};
+}
 
 const Home = React.createClass({
     getInitialState() {
@@ -151,7 +180,7 @@ const ProvenanceView = React.createClass({
                 <tbody>
                     {rows}
                 </tbody>
-            </table>            
+            </table>
 
             </div>
             )
