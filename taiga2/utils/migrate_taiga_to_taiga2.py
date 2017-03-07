@@ -23,6 +23,7 @@ class DatasetVersionFileInfo:
 
 
 def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
+    # TODO: We should handle the Public folder properly, instead of adding it to Philip's account
     # Summary
     nb_user_created = 0
     nb_user_skipped = 0

@@ -3,6 +3,8 @@ import uuid
 import re
 import datetime
 
+from flask_migrate import Migrate
+
 from sqlalchemy import MetaData
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID
@@ -17,6 +19,8 @@ convention = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
     "pk": "pk_%(table_name)s"
 }
+
+migrate = Migrate()
 
 metadata = MetaData(naming_convention=convention)
 db = SQLAlchemy(metadata=metadata)
