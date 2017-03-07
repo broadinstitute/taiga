@@ -22,6 +22,8 @@ setup(
         'requests==2.11.0',
         'six==1.10.0',
         'SQLAlchemy==1.1.4',
+        'Flask-Migrate==2.0.3',
+        'Flask-Script==2.0.5',
         'Flask-SQLAlchemy==2.1',
         'marshmallow-sqlalchemy==0.12.1',
         'flask-marshmallow==0.7.0',
