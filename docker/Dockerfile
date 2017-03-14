@@ -51,6 +51,15 @@ RUN pip3 install -q attrs==16.2.0 \
         numpy==1.11.3 \
         psycopg2==2.6.2
 
+# Install R dependencies
+RUN gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
+RUN gpg -a --export E084DAB9 | apt-key add -
+RUN echo "deb http://cran.rstudio.com/bin/linux/ubuntu xenial/" | tee -a /etc/apt/sources.list
+RUN apt-get update -y
+RUN apt-get -y install r-base r-base-dev
+RUN echo "r <- getOption('repos'); r['CRAN'] <- 'http://cran.us.r-project.org'; options(repos = r);" > ~/.Rprofile
+RUN Rscript -e "source(\"https://bioconductor.org/biocLite.R\"); biocLite(\"rhdf5\")"
+
 RUN apt-get update -y
 
 # Install supervisor
