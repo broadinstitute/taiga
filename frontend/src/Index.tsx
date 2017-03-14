@@ -209,6 +209,8 @@ const NoMatch = React.createClass({
 // <Route path="activity" component={ActivityView}/>
 // <Route path="provenance" component={ProvenanceView}/>
 
+// TODO: let UserRoute: Component<UserRouteProps, ComponentState> = Route as any
+
 tapi.get_user().then((user: User) => {
     ReactDOM.render((
         <Router history={browserHistory}>

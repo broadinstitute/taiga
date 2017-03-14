@@ -62,6 +62,7 @@ export class TaigaApi {
         return this._fetch<User>("/user")
     }
 
+    // TODO: Replace with FolderFullDatasetVersions
     get_folder(folderId: string): Promise<Folder> {
         return this._fetch<Folder>("/folder/" + folderId)
     }
