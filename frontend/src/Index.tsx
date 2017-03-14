@@ -63,7 +63,7 @@ class App extends React.Component<AppProps, any> {
                     <div className="login-box pull-right">
                         <Link className="tokenLink" to={relativePath('token/')}>My Token</Link>
                         {/*TODO: Change this a proper logout behavior*/}
-                        <Link className="logoutLink" to={relativePath('')}>Logout</Link>
+                        {/*<Link className="logoutLink" to={relativePath('')}>Logout</Link>*/}
                     </div>
                 </div>
 
