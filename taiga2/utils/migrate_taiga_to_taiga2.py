@@ -36,6 +36,7 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
     nb_dataset_version_created = 0
     nb_dataset_version_skipped = 0
 
+
     # Dictionary to link find the dataset matching the dataset via the permanames to create the dataset versions
     # Dict<String, Array<int>>
     dict_permaname_datafile_ids = {}
@@ -46,6 +47,8 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
         reader = csv.DictReader(dataset_file)
 
         for row in reader:
+            is_public = False
+
             if not row["permaname"]:
                 print("Warning: We found an empty permaname entry: {}. Skipping it.".format(row))
                 nb_row_dataset_skipped += 1
@@ -72,6 +75,7 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
                 dataset_folder_name = dataset_folder_user.split("(")[0]
             else:
                 # For now, we store all the others into pmontgomery@broadinstitute.org
+                is_public = True
                 dataset_folder_name = row["folder"]
                 dataset_user_email = "pmontgom@broadinstitute.org"
 
@@ -88,7 +92,7 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
 
             flask.g.current_user = dataset_current_user
 
-            # TODO: We should not create the dataset if it is already existing
+            # TODO: We should not create the dataset if it already exists
             new_dataset = models_controller.add_dataset(name=dataset_name,
                                                         permaname=dataset_permaname,
                                                         description=dataset_description)
@@ -101,14 +105,19 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
                 else:
                     dataset_folder = models_controller.get_folder_by_name(dataset_folder_name)
             except NoResultFound:
-                # If no result, it means we need to create the folder in the user space
+                # If no result, it means we need to create the folder in the user space or in public
                 dataset_folder = models_controller.add_folder(name=dataset_folder_name,
                                                               folder_type='folder',
                                                               description=None)
 
-                models_controller.move_to_folder(entry_ids=[dataset_folder.id],
-                                                 current_folder_id=None,
-                                                 target_folder_id=dataset_current_user.home_folder_id)
+                if is_public:
+                    models_controller.move_to_folder(entry_ids=[dataset_folder.id],
+                                                     current_folder_id=None,
+                                                     target_folder_id=models_controller.get_public_folder().id)
+                else:
+                    models_controller.move_to_folder(entry_ids=[dataset_folder.id],
+                                                     current_folder_id=None,
+                                                     target_folder_id=dataset_current_user.home_folder_id)
 
             # Now we can move the dataset to the folder
             models_controller.move_to_folder([new_dataset.id], None, dataset_folder.id)

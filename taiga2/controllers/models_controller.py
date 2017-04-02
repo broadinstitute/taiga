@@ -122,6 +122,11 @@ def get_folder_by_name(folder_name):
         return folder
 
 
+def get_public_folder():
+    public_folder = db.session.query(Folder).filter(Folder.id == 'public').first()
+    return public_folder
+
+
 def update_folder_name(folder_id, new_name):
     folder = get_folder(folder_id)
 
