@@ -112,6 +112,10 @@ export class TaigaApi {
         return this._post<void>("/dataset/" + dataset_id + "/description", {description: description})
     }
 
+    update_dataset_version_description(dataset_version_id: string, description: string) {
+        return this._post<void>("/datasetVersion/" + dataset_version_id + "/description", {description: description})
+    }
+
     create_folder(current_folder_id: string, current_user_id: string, name: string, description: string) {
         return this._post<NamedId>("/folder/create", {
             'creatorId': current_user_id,

@@ -419,7 +419,8 @@ def add_dataset_version(dataset_id,
                         datafiles_ids=None,
                         new_description=None,
                         permaname=None,
-                        anterior_creation_date=None):
+                        anterior_creation_date=None,
+                        forced_id=None):
     assert len(datafiles_ids) > 0
     assert isinstance(datafiles_ids, list)
 
@@ -456,7 +457,8 @@ def add_dataset_version(dataset_id,
                                          datafiles=datafiles,
                                          description=new_description,
                                          version=version,
-                                         creation_date=creation_date)
+                                         creation_date=creation_date,
+                                         id=forced_id)
 
     # We now update the dataset description with the latest datasetVersion description
     # TODO: We should probably remove the description of a dataset, to use only the DatasetVersion one
@@ -548,6 +550,17 @@ def get_dataset_version_by_dataset_id_and_dataset_version_id(dataset_id,
 
     return dataset_version
 
+
+def update_dataset_version_description(dataset_version_id,
+                                       new_description):
+    dataset_version = get_dataset_version(dataset_version_id)
+
+    dataset_version.description = new_description
+
+    db.session.add(dataset_version)
+    db.session.commit()
+
+    return dataset_version
 
 # </editor-fold>
 

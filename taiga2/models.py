@@ -143,7 +143,7 @@ class Folder(Entry):
     }
 
 
-@event.listens_for(Folder.__table__, 'after_create')
+@event.listens_for(metadata, 'after_create', once=True)
 def public_folder_creation(*args, **kwargs):
     """After we create the table Folder, we also add the folder `public`"""
     public_folder = Folder(name="Public",

@@ -10,8 +10,9 @@ from taiga2.controllers import models_controller
 
 
 class DataFileInfo:
-    def __init__(self, id, owner_email, version=None, creation_date=None):
+    def __init__(self, id, datafile, owner_email, version=None, creation_date=None):
         self.id = id
+        self.datafile = datafile
         self.owner_email = owner_email
         self.version = version
         self.creation_date = creation_date
@@ -167,13 +168,13 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
                                                           name=datafile_name,
                                                           type=datafile_type,
                                                           short_summary=datafile_short_summary,
-                                                          long_summary=datafile_long_summary,
-                                                          forced_id=datafile_id)
+                                                          long_summary=datafile_long_summary)
 
             # We register the datafile with its permaname dataset to later create the dataset version
             # with all the datafiles
             if dataset_permaname in dict_permaname_datafile_ids:
                 datafile_info = DataFileInfo(id=datafile_id,
+                                             datafile=new_datafile,
                                              version=datafile_version,
                                              creation_date=datafile_creation_date,
                                              owner_email=datafile_created_by)
@@ -197,8 +198,9 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
             flask.g.current_user = models_controller.get_user_by_email(datafile_info.owner_email)
             # TODO: We should not create the dataset_version if it already exists. ie version already exists for this dataset
             dataset_version = models_controller.add_dataset_version(dataset_id=dataset.id,
-                                                                    datafiles_ids=[datafile_info.id],
-                                                                    anterior_creation_date=datafile_info.creation_date)
+                                                                    datafiles_ids=[datafile_info.datafile.id],
+                                                                    anterior_creation_date=datafile_info.creation_date,
+                                                                    forced_id=datafile_info.id)
 
             # Then we edit the dataset version creation_date to the
             if int(datafile_info.version) == 1:
@@ -244,6 +246,6 @@ if __name__ == "__main__":
 
     with backend_app.app_context():
         # Use the next line only when you are sure you want to drop the db
-        # models_controller.db.drop_all()
+        models_controller.db.drop_all()
         create_db()
         populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path)

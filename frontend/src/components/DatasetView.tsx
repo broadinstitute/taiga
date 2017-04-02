@@ -75,8 +75,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     updateDescription(description: string) {
-        tapi.update_dataset_description(this.state.datasetVersion.dataset_id, description).then(() => {
-            return this.doFetch()
+        tapi.update_dataset_version_description(this.state.datasetVersion.id, description).then(() => {
+            return this.doFetch();
         })
     }
 
@@ -231,9 +231,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         } }/>
                 <Dialogs.EditDescription isVisible={this.state.showEditDescription}
                                          cancel={ () => { this.setState({showEditDescription: false})} }
-                                         initialValue={this.state.dataset.description}
+                                         initialValue={this.state.datasetVersion.description}
                                          save={ (description:string) => {
-                        this.setState({showEditDescription: false})
+                        this.setState({showEditDescription: false});
                         console.log("Save description: "+description);
                         this.updateDescription(description);
                     } }/>

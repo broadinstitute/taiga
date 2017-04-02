@@ -170,6 +170,12 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     return flask.jsonify(json_dv_and_dataset_data)
 
 
+def update_dataset_version_description(datasetVersionId, DescriptionUpdate):
+    models_controller.update_dataset_version_description(datasetVersionId,
+                                                         DescriptionUpdate["description"])
+    return flask.jsonify({})
+
+
 def create_upload_session_file(S3UploadedFileMetadata, sid):
     #      location:
     #      eTag:
