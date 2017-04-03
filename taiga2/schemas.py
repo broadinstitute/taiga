@@ -13,6 +13,7 @@ class UserSchema(ma.ModelSchema):
                   'home_folder_id', 'trash_folder_id',
                   'token')
 
+
 class UserNamedIdSchema(ma.ModelSchema):
     class Meta:
         fields = ('id', 'name')
@@ -121,4 +122,16 @@ class DatasetVersionFullDatasetSchema(ma.ModelSchema):
     creator = ma.Nested(UserNamedIdSchema)
     datafiles = ma.Nested(DataFileSummarySchema, many=True)
     # TODO: Consolidate the term between folders and parents
+    parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
+
+
+class DatasetFullSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('id', 'name', 'description',
+                      'permaname', 'dataset_versions', 'parents')
+    # TODO: Change this field to properly handle multiple permanames (a new permaname is added when we change the name of the dataset)
+    permaname = fields.fields.Function(lambda obj: [obj.permaname], dump_to='permanames')
+    dataset_versions = ma.Nested(DatasetVersionSchema,
+                                 many=True,
+                                 dump_to='versions')
     parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)

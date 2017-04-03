@@ -87,8 +87,20 @@ export interface Dataset {
     "name": string;
     "permanames": Array<string>;
     "description": string;
+    // TODO: Rename this and rework it, since it is "DatasetVersionNamedId" and not a true DatasetVersion(s)
     "versions": Array<DatasetVersions>;
     acl: Acl;
+    "folders": Array<NamedId>;
+}
+
+export interface DatasetFullDatasetVersions {
+    "id": string;
+    "name": string;
+    "permanames": Array<string>;
+    "description": string;
+    "versions": Array<DatasetVersion>;
+    acl: Acl;
+    // TODO: Should we stay without the full folders? Cyclic risks?
     "folders": Array<NamedId>;
 }
 

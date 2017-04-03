@@ -265,6 +265,13 @@ def get_dataset(dataset_id):
     return dataset
 
 
+def get_datasets(array_dataset_ids):
+    datasets = db.session.query(Dataset) \
+        .filter(Dataset.id.in_(array_dataset_ids)).all()
+
+    return datasets
+
+
 def get_dataset_from_permaname(dataset_permaname):
     dataset = db.session.query(Dataset) \
         .filter(Dataset.permaname == dataset_permaname) \

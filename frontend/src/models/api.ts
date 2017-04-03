@@ -2,7 +2,7 @@ import 'whatwg-fetch';
 
 import {
     User, Folder, Dataset, DatasetVersion, S3Credentials,
-    TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId
+    TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId, DatasetFullDatasetVersions
 } from './models';
 
 import { currentUserToken } from '../utilities/route';
@@ -69,6 +69,11 @@ export class TaigaApi {
 
     get_dataset(dataset_id: string): Promise<Dataset> {
         return this._fetch<Dataset>("/dataset/" + dataset_id)
+    }
+
+    get_datasets(datasetIds: Array<string>): Promise<Array<DatasetFullDatasetVersions>> {
+        // TODO: We should not use a post method for a get
+        return this._post<Array<DatasetFullDatasetVersions>>("/datasets", {datasetIds: datasetIds})
     }
 
     get_dataset_version(dataset_version_id: string): Promise<DatasetVersion> {

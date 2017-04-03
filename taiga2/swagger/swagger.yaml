@@ -299,6 +299,34 @@ paths:
             title: DatasetId
             type: string
 
+  /datasets:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_datasets
+      description: Fetch the details of a group of datasets
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: datasetIdsDict
+          schema:
+            type: object
+            required:
+              - datasetIds
+            properties:
+              datasetIds:
+                type: array
+                items:
+                  type: string
+      responses:
+        200:
+          description: The datasets objects with datasetVersions
+          schema:
+            title: DatasetsFull
+            type: array
+            items:
+              "$ref": "#/definitions/DatasetVersion"
+
   /dataset/{datasetId}:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -426,8 +454,6 @@ paths:
                 type: string
               creator:
                 "$ref": "#/definitions/NamedId"
-              description:
-                type: string
               datafiles:
                 type: array
                 items:
@@ -526,8 +552,6 @@ paths:
                     content_summary:
                       description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
                       type: string
-              description:
-                type: string
               provenance:
                 "$ref": "#/definitions/Provenance"
 
@@ -654,8 +678,6 @@ paths:
                     content_summary:
                       description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
                       type: string
-              description:
-                type: string
               provenance:
                 "$ref": "#/definitions/Provenance"
 

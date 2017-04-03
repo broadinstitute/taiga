@@ -32,6 +32,20 @@ def get_dataset(datasetId):
     return flask.jsonify(json_dataset_data)
 
 
+def get_datasets(datasetIdsDict):
+    print("In get_datasets we just received: {}".format(datasetIdsDict['datasetIds']))
+    array_dataset_ids = datasetIdsDict['datasetIds']
+    datasets = models_controller.get_datasets(array_dataset_ids)
+    print("Done getting the datasets")
+
+    dataset_schema = schemas.DatasetFullSchema(many=True)
+    json_data_datasets = dataset_schema.dump(datasets).data
+
+    print("Done dumping the data")
+
+    return flask.jsonify(json_data_datasets)
+
+
 def create_folder(metadata):
     # TODO: Add the add_folder_entry inside the add_folder function?
     folder_name = metadata['name']

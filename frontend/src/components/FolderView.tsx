@@ -15,6 +15,9 @@ import {relativePath} from "../utilities/route";
 
 import {Glyphicon} from "react-bootstrap";
 import {Dataset} from "../models/models";
+import {DatasetVersion} from "../models/models";
+import {isUndefined} from "util";
+import {DatasetFullDatasetVersions} from "../models/models";
 
 export interface FolderViewProps {
     params: any
@@ -87,20 +90,57 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 return folder.entries
             }
         ).then((entries: Array<Folder.FolderEntries>) => {
-            let all_dataset_versions: Array<Promise<void>> = null;
-            all_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
-                if (entry.type == Folder.FolderEntries.TypeEnum.Dataset) {
-                    return tapi.get_dataset_version_last(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
-                        datasetsLatestDv[entry.id] = datasetVersion;
-                    });
-                }
-                else if (entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
-                    return tapi.get_dataset_version(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
-                        datasetsVersion[datasetVersion.id] = datasetVersion
-                    });
-                }
+            // We want to ask the server a bulk of the datasets and the datasetVersions
+            let datasetIds = entries.filter((entry: Folder.FolderEntries) => {
+                return entry.type == Folder.FolderEntries.TypeEnum.Dataset;
+            }).map((datasetEntry: Folder.FolderEntries) => {
+                return datasetEntry.id;
             });
-            return Promise.all(all_dataset_versions);
+            let datasetVersionIds = entries.filter((entry: Folder.FolderEntries) => {
+               return entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion;
+            }).map((datasetVersionEntry: Folder.FolderEntries) => {
+                return datasetVersionEntry.id;
+            });
+
+            // First we ask the dataset bulk
+            return tapi.get_datasets(datasetIds).then((arrayDatasets: Array<DatasetFullDatasetVersions>) => {
+                arrayDatasets.forEach((dataset: DatasetFullDatasetVersions) => {
+                    // We get the latest datasetVersion
+                    let latestDatasetVersion: DatasetVersion = dataset.versions[0];
+                    dataset.versions.forEach((datasetVersion: DatasetVersion) => {
+                        if (latestDatasetVersion.version < datasetVersion.version) {
+                            latestDatasetVersion = datasetVersion;
+                        }
+                    });
+                    datasetsLatestDv[dataset.id] = latestDatasetVersion;
+                });
+            }).then(() => {
+                // Then we ask the datasetVersion bulk
+                console.log("Success to get the datasets!");
+                // return tapi.get_datasetVersion_bulk(datasetVersionIds).then((arrayDatasetVersions: Array<DatasetVersion>) => {
+                //     arrayDatasetVersions.forEach((datasetVersion: DatasetVersion) => {
+                //         datasetsVersion[datasetVersion.id] = datasetVersion
+                //     });
+                // });
+            });
+
+            //
+
+            // let all_dataset_versions: Array<Promise<void>> = null;
+            // all_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
+            //     if (entry.type == Folder.FolderEntries.TypeEnum.Dataset) {
+            //
+            //         return tapi.get_dataset_version_last(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
+            //             datasetsLatestDv[entry.id] = datasetVersion;
+            //         });
+            //     }
+            //     else if (entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
+            //         return tapi.get_dataset_version(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
+            //             datasetsVersion[datasetVersion.id] = datasetVersion
+            //         });
+            //     }
+            // });
+            // return Promise.all(all_dataset_versions);
         }).then(() => {
             console.log("We reset the states");
             this.setState({
