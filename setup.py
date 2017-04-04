@@ -25,6 +25,7 @@ setup(
         'Flask-Migrate==2.0.3',
         'Flask-Script==2.0.5',
         'Flask-SQLAlchemy==2.1',
+        'marshmallow==2.11.1',
         'marshmallow-sqlalchemy==0.12.1',
         'flask-marshmallow==0.7.0',
         'marshmallow-enum==1.0',
