@@ -13,13 +13,15 @@ import {isNullOrUndefined} from "util";
 export class TaigaApi {
     baseUrl: string;
     authHeaders: any;
+    loading: boolean;
 
     constructor(baseUrl: string) {
         this.baseUrl = baseUrl;
         // TODO: Don't pass the name and email as clear strings. We could use a hash function shared between api_app and ui_app to encode/decode
         this.authHeaders = {
             "auth": "Bearer "+currentUserToken
-        }
+        };
+        this.loading = false;
     }
 
     _fetch<T>(url: string): Promise<T> {
@@ -35,7 +37,9 @@ export class TaigaApi {
                     return Promise.reject<Response>(new Error(response.statusText))
                 }
             })
-            .then<T>((response: Response) => response.json())
+            .then<T>((response: Response) => {
+                return response.json();
+            })
     }
 
     _post<T>(url: string, args: any): Promise<T> {
@@ -55,7 +59,9 @@ export class TaigaApi {
                     return Promise.reject<Response>(new Error(response.statusText))
                 }
             })
-            .then<T>((response: Response) => response.json())
+            .then<T>((response: Response) => {
+                return response.json();
+            })
     }
 
     get_user(): Promise<User> {

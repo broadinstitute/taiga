@@ -1,5 +1,6 @@
 import flask
 import logging
+import time
 
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -34,10 +35,17 @@ def get_dataset(datasetId):
 
 def get_datasets(datasetIdsDict):
     array_dataset_ids = datasetIdsDict['datasetIds']
-    datasets = models_controller.get_datasets(array_dataset_ids)
 
+    start_time = time.time()
+    datasets = models_controller.get_datasets(array_dataset_ids)
+    elapsed_time = time.time() - start_time
+    print("Time to get all the datasets: {}".format(elapsed_time))
+
+    start_time = time.time()
     dataset_schema = schemas.DatasetFullSchema(many=True)
     json_data_datasets = dataset_schema.dump(datasets).data
+    elapsed_time = time.time() - start_time
+    print("Time to dump all the datasets via Marshmallow: {}".format(elapsed_time))
 
     return flask.jsonify(json_data_datasets)
 

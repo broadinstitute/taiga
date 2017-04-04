@@ -12,6 +12,7 @@ import {TreeView} from "./modals/TreeView";
 
 import {toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
+import {LoadingOverlay} from "../utilities/loading";
 
 import {Glyphicon} from "react-bootstrap";
 import {Dataset} from "../models/models";
@@ -42,6 +43,8 @@ export interface FolderViewState {
 
     actionIntoFolderValidation?: string;
     actionIntoFolderHelp?: string;
+
+    loading?: boolean;
 }
 
 export class Conditional extends React.Component<any, any> {
@@ -80,6 +83,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     doFetch() {
         console.log("FolderView: componentDidMount");
+        this.setState({
+               loading: true
+        });
         // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
         let datasetsLatestDv: {[dataset_id: string]: Folder.DatasetVersion} = {};
         let datasetsVersion: {[datasetVersion_id: string]: Folder.DatasetVersion} = {};
@@ -97,12 +103,13 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 return datasetEntry.id;
             });
             let datasetVersionIds = entries.filter((entry: Folder.FolderEntries) => {
-               return entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion;
+                return entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion;
             }).map((datasetVersionEntry: Folder.FolderEntries) => {
                 return datasetVersionEntry.id;
             });
 
             // First we ask the dataset bulk
+
             return tapi.get_datasets(datasetIds).then((arrayDatasets: Array<DatasetFullDatasetVersions>) => {
                 arrayDatasets.forEach((dataset: DatasetFullDatasetVersions) => {
                     // We get the latest datasetVersion
@@ -121,10 +128,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     arrayDatasetVersions.forEach((datasetVersion: DatasetVersion) => {
                         datasetsVersion[datasetVersion.id] = datasetVersion
                     });
+                    // this.setState({
+                    //     loading: false
+                    // });
                 });
             });
 
-            //
 
             // let all_dataset_versions: Array<Promise<void>> = null;
             // all_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
@@ -147,7 +156,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 folder: _folder,
                 selection: new Array<string>(),
                 datasetLastDatasetVersion: datasetsLatestDv,
-                datasetsVersion: datasetsVersion
+                datasetsVersion: datasetsVersion,
+                loading: false
             });
         });
     }
@@ -482,6 +492,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         {other_rows}
                         </tbody>
                     </table>
+                    {this.state.loading && <LoadingOverlay></LoadingOverlay>}
                 </div>
             </div>
         )

@@ -40,5 +40,3 @@ script:
       chmod ugo+x travis/push_docker.sh;
       travis/push_docker.sh;
     fi
-
-

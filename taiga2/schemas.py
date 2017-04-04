@@ -125,13 +125,24 @@ class DatasetVersionFullDatasetSchema(ma.ModelSchema):
     parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
 
 
+class DatasetVersionLightSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('id', 'name', 'dataset_id',
+                      'creation_date', 'creator',
+                      'description', 'version')
+    creator = ma.Nested(UserNamedIdSchema)
+    # datafiles = ma.Nested(DataFileSummarySchema, many=True)
+    # TODO: Consolidate the term between folders and parents
+    # parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
+
+
 class DatasetFullSchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'name', 'description',
-                      'permaname', 'dataset_versions', 'parents')
+                      'permaname', 'dataset_versions')
     # TODO: Change this field to properly handle multiple permanames (a new permaname is added when we change the name of the dataset)
     permaname = fields.fields.Function(lambda obj: [obj.permaname], dump_to='permanames')
-    dataset_versions = ma.Nested(DatasetVersionSchema,
+    dataset_versions = ma.Nested(DatasetVersionLightSchema(),
                                  many=True,
                                  dump_to='versions')
-    parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
+    # parents = ma.Nested(FolderNamedIdSchema(), dump_to='folders', many=True)
