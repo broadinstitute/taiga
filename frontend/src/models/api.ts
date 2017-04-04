@@ -80,6 +80,10 @@ export class TaigaApi {
         return this._fetch<DatasetVersion>("/datasetVersion/" + dataset_version_id)
     }
 
+    get_datasetVersions(datasetVersionIds: Array<string>): Promise<Array<DatasetVersion>> {
+        return this._post<Array<DatasetVersion>>("/datasetVersions", {datasetVersionIds: datasetVersionIds})
+    }
+
     get_dataset_version_with_dataset(datasetId: string, datasetVersionId?: string) {
         // If not datasetVersion is passed, return the first datasetVersion
         let dsAndDv;

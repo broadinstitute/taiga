@@ -529,6 +529,13 @@ def get_dataset_versions(dataset_id):
     return dataset_versions
 
 
+def get_dataset_versions_bulk(array_dataset_version_ids):
+    dataset_versions = db.session.query(DatasetVersion) \
+        .filter(DatasetVersion.id.in_(array_dataset_version_ids)).all()
+
+    return dataset_versions
+
+
 def get_dataset_version_provenance(dataset_version_id,
                                    provenance):
     # TODO: See how to manage the provenance

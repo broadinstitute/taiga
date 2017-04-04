@@ -33,15 +33,11 @@ def get_dataset(datasetId):
 
 
 def get_datasets(datasetIdsDict):
-    print("In get_datasets we just received: {}".format(datasetIdsDict['datasetIds']))
     array_dataset_ids = datasetIdsDict['datasetIds']
     datasets = models_controller.get_datasets(array_dataset_ids)
-    print("Done getting the datasets")
 
     dataset_schema = schemas.DatasetFullSchema(many=True)
     json_data_datasets = dataset_schema.dump(datasets).data
-
-    print("Done dumping the data")
 
     return flask.jsonify(json_data_datasets)
 
@@ -164,6 +160,16 @@ def get_dataset_version(datasetVersion_id):
     json_dv_data = dataset_version_schema.dump(dv).data
 
     return flask.jsonify(json_dv_data)
+
+
+def get_dataset_versions(datasetVersionIdsDict):
+    array_dataset_version_ids = datasetVersionIdsDict['datasetVersionIds']
+    dataset_versions = models_controller.get_dataset_versions_bulk(array_dataset_version_ids)
+
+    dataset_version_schema = schemas.DatasetVersionSchema(many=True)
+    json_data_dataset_versions = dataset_version_schema.dump(dataset_versions).data
+
+    return flask.jsonify(json_data_dataset_versions)
 
 
 def get_dataset_version_from_dataset(datasetId, datasetVersionId):

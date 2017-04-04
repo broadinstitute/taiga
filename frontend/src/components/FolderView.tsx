@@ -117,11 +117,11 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             }).then(() => {
                 // Then we ask the datasetVersion bulk
                 console.log("Success to get the datasets!");
-                // return tapi.get_datasetVersion_bulk(datasetVersionIds).then((arrayDatasetVersions: Array<DatasetVersion>) => {
-                //     arrayDatasetVersions.forEach((datasetVersion: DatasetVersion) => {
-                //         datasetsVersion[datasetVersion.id] = datasetVersion
-                //     });
-                // });
+                return tapi.get_datasetVersions(datasetVersionIds).then((arrayDatasetVersions: Array<DatasetVersion>) => {
+                    arrayDatasetVersions.forEach((datasetVersion: DatasetVersion) => {
+                        datasetsVersion[datasetVersion.id] = datasetVersion
+                    });
+                });
             });
 
             //

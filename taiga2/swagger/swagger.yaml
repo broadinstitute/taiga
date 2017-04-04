@@ -717,6 +717,36 @@ paths:
             title: DatasetId
             type: string
 
+
+  /datasetVersions:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_dataset_versions
+      description: Fetch the details of a group of datasetVersions
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: datasetVersionIdsDict
+          schema:
+            type: object
+            required:
+              - datasetVersionIds
+            properties:
+              datasetIds:
+                type: array
+                items:
+                  type: string
+      responses:
+        200:
+          description: The datasets objects with datasetVersions
+          schema:
+            title: DatasetsFull
+            type: array
+            items:
+              "$ref": "#/definitions/DatasetVersion"
+
+
   /datasetVersion/{datasetVersionId}/description:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
