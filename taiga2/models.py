@@ -92,7 +92,6 @@ class User(db.Model):
                                                                     self.trash_folder.name)
 
 
-# TODO: The Entry hierarchy needs to use Single Table Inheritance, based on Philip feedback
 class Entry(db.Model):
     __tablename__ = 'entries'
 
@@ -176,7 +175,6 @@ class InitialFileType(enum.Enum):
 
 
 class DataFile(db.Model):
-    # TODO: Can we create a datafile without including it in a datasetVersion?
     __tablename__ = 'datafiles'
 
     # IMPORTANT: Need to sync with frontend for each changes

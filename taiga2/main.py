@@ -25,6 +25,7 @@ def run_celery_worker():
 
 
 def main():
+    """Launches the Front end and the Back end Flask applications. Needs a configuration file as first parameter"""
     if len(sys.argv) != 2:
         log.error("Needs config file")
         sys.exit(-1)

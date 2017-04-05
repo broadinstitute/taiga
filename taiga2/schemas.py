@@ -137,6 +137,7 @@ class DatasetVersionLightSchema(ma.ModelSchema):
 
 
 class DatasetFullSchema(ma.ModelSchema):
+    # TODO: Change the name to DatasetWithVersionSchema, because we skip a few fields
     class Meta:
         additional = ('id', 'name', 'description',
                       'permaname', 'dataset_versions')

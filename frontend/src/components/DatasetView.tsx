@@ -196,12 +196,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     name: x.dataset_version_name,
                     id: x.dataset_version_id
                 };
-            }))
+            }));
             let ancestor_links = [...ancestor_dataset_versions].map((x, index) => {
                 return <li key={index}>
                     <Link to={relativePath("dataset/"+x.id)}>{x.name}</Link>
                 </li>
-            })
+            });
             if (ancestor_links.length > 0) {
                 ancestor_section =
                     <span>
@@ -260,7 +260,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 {ancestor_section}
 
                 <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
-                {/*{Dialogs.renderDescription(this.state.dataset.description)}*/}
 
                 <h2>Contents</h2>
                 <table className="table">
