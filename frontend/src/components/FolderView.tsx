@@ -498,5 +498,3 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         )
     }
 }
-
-

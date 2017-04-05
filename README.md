@@ -173,6 +173,16 @@ Install rhdf5 R library => http://bioconductor.org/packages/release/bioc/html/rh
 
 Coming soon
 
+## Migrate the database
+
+If your model change in SQLAlchemy and you already have a database you can't drop/recreate, you can use Alembic to
+manage the migrations:
+
+Example (but use accordingly to the state of you database, see [Alembic](http://alembic.zzzcomputing.com/en/latest/)):
+
+- `taiga2/manage.py -c settings.cfg db migrate`
+- `taiga2/manage.py -c settings.cfg db upgrade`
+
 ## Contributing
 
 Feel free to make a contribution and then submit a Pull Request!
