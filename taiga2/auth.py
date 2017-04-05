@@ -94,7 +94,9 @@ def set_current_user_from_bearer_token():
             except NoResultFound:
                 user = mc.add_user(name=str(uuid.uuid4()), email=default_user_email)
         else:
-            raise Exception("No user passed")
+            log.critical("A request without authentication has been received. Rejecting.")
+            # raise Exception("No user passed")
+            flask.abort(403)
     flask.g.current_user = user
 
 

@@ -1,7 +1,7 @@
 import hashlib
 import logging
 import flask
-from flask import Flask, render_template, send_from_directory, url_for, request
+from flask import Flask, render_template, send_from_directory, url_for, request, abort
 import os
 from taiga2.conf import load_config
 from taiga2.auth import init_front_auth
@@ -61,10 +61,14 @@ def pseudostatic_url(name):
 
 
 def render_index_html():
-    user_token = flask.g.current_user.token
-    return render_template('index.html',
-                           prefix=url_for('index'),
-                           user_token=user_token)
+    try:
+        user_token = flask.g.current_user.token
+
+        return render_template('index.html',
+                               prefix=url_for('index'),
+                               user_token=user_token)
+    except AttributeError:
+        abort(403)
 
 
 def index():
