@@ -188,7 +188,6 @@ paths:
         200:
           description: Folder description updated
 
-
   /user:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -607,6 +606,24 @@ paths:
         200:
           description: Successfully updated
 
+  /dataset/{datasetId}/logAccess:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: create_or_update_dataset_access_log
+      description: Create or update the access of a dataset by a specific user
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: path
+          type: string
+          description: Dataset ID
+          required: true
+      responses:
+        200:
+          description: Successfully created or updated
+
+
   /datasetVersion/{datasetVersion_id}:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -717,7 +734,6 @@ paths:
             title: DatasetId
             type: string
 
-
   /datasetVersions:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -745,7 +761,6 @@ paths:
             type: array
             items:
               "$ref": "#/definitions/DatasetVersion"
-
 
   /datasetVersion/{datasetVersionId}/description:
     post:
@@ -864,7 +879,6 @@ paths:
           description: Malformed request
         500:
           description: Error encountered during conversion.
-
 
   /task_status/{taskStatusId}:
     get:

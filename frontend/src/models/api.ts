@@ -192,5 +192,9 @@ export class TaigaApi {
             datafileIds: datafile_ids
         })
     }
+
+    create_or_update_dataset_access_log(dataset_id: string) {
+        return this._post<void>("/dataset/" + dataset_id + "/logAccess", {});
+    }
 }
 

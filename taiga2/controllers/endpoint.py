@@ -159,6 +159,11 @@ def update_dataset_description(datasetId, DescriptionUpdate):
     return flask.jsonify({})
 
 
+def create_or_update_dataset_access_log(datasetId):
+    models_controller.add_or_update_dataset_access_log(datasetId)
+    return flask.jsonify({})
+
+
 def get_dataset_version(datasetVersion_id):
     dv = models_controller.get_dataset_version(dataset_version_id=datasetVersion_id)
     if dv is None:

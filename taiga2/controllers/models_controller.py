@@ -13,8 +13,9 @@ from taiga2.models import db
 from taiga2 import aws
 from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
+from taiga2.models import UserLog
 
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
 from sqlalchemy.sql.expression import func
 
@@ -33,7 +34,12 @@ def add_user(name, email):
     new_user = User(name=name,
                     email=email)
 
+    home_description = """Welcome to Taiga2: a light-weight repository for capturing, versioning and accessing datasets.
+
+Make yourself comfortable, you're at Home."""
+
     home_folder = Folder(name="Home",
+                         description=home_description,
                          folder_type=models.Folder.FolderType.home,
                          creator=new_user)
 
@@ -84,6 +90,31 @@ def get_user_by_token(user_token):
 def get_all_users():
     users = db.session.query(User).all()
     return users
+
+
+def add_or_update_dataset_access_log(dataset_id):
+    current_user = flask.g.current_user
+
+    try:
+        access_log = db.session.query(UserLog) \
+            .filter(UserLog.dataset_id == dataset_id) \
+            .filter(UserLog.user_id == current_user.id) \
+            .one_or_none()
+    except MultipleResultsFound:
+        log.error("When logging access to dataset (id {}) for user {}, we had multiple results instead of only one" \
+                  .format(dataset_id, current_user.email)
+                  )
+
+    if access_log:
+        access_log.last_access = datetime.utcnow()
+    else:
+        access_log = UserLog(user_id=current_user.id,
+                             dataset_id=dataset_id)
+
+    db.session.add(access_log)
+    db.session.commit()
+
+    return access_log
 
 
 # </editor-fold>
@@ -288,7 +319,8 @@ def get_first_dataset_version(dataset_id):
 
 
 def get_latest_dataset_version(dataset_id):
-    max_version_subquery = db.session.query(func.max(DatasetVersion.counter)).filter(DatasetVersion.dataset_id == dataset_id)
+    max_version_subquery = db.session.query(func.max(DatasetVersion.counter)).filter(
+        DatasetVersion.dataset_id == dataset_id)
     dataset_version_latest = db.session.query(DatasetVersion).filter(DatasetVersion.dataset_id,
                                                                      DatasetVersion.counter == max_version_subquery)
 
@@ -339,6 +371,7 @@ def update_dataset_creation_date(dataset_id, new_date):
 
     db.session.add(dataset)
     db.session.commit()
+
 
 # TODO: update_datafile_summaries
 # def update_datafile_summaries
@@ -488,7 +521,6 @@ def create_new_dataset_version_from_session(session_id,
                                             dataset_id,
                                             existing_datafiles_id,
                                             new_description=None):
-
     added_datafiles = add_datafiles_from_session(session_id)
     added_datafile_ids = [datafile.id for datafile in added_datafiles]
 
@@ -580,6 +612,7 @@ def update_dataset_version_description(dataset_version_id,
     db.session.commit()
 
     return dataset_version
+
 
 # </editor-fold>
 
@@ -704,6 +737,8 @@ def changer_owner(entry_id, new_creator_id):
 
     db.session.add(entry)
     db.session.commit()
+
+
 # </editor-fold>
 
 # <editor-fold desc="DataFile">
@@ -1004,6 +1039,7 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
 
     return datafile
 
+
 # </editor-fold>
 
 # <editor-fold desc="Utils">
@@ -1011,6 +1047,5 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
 
 def _get_datetime_from_string(string_datetime):
     return datetime.strptime(string_datetime, "%Y-%m-%d %H:%M:%S.%f")
-
 
 # </editor-fold>

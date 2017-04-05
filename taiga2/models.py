@@ -92,6 +92,25 @@ class User(db.Model):
                                                                     self.trash_folder.name)
 
 
+class UserLog(db.Model):
+    __tablename__ = 'user_logs'
+
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+
+    user_id = db.Column(GUID, db.ForeignKey("users.id"))
+    user = db.relationship("User",
+                           foreign_keys="UserLog.user_id",
+                           backref="user")
+
+    dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
+    dataset = db.relationship("Dataset",
+                              foreign_keys="UserLog.dataset_id",
+                              backref="dataset")
+    # TODO: Setup the constraint of only having one (user, dataset) row
+
+    last_access = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+
 class Entry(db.Model):
     __tablename__ = 'entries'
 

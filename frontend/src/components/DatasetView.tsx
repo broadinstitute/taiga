@@ -52,7 +52,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     componentDidMount() {
         tapi = (this.context as any).tapi;
-        this.doFetch();
+        this.doFetch().then(() => {
+            this.logAccess();
+        });
     }
 
     doFetch() {
@@ -65,6 +67,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             this.setState({
                 dataset: dataset, datasetVersion: datasetVersion
             });
+        });
+    }
+
+    logAccess() {
+        return tapi.create_or_update_dataset_access_log(this.state.dataset.id).then(() => {
+            console.log("We added an access log!");
         });
     }
 
@@ -140,10 +148,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
         let entries = datasetVersion.datafiles.map((df, index) => {
             return <tr key={index}>
-                    <td>{df.name}</td>
-                    <td>{df.short_summary}</td>
-                    <td><a href={df.url} download={true}>{df.type}</a></td>
-                </tr>
+                <td>{df.name}</td>
+                <td>{df.short_summary}</td>
+                <td><a href={df.url} download={true}>{df.type}</a></td>
+            </tr>
         });
 
         let folders = dataset.folders.map((f, index) => {
@@ -153,7 +161,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         {f.name}
                     </Link>
                     {dataset.folders.length != index + 1 &&
-                        <span>, </span>
+                    <span>, </span>
                     }
                 </span>
             )
@@ -176,8 +184,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             // },
             {
                 label: "Create new version", action: () => {
-                    this.showUploadNewVersion();
-                }
+                this.showUploadNewVersion();
+            }
             },
             // {
             //     label: "Deprecate version", action: function () {
@@ -217,7 +225,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
         let permaname = dataset.permanames[dataset.permanames.length - 1];
         let r_block = "library(taigr);\n" +
-                `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
+            `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
 
         return <div>
             <LeftNav items={navItems}/>
@@ -252,14 +260,19 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     previousVersionFiles={ this.state.datasetVersion.datafiles }
                 />
 
-                <h1>{dataset.name} <small>{permaname}</small></h1>
-                <p>Version {datasetVersion.version} created by {datasetVersion.creator.name} on the {toLocalDateString(datasetVersion.creation_date)}</p>
+                <h1>{dataset.name}
+                    <small>{permaname}</small>
+                </h1>
+                <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
+                    on the {toLocalDateString(datasetVersion.creation_date)}</p>
                 <p>Versions: {versions} </p>
 
                 <p>Contained within {folders}</p>
                 {ancestor_section}
 
+                { this.state.datasetVersion.description &&
                 <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
+                }
 
                 <h2>Contents</h2>
                 <table className="table">
