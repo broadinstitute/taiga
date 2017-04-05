@@ -164,6 +164,15 @@ def create_or_update_dataset_access_log(datasetId):
     return flask.jsonify({})
 
 
+def get_datasets_access_logs():
+    array_access_logs = models_controller.get_datasets_access_logs()
+
+    access_log_schema = schemas.AccessLogSchema(many=True)
+    json_data_access_logs_current_user_datasets = access_log_schema.dump(array_access_logs).data
+
+    return flask.jsonify(json_data_access_logs_current_user_datasets)
+
+
 def get_dataset_version(datasetVersion_id):
     dv = models_controller.get_dataset_version(dataset_version_id=datasetVersion_id)
     if dv is None:

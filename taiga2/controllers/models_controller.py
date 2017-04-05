@@ -93,6 +93,9 @@ def get_all_users():
 
 
 def add_or_update_dataset_access_log(dataset_id):
+    """Create or update, with the current datetime, the access log for the current user, on the dataset
+    passed in parameter"""
+
     current_user = flask.g.current_user
 
     try:
@@ -115,6 +118,15 @@ def add_or_update_dataset_access_log(dataset_id):
     db.session.commit()
 
     return access_log
+
+
+def get_datasets_access_logs():
+    current_user = flask.g.current_user
+
+    array_access_logs = db.session.query(UserLog) \
+        .filter(UserLog.user_id == current_user.id).all()
+
+    return array_access_logs
 
 
 # </editor-fold>

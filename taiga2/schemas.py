@@ -24,6 +24,11 @@ class FolderNamedIdSchema(ma.ModelSchema):
         fields = ('id', 'name')
 
 
+class DatasetNamedIdSchema(ma.ModelSchema):
+    class Meta:
+        fields = ('id', 'name')
+
+
 class DatasetSummarySchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'permaname')
@@ -147,3 +152,10 @@ class DatasetFullSchema(ma.ModelSchema):
                                  many=True,
                                  dump_to='versions')
     # parents = ma.Nested(FolderNamedIdSchema(), dump_to='folders', many=True)
+
+
+class AccessLogSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('user_id', 'dataset', 'last_access')
+
+    dataset = ma.Nested(DatasetNamedIdSchema)

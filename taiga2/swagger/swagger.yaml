@@ -623,6 +623,32 @@ paths:
         200:
           description: Successfully created or updated
 
+  /dataset/logAccess:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_datasets_access_logs
+      description: Fetch the user's access logs for the datasets
+      responses:
+        200:
+          description: An array of AccessLogs
+          schema:
+            title: AccessLogs
+            type: array
+            items:
+              title: AccessLog
+              type: object
+              required:
+                - user_id
+                - dataset_id
+                - last_access
+              properties:
+                user_id:
+                  type: string
+                dataset:
+                  "$ref": "#/definitions/NamedId"
+                last_access:
+                  type: string
+
 
   /datasetVersion/{datasetVersion_id}:
     get:

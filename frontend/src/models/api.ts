@@ -2,7 +2,8 @@ import 'whatwg-fetch';
 
 import {
     User, Folder, Dataset, DatasetVersion, S3Credentials,
-    TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId, DatasetFullDatasetVersions
+    TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId, DatasetFullDatasetVersions,
+    AccessLog
 } from './models';
 
 import { currentUserToken } from '../utilities/route';
@@ -75,6 +76,10 @@ export class TaigaApi {
 
     get_dataset(dataset_id: string): Promise<Dataset> {
         return this._fetch<Dataset>("/dataset/" + dataset_id)
+    }
+
+    get_user_dataset_access_log(): Promise<Array<AccessLog>> {
+        return this._fetch<Array<AccessLog>>("/dataset/logAccess");
     }
 
     get_datasets(datasetIds: Array<string>): Promise<Array<DatasetFullDatasetVersions>> {
@@ -193,7 +198,7 @@ export class TaigaApi {
         })
     }
 
-    create_or_update_dataset_access_log(dataset_id: string) {
+    create_or_update_dataset_access_log(dataset_id: string): Promise<void> {
         return this._post<void>("/dataset/" + dataset_id + "/logAccess", {});
     }
 }

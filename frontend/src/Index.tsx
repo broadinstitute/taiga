@@ -10,6 +10,7 @@ import {TaigaApi} from "./models/api"
 import {User} from "./models/models"
 
 import {Token} from "./components/Token"
+import {RecentlyViewed} from "./components/RecentlyViewed"
 
 import {relativePath} from "./utilities/route"
 import {isNullOrUndefined} from "util";
@@ -52,15 +53,17 @@ class App extends React.Component<AppProps, any> {
                     <div className="top-page-menu">
                         <img id="taiga_logo"/>
                         {/*TODO: Change the way we manage spaces*/}
-                        <span>Taiga</span>
+                        <span className="headerSpan">Taiga</span>
                         <Link to={relativePath('')}>Home</Link>
-                        <span></span>
+                        <span className="headerSpan"></span>
                         <Link to={relativePath('folder/public')}>Public</Link>
-                        <span></span>
+                        <span className="headerSpan"></span>
                         {trash_link}
                     </div>
 
                     <div className="login-box pull-right">
+                        <Link className="recentlyViewedLink" to={relativePath('recentlyViewed/')}>Recently Viewed</Link>
+                        <span className="headerSpan"></span>
                         <Link className="tokenLink" to={relativePath('token/')}>My Token</Link>
                         {/*TODO: Change this a proper logout behavior*/}
                         {/*<Link className="logoutLink" to={relativePath('')}>Logout</Link>*/}
@@ -220,6 +223,7 @@ tapi.get_user().then((user: User) => {
                 <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any}/>
                 <Route path="folder/:folderId" component={FolderView as any}/>
                 <Route path="token/" component={ Token as any }/>
+                <Route path="recentlyViewed/" component={ RecentlyViewed as any }/>
             </Route>
             <Route path="*" component={NoMatch}/>
         </Router>

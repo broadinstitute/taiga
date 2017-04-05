@@ -224,3 +224,9 @@ export enum DataFileType {
     HDF5 = <any> 'HDF5',
     Columnar = <any> 'Columnar'
 }
+
+export class AccessLog {
+    user_id: string;
+    dataset: NamedId;
+    last_access: string;
+}
