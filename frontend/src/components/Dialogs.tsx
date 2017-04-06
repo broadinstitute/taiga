@@ -109,6 +109,9 @@ export class EditDescription extends React.Component<EditStringProps, any> {
                     <div className="modal-body">
                         <div className="form-group">
                             <label htmlFor="descriptionInput">Description</label>
+                            <p>
+                                <em>Markdown is accepted. <a href="http://markdown-guide.readthedocs.io/en/latest/basics.html" target="_blank" >Click here</a> if you want to have more information about it</em>
+                            </p>
                             <textarea rows={15} defaultValue={this.props.initialValue} className="form-control"
                                       id="descriptionInput" ref={ (c) => {this.textArea = c}  }></textarea>
                         </div>
