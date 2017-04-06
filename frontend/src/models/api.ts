@@ -97,8 +97,9 @@ export class TaigaApi {
 
     get_dataset_version_with_dataset(datasetId: string, datasetVersionId?: string) {
         // If not datasetVersion is passed, return the first datasetVersion
-        let dsAndDv;
+        let dsAndDv: Promise<DatasetAndDatasetVersion>;
         if (isUndefined(datasetVersionId)) {
+            // TODO: This should not call the /dataset/{datasetId} api but a specific one to get the dataset and the last datasetVersion
             dsAndDv = this._fetch<DatasetAndDatasetVersion>("/dataset/" + datasetId);
         }
         else {
@@ -202,4 +203,3 @@ export class TaigaApi {
         return this._post<void>("/dataset/" + dataset_id + "/logAccess", {});
     }
 }
-

@@ -645,7 +645,7 @@ paths:
                 user_id:
                   type: string
                 dataset:
-                  "$ref": "#/definitions/NamedId"
+                  type:
                 last_access:
                   type: string
 

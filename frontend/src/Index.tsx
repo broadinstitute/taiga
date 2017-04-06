@@ -59,11 +59,11 @@ class App extends React.Component<AppProps, any> {
                         <Link to={relativePath('folder/public')}>Public</Link>
                         <span className="headerSpan"></span>
                         {trash_link}
+                        <span className="headerSpan"></span>
+                        <Link className="recentlyViewedLink" to={relativePath('recentlyViewed/')}>Recently Viewed</Link>
                     </div>
 
                     <div className="login-box pull-right">
-                        <Link className="recentlyViewedLink" to={relativePath('recentlyViewed/')}>Recently Viewed</Link>
-                        <span className="headerSpan"></span>
                         <Link className="tokenLink" to={relativePath('token/')}>My Token</Link>
                         {/*TODO: Change this a proper logout behavior*/}
                         {/*<Link className="logoutLink" to={relativePath('')}>Logout</Link>*/}

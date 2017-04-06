@@ -228,5 +228,18 @@ export enum DataFileType {
 export class AccessLog {
     user_id: string;
     dataset: NamedId;
+
+    // Used for presentation BootstrapTable
+    dataset_id: string;
+    dataset_name: string;
+
+
     last_access: string;
+
+    constructor(obj: any) {
+        this.user_id = obj.user_id;
+        this.dataset_id = obj.dataset.id;
+        this.dataset_name = obj.dataset.name;
+        this.last_access = obj.last_access;
+    }
 }

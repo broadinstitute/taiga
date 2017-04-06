@@ -61,12 +61,36 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         // could do fetches in parallel if url encoded both ids
         return tapi.get_dataset_version_with_dataset(this.props.params.datasetId,
             this.props.params.datasetVersionId
-        ).then((datasetAndDatasetVersion: Models.DatasetAndDatasetVersion) => {
-            let dataset = datasetAndDatasetVersion.dataset;
-            let datasetVersion = datasetAndDatasetVersion.datasetVersion;
-            this.setState({
-                dataset: dataset, datasetVersion: datasetVersion
-            });
+        ).then((datasetAndDatasetVersion: Models.DatasetAndDatasetVersion | Models.Dataset) => {
+            let dataset: Models.Dataset;
+            let datasetVersion: Models.DatasetVersion;
+
+            if ((datasetAndDatasetVersion as Models.DatasetAndDatasetVersion).dataset) {
+                datasetAndDatasetVersion = (datasetAndDatasetVersion as Models.DatasetAndDatasetVersion);
+                dataset = datasetAndDatasetVersion.dataset;
+                datasetVersion = datasetAndDatasetVersion.datasetVersion;
+
+                this.setState({
+                    dataset: dataset, datasetVersion: datasetVersion
+                });
+            }
+            else if ((datasetAndDatasetVersion as Models.Dataset).id) {
+                // It means we received a Models.Dataset, we need to get the last datasetVersion now
+                // TODO: get_dataset_version_with_dataset should really return a dataset with datasetVersion, and we should not do this extra step
+                dataset = (datasetAndDatasetVersion as Models.Dataset);
+                return tapi.get_dataset_version_last(dataset.id).then((last_datasetVersion) => {
+                    datasetVersion = last_datasetVersion;
+                }).then(() => {
+                    this.setState({
+                        dataset: dataset, datasetVersion: datasetVersion
+                    });
+                });
+            }
+            else {
+                console.log("Error in doFetch DatasetView. Type received is not a Dataset or a DatasetAndDatasetVersion")
+            }
+
+
         });
     }
 
@@ -165,7 +189,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     }
                 </span>
             )
-        })
+        });
 
         let navItems = [
             {
@@ -264,7 +288,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     <small>{permaname}</small>
                 </h1>
                 <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
-                    on the {toLocalDateString(datasetVersion.creation_date)}</p>
+                     on the {toLocalDateString(datasetVersion.creation_date)}</p>
                 <p>Versions: {versions} </p>
 
                 <p>Contained within {folders}</p>
