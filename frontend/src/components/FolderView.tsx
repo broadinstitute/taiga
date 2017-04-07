@@ -84,7 +84,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     doFetch() {
         console.log("FolderView: componentDidMount");
         this.setState({
-               loading: true
+            loading: true
         });
         // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
         let datasetsLatestDv: {[dataset_id: string]: Folder.DatasetVersion} = {};
@@ -283,6 +283,19 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         });
     }
 
+    getMostRecentDateEntry(entry: Folder.FolderEntries) {
+        if (entry.type == Folder.FolderEntries.TypeEnum.Folder) {
+            return entry.creation_date;
+        }
+        else if (entry.type == Folder.FolderEntries.TypeEnum.Dataset) {
+            let latestDatasetVersion = this.state.datasetLastDatasetVersion[entry.id];
+            return latestDatasetVersion.creation_date;
+        }
+        else if (entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
+            return entry.creation_date;
+        }
+    }
+
     render() {
         console.log("folderId in render", this.props.params.folderId);
         if (!this.state) {
@@ -304,78 +317,148 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             return <Link key={index} to={relativePath("folder/"+p.id)}>{p.name}</Link>
         });
 
+        let entriesOutput: Array<any> = [];
         var subfolders: Folder.FolderEntries[] = [];
         var others: Folder.FolderEntries[] = [];
 
-        folder.entries.forEach((e: Folder.FolderEntries) => {
+
+        let sortedEntries = folder.entries.sort((elementA, elementB) => {
+            // Sorting by descending order
+            let keyA = new Date(this.getMostRecentDateEntry(elementA));
+            let keyB = new Date(this.getMostRecentDateEntry(elementB));
+
+            debugger;
+
+            if (keyA > keyB) return -1;
+            if (keyA < keyB) return 1;
+            return 0;
+        });
+
+        sortedEntries.forEach((e: Folder.FolderEntries, index: number) => {
             if (e.type == Folder.FolderEntries.TypeEnum.Folder) {
-                subfolders.push(e);
+                entriesOutput.push(
+                    <tr key={e.id}>
+                        <td><input type="checkbox" checked={ this.state.selection.includes(e.id) }
+                                   onChange={ () => {this.selectRow(e.id)} }/></td>
+                        <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
+                            <span> </span>
+                            <Link key={index} to={relativePath("folder/"+e.id)}>
+                                {e.name}
+                            </Link>
+                        </td>
+                        <td>{toLocalDateString(e.creation_date)}</td>
+                        <td>Folder</td>
+                        <td>{e.creator.name}</td>
+                    </tr>
+                );
             } else {
-                others.push(e);
-            }
-        });
+                var link: any;
+                let entryType: any;
+                let creation_date: string = toLocalDateString(e.creation_date);
 
-        var folder_rows = subfolders.map((e, index) => {
-            let select_key = e.id;
-            return <tr key={e.id}>
-                <td><input type="checkbox" checked={ this.state.selection.includes(select_key) }
-                           onChange={ () => {this.selectRow(select_key)} }/></td>
-                <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
-                    <span> </span>
-                    <Link key={index} to={relativePath("folder/"+e.id)}>
-                        {e.name}
-                    </Link>
-                </td>
-                <td>{toLocalDateString(e.creation_date)}</td>
-                <td>Folder</td>
-                <td>{e.creator.name}</td>
-            </tr>
-        });
-
-        var other_rows = others.map((e, index) => {
-            var link: any;
-            let entryType: any;
-            let creation_date: string = toLocalDateString(e.creation_date);
-
-            if (e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
-                entryType = 'Dataset Version';
-                let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[e.id];
-                // Since we don't have the id of the dataset, we need to ask the api for it
-                link =
-                    <span>
+                if (e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
+                    entryType = 'Dataset Version';
+                    let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[e.id];
+                    // Since we don't have the id of the dataset, we need to ask the api for it
+                    link =
+                        <span>
                             <Glyphicon glyph="glyphicon glyphicon-file"/>
                             <span> </span>
                             <Link key={index} to={relativePath("dataset/"+full_datasetVersion.dataset_id+"/"+e.id)}>
                                 {e.name}
                             </Link>
                         </span>
-            } else if (e.type == Folder.FolderEntries.TypeEnum.Dataset) {
-                entryType = 'Dataset';
-                // TODO: Be careful about this add, not sure if we should access Dataset data like this
-                // TODO: We need to get the latest datasetVersion from this dataset
-                let latestDatasetVersion = this.state.datasetLastDatasetVersion[e.id];
-                link =
-                    <span>
+                } else if (e.type == Folder.FolderEntries.TypeEnum.Dataset) {
+                    entryType = 'Dataset';
+                    // TODO: Be careful about this add, not sure if we should access Dataset data like this
+                    // TODO: We need to get the latest datasetVersion from this dataset
+                    let latestDatasetVersion = this.state.datasetLastDatasetVersion[e.id];
+                    link =
+                        <span>
                         <Glyphicon glyph="glyphicon glyphicon-inbox"/>
                         <span> </span>
                         <Link key={index} to={relativePath("dataset/"+e.id+"/"+latestDatasetVersion.id)}>{e.name}</Link>
                     </span>;
-                creation_date = toLocalDateString(latestDatasetVersion.creation_date);
-            }
-            else {
-                link = e.name;
-            }
+                    creation_date = toLocalDateString(latestDatasetVersion.creation_date);
+                }
+                else {
+                    link = e.name;
+                }
 
-            let select_key = e.id;
-            return <tr key={e.id}>
-                <td><input type="checkbox" checked={ this.state.selection.includes(select_key) }
-                           onChange={ () => {this.selectRow(select_key)} }/></td>
-                <td>{link}</td>
-                <td>{creation_date}</td>
-                <td>{entryType}</td>
-                <td>{e.creator.name}</td>
-            </tr>
+                entriesOutput.push(
+                    <tr key={e.id}>
+                        <td><input type="checkbox" checked={ this.state.selection.includes(e.id) }
+                                   onChange={ () => {this.selectRow(e.id)} }/></td>
+                        <td>{link}</td>
+                        <td>{creation_date}</td>
+                        <td>{entryType}</td>
+                        <td>{e.creator.name}</td>
+                    </tr>
+                );
+            }
         });
+
+        // var folder_rows = subfolders.map((e, index) => {
+        //     let select_key = e.id;
+        //     return <tr key={e.id}>
+        //         <td><input type="checkbox" checked={ this.state.selection.includes(select_key) }
+        //                    onChange={ () => {this.selectRow(select_key)} }/></td>
+        //         <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
+        //             <span> </span>
+        //             <Link key={index} to={relativePath("folder/"+e.id)}>
+        //                 {e.name}
+        //             </Link>
+        //         </td>
+        //         <td>{toLocalDateString(e.creation_date)}</td>
+        //         <td>Folder</td>
+        //         <td>{e.creator.name}</td>
+        //     </tr>
+        // });
+        //
+        // var other_rows = others.map((e, index) => {
+        //     var link: any;
+        //     let entryType: any;
+        //     let creation_date: string = toLocalDateString(e.creation_date);
+        //
+        //     if (e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
+        //         entryType = 'Dataset Version';
+        //         let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[e.id];
+        //         // Since we don't have the id of the dataset, we need to ask the api for it
+        //         link =
+        //             <span>
+        //                     <Glyphicon glyph="glyphicon glyphicon-file"/>
+        //                     <span> </span>
+        //                     <Link key={index} to={relativePath("dataset/"+full_datasetVersion.dataset_id+"/"+e.id)}>
+        //                         {e.name}
+        //                     </Link>
+        //                 </span>
+        //     } else if (e.type == Folder.FolderEntries.TypeEnum.Dataset) {
+        //         entryType = 'Dataset';
+        //         // TODO: Be careful about this add, not sure if we should access Dataset data like this
+        //         // TODO: We need to get the latest datasetVersion from this dataset
+        //         let latestDatasetVersion = this.state.datasetLastDatasetVersion[e.id];
+        //         link =
+        //             <span>
+        //                 <Glyphicon glyph="glyphicon glyphicon-inbox"/>
+        //                 <span> </span>
+        //                 <Link key={index} to={relativePath("dataset/"+e.id+"/"+latestDatasetVersion.id)}>{e.name}</Link>
+        //             </span>;
+        //         creation_date = toLocalDateString(latestDatasetVersion.creation_date);
+        //     }
+        //     else {
+        //         link = e.name;
+        //     }
+        //
+        //     let select_key = e.id;
+        //     return <tr key={e.id}>
+        //         <td><input type="checkbox" checked={ this.state.selection.includes(select_key) }
+        //                    onChange={ () => {this.selectRow(select_key)} }/></td>
+        //         <td>{link}</td>
+        //         <td>{creation_date}</td>
+        //         <td>{entryType}</td>
+        //         <td>{e.creator.name}</td>
+        //     </tr>
+        // });
 
         console.log(this.props.params);
 
@@ -488,8 +571,10 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         </tr>
                         </thead>
                         <tbody>
-                        {folder_rows}
-                        {other_rows}
+
+                        {entriesOutput}
+                        {/*{folder_rows}*/}
+                        {/*{other_rows}*/}
                         </tbody>
                     </table>
                     {this.state.loading && <LoadingOverlay></LoadingOverlay>}
