@@ -1,1 +1,5 @@
 Generic single-database configuration.
+
+Use `manage.py -c settings.cfg db migrate` to generate the migration from your new model (models.py)
+then use `manage.py -c settings.cfg db upgrade` to apply these changes to the database in your settings.cfg
+(SQLALCHEMY_DATABASE_URI)

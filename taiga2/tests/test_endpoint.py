@@ -1,12 +1,16 @@
-import celery
+from datetime import datetime
 import flask
 import pytest
 
 from flask_sqlalchemy import SessionBase
+from freezegun import freeze_time
 
 import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
-import taiga2.tasks as celery_tasks
+
+from taiga2.models import generate_permaname, DataFile
+
+from taiga2.schemas import AccessLogSchema
 
 
 def get_data_from_flask_jsonify(flask_jsonified):
@@ -163,3 +167,63 @@ def test_create_new_dataset_version(session: SessionBase, new_dataset, new_uploa
 
     assert _new_dataset_version.description == new_description
     # TODO: Check if the datafiles in the new dataset_version are the same (filename/name) than in the new_upload_session_file + in the previous_dataset_version_datafiles
+
+
+@pytest.fixture
+def new_datafile():
+    # TODO: These tests should be using the endpoint and not the model
+    new_datafile_name = "New Datafile"
+    new_datafile_url = "http://google.com"
+
+    _new_datafile = models_controller.add_datafile(name=new_datafile_name,
+                                    s3_bucket="broadtaiga2prototype",
+                                    s3_key=models_controller.generate_convert_key(),
+                                    type=DataFile.DataFileType.Raw,
+                                    short_summary="short",
+                                    long_summary="long")
+
+    return _new_datafile
+
+
+@pytest.fixture
+def new_dataset(new_datafile):
+    # TODO: These tests should be using the endpoint and not the model
+    new_dataset_name = "New Dataset"
+    new_dataset_permaname = generate_permaname(new_dataset_name)
+
+    _new_dataset = models_controller.add_dataset(name=new_dataset_name,
+                                  permaname=new_dataset_permaname,
+                                  description="New dataset description",
+                                  datafiles_ids=[new_datafile.id])
+
+    return _new_dataset
+
+# <editor-fold desc="Access Logs">
+
+
+def test_create_access_log(session: SessionBase, new_dataset):
+    json_result = endpoint.create_or_update_dataset_access_log(new_dataset.id)
+    assert json_result.status_code == 200
+
+
+@pytest.fixture
+def dataset_create_access_log(session: SessionBase, new_dataset):
+    endpoint.create_or_update_dataset_access_log(new_dataset.id)
+    return new_dataset
+
+
+def test_update_access_log(session: SessionBase, dataset_create_access_log):
+    json_result = endpoint.create_or_update_dataset_access_log(dataset_create_access_log.id)
+    assert json_result.status_code == 200
+
+
+def test_retrieve_user_access_log(session: SessionBase, dataset_create_access_log):
+    json_response_result = endpoint.get_datasets_access_logs()
+    json_data_result = flask.json.loads(json_response_result.data)
+
+    assert json_data_result[0]['dataset']['id'] == dataset_create_access_log.id
+
+
+# TODO: We should also test the time logged and verify it matches when we called it
+
+# </editor-fold>

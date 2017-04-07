@@ -47,7 +47,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 showUploadDataset: false
             })
         }
-
     }
 
     componentDidMount() {
@@ -87,16 +86,13 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 });
             }
             else {
-                console.log("Error in doFetch DatasetView. Type received is not a Dataset or a DatasetAndDatasetVersion")
+                console.log("Error in doFetch DatasetView. Type received is not a Dataset or a DatasetAndDatasetVersion");
             }
-
-
         });
     }
 
     logAccess() {
         return tapi.create_or_update_dataset_access_log(this.state.dataset.id).then(() => {
-            console.log("We added an access log!");
         });
     }
 
@@ -128,7 +124,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             showUploadDataset: true
         })
     }
-
 
     filesUploadedAndConverted(sid: string, name: string, description: string, previousDatafileIds: Array<string>) {
         let datafileIds = previousDatafileIds;

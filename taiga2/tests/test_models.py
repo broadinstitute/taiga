@@ -12,6 +12,7 @@ import taiga2.controllers.models_controller as mc
 from taiga2.models import db
 from taiga2.models import User, Folder, Dataset, DatasetVersion
 from taiga2.models import generate_permaname
+from taiga2.models import DataFile
 
 # TODO: Remove the domain tests and bring them to test_endpoint.py
 #<editor-fold desc="User Tests">
@@ -349,6 +350,7 @@ def test_get_dataset_version(session,
     assert fetched_dataset_version == new_dataset_version
     assert fetched_dataset_version.id == new_dataset_version.id
 
+
 def test_get_dataset_version_by_permaname_and_version(session,
                                                       new_dataset_version: DatasetVersion):
     dataset = new_dataset_version.dataset
@@ -361,6 +363,7 @@ def test_get_dataset_version_by_permaname_and_version(session,
                                    if dataset_version.version == 1][0]
     assert first_dataset_version == check_first_dataset_version
     assert first_dataset_version.version == 1
+
 
 def test_get_dataset_version_by_dataset_id_and_dataset_version_id(session: SessionBase,
                                                                   new_dataset,
@@ -375,7 +378,6 @@ def test_get_dataset_version_by_dataset_id_and_dataset_version_id(session: Sessi
 
 
 #</editor-fold>
-from taiga2.models import DataFile
 
 #<editor-fold desc="DataFile Tests">
 @pytest.fixture
@@ -394,6 +396,7 @@ def new_datafile():
 #</editor-fold>
 
 #<editor-fold desc="Entry Tests">
+
 
 def test_get_entry(session: SessionBase,
                    new_folder):
