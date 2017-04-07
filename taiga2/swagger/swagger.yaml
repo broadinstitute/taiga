@@ -606,23 +606,6 @@ paths:
         200:
           description: Successfully updated
 
-  /dataset/{datasetId}/logAccess:
-    post:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: create_or_update_dataset_access_log
-      description: Create or update the access of a dataset by a specific user
-      consumes:
-        - application/json
-      parameters:
-        - name: datasetId
-          in: path
-          type: string
-          description: Dataset ID
-          required: true
-      responses:
-        200:
-          description: Successfully created or updated
-
   /dataset/logAccess:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -639,16 +622,32 @@ paths:
               type: object
               required:
                 - user_id
-                - dataset_id
+                - dataset
                 - last_access
               properties:
                 user_id:
                   type: string
                 dataset:
-                  type:
+                  "$ref": "#/definitions/NamedId"
                 last_access:
                   type: string
 
+  /dataset/{datasetId}/logAccess:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: create_or_update_dataset_access_log
+      description: Create or update the access of a dataset by a specific user
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: path
+          type: string
+          description: Dataset ID
+          required: true
+      responses:
+        200:
+          description: Successfully created or updated
 
   /datasetVersion/{datasetVersion_id}:
     get:
@@ -775,7 +774,7 @@ paths:
             required:
               - datasetVersionIds
             properties:
-              datasetIds:
+              datasetVersionIds:
                 type: array
                 items:
                   type: string
