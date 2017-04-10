@@ -1095,6 +1095,7 @@ definitions:
             - name
             - url
             - mime_type
+            - allowed_conversion_type
             - short_summary
           properties:
             id:
@@ -1105,6 +1106,10 @@ definitions:
               type: string
             mime_type:
               type: string
+            allowed_conversion_type:
+              type: array
+              items:
+                type: string
             short_summary:
               description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
               type: string

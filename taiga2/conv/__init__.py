@@ -15,7 +15,15 @@ def columnar_to_csv(progress, src, temp_file_generator):
     return [dst]
 
 CSV_FORMAT = "csv"
+TSV_FORMAT = "tsv"
+
+GCT_FORMAT = "gct"
+
 RAW_FORMAT = "raw"
+
+# R format
 RDS_FORMAT = "rds"
+
+# Canonical format
 HDF5_FORMAT = "hdf5"
 COLUMNAR_FORMAT = "columnar"

@@ -158,6 +158,22 @@ export class TaigaApi {
         return this._post<string>("/datafile/" + sid, S3UploadedFileMetadata)
     }
 
+    url_get_datafile(datasetPermaname: string, datasetVersion: string,
+                     datasetVersionId: string, datafileName: string,
+                     format: string, force: string) {
+        // Returns the url to launch/get status/retrieve the datafile
+        // (datasetPermaname with datasetVersion OR datasetVersionId) and datafileName + format [+ force]
+        // TODO: Support Permaname+Version. Currently only datasetVersionId
+        let url = this.baseUrl + "/datafile?"
+            + "dataset_version_id=" + datasetVersionId
+            + "&"
+            + "datafile_name=" + datafileName
+            + "&"
+            + "format=" + format;
+
+        return url;
+    }
+
     get_task_status(taskStatusId: string) {
         return this._fetch<TaskStatus>("/task_status/" + taskStatusId)
     }

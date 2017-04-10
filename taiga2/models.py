@@ -12,6 +12,8 @@ from sqlalchemy import event
 
 from flask_sqlalchemy import SQLAlchemy
 
+import taiga2.conv as conversion
+
 convention = {
     "ix": 'ix_%(column_0_label)s',
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -220,6 +222,20 @@ class DataFile(db.Model):
 
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)
+
+
+def get_allowed_conversion_type(datafile_type):
+    if datafile_type == DataFile.DataFileType.HDF5:
+        return [conversion.CSV_FORMAT, conversion.GCT_FORMAT, conversion.HDF5_FORMAT,
+                                  conversion.RDS_FORMAT, conversion.TSV_FORMAT]
+
+    if datafile_type == DataFile.DataFileType.Columnar:
+        return [conversion.CSV_FORMAT, conversion.TSV_FORMAT]
+
+    if datafile_type == DataFile.DataFileType.Raw:
+        return [conversion.RAW_FORMAT]
+
+    raise Exception("datafile type {} does not exist in the model".format(datafile_type))
 
 
 _INTIAL_TO_CONVERTED_MAPPING = {InitialFileType.NumericMatrixCSV: DataFile.DataFileType.HDF5,

@@ -166,10 +166,24 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         });
 
         let entries = datasetVersion.datafiles.map((df, index) => {
+            let conversionTypesOutput = df.allowed_conversion_type.map((conversionType, index) => {
+                // TODO: If we have the same name for datafiles, we will run into troubles
+                let url_conversion = tapi.url_get_datafile(undefined, undefined,
+                    datasetVersion.id, df.name, conversionType, 'N');
+                return <span key={conversionType}>
+                    <a href={url_conversion} download={true}>{ conversionType }</a>
+                    { df.allowed_conversion_type.length != index + 1 &&
+                    <span>, </span>
+                    }
+                </span>
+            });
+
             return <tr key={index}>
                 <td>{df.name}</td>
                 <td>{df.short_summary}</td>
-                <td><a href={df.url} download={true}>{df.type}</a></td>
+                <td>
+                { conversionTypesOutput }
+                </td>
             </tr>
         });
 
@@ -283,7 +297,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     <small>{permaname}</small>
                 </h1>
                 <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
-                     on the {toLocalDateString(datasetVersion.creation_date)}</p>
+                    on the {toLocalDateString(datasetVersion.creation_date)}</p>
                 <p>Versions: {versions} </p>
 
                 <p>Contained within {folders}</p>

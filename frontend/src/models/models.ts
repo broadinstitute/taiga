@@ -69,11 +69,12 @@ export interface DatasetAndDatasetVersion {
 }
 
 export interface DatasetVersionDatafiles {
-    "id": string;
-    "name": string;
-    "url": string;
-    "type": DataFileType;
-    "short_summary": string;
+    id: string;
+    name: string;
+    url: string;
+    type: DataFileType;
+    allowed_conversion_type: Array<string>;
+    short_summary: string;
 }
 
 export interface DatasetVersions {

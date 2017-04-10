@@ -2,7 +2,7 @@ from flask_marshmallow import Marshmallow, fields
 from marshmallow_enum import EnumField
 from marshmallow_oneofschema import OneOfSchema
 
-from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile
+from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile, get_allowed_conversion_type
 
 ma = Marshmallow()
 
@@ -103,6 +103,9 @@ class DataFileSchema(ma.ModelSchema):
     class Meta:
         model = DataFile
     type = EnumField(DataFile.DataFileType)
+    # Allowed Conversion Type
+    allowed_conversion_type = fields.fields.Function(lambda obj: get_allowed_conversion_type(obj.type),
+                                                     dump_to="allowed_conversion_type")
     description = fields.fields.Function(lambda obj: 'TODO')
     content_summary = fields.fields.Function(lambda obj: 'TODO')
 
