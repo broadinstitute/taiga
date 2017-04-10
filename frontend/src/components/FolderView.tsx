@@ -327,8 +327,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             let keyA = new Date(this.getMostRecentDateEntry(elementA));
             let keyB = new Date(this.getMostRecentDateEntry(elementB));
 
-            debugger;
-
             if (keyA > keyB) return -1;
             if (keyA < keyB) return 1;
             return 0;

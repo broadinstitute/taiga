@@ -3,7 +3,7 @@ import 'whatwg-fetch';
 import {
     User, Folder, Dataset, DatasetVersion, S3Credentials,
     TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId, DatasetFullDatasetVersions,
-    AccessLog
+    AccessLog, DatafileUrl
 } from './models';
 
 import { currentUserToken } from '../utilities/route';
@@ -158,20 +158,20 @@ export class TaigaApi {
         return this._post<string>("/datafile/" + sid, S3UploadedFileMetadata)
     }
 
-    url_get_datafile(datasetPermaname: string, datasetVersion: string,
+    get_datafile(datasetPermaname: string, datasetVersion: string,
                      datasetVersionId: string, datafileName: string,
-                     format: string, force: string) {
+                     format: string, force: string): Promise<DatafileUrl> {
         // Returns the url to launch/get status/retrieve the datafile
         // (datasetPermaname with datasetVersion OR datasetVersionId) and datafileName + format [+ force]
         // TODO: Support Permaname+Version. Currently only datasetVersionId
-        let url = this.baseUrl + "/datafile?"
+        let url = "/datafile?"
             + "dataset_version_id=" + datasetVersionId
             + "&"
             + "datafile_name=" + datafileName
             + "&"
             + "format=" + format;
 
-        return url;
+        return this._fetch<DatafileUrl>(url);
     }
 
     get_task_status(taskStatusId: string) {

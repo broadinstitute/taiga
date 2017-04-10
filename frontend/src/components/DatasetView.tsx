@@ -12,6 +12,7 @@ import * as Upload from "./modals/Upload";
 
 import {toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
+import {DatafileUrl, ConversionStatusEnum} from "../models/models";
 
 export interface DatasetViewProps {
     params: any
@@ -144,6 +145,55 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         });
     }
 
+    // Download
+
+    // Async function to wait
+    delay(milliseconds: number) {
+        return new Promise<void>(resolve => {
+            setTimeout(resolve, milliseconds);
+        });
+    }
+
+    getOrLaunchConversion(datasetPermaname: string, version: string, datasetVersionId: string,
+                          datafileName: string, format: string, force: string) {
+        // Ask for conversion, if ok download. Else convert process and loading for user
+        // Loading
+
+        return tapi.get_datafile(datasetPermaname, version, datasetVersionId, datafileName, format, force)
+            .then((result: DatafileUrl) => {
+                console.log(result.status);
+                if (result.status != ConversionStatusEnum.Completed.toString()) {
+                    return this.delay(2000).then(() => {
+                        if (result.status == ConversionStatusEnum.Pending.toString()) {
+                            // We call this again in a few seconds and change the message to pending
+                            console.log("We wait!");
+                        }
+                        else if (result.status == ConversionStatusEnum.Downloading.toString()) {
+                            // We call this again in a few seconds and change the message to downloading from S3
+                            console.log("We download from s3!");
+                        }
+                        else if (result.status == ConversionStatusEnum.Running.toString()) {
+                            // We call this again in a few seconds and change the message to Running the conversion
+                            console.log("Running the conversion");
+                        }
+                        else {
+                            console.log("Something went wrong in the getOrLaunchConversion function. We received this status: "
+                                + result.status);
+                        }
+                        return this.getOrLaunchConversion(datasetPermaname, version, datasetVersionId, datafileName, format, force);
+                    });
+                }
+                else {
+                    // We stop the loading, and download the file because it is ready
+                    console.log("Conversion done! We got:");
+                    result.urls.forEach((url) => {
+                        window.location.href = url;
+                        console.log("- " + url);
+                    });
+                }
+            });
+    }
+
     render() {
         if (!this.state) {
             return     <div>
@@ -168,10 +218,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let entries = datasetVersion.datafiles.map((df, index) => {
             let conversionTypesOutput = df.allowed_conversion_type.map((conversionType, index) => {
                 // TODO: If we have the same name for datafiles, we will run into troubles
-                let url_conversion = tapi.url_get_datafile(undefined, undefined,
-                    datasetVersion.id, df.name, conversionType, 'N');
                 return <span key={conversionType}>
-                    <a href={url_conversion} download={true}>{ conversionType }</a>
+                    <a href="#" onClick={() => { return this.getOrLaunchConversion(undefined, undefined,
+                    datasetVersion.id, df.name, conversionType, 'N'); }}>
+                        { conversionType }
+                        </a>
                     { df.allowed_conversion_type.length != index + 1 &&
                     <span>, </span>
                     }
@@ -182,7 +233,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <td>{df.name}</td>
                 <td>{df.short_summary}</td>
                 <td>
-                { conversionTypesOutput }
+                    { conversionTypesOutput }
                 </td>
             </tr>
         });

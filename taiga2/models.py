@@ -312,7 +312,7 @@ class ConversionEntryState(enum.Enum):
 class ConversionCache(db.Model):
     __tablename__ = "conversion_cache"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid())
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
 
     dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
 

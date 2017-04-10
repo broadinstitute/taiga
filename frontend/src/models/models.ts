@@ -226,6 +226,23 @@ export enum DataFileType {
     Columnar = <any> 'Columnar'
 }
 
+export interface DatafileUrl {
+    dataset_name: string;
+    dataset_version: string;
+    dataset_id: string;
+    dataset_version_id: string;
+    datafile_name: string;
+    status: string;
+    urls: Array<string>;
+}
+
+export enum ConversionStatusEnum {
+    Pending =  <any> 'Conversion pending',
+    Downloading = <any> 'Downloading from S3',
+    Running = <any> 'Running conversion',
+    Completed = <any> 'Completed successfully'
+}
+
 export class AccessLog {
     user_id: string;
     dataset: NamedId;

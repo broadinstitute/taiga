@@ -316,6 +316,8 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
     dataset_name = dataset_version.dataset.name
     dataset_permaname = dataset_version.dataset.permaname
 
+    import pdb
+
     if format == "metadata":
         urls = None
         conversion_status = ""
