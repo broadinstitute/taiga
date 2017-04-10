@@ -113,9 +113,7 @@ export class RecentlyViewed extends React.Component<RecentlyViewedProps, Recentl
                         <h1>Your dataset access history</h1>
                     </Row>
                     <Row>
-                        <ul>
-                            {displayAccessLogs}
-                        </ul>
+                        {displayAccessLogs}
                     </Row>
                 </Grid>
             </div>
