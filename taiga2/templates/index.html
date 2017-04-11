@@ -144,7 +144,7 @@
             position: fixed;
             z-index: 999;
             height: 2em;
-            width: 2em;
+            width: 30em;
             overflow: show;
             margin: auto;
             top: 0;
@@ -168,11 +168,11 @@
         /* :not(:required) hides these rules from IE9 and below */
         .loadingOverlay:not(:required) {
             /* hide "loading..." text */
-            font: 0/0 a;
-            color: transparent;
-            text-shadow: none;
-            background-color: transparent;
-            border: 0;
+            /*font: 0/0 a;*/
+            /*color: transparent;*/
+            /*text-shadow: none;*/
+            /*background-color: transparent;*/
+            /*border: 0;*/
         }
 
         .loadingOverlay:not(:required):after {
@@ -181,7 +181,8 @@
             font-size: 10px;
             width: 1em;
             height: 1em;
-            margin-top: -0.5em;
+            margin-top: 3.5em;
+            margin-left: 45%;
             -webkit-animation: spinner 1500ms infinite linear;
             -moz-animation: spinner 1500ms infinite linear;
             -ms-animation: spinner 1500ms infinite linear;

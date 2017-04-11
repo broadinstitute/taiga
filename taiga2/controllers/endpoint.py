@@ -305,9 +305,11 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
     from taiga2.tasks import start_conversion_task
 
     datafile = models_controller.find_datafile(dataset_permaname, version, dataset_version_id, datafile_name)
+
     if datafile is None:
         flask.abort(404)
 
+    # import pdb; pdb.set_trace()
     dataset_version = datafile.dataset_version
     dataset_version_version = dataset_version.version
     dataset_version_id = dataset_version.id
@@ -315,8 +317,6 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
     datafile_name = datafile.name
     dataset_name = dataset_version.dataset.name
     dataset_permaname = dataset_version.dataset.permaname
-
-    import pdb
 
     if format == "metadata":
         urls = None
@@ -332,6 +332,8 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
         from taiga2 import models
         if not is_new:
             if entry.state == models.ConversionEntryState.failed and not force_conversion:
+                log.error("For entry {}, entry.state is failed and force_conversion is not set."
+                          "Reporting internal error.".format(entry.id))
                 flask.abort(500)  # report internal error
             elif not entry_is_valid(entry) or force_conversion:
                 log.warning("Cache entry not associated with a running task, deleting to try again")

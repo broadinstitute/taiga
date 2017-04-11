@@ -11,6 +11,7 @@ import * as Dialogs from "./Dialogs"
 import * as Upload from "./modals/Upload";
 
 import {toLocalDateString} from "../utilities/formats";
+import {LoadingOverlay} from "../utilities/loading";
 import {relativePath} from "../utilities/route";
 import {DatafileUrl, ConversionStatusEnum} from "../models/models";
 
@@ -24,6 +25,8 @@ export interface DatasetViewState {
     showEditName?: boolean;
     showEditDescription?: boolean;
     showUploadDataset?: boolean;
+    loading?: boolean;
+    loadingMessage?: string;
 }
 
 const buttonUploadNewVersionStyle = {
@@ -45,15 +48,21 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             this.doFetch();
             // We close the modal
             this.setState({
-                showUploadDataset: false
+                showUploadDataset: false,
+                loading: false
             })
         }
     }
 
     componentDidMount() {
         tapi = (this.context as any).tapi;
+
+        this.setLoading(true);
+
         this.doFetch().then(() => {
             this.logAccess();
+
+            this.setLoading(false);
         });
     }
 
@@ -158,40 +167,63 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                           datafileName: string, format: string, force: string) {
         // Ask for conversion, if ok download. Else convert process and loading for user
         // Loading
+        this.setLoading(true);
 
         return tapi.get_datafile(datasetPermaname, version, datasetVersionId, datafileName, format, force)
             .then((result: DatafileUrl) => {
                 console.log(result.status);
+
                 if (result.status != ConversionStatusEnum.Completed.toString()) {
-                    return this.delay(2000).then(() => {
+                    return this.delay(500).then(() => {
                         if (result.status == ConversionStatusEnum.Pending.toString()) {
                             // We call this again in a few seconds and change the message to pending
-                            console.log("We wait!");
+                            this.setLoadingMessage("Pending...");
                         }
                         else if (result.status == ConversionStatusEnum.Downloading.toString()) {
                             // We call this again in a few seconds and change the message to downloading from S3
-                            console.log("We download from s3!");
+                            this.setLoadingMessage("Downloading from S3...");
                         }
                         else if (result.status == ConversionStatusEnum.Running.toString()) {
                             // We call this again in a few seconds and change the message to Running the conversion
-                            console.log("Running the conversion");
+                            this.setLoadingMessage("Running the conversion...");
                         }
                         else {
                             console.log("Something went wrong in the getOrLaunchConversion function. We received this status: "
                                 + result.status);
+                            this.setLoadingMessage("Something went wrong. Please retry later and inform the admin.");
                         }
                         return this.getOrLaunchConversion(datasetPermaname, version, datasetVersionId, datafileName, format, force);
                     });
                 }
                 else {
+                    this.setLoading(false);
                     // We stop the loading, and download the file because it is ready
-                    console.log("Conversion done! We got:");
                     result.urls.forEach((url) => {
                         window.location.href = url;
                         console.log("- " + url);
                     });
                 }
             });
+    }
+
+    setLoading(requireLoading: boolean, message?: string){
+        if (message) {
+            this.setState({
+                loading: requireLoading,
+                loadingMessage: message
+            });
+        }
+        else {
+            this.setState({
+                loading: requireLoading
+            })
+        }
+    }
+
+    setLoadingMessage(message: string) {
+        this.setState({
+            loadingMessage: message
+        });
     }
 
     render() {
@@ -219,8 +251,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             let conversionTypesOutput = df.allowed_conversion_type.map((conversionType, index) => {
                 // TODO: If we have the same name for datafiles, we will run into troubles
                 return <span key={conversionType}>
-                    <a href="#" onClick={() => { return this.getOrLaunchConversion(undefined, undefined,
-                    datasetVersion.id, df.name, conversionType, 'N'); }}>
+                    <a href="#" onClick={() => {
+                        this.setLoadingMessage("Sent the request to the server...");
+                        return this.getOrLaunchConversion(undefined, undefined,
+                            datasetVersion.id, df.name, conversionType, 'N'); }}>
                         { conversionType }
                         </a>
                     { df.allowed_conversion_type.length != index + 1 &&
@@ -375,6 +409,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <h2>Reading from R</h2>
                 <pre>{r_block}</pre>
             </div>
+            {this.state.loading && <LoadingOverlay message={ this.state.loadingMessage }></LoadingOverlay>}
         </div>
     }
 }
