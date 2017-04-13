@@ -8,6 +8,10 @@ interface LoadingOverlayProps {
 
 export class LoadingOverlay extends React.Component<LoadingOverlayProps, any> {
     render() {
-        return <div className="loadingOverlay"><Well>{ this.props.message }</Well></div>
+        return <div className="loadingOverlay">
+            { this.props.message &&
+                <Well>{ this.props.message }</Well>
+            }
+        </div>
     }
 }
