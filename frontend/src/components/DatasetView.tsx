@@ -203,6 +203,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         console.log("- " + url);
                     });
                 }
+            }).catch((reason: any) => {
+                this.setLoadingMessage("Conversion error on server side: "+reason+". Please inform the admin."+
+                " This loading page will disappear in 30 seconds (you can also refresh).");
+                this.delay(30000).then(() => {
+                   this.setLoading(false);
+                });
             });
     }
 
