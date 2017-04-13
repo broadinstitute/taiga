@@ -69,8 +69,14 @@ def parse_s3_url(url):
     return g.group(1), g.group(2)
 
 
-def sign_url(bucket, key):
+def create_s3_url(bucket, key):
+    return "".join(["s3://", bucket, "/", key])
+
+
+def sign_url(url):
     # TODO: Set expiry on signing url
+    bucket, key = parse_s3_url(url)
+
     signed_url = aws.s3_client.generate_presigned_url(
         ClientMethod='get_object',
         Params={
