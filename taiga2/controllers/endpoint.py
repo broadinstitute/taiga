@@ -320,11 +320,11 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
 
     if format == "metadata":
         urls = None
-        conversion_status = ""
+        conversion_status = "Completed successfully"
     elif _no_transform_needed(format, datafile.type):
         # no conversion is necessary
-        urls = [aws_sign_url(datafile.url)]
-        conversion_status = ""
+        urls = [aws_sign_url(bucket=datafile.s3_bucket, key=datafile.s3_key)]
+        conversion_status = "Completed successfully"
     else:
         force_conversion = force == "Y"
         is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)

@@ -172,7 +172,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         return tapi.get_datafile(datasetPermaname, version, datasetVersionId, datafileName, format, force)
             .then((result: DatafileUrl) => {
                 console.log(result.status);
-
+                debugger;
                 if (result.status != ConversionStatusEnum.Completed.toString()) {
                     return this.delay(500).then(() => {
                         if (result.status == ConversionStatusEnum.Pending.toString()) {
