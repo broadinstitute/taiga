@@ -64,12 +64,20 @@ def create_table_dataset_version(tmpdir, mock_s3):
     ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
 
+def _as_tsv(rows):
+    content = "".join(["\t".join(row)+"\r\n" for row in rows])
+    return content.encode("utf8")
+
 @pytest.mark.parametrize("src_format, out_format, is_expected", [
     ("table", "csv", lambda x: x == b"a,b\r\n1,2\r\n"),
     ("table", "tsv", lambda x: x == b"a\tb\r\n1\t2\r\n"),
     ("table", "rds", lambda x: len(x) > 0),
     ("matrix", "csv", lambda x: x == b",a,b\r\nc,1.0,2.0\r\n"),
     ("matrix", "tsv", lambda x: x == b"\ta\tb\r\nc\t1.0\t2.0\r\n"),
+    ("matrix", "gct", lambda x: x == _as_tsv([["#1.2"],
+                                      ["1","2"],
+                                      ["Name", "Description", "a", "b"],
+                                      ["c", "c", "1.0", "2.0"]])),
     ("matrix", "rds", lambda x: len(x) > 0)
 ])
 def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, out_format, is_expected):

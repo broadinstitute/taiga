@@ -1,5 +1,5 @@
 from taiga2.conv.imp import csv_to_hdf5, tsv_to_hdf5
-from taiga2.conv.exp import hdf5_to_rds, hdf5_to_csv, hdf5_to_tsv
+from taiga2.conv.exp import hdf5_to_rds, hdf5_to_csv, hdf5_to_tsv, hdf5_to_gct
 
 from taiga2.conv import columnar
 
@@ -19,9 +19,9 @@ def columnar_to_tsv(progress, src, temp_file_generator):
     columnar.convert_tabular_to_csv(src, dst, "\t")
     return [dst]
 
+# text formats
 CSV_FORMAT = "csv"
 TSV_FORMAT = "tsv"
-
 GCT_FORMAT = "gct"
 
 RAW_FORMAT = "raw"

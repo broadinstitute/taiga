@@ -138,6 +138,8 @@ def get_converter(src_format, dst_format):
             return conversion.hdf5_to_rds
         elif dst_format == conversion.TSV_FORMAT:
             return conversion.hdf5_to_tsv
+        elif dst_format == conversion.GCT_FORMAT:
+            return conversion.hdf5_to_gct
     elif is_columnar:
         if dst_format == conversion.CSV_FORMAT:
             return conversion.columnar_to_csv
