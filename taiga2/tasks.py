@@ -131,14 +131,21 @@ def get_converter(src_format, dst_format):
     is_hdf5 = (src_format == str(DataFile.DataFileType.HDF5))
     is_columnar = str(DataFile.DataFileType.Columnar)
 
-    if is_hdf5 and dst_format == conversion.CSV_FORMAT:
-        return conversion.hdf5_to_csv
-    if is_hdf5 and dst_format == conversion.RDS_FORMAT:
-        return conversion.hdf5_to_rds
-    if is_columnar and dst_format == conversion.CSV_FORMAT:
-        return conversion.columnar_to_csv
-    if is_columnar and dst_format == conversion.RDS_FORMAT:
-        return conversion.columnar_to_rds
+    if is_hdf5:
+        if dst_format == conversion.CSV_FORMAT:
+            return conversion.hdf5_to_csv
+        elif dst_format == conversion.RDS_FORMAT:
+            return conversion.hdf5_to_rds
+        elif dst_format == conversion.TSV_FORMAT:
+            return conversion.hdf5_to_tsv
+    elif is_columnar:
+        if dst_format == conversion.CSV_FORMAT:
+            return conversion.columnar_to_csv
+        elif dst_format == conversion.TSV_FORMAT:
+            return conversion.columnar_to_tsv
+        elif dst_format == conversion.RDS_FORMAT:
+            return conversion.columnar_to_rds
+
     raise Exception("No conversion for {} to {}".format(src_format, dst_format))
 
 

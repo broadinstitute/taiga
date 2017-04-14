@@ -4,6 +4,7 @@ import taiga2.controllers.models_controller as mc
 import json
 from taiga2.tests.mock_s3 import parse_presigned_url
 from taiga2.controllers.models_controller import find_datafile
+import pytest
 
 from flask_sqlalchemy import SessionBase
 
@@ -63,12 +64,12 @@ def create_table_dataset_version(tmpdir, mock_s3):
     ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
 
-import pytest
-
 @pytest.mark.parametrize("src_format, out_format, is_expected", [
     ("table", "csv", lambda x: x == b"a,b\r\n1,2\r\n"),
+    ("table", "tsv", lambda x: x == b"a\tb\r\n1\t2\r\n"),
     ("table", "rds", lambda x: len(x) > 0),
     ("matrix", "csv", lambda x: x == b",a,b\r\nc,1.0,2.0\r\n"),
+    ("matrix", "tsv", lambda x: x == b"\ta\tb\r\nc\t1.0\t2.0\r\n"),
     ("matrix", "rds", lambda x: len(x) > 0)
 ])
 def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, out_format, is_expected):
