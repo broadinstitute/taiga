@@ -227,7 +227,7 @@ class DataFile(db.Model):
 def get_allowed_conversion_type(datafile_type):
     if datafile_type == DataFile.DataFileType.HDF5:
         return [conversion.CSV_FORMAT, conversion.GCT_FORMAT, conversion.HDF5_FORMAT,
-                                  conversion.RDS_FORMAT, conversion.TSV_FORMAT]
+                conversion.RDS_FORMAT, conversion.TSV_FORMAT]
 
     if datafile_type == DataFile.DataFileType.Columnar:
         return [conversion.CSV_FORMAT, conversion.TSV_FORMAT]
@@ -364,3 +364,71 @@ class UploadSessionFile(db.Model):
 
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)
+
+
+# <editor-fold desc="Provenance">
+class ProvenanceGraph(db.Model):
+    __tablename__ = "provenance_graphs"
+
+    graph_id = db.Column(GUID,
+                         primary_key=True,
+                         default=generate_uuid)
+
+    permaname = db.Column(GUID,
+                          unique=True,
+                          default=generate_uuid)
+
+    name = db.Column(db.Text)
+
+    created_by_user_id = db.Column(GUID, db.ForeignKey("users.id"))
+    user = db.relationship("User",
+                           backref=__tablename__)
+
+    created_timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+
+class ProvenanceEdge(db.Model):
+    __tablename__ = "provenance_edges"
+
+    edge_id = db.Column(GUID,
+                        primary_key=True,
+                        default=generate_uuid)
+
+    from_node_id = db.Column(GUID, db.ForeignKey("provenance_nodes.node_id"))
+    from_node = db.relationship("ProvenanceNode",
+                                foreign_keys="ProvenanceEdge.from_node_id",
+                                backref="from_edges")
+
+    to_node_id = db.Column(GUID, db.ForeignKey("provenance_nodes.node_id"))
+    to_node = db.relationship("ProvenanceNode",
+                              foreign_keys="ProvenanceEdge.to_node_id",
+                              backref="to_edges")
+
+    label = db.Column(db.Text)
+
+
+class ProvenanceNode(db.Model):
+    __tablename__ = "provenance_nodes"
+
+    class NodeType(enum.Enum):
+        Dataset = "dataset"
+        External = "external"
+        Process = "process"
+
+    node_id = db.Column(GUID,
+                        primary_key=True,
+                        default=generate_uuid)
+
+    graph_id = db.Column(GUID, db.ForeignKey("provenance_graphs.graph_id"))
+    graph = db.relationship("ProvenanceGraph",
+                            backref=__tablename__)
+
+    dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"), nullable=True)
+    dataset_version = db.relationship("DatasetVersion",
+                                      backref=__tablename__)
+
+    label = db.Column(db.Text)
+
+    type = db.Column(db.Enum(NodeType))
+
+# <editor-fold>
