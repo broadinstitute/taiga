@@ -37,14 +37,18 @@ export class TypeEditorBootstrapTable extends React.Component<TypeEditorProps, T
     }
 
     render() {
+        // Options values should also be changed in formats.tsx
+        // TODO: Use the same text to print to the user between selection of option and print result in formats.tsx
         return (
             <FormGroup controlId="formControlsSelect">
                 <FormControl componentClass="select"
                              value={ this.state.type }
                              onChange={ (evt) => this.updateData(evt) } >
+                    <option value={InitialFileType.TableCSV}>{InitialFileType.TableCSV}</option>
                     <option value={InitialFileType.NumericMatrixCSV}>{InitialFileType.NumericMatrixCSV}</option>
+                    <option value={InitialFileType.TableTSV}>{InitialFileType.TableTSV}</option>
+                    <option value={InitialFileType.NumericMatrixTSV}>{InitialFileType.NumericMatrixTSV}</option>
                     <option value={InitialFileType.Raw}>{InitialFileType.Raw}</option>
-                    <option value={InitialFileType.Table}>{InitialFileType.Table}</option>
                 </FormControl>
             </FormGroup>
         )

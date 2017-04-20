@@ -215,7 +215,8 @@ export class TaskStatus {
 export enum InitialFileType {
     NumericMatrixCSV = <any> 'NumericMatrixCSV',
     NumericMatrixTSV = <any> 'NumericMatrixTSV',
-    Table = <any> 'Table',
+    TableCSV = <any> 'TableCSV',
+    TableTSV = <any> 'TableTSV',
     GCT = <any> 'GCT',
     Raw = <any> 'Raw'
 }

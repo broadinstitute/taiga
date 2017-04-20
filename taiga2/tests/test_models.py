@@ -14,8 +14,9 @@ from taiga2.models import User, Folder, Dataset, DatasetVersion
 from taiga2.models import generate_permaname
 from taiga2.models import DataFile
 
+
 # TODO: Remove the domain tests and bring them to test_endpoint.py
-#<editor-fold desc="User Tests">
+# <editor-fold desc="User Tests">
 
 # TODO: These two tests generate Integrity error on the token. Why? Due to the way a uuid is generated during the tests?
 # @pytest.fixture(scope='function')
@@ -49,16 +50,20 @@ def test_get_user(session):
     db_user = mc.get_user(current_user.id)
 
     assert db_user == current_user
-#</editor-fold>
 
-#<editor-fold desc="SessionUpload">
+
+# </editor-fold>
+
+# <editor-fold desc="SessionUpload">
 def test_create_sessionUpload(session: SessionBase):
     sessionUpload = mc.UploadSession()
 
     assert isinstance(sessionUpload, mc.UploadSession)
-#</editor-fold>
 
-#<editor-fold desc="Folder Tests">
+
+# </editor-fold>
+
+# <editor-fold desc="Folder Tests">
 @pytest.fixture
 def new_folder():
     new_folder_name = "New folder"
@@ -147,22 +152,24 @@ def test_add_folder_entry(session: SessionBase,
                           new_dummy_folder,
                           new_dataset):
     updated_folder = mc.add_folder_entry(new_folder.id,
-                                      new_dummy_folder.id)
+                                         new_dummy_folder.id)
 
     assert len(updated_folder.entries) == 1
     assert new_dummy_folder in updated_folder.entries
 
     updated_again_folder = mc.add_folder_entry(new_folder.id,
-                                            new_dataset.id)
+                                               new_dataset.id)
 
     assert len(updated_again_folder.entries) == 2
     assert new_dataset in updated_again_folder.entries
 
     assert new_folder == updated_folder
     assert updated_again_folder == updated_folder
-#</editor-fold>
 
-#<editor-fold desc="Dataset Tests">
+
+# </editor-fold>
+
+# <editor-fold desc="Dataset Tests">
 @pytest.fixture()
 def new_dataset(new_datafile):
     new_dataset_name = "New Dataset"
@@ -205,15 +212,15 @@ def test_add_dataset(session: SessionBase,
 
 
 def test_add_dataset_with_datafile(session: SessionBase,
-                                          new_datafile):
+                                   new_datafile):
     new_dataset_name = "New dataset with datasetVersion"
     new_dataset_description = "New dataset with datasetVersion"
 
     datafiles_ids = [new_datafile.id]
 
     new_dataset = mc.add_dataset(name=new_dataset_name,
-                              description=new_dataset_description,
-                              datafiles_ids=datafiles_ids)
+                                 description=new_dataset_description,
+                                 datafiles_ids=datafiles_ids)
 
     assert new_dataset.name == new_dataset_name
     assert new_dataset.description == new_dataset_description
@@ -227,7 +234,7 @@ def test_update_dataset_name(session: SessionBase,
                              new_dataset):
     new_dataset_name = "New name"
     updated_dataset = mc.update_dataset_name(new_dataset.id,
-                                          new_dataset_name)
+                                             new_dataset_name)
 
     assert new_dataset == updated_dataset
     assert updated_dataset.name == new_dataset_name
@@ -237,7 +244,7 @@ def test_update_dataset_description(session: SessionBase,
                                     new_dataset):
     new_dataset_description = "New description"
     updated_dataset = mc.update_dataset_description(new_dataset.id,
-                                                 new_dataset_description)
+                                                    new_dataset_description)
 
     assert updated_dataset == new_dataset
     assert updated_dataset.description == new_dataset_description
@@ -293,9 +300,10 @@ def test_get_dataset_by_permaname(session: SessionBase,
     assert fetched_dataset.id == new_dataset.id
     assert fetched_dataset.permaname == new_dataset.permaname
 
-#</editor-fold>
 
-#<editor-fold desc="DatasetVersion Tests">
+# </editor-fold>
+
+# <editor-fold desc="DatasetVersion Tests">
 @pytest.fixture
 def new_dataset_version(new_datafile):
     # TODO: Add in the name it is an empty dataset_version
@@ -356,7 +364,7 @@ def test_get_dataset_version_by_permaname_and_version(session,
     dataset = new_dataset_version.dataset
     first_version_number = 1
     first_dataset_version = mc.get_dataset_version_by_permaname_and_version(dataset.permaname,
-                                                                              first_version_number)
+                                                                            first_version_number)
 
     check_first_dataset_version = [dataset_version
                                    for dataset_version in dataset.dataset_versions
@@ -368,18 +376,17 @@ def test_get_dataset_version_by_permaname_and_version(session,
 def test_get_dataset_version_by_dataset_id_and_dataset_version_id(session: SessionBase,
                                                                   new_dataset,
                                                                   new_dataset_version):
-
     _dataset_version_id = new_dataset_version.dataset_id
 
     test_dataset_version = mc.get_dataset_version_by_dataset_id_and_dataset_version_id(_dataset_version_id,
-                                                                                    new_dataset_version.id)
+                                                                                       new_dataset_version.id)
 
     assert test_dataset_version == new_dataset_version
 
 
-#</editor-fold>
+# </editor-fold>
 
-#<editor-fold desc="DataFile Tests">
+# <editor-fold desc="DataFile Tests">
 @pytest.fixture
 def new_datafile():
     new_datafile_name = "New Datafile"
@@ -393,9 +400,11 @@ def new_datafile():
                                     long_summary="long")
 
     return _new_datafile
-#</editor-fold>
 
-#<editor-fold desc="Entry Tests">
+
+# </editor-fold>
+
+# <editor-fold desc="Entry Tests">
 
 
 def test_get_entry(session: SessionBase,
@@ -406,9 +415,63 @@ def test_get_entry(session: SessionBase,
     # assert type(entry) is Entry
     assert entry.id == new_folder.id
 
-#</editor-fold>
 
-#<editor-fold desc="Test Utilities">
+# </editor-fold>
+
+# <editor-fold desc="Provenance Tests">
+
+def test_add_provenance_graph(session: SessionBase):
+    graph_permaname = "permaname_graph"
+    graph_name = "Graph name"
+    graph_user_id = flask.g.current_user.id
+    graph_id = graph_permaname
+
+    _new_graph = mc.add_graph(graph_permaname=graph_permaname,
+                              graph_name=graph_name,
+                              graph_user_id=graph_user_id,
+                              graph_id=graph_id)
+
+    return _new_graph
+
+
+@pytest.fixture
+def new_graph():
+    graph_permaname = "permaname_graph"
+    graph_name = "Graph name"
+    graph_user_id = flask.g.current_user.id
+    graph_id = graph_permaname
+
+    _new_graph = mc.add_graph(graph_permaname=graph_permaname,
+                              graph_name=graph_name,
+                              graph_user_id=graph_user_id,
+                              graph_id=graph_id)
+
+    return _new_graph
+
+
+def test_get_provenance_graph(session: SessionBase, new_graph):
+    _test_graph = mc.get_provenance_graph(new_graph.graph_id)
+
+    assert _test_graph.graph_id == new_graph.graph_id
+
+# TODO: Implement node and edge tests
+# def test_add_provenance_node(session: SessionBase):
+#     return False
+#
+#
+# def test_get_provenance_node(session: SessionBase):
+#     return False
+#
+#
+# def test_add_provenance_edge(session: SessionBase):
+#     return False
+#
+#
+# def test_get_provenance_edge(session: SessionBase):
+#     return False
+
+# </editor-fold>
+
+# <editor-fold desc="Test Utilities">
 # TODO: Test generate_name
-#</editor-fold>
-
+# </editor-fold>

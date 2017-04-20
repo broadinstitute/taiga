@@ -190,7 +190,8 @@ class Dataset(Entry):
 class InitialFileType(enum.Enum):
     NumericMatrixCSV = "NumericMatrixCSV"
     NumericMatrixTSV = "NumericMatrixTSV"
-    Table = "Table"
+    TableCSV = "TableCSV"
+    TableTSV = "TableTSV"
     GCT = "GCT"
     Raw = "Raw"
 
@@ -241,7 +242,8 @@ def get_allowed_conversion_type(datafile_type):
 _INTIAL_TO_CONVERTED_MAPPING = {InitialFileType.NumericMatrixCSV: DataFile.DataFileType.HDF5,
                                 InitialFileType.NumericMatrixTSV: DataFile.DataFileType.HDF5,
                                 InitialFileType.GCT: DataFile.DataFileType.HDF5,
-                                InitialFileType.Table: DataFile.DataFileType.Columnar,
+                                InitialFileType.TableCSV: DataFile.DataFileType.Columnar,
+                                InitialFileType.TableTSV: DataFile.DataFileType.Columnar,
                                 InitialFileType.Raw: DataFile.DataFileType.Raw,
                                 }
 
