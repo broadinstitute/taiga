@@ -423,14 +423,14 @@ def get_long_summary(input_file):
             b.write("\t\"{}\" {}\n".format(c.name, c.persister.type_name))
         return b.getvalue()
 
-def convert_csv_to_tabular(input_file, output_file, delimiter):
+def convert_csv_to_tabular(input_file, output_file, delimiter, rows_per_block=100000):
     sha256 = get_file_sha256(input_file)
     hasRowNames, datafile_columns = sniff.sniff(input_file, delimiter=delimiter)
 
     with open(input_file, 'rU') as fd:
         reader = csv.reader(fd, delimiter=delimiter)
 
-        w = DatasetWriter(output_file, datafile_columns)
+        w = DatasetWriter(output_file, datafile_columns, rows_per_block=rows_per_block)
 
         # throw out the header row
         next(reader)

@@ -95,6 +95,9 @@ def _hdf5_to_tcsv(progress, src_path, temp_file_generator, delimiter, dedup_head
         data = f['data']
         row_header, col_header = _get_matrix_dim_names(f, dedup_headers)
 
+        assert len(row_header) == data.shape[0], "row header length is {} but data has {} rows".format(len(row_header), data.shape[0])
+        assert len(col_header) == data.shape[1], "column header length is {} but data has {} columns".format(len(row_header), data.shape[1])
+
         w.writerow([""] + col_header)
         row_count = len(row_header)
         for i in range(row_count):

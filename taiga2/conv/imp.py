@@ -108,6 +108,9 @@ def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=
                 block_data_array = np.array(block_data)
                 na_count += np.count_nonzero(np.isnan(block_data_array))
 
+                assert len(block_row_header) == block_data_array.shape[0]
+                assert data.shape[1] == block_data_array.shape[1]
+
                 data[row_index:block_end,:] = block_data_array
 
                 row_index = block_end
@@ -122,6 +125,8 @@ def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=
             dim_1 = file_hdf5.create_dataset("dim_1", (len(col_header),), dtype=str_dt)
             dim_1[:] = col_header
             dim_1.attrs['name'] = "col_axis"
+
+            assert len(row_header) == row_count, "Row header length did not match expected row count"
 
     long_summary="Column names: {}\nRow names: {}\n".format(shortened_list(col_header), shortened_list(row_header))
 
@@ -168,6 +173,7 @@ def _read_rows_in_chunks(line, progress, dst_hdf5_file, col_header, r, rows_per_
         if len(rows) >= rows_per_chunk:
             yield row_header, _pack_into_matrix(rows)
             rows = []
+            row_header = []
 
     if len(rows) > 0:
         yield row_header, _pack_into_matrix(rows)
