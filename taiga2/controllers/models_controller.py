@@ -14,6 +14,7 @@ from taiga2 import aws
 from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
+from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
@@ -1051,6 +1052,85 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
 
     return datafile
 
+
+# </editor-fold>
+
+# <editor-fold desc="Provenance">
+def add_graph(graph_permaname, graph_name,
+              graph_user_id=None, graph_created_timestamp=None,
+              graph_id=None):
+    if not graph_created_timestamp:
+        graph_created_timestamp = None
+
+    new_graph = ProvenanceGraph(graph_id=graph_id,
+                                permaname=graph_permaname,
+                                name=graph_name,
+                                created_by_user_id=graph_user_id,
+                                created_timestamp=graph_created_timestamp)
+
+    db.session.add(new_graph)
+    db.session.commit()
+
+    return new_graph
+
+
+def get_provenance_graph(graph_permaname):
+    graph = db.session.query(ProvenanceGraph) \
+        .filter(ProvenanceGraph.permaname == graph_permaname) \
+        .one_or_none()
+
+    return graph
+
+
+def add_node(graph_id, dataset_version_id,
+             label, type,
+             node_id=None):
+
+    node_type = models.ProvenanceNode.NodeType(type)
+
+    if node_type == ProvenanceNode.NodeType.Dataset:
+        dataset_version = get_dataset_version(dataset_version_id=dataset_version_id)
+    else:
+        dataset_version = None
+
+    new_node = ProvenanceNode(node_id=node_id,
+                              graph_id=graph_id,
+                              dataset_version=dataset_version,
+                              label=label,
+                              type=node_type)
+
+    db.session.add(new_node)
+    db.session.commit()
+
+    return new_node
+
+
+def get_provenance_node(node_id):
+    node = db.session.query(ProvenanceNode)\
+        .filter(ProvenanceNode.node_id == node_id)\
+        .one_or_none()
+
+    return node
+
+
+def add_edge(from_node_id, to_node_id,
+             edge_id=None, label=None):
+    new_edge = ProvenanceEdge(edge_id=edge_id,
+                              from_node_id=from_node_id,
+                              to_node_id=to_node_id,
+                              label=label)
+    db.session.add(new_edge)
+    db.session.commit()
+
+    return new_edge
+
+
+def get_provenance_edge(edge_id):
+    edge = db.session.query(ProvenanceEdge)\
+        .filter(ProvenanceEdge.edge_id == edge_id)\
+        .one_or_none()
+
+    return edge
 
 # </editor-fold>
 

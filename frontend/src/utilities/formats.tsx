@@ -10,6 +10,9 @@ export function toLocalDateString(stringDate: string) {
 
 export function getInitialFileTypeFromMimeType(mimeTypeOrEnum: string|InitialFileType): InitialFileType {
     // Manage the case of receiving the Enum
+
+    // Options values should also be changed in formats.tsx
+    // TODO: Use the same text to print to the user between selection of option and print result in formats.tsx
     let formattedType: InitialFileType = InitialFileType.Raw;
     if (mimeTypeOrEnum in InitialFileType) {
         formattedType = mimeTypeOrEnum as InitialFileType;
