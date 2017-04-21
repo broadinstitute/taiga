@@ -124,7 +124,7 @@ def hdf5_to_gct(progress, src_path, temp_file_generator):
         data = f['data']
         row_header, col_header = _get_matrix_dim_names(f, False)
         if 'gct_description' in f:
-          descriptions = f['gct_description']
+          descriptions = [x.decode('utf8') for x in f['gct_description']]
         else:
           descriptions = row_header
 
