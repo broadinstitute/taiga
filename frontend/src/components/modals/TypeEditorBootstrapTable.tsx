@@ -48,6 +48,7 @@ export class TypeEditorBootstrapTable extends React.Component<TypeEditorProps, T
                     <option value={InitialFileType.NumericMatrixCSV}>{InitialFileType.NumericMatrixCSV}</option>
                     <option value={InitialFileType.TableTSV}>{InitialFileType.TableTSV}</option>
                     <option value={InitialFileType.NumericMatrixTSV}>{InitialFileType.NumericMatrixTSV}</option>
+                    <option value={InitialFileType.GCT}>{InitialFileType.GCT}</option>
                     <option value={InitialFileType.Raw}>{InitialFileType.Raw}</option>
                 </FormControl>
             </FormGroup>
