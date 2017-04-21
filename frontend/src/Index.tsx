@@ -43,6 +43,7 @@ class App extends React.Component<AppProps, any> {
     }
 
     render() {
+        // TODO: Get the revision from package.json?
         const trash_link: any = (this.props.route.user &&
             <Link to={relativePath('folder/'+this.props.route.user.trash_folder_id)}>Trash</Link>
         );
@@ -76,10 +77,10 @@ class App extends React.Component<AppProps, any> {
 
                 <footer id="footer">
                     <div className="top-page-menu bottom-page-text">
-                        Broad Institute, Cancer Program Data Science 2015
+                        Broad Institute, Cancer Program Data Science {(new Date()).getFullYear()}
                     </div>
                     <div className="login-box pull-right bottom-page-text">
-                        Rev DEV
+                        Rev 1.0.0
                     </div>
                 </footer>
             </div>
