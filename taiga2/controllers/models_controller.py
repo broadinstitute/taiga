@@ -591,7 +591,7 @@ def get_latest_dataset_version_by_permaname(permaname):
     dataset_version = db.session.query(DatasetVersion) \
         .filter(Dataset.permaname == permaname) \
         .order_by(DatasetVersion.version.desc()) \
-        .one()
+        .first()
 
     return dataset_version
 
