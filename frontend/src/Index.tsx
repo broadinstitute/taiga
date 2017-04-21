@@ -72,7 +72,7 @@ class App extends React.Component<AppProps, any> {
                         <span className="headerSpan"></span>
                         <a href="https://docs.google.com/forms/d/e/1FAIpQLSe_byA04iJsZq9WPqwNfPkEOej8KXg0XVimr6NURMJ_x3ND9w/viewform"
                             target="_blank"
-                            className="headerTitleMinor">
+                            className="headerTitle headerTitleMinor">
                             Feedback
                         </a>
                     </div>
