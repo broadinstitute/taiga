@@ -45,7 +45,8 @@ class App extends React.Component<AppProps, any> {
     render() {
         // TODO: Get the revision from package.json?
         const trash_link: any = (this.props.route.user &&
-            <Link to={relativePath('folder/'+this.props.route.user.trash_folder_id)}>Trash</Link>
+            <Link to={relativePath('folder/'+this.props.route.user.trash_folder_id)}
+                className="headerTitle">Trash</Link>
         );
 
         return (
@@ -54,20 +55,26 @@ class App extends React.Component<AppProps, any> {
                     <div className="top-page-menu">
                         <img id="taiga_logo"/>
                         {/*TODO: Change the way we manage spaces*/}
-                        <span className="headerSpan">Taiga</span>
-                        <Link to={relativePath('')}>Home</Link>
+                        <span className="headerSpan softwareAppName">Taiga</span>
+                        <Link to={relativePath('')} className="headerTitle">Home</Link>
                         <span className="headerSpan"></span>
-                        <Link to={relativePath('folder/public')}>Public</Link>
+                        <Link to={relativePath('folder/public')} className="headerTitle">Public</Link>
                         <span className="headerSpan"></span>
                         {trash_link}
                         <span className="headerSpan"></span>
-                        <Link className="recentlyViewedLink" to={relativePath('recentlyViewed/')}>Recently Viewed</Link>
+                        <Link className="headerTitle" to={relativePath('recentlyViewed/')}>Recently Viewed</Link>
                     </div>
 
                     <div className="login-box pull-right">
-                        <Link className="tokenLink" to={relativePath('token/')}>My Token</Link>
+                        <Link className="tokenLink headerTitle" to={relativePath('token/')}>My Token</Link>
                         {/*TODO: Change this a proper logout behavior*/}
                         {/*<Link className="logoutLink" to={relativePath('')}>Logout</Link>*/}
+                        <span className="headerSpan"></span>
+                        <a href="https://docs.google.com/forms/d/e/1FAIpQLSe_byA04iJsZq9WPqwNfPkEOej8KXg0XVimr6NURMJ_x3ND9w/viewform"
+                            target="_blank"
+                            className="headerTitleMinor">
+                            Feedback
+                        </a>
                     </div>
                 </div>
 
