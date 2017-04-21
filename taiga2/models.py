@@ -52,9 +52,7 @@ folder_entry_association_table = db.Table('folder_entry_association',
 
 # End Associations #
 
-
-def generate_permaname(name):
-    """Generate a permaname based on uuid and the original name"""
+def normalize_name(name):
     permaname_prefix = name.casefold()  # str.casefold() is a more aggressive .lower()
     permaname_prefix = permaname_prefix.replace('\\', '-')  # Replace '\' by '-'
     # Replace all non alphanumeric by "-"
@@ -63,8 +61,11 @@ def generate_permaname(name):
 
     # Remove all repetitions of the same non word character (most likely suite of '-')
     permaname_prefix = re.sub(r'(\W)(?=\1)', '', permaname_prefix)
+    return permaname_prefix
 
-    permaname = permaname_prefix + "-" + str(uuid.uuid4())[:4]
+def generate_permaname(name):
+    """Generate a permaname based on uuid and the original name"""
+    permaname = normalize_name(name) + "-" + str(uuid.uuid4())[:4]
 
     return permaname
 

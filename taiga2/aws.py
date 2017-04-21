@@ -73,15 +73,15 @@ def create_s3_url(bucket, key):
     return "".join(["s3://", bucket, "/", key])
 
 
-def sign_url(url):
+def create_signed_get_obj(bucket, key, filename):
+    content_disposition = "attachment; filename={};".format(filename)
     # TODO: Set expiry on signing url
-    bucket, key = parse_s3_url(url)
-
     signed_url = aws.s3_client.generate_presigned_url(
         ClientMethod='get_object',
         Params={
             'Bucket': bucket,
-            'Key': key
+            'Key': key,
+            'ResponseContentDisposition': content_disposition
         }
     )
     return signed_url

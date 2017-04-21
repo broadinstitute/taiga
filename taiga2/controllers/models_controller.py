@@ -933,15 +933,37 @@ def _find_cache_entry(dataset_version_id, format, datafile_name):
     return entry
 
 
-def get_signed_urls_from_cache_entry(paths_as_json):
+def _add_dl_name(url, dl_name):
+    from urllib.parse import urlparse, parse_qsl, urlencode, ParseResult
+
+    p = urlparse(url)
+    params = parse_qsl(p.query)
+    params.append( ("response-content-disposition", "attachment; filename=" + dl_name) )
+
+    new_p = ParseResult(scheme=p.scheme, netloc=p.netloc, path=p.path,
+            params=p.params, query=urlencode(params), fragment=p.fragment)
+
+    return new_p.geturl()
+
+def get_signed_urls_from_cache_entry(paths_as_json, dl_filename):
     # if there's urls on the cache entry, report those too after signing them
     if paths_as_json is None or paths_as_json == "":
         return None
 
     urls = json.loads(paths_as_json)
-    signed_urls = [aws.sign_url(url) for url in urls]
-    return signed_urls
 
+    if len(urls) == 1:
+        dl_filenames = [dl_filename]
+    else:
+        dl_filenames = ["{}.{}".format(dl_filename, i) for i in range(len(urls))]
+
+    def make_signed_url(url, dl_filename):
+        s3_bucket, s3_key = aws.parse_s3_url(url)
+
+        return aws.create_signed_get_obj(s3_bucket, s3_key, dl_filename)
+
+    signed_urls = [make_signed_url(url, dl_filename) for dl_filename, url in zip(dl_filenames, urls)]
+    return signed_urls
 
 def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
     entry = _find_cache_entry(dataset_version_id, format, datafile_name)
@@ -965,7 +987,6 @@ def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
 
 
 def update_conversion_cache_entry(entry_id, status, urls=None):
-    print("update_conversion_cache", entry_id, status, urls)
     entry = db.session.query(ConversionCache).filter(and_(ConversionCache.id == entry_id)).first()
     if urls is not None:
         assert isinstance(urls, list)

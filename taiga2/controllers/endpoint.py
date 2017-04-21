@@ -8,10 +8,10 @@ from sqlalchemy.orm.exc import NoResultFound
 import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 import taiga2.conv as conversion
-from taiga2.models import DataFile
+from taiga2.models import DataFile, normalize_name
 
 from taiga2.aws import aws
-from taiga2.aws import sign_url as aws_sign_url
+from taiga2.aws import create_signed_get_obj
 from taiga2.aws import create_s3_url as aws_create_s3_url
 
 log = logging.getLogger(__name__)
@@ -301,6 +301,14 @@ def _no_transform_needed(requested_format, datafile_type):
 
     return False
 
+def _make_dl_name(datafile_name, dataset_version_version, dataset_name, format):
+    if format != 'raw':
+        suffix = '.'+format
+    else:
+        suffix = ""
+
+    name = "{}_v{}-{}{}".format(normalize_name(dataset_name), dataset_version_version, normalize_name(datafile_name), suffix)
+    return name
 
 def get_datafile(format, dataset_permaname=None, version=None, dataset_version_id=None, datafile_name=None, force=None):
     from taiga2.tasks import start_conversion_task
@@ -318,14 +326,14 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
     datafile_name = datafile.name
     dataset_name = dataset_version.dataset.name
     dataset_permaname = dataset_version.dataset.permaname
+    dl_filename = _make_dl_name(datafile_name, dataset_version_version, dataset_name, format)
 
     if format == "metadata":
         urls = None
         conversion_status = "Completed successfully"
     elif _no_transform_needed(format, datafile.type):
         # no conversion is necessary
-        s3_url = aws_create_s3_url(bucket=datafile.s3_bucket, key=datafile.s3_key)
-        urls = [aws_sign_url(s3_url)]
+        urls = [create_signed_get_obj(datafile.s3_bucket, datafile.s3_key, dl_filename)]
         conversion_status = "Completed successfully"
     else:
         force_conversion = force == "Y"
@@ -343,12 +351,10 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
                 is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
 
         if is_new:
-            log.error("endpoint %s %s", id(flask.g), dir(flask.g))
             t = start_conversion_task.delay(datafile.s3_bucket, datafile.s3_key, str(datafile.type), format, entry.id)
-            log.error("ended %s %s", flask.g, dir(flask.g))
             models_controller.update_conversion_cache_entry_with_task_id(entry.id, t.id)
 
-        urls = models_controller.get_signed_urls_from_cache_entry(entry.urls_as_json)
+        urls = models_controller.get_signed_urls_from_cache_entry(entry.urls_as_json, dl_filename)
         conversion_status = entry.status
 
     result = dict(dataset_name=dataset_name,
