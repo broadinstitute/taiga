@@ -66,6 +66,8 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
             converter = conversion.csv_to_columnar
         elif file_type == models.InitialFileType.TableTSV.value:
             converter = conversion.tsv_to_columnar
+        elif file_type == models.InitialFileType.GCT.value:
+            converter = conversion.gct_to_hdf5
         else:
             raise Exception("unimplemented: {}".format(file_type))
 
