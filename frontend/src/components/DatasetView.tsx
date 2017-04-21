@@ -171,30 +171,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
         return tapi.get_datafile(datasetPermaname, version, datasetVersionId, datafileName, format, force)
             .then((result: DatafileUrl) => {
-                console.log(result.status);
-
-                if (result.status != ConversionStatusEnum.Completed.toString()) {
+                if(!result.urls) {
+                    // While we don't receive urls, it means we are still converting/downloading
                     return this.delay(500).then(() => {
-                        if (result.status == ConversionStatusEnum.Pending.toString()) {
-                            // We call this again in a few seconds and change the message to pending
-                            this.setLoadingMessage("Pending...");
-                        }
-                        else if (result.status == ConversionStatusEnum.Downloading.toString()) {
-                            // We call this again in a few seconds and change the message to downloading from S3
-                            this.setLoadingMessage("Downloading from S3...");
-                        }
-                        else if (result.status == ConversionStatusEnum.Running.toString()) {
-                            // We call this again in a few seconds and change the message to Running the conversion
-                            this.setLoadingMessage("Running the conversion...");
-                        }
-                        else if (result.status == ConversionStatusEnum.Uploading.toString()) {
-                            this.setLoadingMessage("Uploading to S3...");
-                        }
-                        else {
-                            console.log("Something went wrong in the getOrLaunchConversion function. We received this status: "
-                                + result.status);
-                            this.setLoadingMessage("Something went wrong. Please retry later and inform the admin.");
-                        }
+                        this.setLoadingMessage(result.status + "...");
                         return this.getOrLaunchConversion(datasetPermaname, version, datasetVersionId, datafileName, format, force);
                     });
                 }
