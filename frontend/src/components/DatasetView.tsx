@@ -187,6 +187,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             // We call this again in a few seconds and change the message to Running the conversion
                             this.setLoadingMessage("Running the conversion...");
                         }
+                        else if (result.status == ConversionStatusEnum.Uploading.toString()) {
+                            this.setLoadingMessage("Uploading to S3...");
+                        }
                         else {
                             console.log("Something went wrong in the getOrLaunchConversion function. We received this status: "
                                 + result.status);

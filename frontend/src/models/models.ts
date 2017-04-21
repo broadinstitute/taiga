@@ -1,4 +1,4 @@
-import { getInitialFileTypeFromMimeType } from "../utilities/formats";
+import {getInitialFileTypeFromMimeType} from "../utilities/formats";
 
 export class Folder {
     id: string;
@@ -111,10 +111,10 @@ interface Method {
 }
 
 interface ProvSource {
-    dataset_version_id : string;
-    name : string;
-    method_parameter : string;
-    dataset_version_name? : string;
+    dataset_version_id: string;
+    name: string;
+    method_parameter: string;
+    dataset_version_name?: string;
 }
 
 export interface Provenance {
@@ -238,9 +238,10 @@ export interface DatafileUrl {
 }
 
 export enum ConversionStatusEnum {
-    Pending =  <any> 'Conversion pending',
+    Pending = <any> 'Conversion pending',
     Downloading = <any> 'Downloading from S3',
     Running = <any> 'Running conversion',
+    Uploading = <any> 'Uploading converted file to S3',
     Completed = <any> 'Completed successfully'
 }
 
