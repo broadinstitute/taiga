@@ -63,6 +63,7 @@ def normalize_name(name):
     permaname_prefix = re.sub(r'(\W)(?=\1)', '', permaname_prefix)
     return permaname_prefix
 
+
 def generate_permaname(name):
     """Generate a permaname based on uuid and the original name"""
     permaname = normalize_name(name) + "-" + str(uuid.uuid4())[:4]
@@ -425,9 +426,9 @@ class ProvenanceNode(db.Model):
     graph = db.relationship("ProvenanceGraph",
                             backref=__tablename__)
 
-    dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"), nullable=True)
-    dataset_version = db.relationship("DatasetVersion",
-                                      backref=__tablename__)
+    datafile_id = db.Column(GUID, db.ForeignKey("datafiles.id"), nullable=True)
+    datafile = db.relationship("DataFile",
+                               backref=__tablename__)
 
     label = db.Column(db.Text)
 

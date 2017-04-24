@@ -51,11 +51,21 @@ def populate_db(edges_file_path, nodes_file_path, graphs_file_path):
             if not models_controller.get_provenance_node(node_id):
                 print("\tAdding node {}".format(node_id))
                 try:
-                    models_controller.add_node(node_id=node_id,
-                                               graph_id=graph_id,
-                                               dataset_version_id=dataset_version_id,
-                                               label=label,
-                                               type=type)
+                    if models_controller.is_dataset_node_type(node_type=type):
+                        datafile = models_controller.get_datafile_by_version_and_name(
+                            dataset_version_id=dataset_version_id,
+                            name="data")
+
+                        models_controller.add_node(node_id=node_id,
+                                                   graph_id=graph_id,
+                                                   datafile_id=datafile.id,
+                                                   label=label,
+                                                   type=type)
+                    else:
+                        models_controller.add_node(node_id=node_id,
+                                                   graph_id=graph_id,
+                                                   label=label,
+                                                   type=type)
                 except NoResultFound:
                     log.error("\tThe node {} refers to the datafile id {} which does not exist"
                               .format(node_id, dataset_version_id))

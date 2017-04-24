@@ -14,6 +14,7 @@ import {RecentlyViewed} from "./components/RecentlyViewed"
 
 import {relativePath} from "./utilities/route"
 import {isNullOrUndefined} from "util";
+import {Provenance} from "./components/Provenance";
 
 interface AppProps {
     route?: any;
@@ -232,6 +233,7 @@ tapi.get_user().then((user: User) => {
                 <Route path="folder/:folderId" component={FolderView as any}/>
                 <Route path="token/" component={ Token as any }/>
                 <Route path="recentlyViewed/" component={ RecentlyViewed as any }/>
+                <Route path="provenance/:graphId" component={Provenance as any}/>
             </Route>
             <Route path="*" component={NoMatch}/>
         </Router>
