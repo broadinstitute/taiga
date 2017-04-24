@@ -228,8 +228,7 @@ class DataFile(db.Model):
 
 def get_allowed_conversion_type(datafile_type):
     if datafile_type == DataFile.DataFileType.HDF5:
-        return [conversion.CSV_FORMAT, conversion.GCT_FORMAT, conversion.HDF5_FORMAT,
-                conversion.RDS_FORMAT, conversion.TSV_FORMAT]
+        return [conversion.CSV_FORMAT, conversion.GCT_FORMAT, conversion.HDF5_FORMAT, conversion.TSV_FORMAT]
 
     if datafile_type == DataFile.DataFileType.Columnar:
         return [conversion.CSV_FORMAT, conversion.TSV_FORMAT]
