@@ -3,7 +3,7 @@ import 'whatwg-fetch';
 import {
     User, Folder, Dataset, DatasetVersion, S3Credentials,
     TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId, DatasetFullDatasetVersions,
-    AccessLog, DatafileUrl, ProvenanceGraph
+    AccessLog, DatafileUrl, ProvenanceGraphFull
 } from './models';
 
 import { currentUserToken } from '../utilities/route';
@@ -219,7 +219,7 @@ export class TaigaApi {
         return this._post<void>("/dataset/" + dataset_id + "/logAccess", {});
     }
 
-    get_provenance_graph(graph_id: string): Promise<ProvenanceGraph> {
-        return this._fetch<ProvenanceGraph>("/provenance/" + graph_id);
+    get_provenance_graph(graph_id: string): Promise<ProvenanceGraphFull> {
+        return this._fetch<ProvenanceGraphFull>("/provenance/" + graph_id);
     }
 }

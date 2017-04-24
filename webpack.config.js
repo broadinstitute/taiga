@@ -45,7 +45,9 @@ module.exports = {
         "react-router": "ReactRouter",
         "aws-sdk": "AWS",
         "react-bootstrap": "ReactBootstrap",
-        "react-bootstrap-table": "ReactBootstrapTable"
+        "react-bootstrap-table": "ReactBootstrapTable",
+        "cytoscape": "cytoscape",
+        "dagre": "dagre"
     },
 
     plugins: [

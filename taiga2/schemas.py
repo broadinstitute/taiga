@@ -92,7 +92,7 @@ class ProvenanceEdgeSchema(ma.ModelSchema):
 
 class ProvenanceNodeWithEdgeSchema(ma.ModelSchema):
     class Meta:
-        additional = ('node_id', 'label')
+        additional = ('node_id', 'label', 'datafile_id')
 
     from_edges = ma.Nested(ProvenanceEdgeSchema(), many=True)
     to_edges = ma.Nested(ProvenanceEdgeSchema(), many=True)

@@ -121,6 +121,38 @@ interface Method {
 //     method: Method;
 //     inputs: Array<ProvSource>;
 // }
+
+export interface ProvenanceGraphFull {
+    graph_id: string;
+    name: string;
+    permaname: string;
+    created_timestamp: string;
+    created_by_user_id: string;
+    provenance_nodes: Array<ProvenanceNodeFull>;
+}
+
+export interface ProvenanceNodeFull {
+    node_id: string;
+    from_edges: Array<ProvenanceEdgeFull>;
+    to_edges: Array<ProvenanceEdgeFull>;
+    label: string;
+    type: ProvenanceNodeType;
+    datafile_id: string;
+}
+
+export interface ProvenanceEdgeFull {
+    edge_id: string;
+    from_node_id: string;
+    to_node_id: string;
+    label: string;
+}
+
+export enum ProvenanceNodeType {
+    Dataset = <any> 'Dataset',
+    Process = <any> 'Process',
+    External = <any> 'External'
+}
+
 export interface ProvenanceGraph {
     graph_id: string;
     name: string;
