@@ -212,6 +212,14 @@ export class S3UploadedFileMetadata {
     }
 }
 
+function dropExtension(filename : string) : string {
+    var i = filename.lastIndexOf(".")
+    if (i > 0) {
+        filename = filename.substring(0, i);
+    }
+    return filename;
+}
+
 // Upload
 export class FileUploadStatus {
     file: File;
@@ -230,7 +238,9 @@ export class FileUploadStatus {
     constructor(file: File, s3Prefix: string) {
         this.file = file;
 
-        this.fileName = this.file.name;
+        // since filename often includes an extension describing how the data is encoded, drop it because it
+        // is no longer relevant once that data is in Taiga.
+        this.fileName = dropExtension(this.file.name);
         this.fileType = getInitialFileTypeFromMimeType(this.file.type);
         this.fileSize = this.file.size;
 

@@ -358,8 +358,18 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         // }
 
         let permaname = dataset.permanames[dataset.permanames.length - 1];
-        let r_block = "library(taigr);\n" +
-            `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
+        let r_block = "library(taigr);\n";
+
+        if(datasetVersion.datafiles.length == 1) {
+            r_block += `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
+        } else {
+            let r_block_lines = datasetVersion.datafiles.map((df, index) => {
+                let r_name = df.name.replace(/[^A-Za-z0-9]+/, ".");
+                return `${r_name} <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
+            });
+            r_block += r_block_lines.join("\n")
+        }
+
 
         let weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
             return element.provenance_nodes.length > 0;
