@@ -383,7 +383,7 @@ class ProvenanceGraph(db.Model):
 
     name = db.Column(db.Text)
 
-    created_by_user_id = db.Column(GUID, db.ForeignKey("users.id"))
+    created_by_user_id = db.Column(GUID, db.ForeignKey("users.id"), nullable=True)
     user = db.relationship("User",
                            backref=__tablename__)
 

@@ -1163,7 +1163,7 @@ def get_provenance_edge(edge_id):
 
 
 def is_dataset_node_type(node_type):
-    if type == ProvenanceNode.NodeType.Dataset:
+    if node_type == ProvenanceNode.NodeType.Dataset.value:
         return True
     else:
         return False

@@ -27,6 +27,10 @@ def populate_db(edges_file_path, nodes_file_path, graphs_file_path):
 
             if not models_controller.get_provenance_graph(graph_permaname):
                 print("\tAdding graph {} with permaname {}".format(graph_name, graph_permaname))
+
+                if not graph_user_id:
+                    graph_user_id = None
+
                 models_controller.add_graph(graph_id=graph_id,
                                             graph_permaname=graph_permaname,
                                             graph_name=graph_name,
@@ -67,7 +71,7 @@ def populate_db(edges_file_path, nodes_file_path, graphs_file_path):
                                                    label=label,
                                                    type=type)
                 except NoResultFound:
-                    log.error("\tThe node {} refers to the datafile id {} which does not exist"
+                    log.error("\tThe node {} refers to the dataset version id {} which does not exist"
                               .format(node_id, dataset_version_id))
 
             else:
