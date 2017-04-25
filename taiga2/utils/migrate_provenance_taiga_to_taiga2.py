@@ -92,10 +92,16 @@ def populate_db(edges_file_path, nodes_file_path, graphs_file_path):
             if not models_controller.get_provenance_edge(edge_id):
                 print("\tAdding edge {}".format(edge_id))
                 try:
-                    models_controller.add_edge(edge_id=edge_id,
-                                               from_node_id=from_node_id,
-                                               to_node_id=to_node_id,
-                                               label=label)
+                    # We check if both nodes exist, otherwise we log the error and don't add the edge
+                    if models_controller.get_provenance_node(from_node_id) and \
+                            models_controller.get_provenance_node(to_node_id):
+                        models_controller.add_edge(edge_id=edge_id,
+                                                   from_node_id=from_node_id,
+                                                   to_node_id=to_node_id,
+                                                   label=label)
+                    else:
+                        log.warning("\tThe edge {} refers to the nodes {} and {}. One of them (or both) does not exist"\
+                                    .format(edge_id, from_node_id, to_node_id))
                 except NoResultFound:
                     log.error("\tThe edge {} refers to the nodes {} and {}. One of them does not exist"
                               .format(edge_id, from_node_id, to_node_id))
