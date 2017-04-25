@@ -34,10 +34,12 @@ const buttonUploadNewVersionStyle = {
 };
 
 let tapi: TaigaApi = null;
+let currentUser: string = null;
 
 export class DatasetView extends React.Component<DatasetViewProps, DatasetViewState> {
     static contextTypes = {
-        tapi: React.PropTypes.object
+        tapi: React.PropTypes.object,
+        currentUser: React.PropTypes.string
     };
 
     componentDidUpdate(prevProps: DatasetViewProps) {
@@ -56,6 +58,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     componentDidMount() {
         tapi = (this.context as any).tapi;
+        currentUser = (this.context as any).currentUser;
+
 
         this.setLoading(true);
 
@@ -296,7 +300,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             )
         });
 
-        let navItems = [
+        let navItems = [];
+        navItems = [
             {
                 label: "Edit Name", action: () => {
                 this.setState({showEditName: true})
@@ -357,12 +362,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
 
         let weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
-           return element.provenance_nodes.length > 0;
+            return element.provenance_nodes.length > 0;
         });
 
-        return <div>
-            <LeftNav items={navItems}/>
-            <div id="main-content">
+        let leftNavsDialogs = (
+            <span>
                 <Dialogs.EditName isVisible={this.state.showEditName}
                                   initialValue={this.state.dataset.name}
                                   cancel={ () => { this.setState({showEditName: false})} }
@@ -370,14 +374,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         this.setState({showEditName: false});
                         this.updateName(name)
                         } }/>
-                <Dialogs.EditDescription isVisible={this.state.showEditDescription}
-                                         cancel={ () => { this.setState({showEditDescription: false})} }
-                                         initialValue={this.state.datasetVersion.description}
-                                         save={ (description:string) => {
-                        this.setState({showEditDescription: false});
-                        console.log("Save description: "+description);
-                        this.updateDescription(description);
-                    } }/>
+                < Dialogs.EditDescription isVisible={this.state.showEditDescription}
+                                          cancel={ () => { this.setState({showEditDescription: false}) } }
+                                          initialValue={this.state.datasetVersion.description}
+                                          save={ (description: string) => {
+                this.setState({showEditDescription: false});
+                console.log("Save description: " + description); this.updateDescription(description); } }/>
 
                 <Upload.UploadDataset
                     isVisible={this.state.showUploadDataset}
@@ -392,6 +394,13 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     previousVersionName={ this.state.datasetVersion.name }
                     previousVersionFiles={ this.state.datasetVersion.datafiles }
                 />
+            </span>
+        );
+
+        return <div>
+            <LeftNav items={navItems}/>
+            <div id="main-content">
+                { leftNavsDialogs }
 
                 <h1>{dataset.name}
                     <small>{permaname}</small>
@@ -400,7 +409,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
                 <p>Versions: {versions} </p>
 
+                { (datasetVersion.creator.id == currentUser ||
+                dataset.folders.some((folder) => {
+                    return folder.id == "public"
+                })) &&
                 <p>Contained within {folders}</p>
+                }
                 {/*{ancestor_section}*/}
 
                 { this.state.datasetVersion.description &&
@@ -417,7 +431,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         <th>Download</th>
 
                         { weHaveProvenanceGraphs &&
-                            <th>Provenance Graph</th>
+                        <th>Provenance Graph</th>
                         }
                     </tr>
                     </thead>

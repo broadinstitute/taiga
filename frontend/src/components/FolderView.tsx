@@ -464,17 +464,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         let selectionCount = this.state.selection.length;
 
         if (selectionCount == 0) {
-            navItems = navItems.concat([
-                {
-                    label: "Edit name", action: () => {
-                    this.setState({showEditName: true})
-                }
-                },
-                {
-                    label: "Edit description", action: () => {
-                    this.setState({showEditDescription: true})
-                }
-                },
+            let add_folder_items = [
                 {
                     label: "Create a subfolder", action: () => {
                     this.setState({showCreateFolder: true})
@@ -485,21 +475,33 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     this.setState({showUploadDataset: true})
                 }
                 }
-            ])
+            ];
+            navItems.push({
+                label: "Edit name", action: () => {
+                    this.setState({showEditName: true})
+                }
+            });
+            navItems.push(
+                {
+                    label: "Edit description", action: () => {
+                    this.setState({showEditDescription: true})
+                }
+                });
+            navItems = navItems.concat(add_folder_items);
         } else {
             navItems.push({
                 label: "Move to trash", action: () => this.moveToTrash()
-            })
+            });
             navItems.push({
                 label: "Move to...", action: () => {
                     this.openActionTo("move");
                 }
-            })
+            });
             navItems.push({
                 label: "Copy to...", action: () => {
                     this.openActionTo("copy");
                 }
-            })
+            });
         }
 
         return (
@@ -552,7 +554,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
                     <h1>{folder.name}</h1>
 
-                    <Conditional show={parent_links.length > 0}>
+                    <Conditional show={ parent_links.length > 0 &&
+                        ((folder.creator && folder.creator.id == currentUser) ||
+                        folder.parents.some((parent) => { return parent.id == 'public'; })) }>
                         <p>Parents: {parent_links}</p>
                     </Conditional>
 
