@@ -3,6 +3,7 @@ from marshmallow_enum import EnumField
 from marshmallow_oneofschema import OneOfSchema
 
 from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile, get_allowed_conversion_type
+from taiga2.models import ProvenanceEdge, ProvenanceNode, ProvenanceGraph
 
 ma = Marshmallow()
 
@@ -32,6 +33,7 @@ class DatasetNamedIdSchema(ma.ModelSchema):
 class DatasetSummarySchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'permaname')
+
     permaname = fields.fields.Function(lambda obj: [obj.permaname], dump_to='permanames')
 
 
@@ -47,6 +49,7 @@ class EntrySchema(ma.ModelSchema):
     class Meta:
         fields = ('type', 'id', 'name', 'creation_date',
                   'creator')
+
     creator = ma.Nested(UserNamedIdSchema)
     type = fields.fields.Method("get_lowercase_type")
 
@@ -67,6 +70,7 @@ class FolderSchema(ma.ModelSchema):
         additional = ('id', 'name', 'type', 'description',
                       'entries', 'creator', 'creation_date',
                       'parents')
+
     entries = ma.Nested(EntrySchema, many=True)
     creator = ma.Nested(UserNamedIdSchema)
     folder_type = EnumField(Folder.FolderType)
@@ -80,10 +84,46 @@ class FolderSchema(ma.ModelSchema):
         return list_entries
 
 
+class ProvenanceEdgeSchema(ma.ModelSchema):
+    class Meta:
+        fields = ('edge_id', 'from_node_id', 'to_node_id',
+                  'label')
+
+
+class ProvenanceNodeWithEdgeSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('node_id', 'label', 'datafile_id')
+
+    from_edges = ma.Nested(ProvenanceEdgeSchema(), many=True)
+    to_edges = ma.Nested(ProvenanceEdgeSchema(), many=True)
+    type = EnumField(ProvenanceNode.NodeType)
+
+
+class ProvenanceGraphFullSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('graph_id', 'permaname', 'name',
+                      'created_by_user_id', 'created_timestamp')
+
+    provenance_nodes = ma.Nested(ProvenanceNodeWithEdgeSchema(), many=True)
+
+
+class ProvenanceGraphSchema(ma.ModelSchema):
+    class Meta:
+        fields = ('graph_id', 'permaname', 'name')
+
+
+class ProvenanceNodeSchema(ma.ModelSchema):
+    class Meta:
+        fields = ('node_id', 'graph')
+
+    graph = ma.Nested(ProvenanceGraphSchema)
+
+
 class DatasetSchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'name', 'description',
                       'permaname', 'dataset_versions', 'parents')
+
     # TODO: Change this field to properly handle multiple permanames (a new permaname is added when we change the name of the dataset)
     permaname = fields.fields.Function(lambda obj: [obj.permaname], dump_to='permanames')
     dataset_versions = ma.Nested(DatasetVersionSummarySchema,
@@ -95,6 +135,7 @@ class DatasetSchema(ma.ModelSchema):
 class DataFileSummarySchema(ma.ModelSchema):
     class Meta:
         additional = ('name', 'type', 'short_summary')
+
     # TODO: Manage the other fields in the model/db too
     type = EnumField(DataFile.DataFileType)
 
@@ -102,12 +143,14 @@ class DataFileSummarySchema(ma.ModelSchema):
 class DataFileSchema(ma.ModelSchema):
     class Meta:
         model = DataFile
+
     type = EnumField(DataFile.DataFileType)
     # Allowed Conversion Type
     allowed_conversion_type = fields.fields.Function(lambda obj: get_allowed_conversion_type(obj.type),
                                                      dump_to="allowed_conversion_type")
     description = fields.fields.Function(lambda obj: 'TODO')
     content_summary = fields.fields.Function(lambda obj: 'TODO')
+    provenance_nodes = ma.Nested(ProvenanceNodeSchema(), many=True)
 
 
 class DatasetVersionSchema(ma.ModelSchema):
@@ -115,6 +158,7 @@ class DatasetVersionSchema(ma.ModelSchema):
         additional = ('id', 'name', 'dataset_id',
                       'creation_date', 'creator', 'datafiles',
                       'description', 'version', 'parents')
+
     creator = ma.Nested(UserNamedIdSchema)
     datafiles = ma.Nested(DataFileSchema, many=True)
     # TODO: Consolidate the term between folders and parents
@@ -126,6 +170,7 @@ class DatasetVersionFullDatasetSchema(ma.ModelSchema):
         additional = ('id', 'name', 'dataset',
                       'creation_date', 'creator', 'datafiles',
                       'description', 'version', 'parents')
+
     dataset = ma.Nested(DatasetSchema)
     creator = ma.Nested(UserNamedIdSchema)
     datafiles = ma.Nested(DataFileSummarySchema, many=True)
@@ -138,6 +183,7 @@ class DatasetVersionLightSchema(ma.ModelSchema):
         additional = ('id', 'name', 'dataset_id',
                       'creation_date', 'creator',
                       'description', 'version')
+
     creator = ma.Nested(UserNamedIdSchema)
     # datafiles = ma.Nested(DataFileSummarySchema, many=True)
     # TODO: Consolidate the term between folders and parents
@@ -149,6 +195,7 @@ class DatasetFullSchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'name', 'description',
                       'permaname', 'dataset_versions')
+
     # TODO: Change this field to properly handle multiple permanames (a new permaname is added when we change the name of the dataset)
     permaname = fields.fields.Function(lambda obj: [obj.permaname], dump_to='permanames')
     dataset_versions = ma.Nested(DatasetVersionLightSchema(),

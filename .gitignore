@@ -44,3 +44,6 @@ docker/taiga.tar.gz
 
 # Ignore the migration data of taiga
 taiga2/tests/test_files/migration/*
+
+# Ignore the provenance folder in test_files
+taiga2/tests/test_files/provenance/*

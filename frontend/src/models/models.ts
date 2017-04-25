@@ -1,4 +1,4 @@
-import { getInitialFileTypeFromMimeType } from "../utilities/formats";
+import {getInitialFileTypeFromMimeType} from "../utilities/formats";
 
 export class Folder {
     id: string;
@@ -60,7 +60,6 @@ export interface DatasetVersion {
     "creator": NamedId;
     "datafiles": Array<DatasetVersionDatafiles>;
     folders: Array<NamedId>;
-    provenance?: Provenance;
 }
 
 export interface DatasetAndDatasetVersion {
@@ -75,6 +74,7 @@ export interface DatasetVersionDatafiles {
     type: DataFileType;
     allowed_conversion_type: Array<string>;
     short_summary: string;
+    provenance_nodes?: Array<ProvenanceNode>; // Array of urls to provenance graph
 }
 
 export interface DatasetVersions {
@@ -110,16 +110,59 @@ interface Method {
     parameters: string;
 }
 
-interface ProvSource {
-    dataset_version_id : string;
-    name : string;
-    method_parameter : string;
-    dataset_version_name? : string;
+// interface ProvSource {
+//     dataset_version_id: string;
+//     name: string;
+//     method_parameter: string;
+//     dataset_version_name?: string;
+// }
+//
+// export interface Provenance {
+//     method: Method;
+//     inputs: Array<ProvSource>;
+// }
+
+export interface ProvenanceGraphFull {
+    graph_id: string;
+    name: string;
+    permaname: string;
+    created_timestamp: string;
+    created_by_user_id: string;
+    provenance_nodes: Array<ProvenanceNodeFull>;
 }
 
-export interface Provenance {
-    method: Method;
-    inputs: Array<ProvSource>;
+export interface ProvenanceNodeFull {
+    node_id: string;
+    from_edges: Array<ProvenanceEdgeFull>;
+    to_edges: Array<ProvenanceEdgeFull>;
+    label: string;
+    type: ProvenanceNodeType;
+    datafile_id: string;
+    url: string;
+}
+
+export interface ProvenanceEdgeFull {
+    edge_id: string;
+    from_node_id: string;
+    to_node_id: string;
+    label: string;
+}
+
+export enum ProvenanceNodeType {
+    Dataset = <any> 'Dataset',
+    Process = <any> 'Process',
+    External = <any> 'External'
+}
+
+export interface ProvenanceGraph {
+    graph_id: string;
+    name: string;
+    permaname: string;
+}
+
+export interface ProvenanceNode {
+    node_id: string;
+    graph: ProvenanceGraph;
 }
 
 interface Grant {
@@ -248,9 +291,10 @@ export interface DatafileUrl {
 }
 
 export enum ConversionStatusEnum {
-    Pending =  <any> 'Conversion pending',
+    Pending = <any> 'Conversion pending',
     Downloading = <any> 'Downloading from S3',
     Running = <any> 'Running conversion',
+    Uploading = <any> 'Uploading converted file to S3',
     Completed = <any> 'Completed successfully'
 }
 

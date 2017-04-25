@@ -171,27 +171,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
         return tapi.get_datafile(datasetPermaname, version, datasetVersionId, datafileName, format, force)
             .then((result: DatafileUrl) => {
-                console.log(result.status);
-
-                if (result.status != ConversionStatusEnum.Completed.toString()) {
+                if (!result.urls) {
+                    // While we don't receive urls, it means we are still converting/downloading
                     return this.delay(500).then(() => {
-                        if (result.status == ConversionStatusEnum.Pending.toString()) {
-                            // We call this again in a few seconds and change the message to pending
-                            this.setLoadingMessage("Pending...");
-                        }
-                        else if (result.status == ConversionStatusEnum.Downloading.toString()) {
-                            // We call this again in a few seconds and change the message to downloading from S3
-                            this.setLoadingMessage("Downloading from S3...");
-                        }
-                        else if (result.status == ConversionStatusEnum.Running.toString()) {
-                            // We call this again in a few seconds and change the message to Running the conversion
-                            this.setLoadingMessage("Running the conversion...");
-                        }
-                        else {
-                            console.log("Something went wrong in the getOrLaunchConversion function. We received this status: "
-                                + result.status);
-                            this.setLoadingMessage("Something went wrong. Please retry later and inform the admin.");
-                        }
+                        this.setLoadingMessage(result.status + "...");
                         return this.getOrLaunchConversion(datasetPermaname, version, datasetVersionId, datafileName, format, force);
                     });
                 }
@@ -204,15 +187,15 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     });
                 }
             }).catch((reason: any) => {
-                this.setLoadingMessage("Conversion error on server side: "+reason+". Please inform the admin."+
-                " This loading page will disappear in 30 seconds (you can also refresh).");
+                this.setLoadingMessage("Conversion error on server side: " + reason + ". Please inform the admin." +
+                    " This loading page will disappear in 30 seconds (you can also refresh).");
                 this.delay(30000).then(() => {
-                   this.setLoading(false);
+                    this.setLoading(false);
                 });
             });
     }
 
-    setLoading(requireLoading: boolean, message?: string){
+    setLoading(requireLoading: boolean, message?: string) {
         if (message) {
             this.setState({
                 loading: requireLoading,
@@ -269,12 +252,34 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 </span>
             });
 
+
+            let provenanceGraphs = null;
+            if (df.provenance_nodes) {
+
+                provenanceGraphs = df.provenance_nodes.map((provenance_node, index) => {
+                    return <span key={provenance_node.graph.graph_id}>
+                        <Link to={relativePath("provenance/"+provenance_node.graph.graph_id)}>
+                            {provenance_node.graph.name}
+                            { df.provenance_nodes.length != index + 1 &&
+                            <span>, </span>
+                            }
+                        </Link>
+               </span>
+                });
+            }
+
             return <tr key={index}>
                 <td>{df.name}</td>
                 <td>{df.short_summary}</td>
                 <td>
                     { conversionTypesOutput }
                 </td>
+
+                { df.provenance_nodes.length > 0 &&
+                <td>
+                    { provenanceGraphs }
+                </td>
+                }
             </tr>
         });
 
@@ -321,31 +326,31 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             // }
         ];
 
-        let ancestor_section: any = null;
-        if (datasetVersion.provenance) {
-            let ancestor_dataset_versions = new Set(datasetVersion.provenance.inputs.map(x => {
-                return {
-                    name: x.dataset_version_name,
-                    id: x.dataset_version_id
-                };
-            }));
-            let ancestor_links = [...ancestor_dataset_versions].map((x, index) => {
-                return <li key={index}>
-                    <Link to={relativePath("dataset/"+x.id)}>{x.name}</Link>
-                </li>
-            });
-            if (ancestor_links.length > 0) {
-                ancestor_section =
-                    <span>
-                        <p>
-                            Derived from
-                        </p>
-                        <ul>
-                            {ancestor_links}
-                        </ul>
-                    </span>;
-            }
-        }
+        // let ancestor_section: any = null;
+        // if (datasetVersion.provenance) {
+        //     let ancestor_dataset_versions = new Set(datasetVersion.provenance.inputs.map(x => {
+        //         return {
+        //             name: x.dataset_version_name,
+        //             id: x.dataset_version_id
+        //         };
+        //     }));
+        //     let ancestor_links = [...ancestor_dataset_versions].map((x, index) => {
+        //         return <li key={index}>
+        //             <Link to={relativePath("dataset/"+x.id)}>{x.name}</Link>
+        //         </li>
+        //     });
+        //     if (ancestor_links.length > 0) {
+        //         ancestor_section =
+        //             <span>
+        //                 <p>
+        //                     Derived from
+        //                 </p>
+        //                 <ul>
+        //                     {ancestor_links}
+        //                 </ul>
+        //             </span>;
+        //     }
+        // }
 
         let permaname = dataset.permanames[dataset.permanames.length - 1];
         let r_block = "library(taigr);\n";
@@ -360,6 +365,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             r_block += r_block_lines.join("\n")
         }
 
+
+        let weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
+           return element.provenance_nodes.length > 0;
+        });
 
         return <div>
             <LeftNav items={navItems}/>
@@ -402,7 +411,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <p>Versions: {versions} </p>
 
                 <p>Contained within {folders}</p>
-                {ancestor_section}
+                {/*{ancestor_section}*/}
 
                 { this.state.datasetVersion.description &&
                 <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
@@ -416,6 +425,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         {/*<th>Description</th>*/}
                         <th>Summary</th>
                         <th>Download</th>
+
+                        { weHaveProvenanceGraphs &&
+                            <th>Provenance Graph</th>
+                        }
                     </tr>
                     </thead>
                     <tbody>

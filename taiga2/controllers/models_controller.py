@@ -591,7 +591,7 @@ def get_latest_dataset_version_by_permaname(permaname):
     dataset_version = db.session.query(DatasetVersion) \
         .filter(Dataset.permaname == permaname) \
         .order_by(DatasetVersion.version.desc()) \
-        .one()
+        .first()
 
     return dataset_version
 
@@ -1103,20 +1103,28 @@ def get_provenance_graph(graph_permaname):
     return graph
 
 
-def add_node(graph_id, dataset_version_id,
+def get_provenance_graph_by_id(graph_id):
+    graph = db.session.query(ProvenanceGraph) \
+        .filter(ProvenanceGraph.graph_id == graph_id) \
+        .one()
+
+    return graph
+
+
+def add_node(graph_id,
              label, type,
-             node_id=None):
+             node_id=None, datafile_id=None):
 
     node_type = models.ProvenanceNode.NodeType(type)
 
     if node_type == ProvenanceNode.NodeType.Dataset:
-        dataset_version = get_dataset_version(dataset_version_id=dataset_version_id)
+        datafile = get_datafile(datafile_id)
     else:
-        dataset_version = None
+        datafile = None
 
     new_node = ProvenanceNode(node_id=node_id,
                               graph_id=graph_id,
-                              dataset_version=dataset_version,
+                              datafile=datafile,
                               label=label,
                               type=node_type)
 
@@ -1153,6 +1161,12 @@ def get_provenance_edge(edge_id):
 
     return edge
 
+
+def is_dataset_node_type(node_type):
+    if node_type == ProvenanceNode.NodeType.Dataset.value:
+        return True
+    else:
+        return False
 # </editor-fold>
 
 # <editor-fold desc="Utils">

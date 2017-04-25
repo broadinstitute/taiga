@@ -301,6 +301,7 @@ def _no_transform_needed(requested_format, datafile_type):
 
     return False
 
+
 def _make_dl_name(datafile_name, dataset_version_version, dataset_name, format):
     if format != 'raw':
         suffix = '.'+format
@@ -309,6 +310,7 @@ def _make_dl_name(datafile_name, dataset_version_version, dataset_name, format):
 
     name = "{}_v{}-{}{}".format(normalize_name(dataset_name), dataset_version_version, normalize_name(datafile_name), suffix)
     return name
+
 
 def get_datafile(format, dataset_permaname=None, version=None, dataset_version_id=None, datafile_name=None, force=None):
     from taiga2.tasks import start_conversion_task
@@ -430,3 +432,22 @@ def copy_to_folder(copyMetadata):
         return flask.abort(422)
 
     return flask.jsonify(return_data)
+
+
+def get_provenance_graph(gid):
+    print("We received the graph Id: {}!".format(gid))
+    provenance_full_graph_schema = schemas.ProvenanceGraphFullSchema()
+
+    graph = models_controller.get_provenance_graph_by_id(gid)
+
+    json_graph_data = provenance_full_graph_schema.dump(graph).data
+    # We also need the url, so we add this to the json
+    for provenance_node in json_graph_data['provenance_nodes']:
+        try:
+            datafile = models_controller.get_datafile(provenance_node['datafile_id'])
+            provenance_node['url'] = datafile.dataset_version_id
+        except NoResultFound:
+            log.info("The node {} with datafile_id {} has been ignored because no datafile was matching"\
+                     .format(provenance_node['node_id'], provenance_node['datafile_id']))
+
+    return flask.jsonify(json_graph_data)

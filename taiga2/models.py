@@ -63,6 +63,7 @@ def normalize_name(name):
     permaname_prefix = re.sub(r'(\W)(?=\1)', '', permaname_prefix)
     return permaname_prefix
 
+
 def generate_permaname(name):
     """Generate a permaname based on uuid and the original name"""
     permaname = normalize_name(name) + "-" + str(uuid.uuid4())[:4]
@@ -228,8 +229,7 @@ class DataFile(db.Model):
 
 def get_allowed_conversion_type(datafile_type):
     if datafile_type == DataFile.DataFileType.HDF5:
-        return [conversion.CSV_FORMAT, conversion.GCT_FORMAT, conversion.HDF5_FORMAT,
-                conversion.RDS_FORMAT, conversion.TSV_FORMAT]
+        return [conversion.CSV_FORMAT, conversion.GCT_FORMAT, conversion.HDF5_FORMAT, conversion.TSV_FORMAT]
 
     if datafile_type == DataFile.DataFileType.Columnar:
         return [conversion.CSV_FORMAT, conversion.TSV_FORMAT]
@@ -383,7 +383,7 @@ class ProvenanceGraph(db.Model):
 
     name = db.Column(db.Text)
 
-    created_by_user_id = db.Column(GUID, db.ForeignKey("users.id"))
+    created_by_user_id = db.Column(GUID, db.ForeignKey("users.id"), nullable=True)
     user = db.relationship("User",
                            backref=__tablename__)
 
@@ -426,9 +426,9 @@ class ProvenanceNode(db.Model):
     graph = db.relationship("ProvenanceGraph",
                             backref=__tablename__)
 
-    dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"), nullable=True)
-    dataset_version = db.relationship("DatasetVersion",
-                                      backref=__tablename__)
+    datafile_id = db.Column(GUID, db.ForeignKey("datafiles.id"), nullable=True)
+    datafile = db.relationship("DataFile",
+                               backref=__tablename__)
 
     label = db.Column(db.Text)
 

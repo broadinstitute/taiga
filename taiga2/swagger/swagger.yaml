@@ -324,7 +324,7 @@ paths:
             title: DatasetsFull
             type: array
             items:
-              "$ref": "#/definitions/DatasetVersion"
+              "$ref": "#/definitions/Dataset"
 
   /dataset/{datasetId}:
     get:
@@ -1007,6 +1007,63 @@ paths:
         422:
           description: Folder Id does not exist
 
+  /provenance/{gid}:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_provenance_graph
+      description: Get the provenance graph given its ID
+      parameters:
+        - name: gid
+          in: path
+          type: string
+          description: Graph Id
+          required: true
+      responses:
+        200:
+          description: Provenance Graph
+          schema:
+            title: ProvenanceGraph
+            type: object
+            required:
+              - graph_id
+              - name
+              - permaname
+              - nodes
+            properties:
+              graph_id:
+                type: string
+              name:
+                type: string
+              permaname:
+                type: string
+              nodes:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - node_id
+                    - to_edges
+                    - from_edges
+                    - label
+                    - type
+                  properties:
+                    node_id:
+                      type: string
+                    from_edges:
+                      type: array
+                      items:
+                        "$ref": "#/definitions/ProvenanceEdge"
+                    to_edges:
+                      type: array
+                      items:
+                        "$ref": "#/definitions/ProvenanceEdge"
+                    label:
+                      type: string
+                    type:
+                      type: string
+
+
+
 #missing provenance
 
 definitions:
@@ -1115,6 +1172,20 @@ definitions:
               type: string
       provenance:
         "$ref": "#/definitions/Provenance"
+
+  ProvenanceEdge:
+    type: object
+    required:
+      - edge_id
+      - from_node_id
+      - to_node_id
+    properties:
+      edge_id:
+        type: string
+      from_node_id:
+        type: string
+      to_node_id:
+        type: string
 
   Provenance:
     type: object
