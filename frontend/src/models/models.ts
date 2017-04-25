@@ -138,6 +138,7 @@ export interface ProvenanceNodeFull {
     label: string;
     type: ProvenanceNodeType;
     datafile_id: string;
+    url: string;
 }
 
 export interface ProvenanceEdgeFull {

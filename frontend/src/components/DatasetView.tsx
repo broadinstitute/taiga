@@ -274,9 +274,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <td>
                     { conversionTypesOutput }
                 </td>
+
+                { df.provenance_nodes.length > 0 &&
                 <td>
                     { provenanceGraphs }
                 </td>
+                }
             </tr>
         });
 
@@ -353,6 +356,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let r_block = "library(taigr);\n" +
             `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
 
+        let weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
+           return element.provenance_nodes.length > 0;
+        });
+
         return <div>
             <LeftNav items={navItems}/>
             <div id="main-content">
@@ -408,7 +415,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         {/*<th>Description</th>*/}
                         <th>Summary</th>
                         <th>Download</th>
-                        <th>Provenance Graph</th>
+
+                        { weHaveProvenanceGraphs &&
+                            <th>Provenance Graph</th>
+                        }
                     </tr>
                     </thead>
                     <tbody>

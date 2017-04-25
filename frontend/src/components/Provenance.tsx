@@ -10,6 +10,8 @@ import {InputGroup, InputGroupButton, FormGroup, FormControl} from 'react-bootst
 import ClipboardButton from '../utilities/r-clipboard';
 import {LeftNav, MenuItem} from "./LeftNav";
 
+import {relativePath} from "../utilities/route";
+
 import {TaigaApi} from "../models/api"
 import {User, ProvenanceGraph, ProvenanceGraphFull} from "../models/models";
 
@@ -83,7 +85,8 @@ export class Provenance extends React.Component<ProvenanceProps, ProvenanceState
                     id: "n" + node.node_id,
                     label: node.label,
                     type: node.type,
-                    datafile_id: node.datafile_id
+                    datafile_id: node.datafile_id,
+                    url: node.url
                 }
             });
             possibleRoots.set("n" + node.node_id, true);
@@ -161,13 +164,6 @@ export class Provenance extends React.Component<ProvenanceProps, ProvenanceState
                 }
             ],
 
-            //layout: {
-            //    name: 'breadthfirst',
-            //    spacingFactor: 0.1,
-            //    directed: true,
-            //    padding: 10
-            //}
-
             layout: {
                 name: 'dagre'
             }
@@ -175,14 +171,17 @@ export class Provenance extends React.Component<ProvenanceProps, ProvenanceState
 
         cy.on('tap', 'node', function () {
             console.log("data", this.data());
-            let taiga_id = this.data('dataset_id');
-            if (taiga_id) {
-                let href = "/dataset/show/" + taiga_id
+
+            let url = this.data('url');
+            if (url) {
+                // TODO: Use a function which will be consistent with the change of the UI
+                url = relativePath('dataset/from_provenance/' + url);
+                let href = url;
 
                 try { // your browser may block popups
                     window.open(href);
                 } catch (e) { // fall back on url change
-                    window.location.href = this.data('href');
+                    window.location.href = this.data('url');
                 }
             }
 

@@ -441,5 +441,13 @@ def get_provenance_graph(gid):
     graph = models_controller.get_provenance_graph_by_id(gid)
 
     json_graph_data = provenance_full_graph_schema.dump(graph).data
+    # We also need the url, so we add this to the json
+    for provenance_node in json_graph_data['provenance_nodes']:
+        try:
+            datafile = models_controller.get_datafile(provenance_node['datafile_id'])
+            provenance_node['url'] = datafile.dataset_version_id
+        except NoResultFound:
+            log.info("The node {} with datafile_id {} has been ignored because no datafile was matching"\
+                     .format(provenance_node['node_id'], provenance_node['datafile_id']))
 
     return flask.jsonify(json_graph_data)
