@@ -23,8 +23,10 @@ export interface ProvenanceState {
 }
 
 const cyStyle = {
+    marginTop: '1%',
     width: '100%',
-    height: '100%'
+    height: '97%',
+    border: 'solid black'
 };
 
 let tapi: TaigaApi = null;
@@ -105,14 +107,13 @@ export class Provenance extends React.Component<ProvenanceProps, ProvenanceState
                 rootNodeIds.push(node_id);
             }
         });
-        debugger;
 
         let cy = cytoscape({
             container: document.getElementById('cy'),
             elements: elements,
             style: [ // the stylesheet for the graph
                 {
-                    selector: 'node[type="external"]',
+                    selector: 'node[type="External"]',
                     style: {
                         'background-color': '#666',
                         'color': "white",
@@ -126,7 +127,7 @@ export class Provenance extends React.Component<ProvenanceProps, ProvenanceState
                 },
 
                 {
-                    selector: 'node[type="dataset"]',
+                    selector: 'node[type="Dataset"]',
                     style: {
                         'background-color': '#6FB1FC',
                         'color': "white",
@@ -140,7 +141,7 @@ export class Provenance extends React.Component<ProvenanceProps, ProvenanceState
                 },
 
                 {
-                    selector: 'node[type="process"]',
+                    selector: 'node[type="Process"]',
                     style: {
                         'background-color': '#2ff',
                         'label': 'data(label)',
@@ -193,7 +194,6 @@ export class Provenance extends React.Component<ProvenanceProps, ProvenanceState
         return <div>
             <LeftNav items={navItems}/>
             <div id="main-content">
-                <span>Hello world: {this.props.params.graphId}</span>
                 <div style={cyStyle} id="cy"></div>
             </div>
         </div>
