@@ -589,7 +589,7 @@ def get_dataset_version_provenance(dataset_version_id,
 
 def get_latest_dataset_version_by_permaname(permaname):
     dataset_version = db.session.query(DatasetVersion) \
-        .filter(Dataset.permaname == permaname) \
+        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
         .order_by(DatasetVersion.version.desc()) \
         .first()
 
@@ -1037,7 +1037,6 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
                 return None
         else:
             try:
-                print("dataset_perma", repr((dataset_permaname, version_number)))
                 dataset_version = get_dataset_version_by_permaname_and_version(dataset_permaname, version_number)
             except NoResultFound:
                 return None
