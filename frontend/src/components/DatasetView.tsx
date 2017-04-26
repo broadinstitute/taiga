@@ -34,10 +34,12 @@ const buttonUploadNewVersionStyle = {
 };
 
 let tapi: TaigaApi = null;
+let currentUser: string = null;
 
 export class DatasetView extends React.Component<DatasetViewProps, DatasetViewState> {
     static contextTypes = {
-        tapi: React.PropTypes.object
+        tapi: React.PropTypes.object,
+        currentUser: React.PropTypes.string
     };
 
     componentDidUpdate(prevProps: DatasetViewProps) {
@@ -56,6 +58,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     componentDidMount() {
         tapi = (this.context as any).tapi;
+        currentUser = (this.context as any).currentUser;
+
 
         this.setLoading(true);
 
@@ -227,37 +231,57 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let dataset = this.state.dataset;
         let datasetVersion = this.state.datasetVersion;
 
-        let versions = dataset.versions.map((dataset_version: Models.DatasetVersion, index: any) => {
-            return <span key={dataset_version.id}>
-                        {this.getLinkOrNot(dataset_version)}
-                {dataset.versions.length != index + 1 &&
-                <span>, </span>
-                }
-                    </span>
-        });
+        let versions = null;
+        let folders = null;
+        if (dataset) {
+            versions = dataset.versions.map((dataset_version: Models.DatasetVersion, index: any) => {
+                return <span key={dataset_version.id}>
+                    {this.getLinkOrNot(dataset_version)}
+                    {dataset.versions.length != index + 1 &&
+                    <span>, </span>
+                    }
+                </span>
+            });
 
-        let entries = datasetVersion.datafiles.map((df, index) => {
-            let conversionTypesOutput = df.allowed_conversion_type.map((conversionType, index) => {
-                // TODO: If we have the same name for datafiles, we will run into troubles
-                return <span key={conversionType}>
+            folders = dataset.folders.map((f, index) => {
+                return (
+                    <span key={index}>
+                        <Link to={relativePath("folder/"+f.id)}>
+                            {f.name}
+                        </Link>
+                        {dataset.folders.length != index + 1 &&
+                        <span>, </span>
+                        }
+                    </span>
+                )
+            });
+        }
+
+        let entries = null;
+        let weHaveProvenanceGraphs = null;
+        if (datasetVersion) {
+            entries = datasetVersion.datafiles.map((df, index) => {
+                let conversionTypesOutput = df.allowed_conversion_type.map((conversionType, index) => {
+                    // TODO: If we have the same name for datafiles, we will run into troubles
+                    return <span key={conversionType}>
                     <a href="#" onClick={() => {
                         this.setLoadingMessage("Sent the request to the server...");
                         return this.getOrLaunchConversion(undefined, undefined,
                             datasetVersion.id, df.name, conversionType, 'N'); }}>
                         { conversionType }
                         </a>
-                    { df.allowed_conversion_type.length != index + 1 &&
-                    <span>, </span>
-                    }
+                        { df.allowed_conversion_type.length != index + 1 &&
+                        <span>, </span>
+                        }
                 </span>
-            });
+                });
 
 
-            let provenanceGraphs = null;
-            if (df.provenance_nodes) {
+                let provenanceGraphs = null;
+                if (df.provenance_nodes) {
 
-                provenanceGraphs = df.provenance_nodes.map((provenance_node, index) => {
-                    return <span key={provenance_node.graph.graph_id}>
+                    provenanceGraphs = df.provenance_nodes.map((provenance_node, index) => {
+                        return <span key={provenance_node.graph.graph_id}>
                         <Link to={relativePath("provenance/"+provenance_node.graph.graph_id)}>
                             {provenance_node.graph.name}
                             { df.provenance_nodes.length != index + 1 &&
@@ -265,38 +289,33 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             }
                         </Link>
                </span>
-                });
-            }
-
-            return <tr key={index}>
-                <td>{df.name}</td>
-                <td>{df.short_summary}</td>
-                <td>
-                    { conversionTypesOutput }
-                </td>
-
-                { df.provenance_nodes.length > 0 &&
-                <td>
-                    { provenanceGraphs }
-                </td>
+                    });
                 }
-            </tr>
-        });
 
-        let folders = dataset.folders.map((f, index) => {
-            return (
-                <span key={index}>
-                    <Link to={relativePath("folder/"+f.id)}>
-                        {f.name}
-                    </Link>
-                    {dataset.folders.length != index + 1 &&
-                    <span>, </span>
+                return <tr key={index}>
+                    <td>{df.name}</td>
+                    <td>{df.short_summary}</td>
+                    <td>
+                        { conversionTypesOutput }
+                    </td>
+
+                    { df.provenance_nodes.length > 0 &&
+                    <td>
+                        { provenanceGraphs }
+                    </td>
                     }
-                </span>
-            )
-        });
+                </tr>
+            });
 
-        let navItems = [
+            weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
+                return element.provenance_nodes.length > 0;
+            });
+        }
+
+
+
+        let navItems = [];
+        navItems = [
             {
                 label: "Edit Name", action: () => {
                 this.setState({showEditName: true})
@@ -326,117 +345,107 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             // }
         ];
 
-        // let ancestor_section: any = null;
-        // if (datasetVersion.provenance) {
-        //     let ancestor_dataset_versions = new Set(datasetVersion.provenance.inputs.map(x => {
-        //         return {
-        //             name: x.dataset_version_name,
-        //             id: x.dataset_version_id
-        //         };
-        //     }));
-        //     let ancestor_links = [...ancestor_dataset_versions].map((x, index) => {
-        //         return <li key={index}>
-        //             <Link to={relativePath("dataset/"+x.id)}>{x.name}</Link>
-        //         </li>
-        //     });
-        //     if (ancestor_links.length > 0) {
-        //         ancestor_section =
-        //             <span>
-        //                 <p>
-        //                     Derived from
-        //                 </p>
-        //                 <ul>
-        //                     {ancestor_links}
-        //                 </ul>
-        //             </span>;
-        //     }
-        // }
+        let permaname = null;
+        let r_block = null;
+        let leftNavsDialogs = null;
 
-        let permaname = dataset.permanames[dataset.permanames.length - 1];
-        let r_block = "library(taigr);\n";
+        if (dataset && datasetVersion) {
+            permaname = dataset.permanames[dataset.permanames.length - 1];
+            r_block = "library(taigr);\n";
 
-        if(datasetVersion.datafiles.length == 1) {
-            r_block += `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
-        } else {
-            let r_block_lines = datasetVersion.datafiles.map((df, index) => {
-                let r_name = df.name.replace(/[^A-Za-z0-9]+/, ".");
-                return `${r_name} <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
-            });
-            r_block += r_block_lines.join("\n")
+            if (datasetVersion.datafiles.length == 1) {
+                r_block += `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
+            } else {
+                let r_block_lines = datasetVersion.datafiles.map((df, index) => {
+                    let r_name = df.name.replace(/[^A-Za-z0-9]+/, ".");
+                    return `${r_name} <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
+                });
+                r_block += r_block_lines.join("\n")
+            }
+
+            leftNavsDialogs = (
+                <span>
+                    <Dialogs.EditName isVisible={this.state.showEditName}
+                                      initialValue={this.state.dataset.name}
+                                      cancel={ () => { this.setState({showEditName: false})} }
+                                      save={ (name:string) => {
+                            this.setState({showEditName: false});
+                            this.updateName(name)
+                            } }/>
+                    < Dialogs.EditDescription isVisible={this.state.showEditDescription}
+                                              cancel={ () => { this.setState({showEditDescription: false}) } }
+                                              initialValue={this.state.datasetVersion.description}
+                                              save={ (description: string) => {
+                    this.setState({showEditDescription: false});
+                    console.log("Save description: " + description); this.updateDescription(description); } }/>
+
+                    <Upload.UploadDataset
+                        isVisible={this.state.showUploadDataset}
+                        cancel={ () => { this.setState({showUploadDataset: false}) } }
+                        onFileUploadedAndConverted={ (sid: string, name: string, description: string, previousDatafileIds: Array<string>) =>
+                            this.filesUploadedAndConverted(sid, name, description, previousDatafileIds)
+                        }
+                        currentFolderId={this.state.dataset.folders[0].id}
+                        title="New Dataset Version"
+                        readOnlyName={ this.state.dataset.name }
+                        previousDescription={ this.state.datasetVersion.description }
+                        previousVersionName={ this.state.datasetVersion.name }
+                        previousVersionFiles={ this.state.datasetVersion.datafiles }
+                    />
+                </span>
+            );
         }
 
 
-        let weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
-           return element.provenance_nodes.length > 0;
-        });
 
         return <div>
             <LeftNav items={navItems}/>
             <div id="main-content">
-                <Dialogs.EditName isVisible={this.state.showEditName}
-                                  initialValue={this.state.dataset.name}
-                                  cancel={ () => { this.setState({showEditName: false})} }
-                                  save={ (name:string) => {
-                        this.setState({showEditName: false});
-                        this.updateName(name)
-                        } }/>
-                <Dialogs.EditDescription isVisible={this.state.showEditDescription}
-                                         cancel={ () => { this.setState({showEditDescription: false})} }
-                                         initialValue={this.state.datasetVersion.description}
-                                         save={ (description:string) => {
-                        this.setState({showEditDescription: false});
-                        console.log("Save description: "+description);
-                        this.updateDescription(description);
-                    } }/>
+                { dataset && datasetVersion &&
+                <span>
+                    { leftNavsDialogs }
 
-                <Upload.UploadDataset
-                    isVisible={this.state.showUploadDataset}
-                    cancel={ () => { this.setState({showUploadDataset: false}) } }
-                    onFileUploadedAndConverted={ (sid: string, name: string, description: string, previousDatafileIds: Array<string>) =>
-                        this.filesUploadedAndConverted(sid, name, description, previousDatafileIds)
-                    }
-                    currentFolderId={this.state.dataset.folders[0].id}
-                    title="New Dataset Version"
-                    readOnlyName={ this.state.dataset.name }
-                    previousDescription={ this.state.datasetVersion.description }
-                    previousVersionName={ this.state.datasetVersion.name }
-                    previousVersionFiles={ this.state.datasetVersion.datafiles }
-                />
+                        <h1>{dataset.name}
+                            <small>{permaname}</small>
+                    </h1>
+                    <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
+                        &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
+                    <p>Versions: {versions} </p>
 
-                <h1>{dataset.name}
-                    <small>{permaname}</small>
-                </h1>
-                <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
-                    &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
-                <p>Versions: {versions} </p>
-
-                <p>Contained within {folders}</p>
-                {/*{ancestor_section}*/}
-
-                { this.state.datasetVersion.description &&
-                <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
-                }
-
-                <h2>Contents</h2>
-                <table className="table">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        {/*<th>Description</th>*/}
-                        <th>Summary</th>
-                        <th>Download</th>
-
-                        { weHaveProvenanceGraphs &&
-                            <th>Provenance Graph</th>
+                        { (datasetVersion.creator.id == currentUser ||
+                        dataset.folders.some((folder) => {
+                            return folder.id == "public"
+                        })) &&
+                        <p>Contained within {folders}</p>
                         }
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {entries}
-                    </tbody>
-                </table>
-                <h2>Reading from R</h2>
-                <pre>{r_block}</pre>
+                        {/*{ancestor_section}*/}
+
+                        { this.state.datasetVersion.description &&
+                        <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
+                        }
+
+                        <h2>Contents</h2>
+                    <table className="table">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            {/*<th>Description</th>*/}
+                            <th>Summary</th>
+                            <th>Download</th>
+
+                            { weHaveProvenanceGraphs &&
+                            <th>Provenance Graph</th>
+                            }
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {entries}
+                        </tbody>
+                    </table>
+                    <h2>Reading from R</h2>
+                    <pre>{r_block}</pre>
+                </span>
+                }
             </div>
             {this.state.loading && <LoadingOverlay message={ this.state.loadingMessage }></LoadingOverlay>}
         </div>
