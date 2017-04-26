@@ -88,7 +88,7 @@ class App extends React.Component<AppProps, any> {
                         Broad Institute, Cancer Program Data Science {(new Date()).getFullYear()}
                     </div>
                     <div className="login-box pull-right bottom-page-text">
-                        Rev 1.2.0
+                        Rev 1.2.1
                     </div>
                 </footer>
             </div>
@@ -98,8 +98,6 @@ class App extends React.Component<AppProps, any> {
 
 const Home = React.createClass({
     getInitialState() {
-        console.log("getInitialState");
-        console.log("getInitialState2");
         return {
             user: null
         };
@@ -108,12 +106,10 @@ const Home = React.createClass({
     componentDidMount() {
         let tapi: TaigaApi = this.context.tapi;
 
-        console.log("get_user start in React");
         tapi.get_user().then(user => {
                 this.setState({user: user}, () => {
                     browserHistory.push(relativePath("folder/" + this.state.user.home_folder_id));
                 });
-                console.log("get_user complete, complete");
             }
         );
     },
@@ -208,18 +204,6 @@ const NoMatch = React.createClass({
         )
     }
 });
-
-
-// tapi.get_user().then(user => {
-//     console.log("User:", user);
-//     return tapi.get_folder(user.home_folder_id)
-// }).then(folder => {
-//     console.log("Folder:", folder);
-// })
-
-// <IndexRoute component={DatasetDetails}/>
-// <Route path="activity" component={ActivityView}/>
-// <Route path="provenance" component={ProvenanceView}/>
 
 // TODO: let UserRoute: Component<UserRouteProps, ComponentState> = Route as any
 

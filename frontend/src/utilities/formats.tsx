@@ -28,8 +28,6 @@ export function getInitialFileTypeFromMimeType(mimeTypeOrEnum: string|InitialFil
             formattedType = InitialFileType.Raw;
         }
     }
-    console.log("In getInitial: " + mimeTypeOrEnum);
-    console.log("Returning: " + mimeTypeOrEnum);
     return formattedType;
 }
 

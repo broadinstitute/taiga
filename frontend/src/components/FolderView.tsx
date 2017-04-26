@@ -67,7 +67,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     };
 
     componentDidUpdate(prevProps: FolderViewProps) {
-        console.log("We updated folderView");
         // respond to parameter change in scenario 3
         let oldId = prevProps.params.folderId;
         let newId = this.props.params.folderId;
@@ -82,7 +81,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     doFetch() {
-        console.log("FolderView: componentDidMount");
         this.setState({
             loading: true
         });
@@ -92,7 +90,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         let _folder: Folder.Folder = null;
         return tapi.get_folder(this.props.params.folderId).then(folder => {
                 _folder = folder;
-                console.log("FolderView: complete");
                 return folder.entries
             }
         ).then((entries: Array<Folder.FolderEntries>) => {
@@ -123,7 +120,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 });
             }).then(() => {
                 // Then we ask the datasetVersion bulk
-                console.log("Success to get the datasets!");
                 return tapi.get_datasetVersions(datasetVersionIds).then((arrayDatasetVersions: Array<DatasetVersion>) => {
                     arrayDatasetVersions.forEach((datasetVersion: DatasetVersion) => {
                         datasetsVersion[datasetVersion.id] = datasetVersion
@@ -151,7 +147,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             // });
             // return Promise.all(all_dataset_versions);
         }).then(() => {
-            console.log("We reset the states");
             this.setState({
                 folder: _folder,
                 selection: new Array<string>(),
@@ -297,289 +292,229 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     render() {
-        console.log("folderId in render", this.props.params.folderId);
-        if (!this.state) {
-            return <div>
-                <LeftNav items={[]}/>
-                <div id="main-content"/>
-            </div>
-        } else if (this.state.error) {
-            return <div>
-                <LeftNav items={[]}/>
-                <div id="main-content">
-                    An error occurred: {this.state.error}
-                </div>
-            </div>
-        }
-        var folder: Folder.Folder = this.state.folder;
-
-        var parent_links = folder.parents.map((p: Folder.NamedId, index: number) => {
-            return <Link key={index} to={relativePath("folder/"+p.id)}>{p.name}</Link>
-        });
-
         let entriesOutput: Array<any> = [];
-        var subfolders: Folder.FolderEntries[] = [];
-        var others: Folder.FolderEntries[] = [];
+        let navItems: MenuItem[] = [];
+
+        if (this.state && this.state.folder) {
+            if (!this.state) {
+                return <div>
+                    <LeftNav items={[]}/>
+                    <div id="main-content"/>
+                </div>
+            } else if (this.state.error) {
+                return <div>
+                    <LeftNav items={[]}/>
+                    <div id="main-content">
+                        An error occurred: {this.state.error}
+                    </div>
+                </div>
+            }
+            var folder: Folder.Folder = this.state.folder;
+
+            var parent_links = folder.parents.map((p: Folder.NamedId, index: number) => {
+                return <Link key={index} to={relativePath("folder/"+p.id)}>{p.name}</Link>
+            });
 
 
-        let sortedEntries = folder.entries.sort((elementA, elementB) => {
-            // Sorting by descending order
-            let keyA = new Date(this.getMostRecentDateEntry(elementA));
-            let keyB = new Date(this.getMostRecentDateEntry(elementB));
+            var subfolders: Folder.FolderEntries[] = [];
+            var others: Folder.FolderEntries[] = [];
 
-            if (keyA > keyB) return -1;
-            if (keyA < keyB) return 1;
-            return 0;
-        });
 
-        sortedEntries.forEach((e: Folder.FolderEntries, index: number) => {
-            if (e.type == Folder.FolderEntries.TypeEnum.Folder) {
-                entriesOutput.push(
-                    <tr key={e.id}>
-                        <td><input type="checkbox" checked={ this.state.selection.includes(e.id) }
-                                   onChange={ () => {this.selectRow(e.id)} }/></td>
-                        <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
-                            <span> </span>
-                            <Link key={index} to={relativePath("folder/"+e.id)}>
-                                {e.name}
-                            </Link>
-                        </td>
-                        <td>{toLocalDateString(e.creation_date)}</td>
-                        <td>Folder</td>
-                        <td>{e.creator.name}</td>
-                    </tr>
-                );
-            } else {
-                var link: any;
-                let entryType: any;
-                let creation_date: string = toLocalDateString(e.creation_date);
+            let sortedEntries = folder.entries.sort((elementA, elementB) => {
+                // Sorting by descending order
+                let keyA = new Date(this.getMostRecentDateEntry(elementA));
+                let keyB = new Date(this.getMostRecentDateEntry(elementB));
 
-                if (e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
-                    entryType = 'Dataset Version';
-                    let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[e.id];
-                    // Since we don't have the id of the dataset, we need to ask the api for it
-                    link =
-                        <span>
+                if (keyA > keyB) return -1;
+                if (keyA < keyB) return 1;
+                return 0;
+            });
+
+            sortedEntries.forEach((e: Folder.FolderEntries, index: number) => {
+                if (e.type == Folder.FolderEntries.TypeEnum.Folder) {
+                    entriesOutput.push(
+                        <tr key={e.id}>
+                            <td><input type="checkbox" checked={ this.state.selection.includes(e.id) }
+                                       onChange={ () => {this.selectRow(e.id)} }/></td>
+                            <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
+                                <span> </span>
+                                <Link key={index} to={relativePath("folder/"+e.id)}>
+                                    {e.name}
+                                </Link>
+                            </td>
+                            <td>{toLocalDateString(e.creation_date)}</td>
+                            <td>Folder</td>
+                            <td>{e.creator.name}</td>
+                        </tr>
+                    );
+                } else {
+                    var link: any;
+                    let entryType: any;
+                    let creation_date: string = toLocalDateString(e.creation_date);
+
+                    if (e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
+                        entryType = 'Dataset Version';
+                        let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[e.id];
+                        // Since we don't have the id of the dataset, we need to ask the api for it
+                        link =
+                            <span>
                             <Glyphicon glyph="glyphicon glyphicon-file"/>
                             <span> </span>
                             <Link key={index} to={relativePath("dataset/"+full_datasetVersion.dataset_id+"/"+e.id)}>
                                 {e.name}
                             </Link>
                         </span>
-                } else if (e.type == Folder.FolderEntries.TypeEnum.Dataset) {
-                    entryType = 'Dataset';
-                    // TODO: Be careful about this add, not sure if we should access Dataset data like this
-                    // TODO: We need to get the latest datasetVersion from this dataset
-                    let latestDatasetVersion = this.state.datasetLastDatasetVersion[e.id];
-                    link =
-                        <span>
+                    } else if (e.type == Folder.FolderEntries.TypeEnum.Dataset) {
+                        entryType = 'Dataset';
+                        // TODO: Be careful about this add, not sure if we should access Dataset data like this
+                        // TODO: We need to get the latest datasetVersion from this dataset
+                        let latestDatasetVersion = this.state.datasetLastDatasetVersion[e.id];
+                        link =
+                            <span>
                         <Glyphicon glyph="glyphicon glyphicon-inbox"/>
                         <span> </span>
                         <Link key={index} to={relativePath("dataset/"+e.id+"/"+latestDatasetVersion.id)}>{e.name}</Link>
                     </span>;
-                    creation_date = toLocalDateString(latestDatasetVersion.creation_date);
-                }
-                else {
-                    link = e.name;
-                }
+                        creation_date = toLocalDateString(latestDatasetVersion.creation_date);
+                    }
+                    else {
+                        link = e.name;
+                    }
 
-                entriesOutput.push(
-                    <tr key={e.id}>
-                        <td><input type="checkbox" checked={ this.state.selection.includes(e.id) }
-                                   onChange={ () => {this.selectRow(e.id)} }/></td>
-                        <td>{link}</td>
-                        <td>{creation_date}</td>
-                        <td>{entryType}</td>
-                        <td>{e.creator.name}</td>
-                    </tr>
-                );
-            }
-        });
-
-        // var folder_rows = subfolders.map((e, index) => {
-        //     let select_key = e.id;
-        //     return <tr key={e.id}>
-        //         <td><input type="checkbox" checked={ this.state.selection.includes(select_key) }
-        //                    onChange={ () => {this.selectRow(select_key)} }/></td>
-        //         <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
-        //             <span> </span>
-        //             <Link key={index} to={relativePath("folder/"+e.id)}>
-        //                 {e.name}
-        //             </Link>
-        //         </td>
-        //         <td>{toLocalDateString(e.creation_date)}</td>
-        //         <td>Folder</td>
-        //         <td>{e.creator.name}</td>
-        //     </tr>
-        // });
-        //
-        // var other_rows = others.map((e, index) => {
-        //     var link: any;
-        //     let entryType: any;
-        //     let creation_date: string = toLocalDateString(e.creation_date);
-        //
-        //     if (e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
-        //         entryType = 'Dataset Version';
-        //         let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[e.id];
-        //         // Since we don't have the id of the dataset, we need to ask the api for it
-        //         link =
-        //             <span>
-        //                     <Glyphicon glyph="glyphicon glyphicon-file"/>
-        //                     <span> </span>
-        //                     <Link key={index} to={relativePath("dataset/"+full_datasetVersion.dataset_id+"/"+e.id)}>
-        //                         {e.name}
-        //                     </Link>
-        //                 </span>
-        //     } else if (e.type == Folder.FolderEntries.TypeEnum.Dataset) {
-        //         entryType = 'Dataset';
-        //         // TODO: Be careful about this add, not sure if we should access Dataset data like this
-        //         // TODO: We need to get the latest datasetVersion from this dataset
-        //         let latestDatasetVersion = this.state.datasetLastDatasetVersion[e.id];
-        //         link =
-        //             <span>
-        //                 <Glyphicon glyph="glyphicon glyphicon-inbox"/>
-        //                 <span> </span>
-        //                 <Link key={index} to={relativePath("dataset/"+e.id+"/"+latestDatasetVersion.id)}>{e.name}</Link>
-        //             </span>;
-        //         creation_date = toLocalDateString(latestDatasetVersion.creation_date);
-        //     }
-        //     else {
-        //         link = e.name;
-        //     }
-        //
-        //     let select_key = e.id;
-        //     return <tr key={e.id}>
-        //         <td><input type="checkbox" checked={ this.state.selection.includes(select_key) }
-        //                    onChange={ () => {this.selectRow(select_key)} }/></td>
-        //         <td>{link}</td>
-        //         <td>{creation_date}</td>
-        //         <td>{entryType}</td>
-        //         <td>{e.creator.name}</td>
-        //     </tr>
-        // });
-
-        console.log(this.props.params);
-
-        let navItems: MenuItem[] = [];
-        let selectionCount = this.state.selection.length;
-
-        if (selectionCount == 0) {
-            let add_folder_items = [
-                {
-                    label: "Create a subfolder", action: () => {
-                    this.setState({showCreateFolder: true})
-                }
-                },
-                {
-                    label: "Upload dataset", action: () => {
-                    this.setState({showUploadDataset: true})
-                }
-                }
-            ];
-            navItems.push({
-                label: "Edit name", action: () => {
-                    this.setState({showEditName: true})
+                    entriesOutput.push(
+                        <tr key={e.id}>
+                            <td><input type="checkbox" checked={ this.state.selection.includes(e.id) }
+                                       onChange={ () => {this.selectRow(e.id)} }/></td>
+                            <td>{link}</td>
+                            <td>{creation_date}</td>
+                            <td>{entryType}</td>
+                            <td>{e.creator.name}</td>
+                        </tr>
+                    );
                 }
             });
-            navItems.push(
-                {
-                    label: "Edit description", action: () => {
-                    this.setState({showEditDescription: true})
-                }
+
+            let selectionCount = this.state.selection.length;
+
+            if (selectionCount == 0) {
+                let add_folder_items = [
+                    {
+                        label: "Create a subfolder", action: () => {
+                        this.setState({showCreateFolder: true})
+                    }
+                    },
+                    {
+                        label: "Upload dataset", action: () => {
+                        this.setState({showUploadDataset: true})
+                    }
+                    }
+                ];
+                navItems.push({
+                    label: "Edit name", action: () => {
+                        this.setState({showEditName: true})
+                    }
                 });
-            navItems = navItems.concat(add_folder_items);
-        } else {
-            navItems.push({
-                label: "Move to trash", action: () => this.moveToTrash()
-            });
-            navItems.push({
-                label: "Move to...", action: () => {
-                    this.openActionTo("move");
-                }
-            });
-            navItems.push({
-                label: "Copy to...", action: () => {
-                    this.openActionTo("copy");
-                }
-            });
+                navItems.push(
+                    {
+                        label: "Edit description", action: () => {
+                        this.setState({showEditDescription: true})
+                    }
+                    });
+                navItems = navItems.concat(add_folder_items);
+            } else {
+                navItems.push({
+                    label: "Move to trash", action: () => this.moveToTrash()
+                });
+                navItems.push({
+                    label: "Move to...", action: () => {
+                        this.openActionTo("move");
+                    }
+                });
+                navItems.push({
+                    label: "Copy to...", action: () => {
+                        this.openActionTo("copy");
+                    }
+                });
+            }
         }
 
         return (
             <div>
                 <LeftNav items={navItems}/>
                 <div id="main-content">
-                    <Dialogs.EditName isVisible={this.state.showEditName}
-                                      initialValue={ this.state.folder.name }
-                                      cancel={ () => { this.setState({showEditName: false})} }
-                                      save={ (name:string) => {
-                            console.log("Save name: "+name); 
-                            this.setState({showEditName: false})
-                            this.updateName(name);    
-                    } }/>
+                    { folder && <span>
+                        <Dialogs.EditName isVisible={this.state.showEditName}
+                                          initialValue={ this.state.folder.name }
+                                          cancel={ () => { this.setState({showEditName: false})} }
+                                          save={ (name:string) => {
+                                this.setState({showEditName: false})
+                                this.updateName(name);
+                        } }/>
 
-                    <Dialogs.EditDescription
-                        initialValue={ this.state.folder.description }
-                        isVisible={this.state.showEditDescription}
-                        cancel={ () => { this.setState({showEditDescription: false})} }
-                        save={ (description:string) => { 
-                            this.setState({showEditDescription: false}) 
-                            this.updateDescription(description);
-                        }}/>
+                        <Dialogs.EditDescription
+                            initialValue={ this.state.folder.description }
+                            isVisible={this.state.showEditDescription}
+                            cancel={ () => { this.setState({showEditDescription: false})} }
+                            save={ (description:string) => {
+                                this.setState({showEditDescription: false})
+                                this.updateDescription(description);
+                            }}/>
 
-                    <Upload.UploadDataset
-                        isVisible={this.state.showUploadDataset}
-                        cancel={ () => { this.setState({showUploadDataset: false}) } }
+                        <Upload.UploadDataset
+                            isVisible={this.state.showUploadDataset}
+                            cancel={ () => { this.setState({showUploadDataset: false}) } }
 
-                        onFileUploadedAndConverted={ (sid: string, name: string , description: string) =>
-                            this.filesUploadedAndConverted(sid, name, description) }
-                        currentFolderId={this.state.folder.id}
-                        title="New Dataset"
-                    />
+                            onFileUploadedAndConverted={ (sid: string, name: string , description: string) =>
+                                this.filesUploadedAndConverted(sid, name, description) }
+                            currentFolderId={this.state.folder.id}
+                            title="New Dataset"
+                        />
 
-                    <Dialogs.CreateFolder
-                        isVisible={this.state.showCreateFolder}
-                        cancel={ () => { this.setState({showCreateFolder: false}) }}
-                        save={ (name, description) => {
-                            this.setState({showCreateFolder: false});
-                            this.createFolder(name, description);
-                        }}
-                    />
+                        <Dialogs.CreateFolder
+                            isVisible={this.state.showCreateFolder}
+                            cancel={ () => { this.setState({showCreateFolder: false}) }}
+                            save={ (name, description) => {
+                                this.setState({showCreateFolder: false});
+                                this.createFolder(name, description);
+                            }}
+                        />
 
-                    <Dialogs.InputFolderId
-                        actionDescription={ this.state.inputFolderIdActionDescription }
-                        isVisible={ this.state.showInputFolderId }
-                        cancel={ () => { this.setState({showInputFolderId: false}) }}
-                        save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
-                    />
+                        <Dialogs.InputFolderId
+                            actionDescription={ this.state.inputFolderIdActionDescription }
+                            isVisible={ this.state.showInputFolderId }
+                            cancel={ () => { this.setState({showInputFolderId: false}) }}
+                            save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
+                        />
 
-                    <h1>{folder.name}</h1>
+                        <h1>{folder.name}</h1>
 
-                    <Conditional show={ parent_links.length > 0 &&
-                        ((folder.creator && folder.creator.id == currentUser) ||
-                        folder.parents.some((parent) => { return parent.id == 'public'; })) }>
-                        <p>Parents: {parent_links}</p>
-                    </Conditional>
+                        <Conditional show={ parent_links.length > 0 &&
+                            ((folder.creator && folder.creator.id == currentUser) ||
+                            folder.parents.some((parent) => { return parent.id == 'public'; })) }>
+                            <p>Parents: {parent_links}</p>
+                        </Conditional>
 
-                    { Dialogs.renderDescription(this.state.folder.description) }
+                        { Dialogs.renderDescription(this.state.folder.description) }
 
-                    <table className="table">
-                        <thead>
-                        <tr>
-                            <th className="select-column"></th>
-                            <th>Name</th>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Creator</th>
-                        </tr>
-                        </thead>
-                        <tbody>
+                        <table className="table">
+                            <thead>
+                            <tr>
+                                <th className="select-column"></th>
+                                <th>Name</th>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Creator</th>
+                            </tr>
+                            </thead>
+                            <tbody>
 
-                        {entriesOutput}
-                        {/*{folder_rows}*/}
-                        {/*{other_rows}*/}
-                        </tbody>
-                    </table>
-                    {this.state.loading && <LoadingOverlay></LoadingOverlay>}
+                            {entriesOutput}
+                            {/*{folder_rows}*/}
+                            {/*{other_rows}*/}
+                            </tbody>
+                        </table>
+                        {this.state.loading && <LoadingOverlay></LoadingOverlay>}
+                    </span>}
                 </div>
             </div>
         )

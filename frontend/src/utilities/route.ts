@@ -14,7 +14,6 @@ function fetchPrefix(){
 
 function fetchUserToken() {
     if(taigaUserToken) {
-        console.log("User token is "+taigaUserToken);
         return taigaUserToken;
     }
     else {

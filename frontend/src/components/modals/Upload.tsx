@@ -117,8 +117,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         // We need to retrieve now the s3 credentials, so we can build the FileStatus properly
         // TODO: We should not allow the use of the form while we wait for these credentials
         tapi.get_s3_credentials().then((_credentials: S3Credentials) => {
-            console.log("Received credentials! ");
-            console.log("- Access key id: " + _credentials.accessKeyId);
             credentials = _credentials;
         });
     }
@@ -151,8 +149,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     renew_s3_credentials() {
         tapi.get_s3_credentials().then((_credentials: S3Credentials) => {
-            console.log("Received credentials! ");
-            console.log("- Access key id: " + _credentials.accessKeyId);
             credentials = _credentials;
         });
     }
@@ -338,7 +334,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             updatedFileStatus.conversionProgress = status.message;
             this.saveFileStatus(updatedFileStatus)
         }
-        console.log(status.message);
     }
 
     initRecurringCheckStatus(taskId: string, s3Key: string) {
@@ -354,7 +349,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         if (status.state == 'SUCCESS') {
             this.displayStatusUpdate(status, s3Key);
-            console.log("Success of task: " + status.id);
             return Promise.resolve(status.id)
         }
         else if (status.state == 'FAILURE') {
@@ -554,7 +548,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     onClick={(e) => {
                         e.preventDefault();
                         this.requestUpload().then(() => {
-                            console.log("Ok upload");
                         }).catch((err:any) => {
                             console.log("Error received: "+err);
                         });

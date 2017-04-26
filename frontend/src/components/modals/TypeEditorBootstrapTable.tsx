@@ -29,7 +29,6 @@ export class TypeEditorBootstrapTable extends React.Component<TypeEditorProps, T
 
     updateData(evt: any) {
         let newType: InitialFileType = evt.currentTarget.value;
-        console.log("We just updated the value of the control: " + evt.currentTarget.value);
         this.setState({
             type: newType
         });
