@@ -154,7 +154,6 @@ def get_converter(src_format, dst_format):
 
     raise Exception("No conversion for {} to {}".format(src_format, dst_format))
 
-
 def _start_conversion_task(self, progress, bucket, key, src_format, dst_format, cache_entry_id):
     from taiga2.controllers import models_controller
 
@@ -175,7 +174,7 @@ def _start_conversion_task(self, progress, bucket, key, src_format, dst_format, 
 
             urls = []
             for converted_file in converted_files:
-                dest_key = flask.current_app.config['S3_PREFIX'] + "/exported/" + str(uuid.uuid4().hex)
+                dest_key = models_controller.EnumS3FolderPath.Export.value + str(uuid.uuid4().hex)
                 urls.append("s3://{}/{}".format(dest_bucket, dest_key))
 
                 models_controller.update_conversion_cache_entry(cache_entry_id, "Uploading converted file to S3")
