@@ -881,9 +881,9 @@ def get_upload_session_files_from_session(session_id):
 # <editor-fold desc="Upload Session File">
 class EnumS3FolderPath(enum.Enum):
     """Enum which could be useful to have a central way of manipulating the s3 prefixes"""
-    Upload = 'upload/'
-    Convert = 'convert/'
-    Export = 'export/'
+    Upload = 'upload/'    # key prefix which all new uploads are put under.  These are transient until conversion completes
+    Convert = 'convert/'  # key prefix used for data converted to canonical form.  These are the authorative source.
+    Export = 'export/'    # key prefix used for results converted for export.  These are transient because they can be re-generated.
 
 
 def generate_convert_key():
