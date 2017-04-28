@@ -68,15 +68,25 @@ let currentUser: string = null;
 export class FolderView extends React.Component<FolderViewProps, FolderViewState> {
     static contextTypes = {
         tapi: React.PropTypes.object,
-        currentUser: React.PropTypes.string
+        currentUser: React.PropTypes.string,
     };
+
+    constructor(props: any) {
+        super(props);
+    }
+
+    private bootstrapTable: any;
 
     componentDidUpdate(prevProps: FolderViewProps) {
         // respond to parameter change in scenario 3
         let oldId = prevProps.params.folderId;
         let newId = this.props.params.folderId;
-        if (newId !== oldId)
+        if (newId !== oldId) {
             this.doFetch();
+
+            // Clean selected
+            this.bootstrapTable.cleanSelected();
+        }
     }
 
     componentDidMount() {
@@ -278,31 +288,31 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     // BootstrapTable Entries
-    nameUrlFormatter (cell, row: BootstrapTableFolderEntry) {
+    nameUrlFormatter(cell, row: BootstrapTableFolderEntry) {
         // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
         let glyphicon = null;
         if (row.type == Folder.FolderEntries.TypeEnum.Folder) {
-            glyphicon= <Glyphicon glyph="glyphicon glyphicon-folder-close"/>
+            glyphicon = <Glyphicon glyph="glyphicon glyphicon-folder-close"/>
         }
         else if (row.type == Folder.FolderEntries.TypeEnum.Dataset) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-inbox"/>
         }
         else if (row.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
-            glyphicon= <Glyphicon glyph="glyphicon glyphicon-file"/>
+            glyphicon = <Glyphicon glyph="glyphicon glyphicon-file"/>
         }
 
         return (
-            <td>
+            <span>
                 {glyphicon}
                 <span> </span>
                 <Link key={row.id} to={row.url}>
                     {cell}
                 </Link>
-            </td>
+            </span>
         );
     }
 
-    typeFormatter (cell: string, row: BootstrapTableFolderEntry) {
+    typeFormatter(cell: string, row: BootstrapTableFolderEntry) {
         if (cell) {
             return cell[0].toUpperCase() + cell.slice(1, cell.length);
         }
@@ -310,6 +320,25 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             return "";
         }
     }
+
+    onRowSelect(row: BootstrapTableFolderEntry, isSelected: Boolean, e) {
+        let select_key = row.id;
+        console.log(e);
+        const original_selection: any = this.state.selection;
+
+        let updated_selection: Array<string>;
+
+        let index = original_selection.indexOf(select_key);
+        if (index != -1) {
+            updated_selection = update(original_selection, {$splice: [[index, 1]]});
+        }
+        else {
+            updated_selection = update(original_selection, {$push: [select_key]});
+        }
+
+        this.setState({selection: updated_selection});
+    }
+
 
     render() {
         let entriesOutput: Array<any> = [];
@@ -461,6 +490,13 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             }
         }
 
+        // Bootstrap Table configuration
+        const check_mode: SelectRowMode = 'checkbox';
+        const selectRowProp = {
+            mode: check_mode,
+            onSelect: (row, isSelected, e) => {this.onRowSelect(row, isSelected, e)},
+        };
+
         return (
             <div>
                 <LeftNav items={navItems}/>
@@ -521,12 +557,19 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
                         <BootstrapTable data={ sortedEntriesTableFormatted }
                                         bordered={ false }
-                                        tableStyle={ tableEntriesStyle }>
+                                        tableStyle={ tableEntriesStyle }
+                                        selectRow={ selectRowProp }
+                                        ref={(ref) => { this.bootstrapTable = ref }}
+                                        >
                             <TableHeaderColumn dataField='id' isKey hidden>ID</TableHeaderColumn>
-                            <TableHeaderColumn dataField='name' dataSort dataFormat={ this.nameUrlFormatter }>Name</TableHeaderColumn>
-                            <TableHeaderColumn dataField='creation_date'>Date</TableHeaderColumn>
-                            <TableHeaderColumn dataField='type' dataFormat={ this.typeFormatter }>Type</TableHeaderColumn>
-                            <TableHeaderColumn dataField='creator_name'>Creator</TableHeaderColumn>
+                            <TableHeaderColumn dataField='name' dataSort
+                                               dataFormat={ this.nameUrlFormatter }>Name</TableHeaderColumn>
+                            <TableHeaderColumn dataField='creation_date' dataSort>Date</TableHeaderColumn>
+                            <TableHeaderColumn dataField='type'
+                                               dataFormat={ this.typeFormatter }
+                                               dataSort>Type</TableHeaderColumn>
+                            <TableHeaderColumn dataField='creator_name'
+                                               dataSort>Creator</TableHeaderColumn>
                         </BootstrapTable>
 
 
