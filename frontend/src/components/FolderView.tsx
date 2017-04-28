@@ -152,22 +152,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         });
     }
 
-    selectRow(select_key: string) {
-        const original_selection: any = this.state.selection;
-
-        let updated_selection: Array<string>;
-
-        let index = original_selection.indexOf(select_key);
-        if (index != -1) {
-            updated_selection = update(original_selection, {$splice: [[index, 1]]});
-        }
-        else {
-            updated_selection = update(original_selection, {$push: [select_key]});
-        }
-
-        this.setState({selection: updated_selection});
-    }
-
     updateName(name: string) {
         tapi.update_folder_name(this.state.folder.id, name).then(() => {
             return this.doFetch()
@@ -321,7 +305,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
     }
 
-    dataFormatter(cell: Date, row: BootstrapTableFolderEntry){
+    dataFormatter(cell: Date, row: BootstrapTableFolderEntry) {
         return toLocalDateString(cell.toDateString());
     }
 
@@ -347,7 +331,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     render() {
         let entriesOutput: Array<any> = [];
         let navItems: MenuItem[] = [];
-        let sortedEntriesTableFormatted: Array<BootstrapTableFolderEntry> = [];
+        let folderEntriesTableFormatted: Array<BootstrapTableFolderEntry> = [];
 
         if (this.state && this.state.folder) {
             if (!this.state) {
@@ -369,18 +353,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 return <Link key={index} to={relativePath("folder/"+p.id)}>{p.name}</Link>
             });
 
-
-            let sortedEntries = folder.entries.sort((elementA, elementB) => {
-                // Sorting by descending order
-                let keyA = new Date(this.getMostRecentDateEntry(elementA));
-                let keyB = new Date(this.getMostRecentDateEntry(elementB));
-
-                if (keyA > keyB) return -1;
-                if (keyA < keyB) return 1;
-                return 0;
-            });
-
-            sortedEntriesTableFormatted = sortedEntries.map((entry: Folder.FolderEntries, index: number) => {
+            folderEntriesTableFormatted = folder.entries.map((entry: Folder.FolderEntries, index: number) => {
                 let latestDatasetVersion = this.state.datasetLastDatasetVersion[entry.id];
                 let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[entry.id];
                 return new BootstrapTableFolderEntry(entry, latestDatasetVersion, full_datasetVersion);
@@ -442,6 +415,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             },
         };
 
+        const options = {
+            noDataText: 'Nothing created yet',
+            defaultSortName: 'creation_date',  // default sort column name
+            defaultSortOrder: 'desc'  // default sort order
+        };
+
         return (
             <div>
                 <LeftNav items={navItems}/>
@@ -500,11 +479,13 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
                         { Dialogs.renderDescription(this.state.folder.description) }
 
-                        <BootstrapTable data={ sortedEntriesTableFormatted }
+                        <BootstrapTable data={ folderEntriesTableFormatted }
                                         bordered={ false }
                                         tableStyle={ tableEntriesStyle }
                                         selectRow={ selectRowProp }
                                         ref={(ref) => { this.bootstrapTable = ref }}
+                                        options={ options }
+
                         >
                             <TableHeaderColumn dataField='id' isKey hidden>ID</TableHeaderColumn>
                             <TableHeaderColumn dataField='name' dataSort
