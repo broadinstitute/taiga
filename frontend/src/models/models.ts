@@ -272,7 +272,7 @@ export class BootstrapTableFolderEntry {
     id: string;
     name: string;
     url: string;
-    creation_date: string;
+    creation_date: Date;
     creator_name: string;
 
     type: FolderEntries.TypeEnum;
@@ -295,13 +295,16 @@ export class BootstrapTableFolderEntry {
     }
 
     processCreationDate(entry: FolderEntries, latestDatasetVersion?: DatasetVersion) {
-        let processedCreationDate = null;
+        let processedCreationDate: Date = new Date();
 
         if (entry.type == FolderEntries.TypeEnum.Dataset) {
-            processedCreationDate = toLocalDateString(latestDatasetVersion.creation_date);
+
+            processedCreationDate.setTime(Date.parse(latestDatasetVersion.creation_date));
+            // processedCreationDate = toLocalDateString(latestDatasetVersion.creation_date);
         }
         else {
-            processedCreationDate = toLocalDateString(entry.creation_date);
+            processedCreationDate.setTime(Date.parse(entry.creation_date));
+            // processedCreationDate = toLocalDateString(entry.creation_date);
         }
 
         return processedCreationDate;

@@ -321,6 +321,10 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
     }
 
+    dataFormatter(cell: Date, row: BootstrapTableFolderEntry){
+        return toLocalDateString(cell.toDateString());
+    }
+
     onRowSelect(row: BootstrapTableFolderEntry, isSelected: Boolean, e) {
         let select_key = row.id;
         console.log(e);
@@ -382,70 +386,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 return new BootstrapTableFolderEntry(entry, latestDatasetVersion, full_datasetVersion);
             });
 
-            sortedEntries.forEach((e: Folder.FolderEntries, index: number) => {
-                if (e.type == Folder.FolderEntries.TypeEnum.Folder) {
-                    entriesOutput.push(
-                        <tr key={e.id}>
-                            <td><input type="checkbox" checked={ this.state.selection.includes(e.id) }
-                                       onChange={ () => {this.selectRow(e.id)} }/></td>
-                            <td><Glyphicon glyph="glyphicon glyphicon-folder-close"/>
-                                <span> </span>
-                                <Link key={index} to={relativePath("folder/"+e.id)}>
-                                    {e.name}
-                                </Link>
-                            </td>
-                            <td>{toLocalDateString(e.creation_date)}</td>
-                            <td>Folder</td>
-                            <td>{e.creator.name}</td>
-                        </tr>
-                    );
-                } else {
-                    var link: any;
-                    let entryType: any;
-                    let creation_date: string = toLocalDateString(e.creation_date);
-
-                    if (e.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
-                        entryType = 'Dataset Version';
-                        let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[e.id];
-                        // Since we don't have the id of the dataset, we need to ask the api for it
-                        link =
-                            <span>
-                            <Glyphicon glyph="glyphicon glyphicon-file"/>
-                            <span> </span>
-                            <Link key={index} to={relativePath("dataset/"+full_datasetVersion.dataset_id+"/"+e.id)}>
-                                {e.name}
-                            </Link>
-                        </span>
-                    } else if (e.type == Folder.FolderEntries.TypeEnum.Dataset) {
-                        entryType = 'Dataset';
-                        // TODO: Be careful about this add, not sure if we should access Dataset data like this
-                        // TODO: We need to get the latest datasetVersion from this dataset
-                        let latestDatasetVersion = this.state.datasetLastDatasetVersion[e.id];
-                        link =
-                            <span>
-                        <Glyphicon glyph="glyphicon glyphicon-inbox"/>
-                        <span> </span>
-                        <Link key={index} to={relativePath("dataset/"+e.id+"/"+latestDatasetVersion.id)}>{e.name}</Link>
-                    </span>;
-                        creation_date = toLocalDateString(latestDatasetVersion.creation_date);
-                    }
-                    else {
-                        link = e.name;
-                    }
-
-                    entriesOutput.push(
-                        <tr key={e.id}>
-                            <td><input type="checkbox" checked={ this.state.selection.includes(e.id) }
-                                       onChange={ () => {this.selectRow(e.id)} }/></td>
-                            <td>{link}</td>
-                            <td>{creation_date}</td>
-                            <td>{entryType}</td>
-                            <td>{e.creator.name}</td>
-                        </tr>
-                    );
-                }
-            });
-
             let selectionCount = this.state.selection.length;
 
             if (selectionCount == 0) {
@@ -497,7 +437,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         const check_mode: SelectRowMode = 'checkbox';
         const selectRowProp = {
             mode: check_mode,
-            onSelect: (row, isSelected, e) => {this.onRowSelect(row, isSelected, e)},
+            onSelect: (row, isSelected, e) => {
+                this.onRowSelect(row, isSelected, e)
+            },
         };
 
         return (
@@ -563,11 +505,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                                         tableStyle={ tableEntriesStyle }
                                         selectRow={ selectRowProp }
                                         ref={(ref) => { this.bootstrapTable = ref }}
-                                        >
+                        >
                             <TableHeaderColumn dataField='id' isKey hidden>ID</TableHeaderColumn>
                             <TableHeaderColumn dataField='name' dataSort
                                                dataFormat={ this.nameUrlFormatter }>Name</TableHeaderColumn>
-                            <TableHeaderColumn dataField='creation_date' dataSort>Date</TableHeaderColumn>
+                            <TableHeaderColumn dataField='creation_date' dataSort
+                                               dataFormat={ this.dataFormatter }>Date</TableHeaderColumn>
                             <TableHeaderColumn dataField='type'
                                                dataFormat={ this.typeFormatter }
                                                dataSort>Type</TableHeaderColumn>
@@ -575,24 +518,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                                                dataSort>Creator</TableHeaderColumn>
                         </BootstrapTable>
 
-
-                        <table className="table">
-                            <thead>
-                            <tr>
-                                <th className="select-column"></th>
-                                <th>Name</th>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Creator</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-
-                            {entriesOutput}
-                            {/*{folder_rows}*/}
-                            {/*{other_rows}*/}
-                            </tbody>
-                        </table>
                         {this.state.loading && <LoadingOverlay></LoadingOverlay>}
                     </span>}
                 </div>
