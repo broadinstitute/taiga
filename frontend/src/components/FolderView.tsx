@@ -15,14 +15,19 @@ import {relativePath} from "../utilities/route";
 import {LoadingOverlay} from "../utilities/loading";
 
 import {Glyphicon} from "react-bootstrap";
+import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit} from "react-bootstrap-table";
 import {Dataset} from "../models/models";
 import {DatasetVersion} from "../models/models";
 import {isUndefined} from "util";
-import {DatasetFullDatasetVersions} from "../models/models";
+import {DatasetFullDatasetVersions, BootstrapTableFolderEntry} from "../models/models";
 
 export interface FolderViewProps {
     params: any
 }
+
+const tableEntriesStyle: any = {
+    margin: "initial"
+};
 
 export interface FolderViewState {
     folder?: Folder.Folder;
@@ -124,28 +129,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     arrayDatasetVersions.forEach((datasetVersion: DatasetVersion) => {
                         datasetsVersion[datasetVersion.id] = datasetVersion
                     });
-                    // this.setState({
-                    //     loading: false
-                    // });
                 });
             });
-
-
-            // let all_dataset_versions: Array<Promise<void>> = null;
-            // all_dataset_versions = entries.map((entry: Folder.FolderEntries) => {
-            //     if (entry.type == Folder.FolderEntries.TypeEnum.Dataset) {
-            //
-            //         return tapi.get_dataset_version_last(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
-            //             datasetsLatestDv[entry.id] = datasetVersion;
-            //         });
-            //     }
-            //     else if (entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
-            //         return tapi.get_dataset_version(entry.id).then((datasetVersion: Folder.DatasetVersion) => {
-            //             datasetsVersion[datasetVersion.id] = datasetVersion
-            //         });
-            //     }
-            // });
-            // return Promise.all(all_dataset_versions);
         }).then(() => {
             this.setState({
                 folder: _folder,
@@ -279,6 +264,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     getMostRecentDateEntry(entry: Folder.FolderEntries) {
+        // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
         if (entry.type == Folder.FolderEntries.TypeEnum.Folder) {
             return entry.creation_date;
         }
@@ -291,9 +277,44 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
     }
 
+    // BootstrapTable Entries
+    nameUrlFormatter (cell, row: BootstrapTableFolderEntry) {
+        // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
+        let glyphicon = null;
+        if (row.type == Folder.FolderEntries.TypeEnum.Folder) {
+            glyphicon= <Glyphicon glyph="glyphicon glyphicon-folder-close"/>
+        }
+        else if (row.type == Folder.FolderEntries.TypeEnum.Dataset) {
+            glyphicon = <Glyphicon glyph="glyphicon glyphicon-inbox"/>
+        }
+        else if (row.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
+            glyphicon= <Glyphicon glyph="glyphicon glyphicon-file"/>
+        }
+
+        return (
+            <td>
+                {glyphicon}
+                <span> </span>
+                <Link key={row.id} to={row.url}>
+                    {cell}
+                </Link>
+            </td>
+        );
+    }
+
+    typeFormatter (cell: string, row: BootstrapTableFolderEntry) {
+        if (cell) {
+            return cell[0].toUpperCase() + cell.slice(1, cell.length);
+        }
+        else {
+            return "";
+        }
+    }
+
     render() {
         let entriesOutput: Array<any> = [];
         let navItems: MenuItem[] = [];
+        let sortedEntriesTableFormatted: Array<BootstrapTableFolderEntry> = [];
 
         if (this.state && this.state.folder) {
             if (!this.state) {
@@ -316,10 +337,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             });
 
 
-            var subfolders: Folder.FolderEntries[] = [];
-            var others: Folder.FolderEntries[] = [];
-
-
             let sortedEntries = folder.entries.sort((elementA, elementB) => {
                 // Sorting by descending order
                 let keyA = new Date(this.getMostRecentDateEntry(elementA));
@@ -328,6 +345,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 if (keyA > keyB) return -1;
                 if (keyA < keyB) return 1;
                 return 0;
+            });
+
+            sortedEntriesTableFormatted = sortedEntries.map((entry: Folder.FolderEntries, index: number) => {
+                let latestDatasetVersion = this.state.datasetLastDatasetVersion[entry.id];
+                let full_datasetVersion: Folder.DatasetVersion = this.state.datasetsVersion[entry.id];
+                return new BootstrapTableFolderEntry(entry, latestDatasetVersion, full_datasetVersion);
             });
 
             sortedEntries.forEach((e: Folder.FolderEntries, index: number) => {
@@ -495,6 +518,17 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         </Conditional>
 
                         { Dialogs.renderDescription(this.state.folder.description) }
+
+                        <BootstrapTable data={ sortedEntriesTableFormatted }
+                                        bordered={ false }
+                                        tableStyle={ tableEntriesStyle }>
+                            <TableHeaderColumn dataField='id' isKey hidden>ID</TableHeaderColumn>
+                            <TableHeaderColumn dataField='name' dataSort dataFormat={ this.nameUrlFormatter }>Name</TableHeaderColumn>
+                            <TableHeaderColumn dataField='creation_date'>Date</TableHeaderColumn>
+                            <TableHeaderColumn dataField='type' dataFormat={ this.typeFormatter }>Type</TableHeaderColumn>
+                            <TableHeaderColumn dataField='creator_name'>Creator</TableHeaderColumn>
+                        </BootstrapTable>
+
 
                         <table className="table">
                             <thead>

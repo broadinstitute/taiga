@@ -1,4 +1,6 @@
-import {getInitialFileTypeFromMimeType} from "../utilities/formats";
+import {getInitialFileTypeFromMimeType, toLocalDateString} from "../utilities/formats";
+import {relativePath} from "../utilities/route";
+import {process} from "ts-jest/dist/preprocessor";
 
 export class Folder {
     id: string;
@@ -263,6 +265,62 @@ export class TaskStatus {
     total: string;
     s3Key: string;
 }
+
+// Bootstrap Table object
+// Class to manage the items in the bootstrap table of FolderView
+export class BootstrapTableFolderEntry {
+    id: string;
+    name: string;
+    url: string;
+    creation_date: string;
+    creator_name: string;
+
+    type: FolderEntries.TypeEnum;
+
+    processFolderEntryUrl(entry: FolderEntries, latestDatasetVersion?: DatasetVersion,
+                          full_datasetVersion?: DatasetVersion) {
+        let processedUrl = null;
+
+        if(entry.type == FolderEntries.TypeEnum.Folder) {
+            processedUrl = relativePath("folder/" + entry.id);
+        }
+        else if(entry.type == FolderEntries.TypeEnum.DatasetVersion) {
+            processedUrl = relativePath("dataset/"+full_datasetVersion.dataset_id+"/"+entry.id)
+        }
+        else if(entry.type == FolderEntries.TypeEnum.Dataset) {
+            processedUrl = relativePath("dataset/"+entry.id+"/" + latestDatasetVersion.id)
+        }
+
+        return processedUrl;
+    }
+
+    processCreationDate(entry: FolderEntries, latestDatasetVersion?: DatasetVersion) {
+        let processedCreationDate = null;
+
+        if(entry.type == FolderEntries.TypeEnum.Dataset) {
+            processedCreationDate = toLocalDateString(latestDatasetVersion.creation_date);
+        }
+        else {
+            processedCreationDate = toLocalDateString(entry.creation_date);
+        }
+
+        return processedCreationDate;
+    }
+
+    constructor(entry: FolderEntries, latestDatasetVersion?: DatasetVersion, fullDatasetVersion?: DatasetVersion) {
+        this.id = entry.id;
+        this.name = entry.name;
+
+        this.url = this.processFolderEntryUrl(entry, latestDatasetVersion, fullDatasetVersion);
+
+        this.creation_date = this.processCreationDate(entry, latestDatasetVersion);
+        this.creator_name = entry.creator.name;
+
+        this.type = entry.type;
+    }
+}
+
+
 
 // IMPORTANT: Need to sync with backend for each changes
 export enum InitialFileType {
