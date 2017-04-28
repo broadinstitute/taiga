@@ -286,7 +286,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
 
         return (
-            <span>
+            <span title={cell}>
                 {glyphicon}
                 <span> </span>
                 <Link key={row.id} to={row.url}>
@@ -492,12 +492,15 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             <TableHeaderColumn dataField='name' dataSort
                                                dataFormat={ this.nameUrlFormatter }>Name</TableHeaderColumn>
                             <TableHeaderColumn dataField='creation_date' dataSort
-                                               dataFormat={ this.dataFormatter }>Date</TableHeaderColumn>
+                                               dataFormat={ this.dataFormatter }
+                                               width="100">Date</TableHeaderColumn>
                             <TableHeaderColumn dataField='type'
                                                dataFormat={ this.typeFormatter }
-                                               dataSort>Type</TableHeaderColumn>
+                                               dataSort
+                                               width="100">Type</TableHeaderColumn>
                             <TableHeaderColumn dataField='creator_name'
-                                               dataSort>Creator</TableHeaderColumn>
+                                               dataSort
+                                               width="150">Creator</TableHeaderColumn>
                         </BootstrapTable>
 
                         {this.state.loading && <LoadingOverlay></LoadingOverlay>}
