@@ -474,9 +474,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     });
                 navItems = navItems.concat(add_folder_items);
             } else {
-                navItems.push({
-                    label: "Move to trash", action: () => this.moveToTrash()
-                });
+                // Don't display this if we are in the trash of the user
+                if (this.state.folder.folder_type != Folder.TypeEnum.Trash) {
+                    navItems.push({
+                        label: "Move to trash", action: () => this.moveToTrash()
+                    });
+                }
                 navItems.push({
                     label: "Move to...", action: () => {
                         this.openActionTo("move");

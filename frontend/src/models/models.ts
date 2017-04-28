@@ -5,7 +5,8 @@ import {process} from "ts-jest/dist/preprocessor";
 export class Folder {
     id: string;
     name: string;
-    type: Folder.TypeEnum;
+    folder_type: TypeEnum;
+    type: FolderEntries;
     parents: Array<NamedId>;
     entries: Array<FolderEntries>;
     description: string;
@@ -13,13 +14,12 @@ export class Folder {
     acl: Acl;
 }
 
-export namespace Folder {
-    export enum TypeEnum {
-        Folder = <any> 'folder',
-        Trash = <any> 'trash',
-        Home = <any> 'home'
-    }
+export enum TypeEnum {
+    Folder = <any> 'folder',
+    Trash = <any> 'trash',
+    Home = <any> 'home'
 }
+
 export class FolderEntries {
     'type': FolderEntries.TypeEnum;
     'id': string;
@@ -214,7 +214,7 @@ export class S3UploadedFileMetadata {
     }
 }
 
-function dropExtension(filename : string) : string {
+function dropExtension(filename: string): string {
     var i = filename.lastIndexOf(".")
     if (i > 0) {
         filename = filename.substring(0, i);
@@ -281,14 +281,14 @@ export class BootstrapTableFolderEntry {
                           full_datasetVersion?: DatasetVersion) {
         let processedUrl = null;
 
-        if(entry.type == FolderEntries.TypeEnum.Folder) {
+        if (entry.type == FolderEntries.TypeEnum.Folder) {
             processedUrl = relativePath("folder/" + entry.id);
         }
-        else if(entry.type == FolderEntries.TypeEnum.DatasetVersion) {
-            processedUrl = relativePath("dataset/"+full_datasetVersion.dataset_id+"/"+entry.id)
+        else if (entry.type == FolderEntries.TypeEnum.DatasetVersion) {
+            processedUrl = relativePath("dataset/" + full_datasetVersion.dataset_id + "/" + entry.id)
         }
-        else if(entry.type == FolderEntries.TypeEnum.Dataset) {
-            processedUrl = relativePath("dataset/"+entry.id+"/" + latestDatasetVersion.id)
+        else if (entry.type == FolderEntries.TypeEnum.Dataset) {
+            processedUrl = relativePath("dataset/" + entry.id + "/" + latestDatasetVersion.id)
         }
 
         return processedUrl;
@@ -297,7 +297,7 @@ export class BootstrapTableFolderEntry {
     processCreationDate(entry: FolderEntries, latestDatasetVersion?: DatasetVersion) {
         let processedCreationDate = null;
 
-        if(entry.type == FolderEntries.TypeEnum.Dataset) {
+        if (entry.type == FolderEntries.TypeEnum.Dataset) {
             processedCreationDate = toLocalDateString(latestDatasetVersion.creation_date);
         }
         else {
@@ -319,7 +319,6 @@ export class BootstrapTableFolderEntry {
         this.type = entry.type;
     }
 }
-
 
 
 // IMPORTANT: Need to sync with backend for each changes
