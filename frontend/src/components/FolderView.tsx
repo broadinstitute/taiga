@@ -486,7 +486,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                                         ref={(ref) => { this.bootstrapTable = ref }}
                                         options={ options }
                                         striped hover
-                                        pagination
                         >
                             <TableHeaderColumn dataField='id' isKey hidden>ID</TableHeaderColumn>
                             <TableHeaderColumn dataField='name' dataSort
