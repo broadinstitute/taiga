@@ -227,3 +227,46 @@ def test_retrieve_user_access_log(session: SessionBase, dataset_create_access_lo
 # TODO: We should also test the time logged and verify it matches when we called it
 
 # </editor-fold>
+
+# <editor-fold desc="Provenance">
+
+def test_import_provenance(session: SessionBase, new_dataset):
+    datafile_from_dataset = new_dataset.dataset_versions[0].datafiles[0]
+    node_id = models_controller.models.generate_permaname('node_name')
+    provenanceData = {
+        'name': "Test provenance",
+        'graph': {
+            'nodes': [
+                {
+                    'label': datafile_from_dataset.name,
+                    'type': 'dataset',
+                    'datafile_id': datafile_from_dataset.id,
+                    'id': node_id
+                }
+            ],
+            'edges': [
+                {
+                    'from_id': node_id,
+                    'to_id': node_id
+                }
+            ]
+        }
+    }
+
+    response_graph_id = endpoint.import_provenance(provenanceData)
+    new_graph_id = get_data_from_flask_jsonify(response_graph_id)
+
+    assert new_graph_id
+
+    new_graph = models_controller.get_provenance_graph_by_id(new_graph_id)
+    assert len(new_graph.provenance_nodes) == 1
+
+    new_node = models_controller.get_provenance_node(new_graph.provenance_nodes[0].node_id)
+    assert new_node.datafile_id == datafile_from_dataset.id
+
+    # import pdb; pdb.set_trace()
+
+    new_edge = models_controller.get_provenance_edge(new_node.from_edges[0].edge_id)
+    assert new_edge.from_node == new_edge.to_node
+
+# </editor-fold>

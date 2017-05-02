@@ -1079,8 +1079,13 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
 def add_graph(graph_permaname, graph_name,
               graph_user_id=None, graph_created_timestamp=None,
               graph_id=None):
-    if not graph_created_timestamp:
-        graph_created_timestamp = None
+    assert graph_name
+
+    if not graph_permaname:
+        graph_permaname = models.generate_permaname(graph_name)
+
+    # if not graph_user_id:
+    #     graph_user_id = get_current_session_user().id
 
     new_graph = ProvenanceGraph(graph_id=graph_id,
                                 permaname=graph_permaname,
@@ -1113,6 +1118,9 @@ def get_provenance_graph_by_id(graph_id):
 def add_node(graph_id,
              label, type,
              node_id=None, datafile_id=None):
+    if node_id and get_provenance_node(node_id):
+        log.warning("Node {} already exists. Skipping its creation.".format(node_id))
+        return get_provenance_node(node_id)
 
     node_type = models.ProvenanceNode.NodeType(type)
 
@@ -1143,6 +1151,10 @@ def get_provenance_node(node_id):
 
 def add_edge(from_node_id, to_node_id,
              edge_id=None, label=None):
+    if edge_id and get_provenance_edge(edge_id):
+        log.warning("Edge {} already exists. Skipping its creation.".format(edge_id))
+        return get_provenance_edge(edge_id)
+
     new_edge = ProvenanceEdge(edge_id=edge_id,
                               from_node_id=from_node_id,
                               to_node_id=to_node_id,

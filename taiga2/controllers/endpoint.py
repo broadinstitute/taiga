@@ -451,3 +451,43 @@ def get_provenance_graph(gid):
                      .format(provenance_node['node_id'], provenance_node['datafile_id']))
 
     return flask.jsonify(json_graph_data)
+
+
+def import_provenance(provenanceData):
+    """Import in the database a provenance Graph
+    Input:
+        - provenanceData => {name: string, graph: {nodes: [{label, type, id, (datafile_id)}],
+            edges: [{from_id, to_id}]}
+    """
+    graph_name = provenanceData["name"]
+    graph_nodes = provenanceData["graph"]["nodes"]
+    graph_edges = provenanceData["graph"]["edges"]
+
+    # TODO: Move this logic in models_controller
+    new_graph = models_controller.add_graph(graph_permaname=None, graph_name=graph_name)
+
+    for node in graph_nodes:
+        # TODO: Manage existing node (same id)
+        label = node['label']
+        node_type = node['type']
+        node_id = node.get('id')
+        datafile_id = node.get('datafile_id', None)
+
+        models_controller.add_node(graph_id=new_graph.graph_id,
+                                   label=label,
+                                   type=node_type,
+                                   node_id=node_id,
+                                   datafile_id=datafile_id)
+
+    for edge in graph_edges:
+        label = edge.get('label', None)
+        from_node_id = edge['from_id']
+        to_node_id = edge['to_id']
+        edge_id = edge.get('edge_id')
+
+        models_controller.add_edge(from_node_id=from_node_id,
+                                   to_node_id=to_node_id,
+                                   label=label,
+                                   edge_id=edge_id)
+
+    return flask.jsonify(new_graph.graph_id)

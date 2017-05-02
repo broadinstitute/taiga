@@ -1062,9 +1062,63 @@ paths:
                     type:
                       type: string
 
-
-
-#missing provenance
+  /provenance/import:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: import_provenance
+      description: Import a json provenance into Taiga 2
+      consumes:
+        - application/json
+      parameters:
+        - name: provenanceData
+          in: body
+          schema:
+            type: object
+            required:
+              - name
+              - graph
+            properties:
+              name:
+                type: string
+              graph:
+                type: object
+                required:
+                  - nodes
+                  - edges
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - label
+                        - type
+                      properties:
+                        label:
+                          type: string
+                        type:
+                          type: string
+                        id:
+                          type: string
+                        datafile_id:
+                          type: string
+                  edges:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - from_id
+                        - to_id
+                      properties:
+                        from_id:
+                          type: string
+                        to_id:
+                          type: string
+          required: true
+          description: "Graph (name, [nodes], [edges])"
+      responses:
+        200:
+          description: Successfully imported
 
 definitions:
   Dataset:
