@@ -23,7 +23,10 @@ def populate_db(edges_file_path, nodes_file_path, graphs_file_path):
             graph_permaname = row['permaname']
             graph_name = row['name']
             graph_user_id = row['created_by_user_id']
+
             graph_created_timestamp = row['created_timestamp']
+            if not graph_created_timestamp:
+                graph_created_timestamp = None
 
             if not models_controller.get_provenance_graph(graph_permaname):
                 print("\tAdding graph {} with permaname {}".format(graph_name, graph_permaname))

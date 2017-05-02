@@ -255,6 +255,6 @@ if __name__ == "__main__":
 
     with backend_app.app_context():
         # Use the next line only when you are sure you want to drop the db
-        models_controller.db.drop_all()
-        models_controller.db.create_all()
+        # models_controller.db.drop_all()
+        # models_controller.db.create_all()
         populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path)
