@@ -357,7 +357,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 r_block += `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
             } else {
                 let r_block_lines = datasetVersion.datafiles.map((df, index) => {
-                    let r_name = df.name.replace(/[^A-Za-z0-9]+/, ".");
+                    let r_name = df.name.replace(/[^A-Za-z0-9]+/g, ".");
                     return `${r_name} <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
                 });
                 r_block += r_block_lines.join("\n")
