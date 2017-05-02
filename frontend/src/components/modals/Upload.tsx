@@ -381,7 +381,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     // Bootstrap Table functions
     onAfterDeleteRow(rowKeys: Array<string>) {
         const remaining_filesStatus = this.state.filesStatus.filter((fileStatus) => {
-            // We only return the fileStatus that do NOT match any of the rowKeys (file name)0
+            // We only return the fileStatus that do NOT match any of the rowKeys (file name)
             return rowKeys.indexOf(fileStatus.fileName) === -1
         });
 
