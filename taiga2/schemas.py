@@ -142,19 +142,21 @@ class DataFileSummarySchema(ma.ModelSchema):
 
 class DataFileSchema(ma.ModelSchema):
     class Meta:
-        model = DataFile
+        additional = ('id', 'name', 's3_bucket',
+                      's3_key', 'short_summary')
 
     type = EnumField(DataFile.DataFileType)
     # Allowed Conversion Type
     allowed_conversion_type = fields.fields.Function(lambda obj: get_allowed_conversion_type(obj.type),
                                                      dump_to="allowed_conversion_type")
-    description = fields.fields.Function(lambda obj: 'TODO')
-    content_summary = fields.fields.Function(lambda obj: 'TODO')
+    # description = fields.fields.Function(lambda obj: 'TODO')
+    # content_summary = fields.fields.Function(lambda obj: 'TODO')
     provenance_nodes = ma.Nested(ProvenanceNodeSchema(), many=True)
 
 
 class DatasetVersionSchema(ma.ModelSchema):
     class Meta:
+        # WARNING: long_summary is pretty heavy. Don't include it here, but create your own schema
         additional = ('id', 'name', 'dataset_id',
                       'creation_date', 'creator', 'datafiles',
                       'description', 'version', 'parents')
