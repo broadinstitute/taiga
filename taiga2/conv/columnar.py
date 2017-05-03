@@ -111,8 +111,9 @@ def read_int(fd):
     return struct.unpack("I", buffer)[0]
 
 def write_str(output, s):
-    write_int(output, len(s))
-    output.write(s.encode("ascii"))
+    bytes = s.encode("utf8")
+    write_int(output, len(bytes))
+    output.write(bytes)
 
 def read_str(fd):
     length = read_int(fd)
@@ -429,11 +430,11 @@ def get_long_summary(input_file):
             b.write("\t\"{}\" {}\n".format(c.name, c.persister.type_name))
         return b.getvalue()
 
-def convert_csv_to_tabular(input_file, output_file, delimiter, rows_per_block=100000):
+def convert_csv_to_tabular(input_file, output_file, delimiter, encoding, rows_per_block=100000):
     sha256 = get_file_sha256(input_file)
-    hasRowNames, datafile_columns = sniff.sniff(input_file, delimiter=delimiter)
+    hasRowNames, datafile_columns = sniff.sniff(input_file, encoding, delimiter=delimiter)
 
-    with open(input_file, 'rU') as fd:
+    with open(input_file, 'rU', encoding=encoding) as fd:
         reader = csv.reader(fd, delimiter=delimiter)
 
         w = DatasetWriter(output_file, datafile_columns, rows_per_block=rows_per_block)
@@ -456,11 +457,11 @@ def convert_csv_to_tabular(input_file, output_file, delimiter, rows_per_block=10
 
     return ImportResult(sha256=sha256, short_summary="{} rows, {} columns".format(line_number, len(datafile_columns)), long_summary=long_summary)
 
-def convert_tabular_to_csv(input_file, output_file, delimiter, select_names=None, predicate=None):
+def convert_tabular_to_csv(input_file, output_file, delimiter, encoding, select_names=None, predicate=None):
     log.info("convert_tabular_to_csv %s -> %s", input_file, output_file)
-    _convert_tabular_to_csv(input_file, lambda: output_file, lambda row_count, file_len: False, delimiter, select_names, predicate)
+    _convert_tabular_to_csv(input_file, lambda: output_file, lambda row_count, file_len: False, delimiter, encoding, select_names, predicate)
 
-def convert_tabular_to_multiple_csvs(input_file, temp_file_generator, delimiter, select_names=None, predicate=None, max_bytes=None, max_rows=None):
+def convert_tabular_to_multiple_csvs(input_file, temp_file_generator, delimiter, encoding, select_names=None, predicate=None, max_bytes=None, max_rows=None):
     filenames = []
     def output_file_callback():
         filename = temp_file_generator()
@@ -474,10 +475,10 @@ def convert_tabular_to_multiple_csvs(input_file, temp_file_generator, delimiter,
             return True
         return False
 
-    _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, delimiter, select_names, predicate)
+    _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, delimiter, encoding, select_names, predicate)
     return filenames
 
-def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, delimiter, select_names=None, predicate=None):
+def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, delimiter, encoding, select_names=None, predicate=None):
     assert isinstance(input_file, str)
     assert callable(output_file_callback)
     assert callable(flush_callback)
@@ -500,7 +501,7 @@ def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, de
         for row in row_generator:
             if output_file is None:
                 output_file = output_file_callback()
-                output = open(output_file, "w")
+                output = open(output_file, "wt", encoding=encoding)
                 w = csv.writer(output, delimiter=delimiter)
                 w.writerow(select_names)
                 row_count = 0
@@ -516,18 +517,25 @@ def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, de
             output.close()
 
 
-def columnar_to_rds(progress, input_file, temp_file_generator: "() -> str", max_rows=None, max_bytes=50*1024*1024):
+def columnar_to_rds(progress, input_file, temp_file_generator: "() -> str", encoding="iso-8859-1", max_rows=None, max_bytes=50*1024*1024):
     # two step conversion: First convert to csvs, then for each use R to load CSV and write Rdata file.  Not clear that we can do better
     # at the moment
-    csv_files = convert_tabular_to_multiple_csvs(input_file, temp_file_generator, ",", max_rows=max_rows, max_bytes=max_bytes)
+    csv_files = convert_tabular_to_multiple_csvs(input_file, temp_file_generator, ",", encoding="utf-8", max_rows=max_rows, max_bytes=max_bytes)
+    assert encoding in ["utf-8", "iso-8859-1"]
+    if encoding == "utf-8":
+        r_encoding = "UTF-8"
+    else:
+        r_encoding = "Latin-1"
     rds_files = []
     for csv_file in csv_files:
         destination_file = temp_file_generator()
 
         script = """
-            data <- read.table(%s, sep=',', head=T, as.is=T, check.names=F, quote='\"', comment.char='');
-            saveRDS(data, file=%s)
-            """ % (r_escape_str(csv_file), r_escape_str(destination_file))
+            data <- read.table({csv_file}, sep=',', head=T, as.is=T, check.names=F, quote='\"', comment.char='', encoding={encoding});
+            saveRDS(data, file={dest})
+            """.format(csv_file=r_escape_str(csv_file),
+                       dest=r_escape_str(destination_file),
+                       encoding=r_escape_str(r_encoding))
 
         handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
