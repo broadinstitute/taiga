@@ -118,7 +118,13 @@ def read_str(fd):
     length = read_int(fd)
     if length == None:
         return None
-    return str(fd.read(length), "utf8")
+
+    bytes = fd.read(length)
+    try:
+        s = str(bytes, "utf8")
+    except UnicodeDecodeError:
+        s = str(bytes, "iso-8859-1")
+    return s
 
 
 class StringSerializer(object):
