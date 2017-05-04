@@ -169,7 +169,9 @@ export class TaigaApi {
             + "&"
             + "datafile_name=" + datafileName
             + "&"
-            + "format=" + format;
+            + "format=" + format
+            + "&"
+            + "force=" + force;
 
         return this._fetch<DatafileUrl>(url);
     }

@@ -27,6 +27,8 @@ export interface DatasetViewState {
     showUploadDataset?: boolean;
     loading?: boolean;
     loadingMessage?: string;
+    exportError?: boolean;
+    exportErrorInfo?: {datasetVersionId: string, datafileName: string, conversionType: string}
 }
 
 const buttonUploadNewVersionStyle = {
@@ -44,14 +46,15 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     componentDidUpdate(prevProps: DatasetViewProps) {
         // respond to parameter change in scenario 3
-        let oldId = prevProps.params.datasetVersionId
-        let newId = this.props.params.datasetVersionId
+        let oldId = prevProps.params.datasetVersionId;
+        let newId = this.props.params.datasetVersionId;
         if (newId !== oldId) {
             this.doFetch();
             // We close the modal
             this.setState({
                 showUploadDataset: false,
-                loading: false
+                loading: false,
+                exportError: false
             })
         }
     }
@@ -59,7 +62,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     componentDidMount() {
         tapi = (this.context as any).tapi;
         currentUser = (this.context as any).currentUser;
-
 
         this.setLoading(true);
 
@@ -179,7 +181,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     // While we don't receive urls, it means we are still converting/downloading
                     return this.delay(500).then(() => {
                         this.setLoadingMessage(result.status + "...");
-                        return this.getOrLaunchConversion(datasetPermaname, version, datasetVersionId, datafileName, format, force);
+                        return this.getOrLaunchConversion(datasetPermaname, version, datasetVersionId, datafileName, format, 'N');
                     });
                 }
                 else {
@@ -191,10 +193,20 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     });
                 }
             }).catch((reason: any) => {
+                // TODO: Replace here with a DialogModal which is going to ask about retry or cancel
+                this.setLoading(false);
+
+                const exportErrorInfo = {
+                    datasetVersionId: datasetVersionId,
+                    datafileName: datafileName,
+                    conversionType: format
+                };
+                // TODO: The reason should be passed along, but the other message should be written in the Dialog.ExportError module
                 this.setLoadingMessage("Conversion error on server side: " + reason + ". Please inform the admin." +
-                    " This loading page will disappear in 30 seconds (you can also refresh).");
-                this.delay(30000).then(() => {
-                    this.setLoading(false);
+                    " You can retry now, or later on.");
+                this.setState({
+                    exportError: true,
+                    exportErrorInfo: exportErrorInfo
                 });
             });
     }
@@ -217,6 +229,17 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         this.setState({
             loadingMessage: message
         });
+    }
+
+    forceExport() {
+        this.setLoadingMessage("Sent the request to the server...");
+        this.setState({
+            exportError: false
+        });
+        this.getOrLaunchConversion(undefined, undefined,
+                            this.state.exportErrorInfo.datasetVersionId,
+                            this.state.exportErrorInfo.datafileName,
+                            this.state.exportErrorInfo.conversionType, 'Y');
     }
 
     render() {
@@ -448,6 +471,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 }
             </div>
             {this.state.loading && <LoadingOverlay message={ this.state.loadingMessage }></LoadingOverlay>}
+            <Dialogs.ExportError isVisible={this.state.exportError}
+                                    cancel={ () => this.setState({exportError: false})}
+                                    retry={ () => this.forceExport() }
+                                    message={this.state.loadingMessage}/>
         </div>
     }
 }

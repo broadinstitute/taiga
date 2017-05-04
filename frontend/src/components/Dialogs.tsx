@@ -49,7 +49,7 @@ const modalStyles: any = {
 
 export function formSubmitSave(reactComponent: React.Component<any, any>, event: any, argOne: any, argTwo: any) {
     event.preventDefault();
-    if(isNullOrUndefined(argTwo)) {
+    if (isNullOrUndefined(argTwo)) {
         reactComponent.props.save(argOne);
     }
     else {
@@ -110,7 +110,9 @@ export class EditDescription extends React.Component<EditStringProps, any> {
                         <div className="form-group">
                             <label htmlFor="descriptionInput">Description</label>
                             <p>
-                                <em>Markdown is accepted. <a href="http://markdown-guide.readthedocs.io/en/latest/basics.html" target="_blank" >Click here</a> if you want to have more information about it</em>
+                                <em>Markdown is accepted. <a
+                                    href="http://markdown-guide.readthedocs.io/en/latest/basics.html" target="_blank">Click here</a>
+                                    if you want to have more information about it</em>
                             </p>
                             <textarea rows={15} defaultValue={this.props.initialValue} className="form-control"
                                       id="descriptionInput" ref={ (c) => {this.textArea = c}  }></textarea>
@@ -253,6 +255,72 @@ export class InputFolderId extends React.Component<InputFolderIdProps, InputFold
                         </div>
                     </div>
                 </form>
+            </Modal>
+        )
+    }
+}
+
+const exportErrorStyle: any = {
+    overlay: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.75)'
+    },
+    content: {
+        position: 'absolute',
+        top: '40px',
+        left: '40px',
+        right: '40px',
+        bottom: '40px',
+        border: '1px solid #ccc',
+        background: '#fff',
+        overflow: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        borderRadius: '4px',
+        outline: 'none',
+        padding: '20px'
+
+    }
+};
+
+export interface ExportErrorProps extends DialogProps {
+    isVisible: boolean;
+    cancel: () => void;
+    retry: () => void;
+    message: string;
+}
+
+export interface ExportErrorState extends DialogState {
+}
+
+export class ExportError extends React.Component<ExportErrorProps, ExportErrorState> {
+    render() {
+        return (
+            <Modal
+                style={ modalStyles }
+                closeTimeoutMS={150}
+                isOpen={this.props.isVisible}
+                onRequestClose={this.props.cancel}
+                contentLabel="ExportError">
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h2 ref="subtitle">Error when exporting</h2>
+                    </div>
+                    <form>
+                        <div className="modal-body">
+                            {this.props.message}
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
+                            <button type="button" className="btn btn-primary" onClick={this.props.retry}>
+                                Retry
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </Modal>
         )
     }
