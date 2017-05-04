@@ -35,9 +35,9 @@ DEFAULT_MAX_ELEMENTS_PER_BLOCK=1e6*50/8
 #     def sha256(self):
 #         return self.hash.hexdigest()
 
-def _get_csv_dims(progress, filename, dialect):
+def _get_csv_dims(progress, filename, dialect, encoding):
     hash = get_file_sha256(filename)
-    with open(filename, "rU") as fd:
+    with open(filename, "rU", encoding=encoding) as fd:
         r = csv.reader(fd, dialect)
         row_count = 0
         col_header = next(r)
@@ -97,13 +97,13 @@ def _validate_columns(progress, col_header):
             raise Exception(message)
 
 
-def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=None, max_size_per_block=DEFAULT_MAX_ELEMENTS_PER_BLOCK):
+def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=None, max_size_per_block=DEFAULT_MAX_ELEMENTS_PER_BLOCK, encoding="iso-8859-1"):
     # now we could resize the hdf5 matrix as necessary, or we can make two passes over the data.  Let's start with
     # dumb approach of walking over the data twice.
 
     with open(src_csv_file, 'rt') as tcsv:
         tcsv.seek(0)
-        row_count, col_count, sha256 = _get_csv_dims(progress, src_csv_file, dialect)
+        row_count, col_count, sha256 = _get_csv_dims(progress, src_csv_file, dialect, encoding)
 
         tcsv.seek(0)
         r = csv.reader(tcsv, dialect)
@@ -195,9 +195,10 @@ def _pack_into_matrix(rows):
             data[row_i, col_i] = parsed_value
     return data
 
-def _read_rows_in_chunks(line, progress, dst_hdf5_file, col_header, r, rows_per_chunk, dialect):
+def _read_rows_in_chunks(first_line, progress, dst_hdf5_file, col_header, r, rows_per_chunk, dialect):
     row_header = []
     rows = []
+    line = first_line
     for row in r:
         if line % 250 == 0:
             message = "Conversion in progress, line {}".format(line)
@@ -211,19 +212,22 @@ def _read_rows_in_chunks(line, progress, dst_hdf5_file, col_header, r, rows_per_
                 for this file? (Currently using {})""".format(line, repr(row[0]), repr(dialect.delimiter))
             progress.failed(message, dst_hdf5_file)
             raise Exception(message)
+
         if len(data_row) != len(col_header):
             message = "On line %d: Expected %d columns, but found %d columns." % (
                 line, len(col_header), len(data_row))
             if line == 2 and (len(col_header) - 1) == len(data_row):
-                message += "  This looks like you may be missing R-style row and column headers from your file."
+                message += "  This looks like you may be missing R-style row and column headers from your file, or you were loading a table, and not a numerical matrix."
             progress.failed(message, dst_hdf5_file)
             raise Exception(message)
+
         rows.append(data_row)
 
         if len(rows) >= rows_per_chunk:
             yield row_header, _pack_into_matrix(rows)
             rows = []
             row_header = []
+            first_line = line
 
     if len(rows) > 0:
         yield row_header, _pack_into_matrix(rows)

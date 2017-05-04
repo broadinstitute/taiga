@@ -3,8 +3,8 @@ from collections import namedtuple
 
 Column = namedtuple("Column", ["name", "type"])
 
-def sniff(filename, rows_to_check=None, delimiter="\t"):
-    with open(filename, 'rU') as fd:
+def sniff(filename, encoding, rows_to_check=None, delimiter="\t"):
+    with open(filename, 'rU', encoding=encoding) as fd:
         r = csv.reader(fd, delimiter=delimiter)
         col_header = next(r)
         row = next(r)
