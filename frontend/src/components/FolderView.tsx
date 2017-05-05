@@ -311,7 +311,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     onRowSelect(row: BootstrapTableFolderEntry, isSelected: Boolean, e) {
         let select_key = row.id;
-        console.log(e);
         const original_selection: any = this.state.selection;
 
         let updated_selection: Array<string>;
@@ -323,6 +322,27 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         else {
             updated_selection = update(original_selection, {$push: [select_key]});
         }
+
+        this.setState({selection: updated_selection});
+    }
+
+    onAllRowsSelect(isSelected: Boolean, rows: Array<BootstrapTableFolderEntry>) {
+        const original_selection: any = this.state.selection;
+        let updated_selection: Array<string> = original_selection;
+
+        let select_key = null;
+        let index = null;
+        rows.forEach((row) => {
+            select_key = row.id;
+            index = updated_selection.indexOf(select_key);
+
+            if (index != -1) {
+                updated_selection = update(updated_selection, {$splice: [[index, 1]]});
+            }
+            else {
+                updated_selection = update(updated_selection, {$push: [select_key]});
+            }
+        });
 
         this.setState({selection: updated_selection});
     }
@@ -413,6 +433,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             onSelect: (row, isSelected, e) => {
                 this.onRowSelect(row, isSelected, e)
             },
+            onSelectAll: (isSelected: Boolean, rows: Array<BootstrapTableFolderEntry>) => {
+                this.onAllRowsSelect(isSelected, rows)
+            }
         };
 
         const options = {
