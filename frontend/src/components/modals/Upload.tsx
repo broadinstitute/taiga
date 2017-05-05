@@ -463,6 +463,34 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         return true;
     }
 
+    onPreviousAllRowsSelect(isSelected: Boolean, rows: any){
+        const previousVersionFilesIdsSelected = this.state.previousVersionFilesIdsSelected;
+
+        let newPreviousVersionFilesIdsSelected = previousVersionFilesIdsSelected;
+        let clickedId = null;
+        if (isSelected) {
+            rows.forEach((row) => {
+                clickedId = row['id'];
+                newPreviousVersionFilesIdsSelected = update(newPreviousVersionFilesIdsSelected,
+                    {$push: [clickedId]});
+            });
+        }
+        else {
+            let idIndex = null;
+            rows.forEach((row) => {
+                clickedId = row['id'];
+                idIndex = previousVersionFilesIdsSelected.indexOf(clickedId);
+                newPreviousVersionFilesIdsSelected = update(newPreviousVersionFilesIdsSelected,
+                    {$splice: [[idIndex, 1]]});
+            });
+        }
+        this.setState({
+            previousVersionFilesIdsSelected: newPreviousVersionFilesIdsSelected
+        });
+
+        return true;
+    }
+
     requestClose() {
         this.props.cancel();
     }
@@ -602,7 +630,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         const selectRowPreviousProp = {
             mode: check_previous_mode,
             clickToSelect: true,
-            onSelect: (row: any, isSelected: Boolean, event: any) => this.onPreviousRowSelect(row, isSelected, event)
+            onSelect: (row: any, isSelected: Boolean, event: any) => this.onPreviousRowSelect(row, isSelected, event),
+            onSelectAll: (isSelected: Boolean, rows: any) => this.onPreviousAllRowsSelect(isSelected, rows)
         };
 
         let previousFiles = null;
