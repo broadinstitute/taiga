@@ -29,6 +29,9 @@ export interface DatasetViewState {
     loadingMessage?: string;
     exportError?: boolean;
     exportErrorInfo?: {datasetVersionId: string, datafileName: string, conversionType: string}
+
+    showInputFolderId?: boolean;
+    callbackIntoFolderAction?: Function;
 }
 
 const buttonUploadNewVersionStyle = {
@@ -66,6 +69,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         this.setLoading(true);
 
         this.doFetch().then(() => {
+            this.setState({
+                showInputFolderId: false
+            });
+
             this.logAccess();
 
             this.setLoading(false);
@@ -237,9 +244,43 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             exportError: false
         });
         this.getOrLaunchConversion(undefined, undefined,
-                            this.state.exportErrorInfo.datasetVersionId,
-                            this.state.exportErrorInfo.datafileName,
-                            this.state.exportErrorInfo.conversionType, 'Y');
+            this.state.exportErrorInfo.datasetVersionId,
+            this.state.exportErrorInfo.datafileName,
+            this.state.exportErrorInfo.conversionType, 'Y');
+    }
+
+    // Move/Copy
+    copyTo() {
+        // TODO: Change the string telling the action to an enum, like in the backend
+
+        this.setState({
+            callbackIntoFolderAction: (folderId) => {
+                tapi.copy_to_folder([this.state.dataset.id], folderId).then(() => this.afterAction());
+            },
+            showInputFolderId: true,
+            actionIntoFolderValidation: null,
+            actionIntoFolderHelp: null
+        });
+    }
+
+    afterAction() {
+        // TODO: We don't need to do that if we are copying
+        this.doFetch().then(() => {
+            this.setState({
+                showInputFolderId: false
+            });
+        }).catch((err) => {
+            console.log(err);
+
+            // If we receive 422 error
+            if (err.message == "UNPROCESSABLE ENTITY") {
+                let err_message_user = "Folder id is not valid. Please check it and retry :)";
+                this.setState({
+                    actionIntoFolderValidation: 'error',
+                    actionIntoFolderHelp: err_message_user
+                });
+            }
+        })
     }
 
     render() {
@@ -336,7 +377,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         }
 
 
-
         let navItems = [];
         navItems = [
             {
@@ -358,6 +398,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 this.showUploadNewVersion();
             }
             },
+            {
+                label: "Copy to...", action: () => {
+                    this.copyTo();
+                }
+            }
             // {
             //     label: "Deprecate version", action: function () {
             // }
@@ -366,7 +411,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             //     label: "Show History", action: function () {
             // }
             // }
-        ];
+        ]
+        ;
 
         let permaname = null;
         let r_block = null;
@@ -415,10 +461,16 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         previousVersionName={ this.state.datasetVersion.name }
                         previousVersionFiles={ this.state.datasetVersion.datafiles }
                     />
+
+                    <Dialogs.InputFolderId
+                        actionDescription="copy this dataset into it"
+                        isVisible={ this.state.showInputFolderId }
+                        cancel={ () => { this.setState({showInputFolderId: false}) }}
+                        save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
+                    />
                 </span>
             );
         }
-
 
 
         return <div>
@@ -428,26 +480,26 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <span>
                     { leftNavsDialogs }
 
-                        <h1>{dataset.name}
-                            <small>{permaname}</small>
+                    <h1>{dataset.name}
+                        <small>{permaname}</small>
                     </h1>
                     <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
                         &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
                     <p>Versions: {versions} </p>
 
-                        { (datasetVersion.creator.id == currentUser ||
-                        dataset.folders.some((folder) => {
-                            return folder.id == "public"
-                        })) &&
-                        <p>Contained within {folders}</p>
-                        }
-                        {/*{ancestor_section}*/}
+                    { (datasetVersion.creator.id == currentUser ||
+                    dataset.folders.some((folder) => {
+                        return folder.id == "public"
+                    })) &&
+                    <p>Contained within {folders}</p>
+                    }
+                    {/*{ancestor_section}*/}
 
-                        { this.state.datasetVersion.description &&
-                        <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
-                        }
+                    { this.state.datasetVersion.description &&
+                    <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
+                    }
 
-                        <h2>Contents</h2>
+                    <h2>Contents</h2>
                     <table className="table">
                         <thead>
                         <tr>
@@ -472,9 +524,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             </div>
             {this.state.loading && <LoadingOverlay message={ this.state.loadingMessage }></LoadingOverlay>}
             <Dialogs.ExportError isVisible={this.state.exportError}
-                                    cancel={ () => this.setState({exportError: false})}
-                                    retry={ () => this.forceExport() }
-                                    message={this.state.loadingMessage}/>
+                                 cancel={ () => this.setState({exportError: false})}
+                                 retry={ () => this.forceExport() }
+                                 message={this.state.loadingMessage}/>
         </div>
     }
 }

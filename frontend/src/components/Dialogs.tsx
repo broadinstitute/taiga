@@ -19,7 +19,6 @@ interface InputFolderIdState extends DialogState {
     folderId: string;
 }
 
-
 interface CreateFolderProps extends DialogProps {
     save: (name: string, description: string) => void;
 }
@@ -91,7 +90,6 @@ export class EditName extends React.Component<EditStringProps, any> {
         </Modal>
     }
 }
-
 
 export class EditDescription extends React.Component<EditStringProps, any> {
     textArea: any;

@@ -347,7 +347,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         this.setState({selection: updated_selection});
     }
 
-
     render() {
         let entriesOutput: Array<any> = [];
         let navItems: MenuItem[] = [];

@@ -88,7 +88,7 @@ class App extends React.Component<AppProps, any> {
                         Broad Institute, Cancer Program Data Science {(new Date()).getFullYear()}
                     </div>
                     <div className="login-box pull-right bottom-page-text">
-                        Rev 1.5.2
+                        Rev 1.6.0
                     </div>
                 </footer>
             </div>
