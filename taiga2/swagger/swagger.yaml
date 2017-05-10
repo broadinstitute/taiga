@@ -335,7 +335,7 @@ paths:
         - name: datasetId
           in: path
           type: string
-          description: Dataset ID
+          description: Dataset ID or a permaname
           required: true
       responses:
         200:

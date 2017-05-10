@@ -198,6 +198,43 @@ def new_dataset(new_datafile):
 
     return _new_dataset
 
+def test_get_dataset_version_from_dataset(session: SessionBase, new_dataset):
+    import werkzeug.exceptions
+
+    dataset_version_id = new_dataset.dataset_versions[0].id
+
+    # test fetch by dataset version id
+    # passing dataset in as "x" because it is unused and using that assumption when making urls in taiga1 redirect and taigr and taigapy
+    dv = get_data_from_flask_jsonify(endpoint.get_dataset_version_from_dataset("x", dataset_version_id))
+    assert dv['datasetVersion']['id'] == dataset_version_id
+
+    # test alternative mode where we provide a permaname and a version
+    dv = get_data_from_flask_jsonify(endpoint.get_dataset_version_from_dataset(new_dataset.permaname, "1"))
+    assert dv['datasetVersion']['id'] == dataset_version_id
+
+    # test fetching non-existant dataset results in 404
+    with pytest.raises(werkzeug.exceptions.NotFound):
+        endpoint.get_dataset_version_from_dataset("invalid", "invalid")
+
+def test_get_dataset_two_ways(session: SessionBase, new_dataset):
+    import werkzeug.exceptions
+
+    dataset_id = new_dataset.id
+
+    # test fetch by dataset version id
+    # passing dataset in as "x" because it is unused and using that assumption when making urls in taiga1 redirect and taigr and taigapy
+    ds = get_data_from_flask_jsonify(endpoint.get_dataset(dataset_id))
+    assert ds['id'] == dataset_id
+
+    # test alternative mode where we provide a permaname and a version
+    ds = get_data_from_flask_jsonify(endpoint.get_dataset(dataset_id))
+    assert ds['id'] == dataset_id
+
+    # test fetching non-existant dataset results in 404
+    with pytest.raises(werkzeug.exceptions.NotFound):
+        endpoint.get_dataset("invalid")
+
+
 # <editor-fold desc="Access Logs">
 
 

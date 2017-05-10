@@ -25,7 +25,13 @@ ADMIN_USER_ID = "admin"
 
 
 def get_dataset(datasetId):
-    dataset = models_controller.get_dataset(datasetId)
+    # try using ID
+    dataset = models_controller.get_dataset(datasetId, one_or_none=True)
+
+    # if that failed, try by permaname
+    if dataset is None:
+        dataset = models_controller.get_dataset_from_permaname(datasetId, one_or_none=True)
+
     if dataset is None:
         flask.abort(404)
 
@@ -175,7 +181,7 @@ def get_datasets_access_logs():
 
 
 def get_dataset_version(datasetVersion_id):
-    dv = models_controller.get_dataset_version(dataset_version_id=datasetVersion_id)
+    dv = models_controller.get_dataset_version(dataset_version_id=datasetVersion_id, one_or_none=True)
     if dv is None:
         flask.abort(404)
 
@@ -201,7 +207,21 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
     dataset_version = models_controller \
         .get_dataset_version_by_dataset_id_and_dataset_version_id(datasetId,
-                                                                  datasetVersionId)
+                                                                  datasetVersionId, one_or_none=True)
+    if dataset_version is None:
+        # if we couldn't find a version by dataset_version_id, try permaname and version number.
+        version_number = None
+        try:
+            version_number = int(datasetVersionId)
+        except ValueError:
+            pass
+
+        if version_number is not None:
+            dataset_version = models_controller.get_dataset_version_by_permaname_and_version(datasetId, version_number, one_or_none=True)
+
+    if dataset_version is None:
+        flask.abort(404)
+
     dataset = dataset_version.dataset
 
     json_dv_data = dataset_version_schema.dump(dataset_version).data
