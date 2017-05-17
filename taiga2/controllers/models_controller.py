@@ -302,11 +302,10 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
     return added_dataset
 
 
-def get_dataset(dataset_id):
-    dataset = db.session.query(Dataset) \
-        .filter(Dataset.id == dataset_id).one()
-
-    return dataset
+def get_dataset(dataset_id, one_or_none=False):
+    q = db.session.query(Dataset) \
+        .filter(Dataset.id == dataset_id)
+    return _fetch_respecting_one_or_none(q, one_or_none)
 
 
 def get_datasets(array_dataset_ids):
@@ -316,13 +315,11 @@ def get_datasets(array_dataset_ids):
     return datasets
 
 
-def get_dataset_from_permaname(dataset_permaname):
-    dataset = db.session.query(Dataset) \
-        .filter(Dataset.permaname == dataset_permaname) \
-        .one()
+def get_dataset_from_permaname(dataset_permaname, one_or_none=False):
+    q = db.session.query(Dataset) \
+        .filter(Dataset.permaname == dataset_permaname)
 
-    return dataset
-
+    return _fetch_respecting_one_or_none(q, one_or_none)
 
 def get_first_dataset_version(dataset_id):
     dataset_version_first = db.session.query(DatasetVersion) \
@@ -557,13 +554,18 @@ def create_new_dataset_version_from_session(session_id,
 
     return new_dataset_version
 
+def _fetch_respecting_one_or_none(q, one_or_none):
+    if one_or_none:
+        return q.one_or_none()
+    else:
+        return q.one()
 
-def get_dataset_version(dataset_version_id):
-    dataset_version = db.session.query(DatasetVersion) \
-        .filter(DatasetVersion.id == dataset_version_id) \
-        .one()
 
-    return dataset_version
+def get_dataset_version(dataset_version_id, one_or_none=False):
+    q = db.session.query(DatasetVersion) \
+        .filter(DatasetVersion.id == dataset_version_id)
+
+    return _fetch_respecting_one_or_none(q, one_or_none)
 
 
 def get_dataset_versions(dataset_id):
@@ -597,20 +599,19 @@ def get_latest_dataset_version_by_permaname(permaname):
 
 
 def get_dataset_version_by_permaname_and_version(permaname,
-                                                 version):
+                                                 version, one_or_none=False):
     """From the permaname of a dataset, retrieve the specific dataset version"""
     # dataset = get_dataset_from_permaname(permaname)
-    dataset_version = db.session.query(DatasetVersion) \
+    q = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.version == version) \
         .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
-        .one()
 
-    return dataset_version
+    return _fetch_respecting_one_or_none(q, one_or_none)
 
 
 def get_dataset_version_by_dataset_id_and_dataset_version_id(dataset_id,
-                                                             dataset_version_id):
-    dataset_version = get_dataset_version(dataset_version_id)
+                                                             dataset_version_id, one_or_none=False):
+    dataset_version = get_dataset_version(dataset_version_id, one_or_none=one_or_none)
 
     return dataset_version
 
