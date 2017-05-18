@@ -148,8 +148,9 @@ def add_folder(name,
     return new_folder
 
 
-def get_folder(folder_id):
-    return db.session.query(Folder).filter(Folder.id == folder_id).one()
+def get_folder(folder_id, one_or_none=False):
+    query = db.session.query(Folder).filter(Folder.id == folder_id)
+    return _fetch_respecting_one_or_none(q=query, one_or_none=one_or_none)
 
 
 def get_folder_by_name(folder_name):
@@ -554,7 +555,9 @@ def create_new_dataset_version_from_session(session_id,
 
     return new_dataset_version
 
+
 def _fetch_respecting_one_or_none(q, one_or_none):
+    """If one_or_none is set, asks the query q to return none if NoResultFound, else raise the error"""
     if one_or_none:
         return q.one_or_none()
     else:

@@ -77,7 +77,7 @@ def create_folder(metadata):
 
 def get_folder(folder_id):
     print("We received the request of this folder id: {}".format(folder_id))
-    folder = models_controller.get_folder(folder_id)
+    folder = models_controller.get_folder(folder_id, one_or_none=True)
     if folder is None:
         flask.abort(404)
 

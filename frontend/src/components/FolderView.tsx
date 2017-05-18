@@ -8,6 +8,7 @@ import {TaigaApi} from "../models/api";
 
 import * as Dialogs from "./Dialogs";
 import * as Upload from "./modals/Upload";
+import {NotFound} from "./NotFound";
 import {TreeView} from "./modals/TreeView";
 
 import {toLocalDateString} from "../utilities/formats";
@@ -149,6 +150,11 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 datasetsVersion: datasetsVersion,
                 loading: false
             });
+        }).catch((error) => {
+            this.setState({
+                error: error.message
+            });
+            console.log("Error: " + error.message);
         });
     }
 
@@ -352,20 +358,31 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         let navItems: MenuItem[] = [];
         let folderEntriesTableFormatted: Array<BootstrapTableFolderEntry> = [];
 
+        if (!this.state) {
+            return <div>
+                <LeftNav items={[]}/>
+                <div id="main-content"/>
+            </div>
+        } else if (this.state.error == "NOT FOUND") {
+            let message = "The folder " + this.props.params.folderId + " does not exist. Please check this id " +
+                    "is correct. We are also available via the feedback button.";
+            return <div>
+                <LeftNav items={[]}/>
+                <div id="main-content">
+                    <NotFound message={message}/>
+                </div>
+            </div>
+        } else if (this.state.error) {
+            return <div>
+                <LeftNav items={[]}/>
+                <div id="main-content">
+                    An error occurred: {this.state.error}
+                </div>
+            </div>
+        }
+
         if (this.state && this.state.folder) {
-            if (!this.state) {
-                return <div>
-                    <LeftNav items={[]}/>
-                    <div id="main-content"/>
-                </div>
-            } else if (this.state.error) {
-                return <div>
-                    <LeftNav items={[]}/>
-                    <div id="main-content">
-                        An error occurred: {this.state.error}
-                    </div>
-                </div>
-            }
+
             var folder: Folder.Folder = this.state.folder;
 
             var parent_links = folder.parents.map((p: Folder.NamedId, index: number) => {
@@ -525,7 +542,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         </BootstrapTable>
 
                         {this.state.loading && <LoadingOverlay></LoadingOverlay>}
-                    </span>}
+                    </span> }
                 </div>
             </div>
         )

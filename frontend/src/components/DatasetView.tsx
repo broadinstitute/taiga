@@ -14,6 +14,7 @@ import {toLocalDateString} from "../utilities/formats";
 import {LoadingOverlay} from "../utilities/loading";
 import {relativePath} from "../utilities/route";
 import {DatafileUrl, ConversionStatusEnum} from "../models/models";
+import {DatasetVersion} from "../models/models";
 
 export interface DatasetViewProps {
     params: any
@@ -281,6 +282,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 });
             }
         })
+    }
+
+    // DatasetVersions
+    compareDatasetVersionsByVersionNumber(a: DatasetVersion, b: DatasetVersion) {
+        return a.version < b.version;
     }
 
     render() {
