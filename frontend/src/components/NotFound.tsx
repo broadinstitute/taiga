@@ -20,7 +20,7 @@ interface NotFoundProps {
 
 export class NotFound extends React.Component<NotFoundProps, any> {
     render() {
-        return <div class="notFound">
+        return <div className="notFound">
                 <h1>Not found :(</h1>
                 <p>
                     {this.props.message}

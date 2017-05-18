@@ -15,6 +15,7 @@ import {LoadingOverlay} from "../utilities/loading";
 import {relativePath} from "../utilities/route";
 import {DatafileUrl, ConversionStatusEnum} from "../models/models";
 import {DatasetVersion} from "../models/models";
+import {NotFound} from "./NotFound";
 
 export interface DatasetViewProps {
     params: any
@@ -33,6 +34,8 @@ export interface DatasetViewState {
 
     showInputFolderId?: boolean;
     callbackIntoFolderAction?: Function;
+
+    fetchError?: string;
 }
 
 const buttonUploadNewVersionStyle = {
@@ -77,6 +80,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             this.logAccess();
 
             this.setLoading(false);
+        }).catch((error) => {
+            console.log("doFetch failed with this error: "+error);
         });
     }
 
@@ -112,6 +117,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             else {
                 console.log("Error in doFetch DatasetView. Type received is not a Dataset or a DatasetAndDatasetVersion");
             }
+        }).catch((error) => {
+            this.setState({
+               fetchError: error.message
+            });
+            console.log("Error: "+error.stack);
+            return Promise.reject("Dataset Version " + this.props.params.datasetVersionId + " does not exist");
         });
     }
 
@@ -298,60 +309,72 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 </div>
             </div>
         }
-        let dataset = this.state.dataset;
-        let datasetVersion = this.state.datasetVersion;
+        else if (this.state && this.state.fetchError){
+            let message = "Dataset version " + this.props.params.datasetVersionId + " does not exist. Please check this id "
+                + "is correct. We are also available via the feedback button.";
+            return <div>
+                <LeftNav items={[]}/>
+                <div id="main-content">
+                    <NotFound message={message}/>
+                </div>
+            </div>
+        }
+        else {
 
-        let versions = null;
-        let folders = null;
-        if (dataset) {
-            versions = dataset.versions.map((dataset_version: Models.DatasetVersion, index: any) => {
-                return <span key={dataset_version.id}>
+            let dataset = this.state.dataset;
+            let datasetVersion = this.state.datasetVersion;
+
+            let versions = null;
+            let folders = null;
+            if (dataset) {
+                versions = dataset.versions.map((dataset_version: Models.DatasetVersion, index: any) => {
+                    return <span key={dataset_version.id}>
                     {this.getLinkOrNot(dataset_version)}
-                    {dataset.versions.length != index + 1 &&
-                    <span>, </span>
-                    }
+                        {dataset.versions.length != index + 1 &&
+                        <span>, </span>
+                        }
                 </span>
-            });
+                });
 
-            folders = dataset.folders.map((f, index) => {
-                return (
-                    <span key={index}>
+                folders = dataset.folders.map((f, index) => {
+                    return (
+                        <span key={index}>
                         <Link to={relativePath("folder/"+f.id)}>
                             {f.name}
                         </Link>
-                        {dataset.folders.length != index + 1 &&
-                        <span>, </span>
-                        }
+                            {dataset.folders.length != index + 1 &&
+                            <span>, </span>
+                            }
                     </span>
-                )
-            });
-        }
+                    )
+                });
+            }
 
-        let entries = null;
-        let weHaveProvenanceGraphs = null;
-        if (datasetVersion) {
-            entries = datasetVersion.datafiles.map((df, index) => {
-                let conversionTypesOutput = df.allowed_conversion_type.map((conversionType, index) => {
-                    // TODO: If we have the same name for datafiles, we will run into troubles
-                    return <span key={conversionType}>
+            let entries = null;
+            let weHaveProvenanceGraphs = null;
+            if (datasetVersion) {
+                entries = datasetVersion.datafiles.map((df, index) => {
+                    let conversionTypesOutput = df.allowed_conversion_type.map((conversionType, index) => {
+                        // TODO: If we have the same name for datafiles, we will run into troubles
+                        return <span key={conversionType}>
                     <a href="#" onClick={() => {
                         this.setLoadingMessage("Sent the request to the server...");
                         return this.getOrLaunchConversion(undefined, undefined,
                             datasetVersion.id, df.name, conversionType, 'N'); }}>
                         { conversionType }
                         </a>
-                        { df.allowed_conversion_type.length != index + 1 &&
-                        <span>, </span>
-                        }
+                            { df.allowed_conversion_type.length != index + 1 &&
+                            <span>, </span>
+                            }
                 </span>
-                });
+                    });
 
 
-                let provenanceGraphs = null;
-                if (df.provenance_nodes) {
+                    let provenanceGraphs = null;
+                    if (df.provenance_nodes) {
 
-                    provenanceGraphs = df.provenance_nodes.map((provenance_node, index) => {
-                        return <span key={provenance_node.graph.graph_id}>
+                        provenanceGraphs = df.provenance_nodes.map((provenance_node, index) => {
+                            return <span key={provenance_node.graph.graph_id}>
                         <Link to={relativePath("provenance/"+provenance_node.graph.graph_id)}>
                             {provenance_node.graph.name}
                             { df.provenance_nodes.length != index + 1 &&
@@ -359,87 +382,87 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             }
                         </Link>
                </span>
-                    });
-                }
-
-                return <tr key={index}>
-                    <td>{df.name}</td>
-                    <td>{df.short_summary}</td>
-                    <td>
-                        { conversionTypesOutput }
-                    </td>
-
-                    { df.provenance_nodes.length > 0 &&
-                    <td>
-                        { provenanceGraphs }
-                    </td>
+                        });
                     }
-                </tr>
-            });
 
-            weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
-                return element.provenance_nodes.length > 0;
-            });
-        }
+                    return <tr key={index}>
+                        <td>{df.name}</td>
+                        <td>{df.short_summary}</td>
+                        <td>
+                            { conversionTypesOutput }
+                        </td>
+
+                        { df.provenance_nodes.length > 0 &&
+                        <td>
+                            { provenanceGraphs }
+                        </td>
+                        }
+                    </tr>
+                });
+
+                weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
+                    return element.provenance_nodes.length > 0;
+                });
+            }
 
 
-        let navItems = [];
-        navItems = [
-            {
-                label: "Edit Name", action: () => {
-                this.setState({showEditName: true})
-            }
-            },
-            {
-                label: "Edit Description", action: () => {
-                this.setState({showEditDescription: true})
-            }
-            },
-            // {
-            //     label: "Add permaname", action: function () {
-            // }
-            // },
-            {
-                label: "Create new version", action: () => {
-                this.showUploadNewVersion();
-            }
-            },
-            {
-                label: "Copy to...", action: () => {
+            let navItems = [];
+            navItems = [
+                {
+                    label: "Edit Name", action: () => {
+                    this.setState({showEditName: true})
+                }
+                },
+                {
+                    label: "Edit Description", action: () => {
+                    this.setState({showEditDescription: true})
+                }
+                },
+                // {
+                //     label: "Add permaname", action: function () {
+                // }
+                // },
+                {
+                    label: "Create new version", action: () => {
+                    this.showUploadNewVersion();
+                }
+                },
+                {
+                    label: "Copy to...", action: () => {
                     this.copyTo();
                 }
-            }
-            // {
-            //     label: "Deprecate version", action: function () {
-            // }
-            // },
-            // {
-            //     label: "Show History", action: function () {
-            // }
-            // }
-        ]
-        ;
+                }
+                // {
+                //     label: "Deprecate version", action: function () {
+                // }
+                // },
+                // {
+                //     label: "Show History", action: function () {
+                // }
+                // }
+            ]
+            ;
 
-        let permaname = null;
-        let r_block = null;
-        let leftNavsDialogs = null;
+            let permaname = null;
+            let r_block = null;
+            let leftNavsDialogs = null;
 
-        if (dataset && datasetVersion) {
-            permaname = dataset.permanames[dataset.permanames.length - 1];
-            r_block = "library(taigr);\n";
+            if (dataset && datasetVersion) {
+                permaname = dataset.permanames[dataset.permanames.length - 1];
+                r_block = "library(taigr);\n";
 
-            if (datasetVersion.datafiles.length == 1) {
-                r_block += `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
-            } else {
-                let r_block_lines = datasetVersion.datafiles.map((df, index) => {
-                    let r_name = df.name.replace(/[^A-Za-z0-9]+/g, ".");
-                    return `${r_name} <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
-                });
-                r_block += r_block_lines.join("\n")
-            }
+                if (datasetVersion.datafiles.length == 1) {
+                    r_block += `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
+                } else {
+                    let r_block_lines = datasetVersion.datafiles.map((df, index) => {
+                        let r_name = df.name.replace(/[^A-Za-z0-9]+/g, ".");
+                        return `${r_name} <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
+                    });
+                    r_block += r_block_lines.join("\n")
+                }
 
-            leftNavsDialogs = (
-                <span>
+                leftNavsDialogs = (
+                    <span>
                     <Dialogs.EditName isVisible={this.state.showEditName}
                                       initialValue={this.state.dataset.name}
                                       cancel={ () => { this.setState({showEditName: false})} }
@@ -475,37 +498,37 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
                     />
                 </span>
-            );
-        }
+                );
+            }
 
 
-        return <div>
-            <LeftNav items={navItems}/>
-            <div id="main-content">
-                { dataset && datasetVersion &&
-                <span>
+            return <div>
+                <LeftNav items={navItems}/>
+                <div id="main-content">
+                    { dataset && datasetVersion &&
+                    <span>
                     { leftNavsDialogs }
 
-                    <h1>{dataset.name}
-                        <small>{permaname}</small>
+                        <h1>{dataset.name}
+                            <small>{permaname}</small>
                     </h1>
                     <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
                         &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
                     <p>Versions: {versions} </p>
 
-                    { (datasetVersion.creator.id == currentUser ||
-                    dataset.folders.some((folder) => {
-                        return folder.id == "public"
-                    })) &&
-                    <p>Contained within {folders}</p>
-                    }
-                    {/*{ancestor_section}*/}
+                        { (datasetVersion.creator.id == currentUser ||
+                        dataset.folders.some((folder) => {
+                            return folder.id == "public"
+                        })) &&
+                        <p>Contained within {folders}</p>
+                        }
+                        {/*{ancestor_section}*/}
 
-                    { this.state.datasetVersion.description &&
-                    <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
-                    }
+                        { this.state.datasetVersion.description &&
+                        <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
+                        }
 
-                    <h2>Contents</h2>
+                        <h2>Contents</h2>
                     <table className="table">
                         <thead>
                         <tr>
@@ -526,14 +549,15 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     <h2>Reading from R</h2>
                     <pre>{r_block}</pre>
                 </span>
-                }
+                    }
+                </div>
+                {this.state.loading && <LoadingOverlay message={ this.state.loadingMessage }></LoadingOverlay>}
+                <Dialogs.ExportError isVisible={this.state.exportError}
+                                     cancel={ () => this.setState({exportError: false})}
+                                     retry={ () => this.forceExport() }
+                                     message={this.state.loadingMessage}/>
             </div>
-            {this.state.loading && <LoadingOverlay message={ this.state.loadingMessage }></LoadingOverlay>}
-            <Dialogs.ExportError isVisible={this.state.exportError}
-                                 cancel={ () => this.setState({exportError: false})}
-                                 retry={ () => this.forceExport() }
-                                 message={this.state.loadingMessage}/>
-        </div>
+        }
     }
 }
 

@@ -154,7 +154,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             this.setState({
                 error: error.message
             });
-            console.log("Error: " + error.message);
+            console.log("Error: " + error.stack);
         });
     }
 
