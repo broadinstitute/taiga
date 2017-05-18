@@ -93,41 +93,7 @@ def get_all_users():
     return users
 
 
-def add_or_update_dataset_access_log(dataset_id):
-    """Create or update, with the current datetime, the access log for the current user, on the dataset
-    passed in parameter"""
 
-    current_user = flask.g.current_user
-
-    try:
-        access_log = db.session.query(UserLog) \
-            .filter(UserLog.dataset_id == dataset_id) \
-            .filter(UserLog.user_id == current_user.id) \
-            .one_or_none()
-    except MultipleResultsFound:
-        log.error("When logging access to dataset (id {}) for user {}, we had multiple results instead of only one" \
-                  .format(dataset_id, current_user.email)
-                  )
-
-    if access_log:
-        access_log.last_access = datetime.utcnow()
-    else:
-        access_log = UserLog(user_id=current_user.id,
-                             dataset_id=dataset_id)
-
-    db.session.add(access_log)
-    db.session.commit()
-
-    return access_log
-
-
-def get_datasets_access_logs():
-    current_user = flask.g.current_user
-
-    array_access_logs = db.session.query(UserLog) \
-        .filter(UserLog.user_id == current_user.id).all()
-
-    return array_access_logs
 
 
 # </editor-fold>
@@ -467,7 +433,41 @@ def delete_dataset(dataset_id):
     # Clean up
     # TODO: Shouldn't have to clean up, see Cascade and co
 
+def add_or_update_dataset_access_log(dataset_id):
+    """Create or update, with the current datetime, the access log for the current user, on the dataset
+    passed in parameter"""
 
+    current_user = flask.g.current_user
+
+    try:
+        access_log = db.session.query(UserLog) \
+            .filter(UserLog.dataset_id == dataset_id) \
+            .filter(UserLog.user_id == current_user.id) \
+            .one_or_none()
+    except MultipleResultsFound:
+        log.error("When logging access to dataset (id {}) for user {}, we had multiple results instead of only one" \
+                  .format(dataset_id, current_user.email)
+                  )
+
+    if access_log:
+        access_log.last_access = datetime.utcnow()
+    else:
+        access_log = UserLog(user_id=current_user.id,
+                             dataset_id=dataset_id)
+
+    db.session.add(access_log)
+    db.session.commit()
+
+    return access_log
+
+
+def get_datasets_access_logs():
+    current_user = flask.g.current_user
+
+    array_access_logs = db.session.query(UserLog) \
+        .filter(UserLog.user_id == current_user.id).all()
+
+    return array_access_logs
 # </editor-fold>
 
 # <editor-fold desc="DatasetVersion">
@@ -754,7 +754,6 @@ def changer_owner(entry_id, new_creator_id):
 
     db.session.add(entry)
     db.session.commit()
-
 
 # </editor-fold>
 
@@ -1189,5 +1188,46 @@ def is_dataset_node_type(node_type):
 
 def _get_datetime_from_string(string_datetime):
     return datetime.strptime(string_datetime, "%Y-%m-%d %H:%M:%S.%f")
+
+# </editor-fold>
+
+# <editor-fold desc="UserLog">
+
+
+def get_entries_access_logs():
+    current_user = flask.g.current_user
+
+    array_access_logs = db.session.query(UserLog) \
+        .filter(UserLog.user_id == current_user.id).all()
+
+    return array_access_logs
+
+
+def add_or_update_entry_access_log(entry_id):
+    """Create or update, with the current datetime, the access log for the current user, on the entry
+    passed in parameter"""
+
+    current_user = flask.g.current_user
+
+    try:
+        access_log = db.session.query(UserLog) \
+            .filter(UserLog.entry_id == entry_id) \
+            .filter(UserLog.user_id == current_user.id) \
+            .one_or_none()
+    except MultipleResultsFound:
+        log.error("When logging access to dataset (id {}) for user {}, we had multiple results instead of only one" \
+                  .format(entry_id, current_user.email)
+                  )
+
+    if access_log:
+        access_log.last_access = datetime.utcnow()
+    else:
+        access_log = UserLog(user_id=current_user.id,
+                             entry_id=entry_id)
+
+    db.session.add(access_log)
+    db.session.commit()
+
+    return access_log
 
 # </editor-fold>

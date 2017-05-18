@@ -46,7 +46,7 @@ export class RecentlyViewed extends React.Component<RecentlyViewedProps, Recentl
     }
 
     doFetch() {
-        return tapi.get_user_dataset_access_log().then((userAccessLogs) => {
+        return tapi.get_user_entry_access_log().then((userAccessLogs) => {
             // TODO: Think about not using it as State because it does not change during the page lifecycle
 
             let mappedAL = userAccessLogs.map((userAccessLog) => {
@@ -60,8 +60,7 @@ export class RecentlyViewed extends React.Component<RecentlyViewedProps, Recentl
     }
 
     datasetFormatter(cell: any, row: any) {
-        return <Link to={relativePath(
-                      "dataset/" + row.dataset_id)}>{ cell }</Link>
+        return <Link to={row.url}>{ cell }</Link>
     }
 
     lastAccessFormatter(cell: any, row: any) {
@@ -90,11 +89,11 @@ export class RecentlyViewed extends React.Component<RecentlyViewedProps, Recentl
         if (this.state.accessLogs.length != 0) {
             displayAccessLogs = (
                 <BootstrapTable data={this.state.accessLogs} striped hover options={options} pagination>
-                    <TableHeaderColumn isKey dataField='dataset_id' hidden>Dataset Id</TableHeaderColumn>
-                    <TableHeaderColumn dataField='dataset_name'
+                    <TableHeaderColumn isKey dataField='entry_id' hidden>Entry Id</TableHeaderColumn>
+                    <TableHeaderColumn dataField='entry_name'
                                        dataFormat={ this.datasetFormatter }
                                        headerAlign='center'
-                                       dataSort>Dataset</TableHeaderColumn>
+                                       dataSort>Entry</TableHeaderColumn>
                     <TableHeaderColumn dataField='last_access'
                                        headerAlign="center"
                                        dataAlign='center'

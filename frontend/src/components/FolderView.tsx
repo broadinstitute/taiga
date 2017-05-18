@@ -83,7 +83,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         let oldId = prevProps.params.folderId;
         let newId = this.props.params.folderId;
         if (newId !== oldId) {
-            this.doFetch();
+            this.doFetch().then(() => {
+                this.logAccess();
+            });
 
             // Clean selected
             this.bootstrapTable.cleanSelected();
@@ -93,7 +95,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     componentDidMount() {
         tapi = (this.context as any).tapi;
         currentUser = (this.context as any).currentUser;
-        this.doFetch();
+        this.doFetch().then(() => {
+            this.logAccess();
+        });
     }
 
     doFetch() {
@@ -155,6 +159,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 error: error.message
             });
             console.log("Error: " + error.stack);
+        });
+    }
+
+    // TODO: Refactor logAccess in an util or in RecentlyViewed class
+    logAccess() {
+        return tapi.create_or_update_entry_access_log(this.state.folder.id).then(() => {
         });
     }
 
@@ -365,7 +375,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             </div>
         } else if (this.state.error && this.state.error.toUpperCase() == "NOT FOUND".toUpperCase()) {
             let message = "The folder " + this.props.params.folderId + " does not exist. Please check this id " +
-                    "is correct. We are also available via the feedback button.";
+                "is correct. We are also available via the feedback button.";
             return <div>
                 <LeftNav items={[]}/>
                 <div id="main-content">

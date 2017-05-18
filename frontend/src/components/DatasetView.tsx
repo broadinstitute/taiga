@@ -126,8 +126,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         });
     }
 
+    // TODO: Refactor logAccess in an util or in RecentlyViewed class
     logAccess() {
-        return tapi.create_or_update_dataset_access_log(this.state.dataset.id).then(() => {
+        return tapi.create_or_update_entry_access_log(this.state.dataset.id).then(() => {
         });
     }
 

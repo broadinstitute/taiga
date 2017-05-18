@@ -78,8 +78,8 @@ export class TaigaApi {
         return this._fetch<Dataset>("/dataset/" + dataset_id)
     }
 
-    get_user_dataset_access_log(): Promise<Array<AccessLog>> {
-        return this._fetch<Array<AccessLog>>("/dataset/logAccess");
+    get_user_entry_access_log(): Promise<Array<AccessLog>> {
+        return this._fetch<Array<AccessLog>>("/entry/logAccess");
     }
 
     get_datasets(datasetIds: Array<string>): Promise<Array<DatasetFullDatasetVersions>> {
@@ -217,8 +217,8 @@ export class TaigaApi {
         })
     }
 
-    create_or_update_dataset_access_log(dataset_id: string): Promise<void> {
-        return this._post<void>("/dataset/" + dataset_id + "/logAccess", {});
+    create_or_update_entry_access_log(entry_id: string): Promise<void> {
+        return this._post<void>("/entry/" + entry_id + "/logAccess", {});
     }
 
     get_provenance_graph(graph_id: string): Promise<ProvenanceGraphFull> {
