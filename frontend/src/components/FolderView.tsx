@@ -363,7 +363,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 <LeftNav items={[]}/>
                 <div id="main-content"/>
             </div>
-        } else if (this.state.error == "NOT FOUND") {
+        } else if (this.state.error && this.state.error.toUpperCase() == "NOT FOUND".toUpperCase()) {
             let message = "The folder " + this.props.params.folderId + " does not exist. Please check this id " +
                     "is correct. We are also available via the feedback button.";
             return <div>
