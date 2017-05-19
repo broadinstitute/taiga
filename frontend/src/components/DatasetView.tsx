@@ -81,6 +81,18 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             this.logAccess();
 
             this.setLoading(false);
+
+            // Update the url
+            let last_index_dataset_permaname = this.state.dataset.permanames.length - 1;
+            let url =  relativePath("/dataset/" +
+                this.state.dataset.permanames[last_index_dataset_permaname] +
+                "/" + this.state.datasetVersion.version);
+            let history_obj = { Title: this.state.dataset.name + " v" + this.state.datasetVersion.version,
+                Url: url };
+            history.pushState(history_obj, history_obj.Title, history_obj.Url);
+            // window.location.pathname = relativePath("/dataset/" +
+            //     this.state.dataset.permanames[last_index_dataset_permaname] +
+            //     "/" + this.state.datasetVersion.version);
         }).catch((error) => {
             console.log("doFetch failed with this error: "+error);
         });
@@ -151,7 +163,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             return <span>{dataset_version.name}</span>
         }
         else {
-            return <Link to={relativePath("dataset/"+dataset.id+"/"+dataset_version.id)}>{dataset_version.name}</Link>
+            let last_index_dataset_permaname = dataset.permanames.length - 1;
+            let url =  relativePath("/dataset/" +
+                dataset.permanames[last_index_dataset_permaname] +
+                "/" + dataset_version.name);
+            return <Link to={url}>{dataset_version.name}</Link>
         }
     }
 

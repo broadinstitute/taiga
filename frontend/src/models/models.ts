@@ -57,6 +57,7 @@ export interface DatasetVersion {
     "dataset_id": string;
     "status": StatusEnum;
     "name": string;
+    "permanames": Array<string>;
     "version": string;
     "description"?: string;
     "creation_date": string;
@@ -281,12 +282,11 @@ export class BootstrapTableFolderEntry {
     processFolderEntryUrl(entry: FolderEntries, latestDatasetVersion?: DatasetVersion,
                           full_datasetVersion?: DatasetVersion) {
         let processedUrl = null;
-
         if (entry.type == FolderEntries.TypeEnum.Folder) {
             processedUrl = relativePath("folder/" + entry.id);
         }
         else if (entry.type == FolderEntries.TypeEnum.DatasetVersion) {
-            processedUrl = relativePath("dataset/" + full_datasetVersion.dataset_id + "/" + entry.id)
+            processedUrl = relativePath("dataset/" + full_datasetVersion.id + "/" + entry.id)
         }
         else if (entry.type == FolderEntries.TypeEnum.Dataset) {
             processedUrl = relativePath("dataset/" + entry.id + "/" + latestDatasetVersion.id)
