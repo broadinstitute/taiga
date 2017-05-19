@@ -341,7 +341,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             let folders = null;
             if (dataset) {
                 dataset.versions.sort((datasetVersionA: NamedId, datasetVersionB: NamedId) => {
-                    debugger;
                     return this.compareDatasetVersionsByVersionNumber(datasetVersionA, datasetVersionB);
                 });
                 versions = dataset.versions.map((dataset_version: NamedId, index: any) => {
@@ -542,7 +541,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         {/*{ancestor_section}*/}
 
                         { this.state.datasetVersion.description &&
-                        <Well bsSize="sm">{this.state.datasetVersion.description}</Well>
+                            Dialogs.renderDescription(this.state.datasetVersion.description)
                         }
 
                         <h2>Contents</h2>
