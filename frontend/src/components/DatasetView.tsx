@@ -16,6 +16,7 @@ import {relativePath} from "../utilities/route";
 import {DatafileUrl, ConversionStatusEnum} from "../models/models";
 import {DatasetVersion} from "../models/models";
 import {NotFound} from "./NotFound";
+import {NamedId} from "../models/models";
 
 export interface DatasetViewProps {
     params: any
@@ -144,7 +145,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         })
     }
 
-    getLinkOrNot(dataset_version: Models.DatasetVersion) {
+    getLinkOrNot(dataset_version: NamedId) {
         let dataset = this.state.dataset;
         if (dataset_version.id == this.state.datasetVersion.id) {
             return <span>{dataset_version.name}</span>
@@ -297,8 +298,19 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     // DatasetVersions
-    compareDatasetVersionsByVersionNumber(a: DatasetVersion, b: DatasetVersion) {
-        return a.version < b.version;
+    compareDatasetVersionsByVersionNumber(a: NamedId, b: NamedId) {
+        // VersionNumber == Name
+        let int_name_a = parseInt(a.name);
+        let int_name_b = parseInt(b.name);
+        if (int_name_a < int_name_b) {
+            return -1;
+        }
+        else if (int_name_a > int_name_b) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
     }
 
     render() {
@@ -328,7 +340,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             let versions = null;
             let folders = null;
             if (dataset) {
-                versions = dataset.versions.map((dataset_version: Models.DatasetVersion, index: any) => {
+                dataset.versions.sort((datasetVersionA: NamedId, datasetVersionB: NamedId) => {
+                    debugger;
+                    return this.compareDatasetVersionsByVersionNumber(datasetVersionA, datasetVersionB);
+                });
+                versions = dataset.versions.map((dataset_version: NamedId, index: any) => {
                     return <span key={dataset_version.id}>
                     {this.getLinkOrNot(dataset_version)}
                         {dataset.versions.length != index + 1 &&
