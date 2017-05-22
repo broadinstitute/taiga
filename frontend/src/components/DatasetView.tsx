@@ -89,7 +89,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 "/" + this.state.datasetVersion.version);
             let history_obj = { Title: this.state.dataset.name + " v" + this.state.datasetVersion.version,
                 Url: url };
-            history.pushState(history_obj, history_obj.Title, history_obj.Url);
+            history.replaceState(history_obj, history_obj.Title, history_obj.Url);
             // window.location.pathname = relativePath("/dataset/" +
             //     this.state.dataset.permanames[last_index_dataset_permaname] +
             //     "/" + this.state.datasetVersion.version);
