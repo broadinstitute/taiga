@@ -541,9 +541,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     <span>
                     { leftNavsDialogs }
 
-                        <h1>{dataset.name}
-                            <small>{permaname}</small>
-                    </h1>
+                        <h1>
+                            {dataset.name} <small>{ permaname }</small>
+                        </h1>
                     <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
                         &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
                     <p>Versions: {versions} </p>
