@@ -673,7 +673,7 @@ def _action_to_folder(entry_ids, target_folder_id, entry_action, current_folder_
                 entry.parents.append(folder_to_action)
 
             db.session.add(entry)
-        # If the request action is EntryAction.copy:
+        # If the requested action is EntryAction.copy:
         # We create a new dataset, and we populate it with the datasetVersions and the datafiles
         elif entry_action == EntryAction.copy:
             # We check it is not already in

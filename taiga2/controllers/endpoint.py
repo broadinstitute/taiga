@@ -254,13 +254,6 @@ def update_dataset_version_description(datasetVersionId, DescriptionUpdate):
 
 
 def create_upload_session_file(S3UploadedFileMetadata, sid):
-    #      location:
-    #      eTag:
-    #      bucket:
-    #      key:
-    #      filename:
-    #      filetype:
-
     s3_bucket = S3UploadedFileMetadata['bucket']
 
     initial_file_type = S3UploadedFileMetadata['filetype']

@@ -6,7 +6,7 @@ import {process} from "ts-jest/dist/preprocessor";
 export class Folder {
     id: string;
     name: string;
-    folder_type: FolderEntries.TypeEnum;
+    folder_type: TypeFolderEnum;
     type: FolderEntries;
     parents: Array<NamedId>;
     entries: Array<FolderEntries>;
@@ -15,11 +15,11 @@ export class Folder {
     acl: Acl;
 }
 
-// export enum TypeEnum {
-//     Folder = <any> 'folder',
-//     Trash = <any> 'trash',
-//     Home = <any> 'home'
-// }
+export enum TypeFolderEnum {
+    Folder = <any> 'folder',
+    Trash = <any> 'trash',
+    Home = <any> 'home'
+}
 
 export class FolderEntries {
     'type': FolderEntries.TypeEnum;

@@ -754,9 +754,9 @@ paths:
                   type: string
       responses:
         200:
-          description: The info about the newly created dataset
+          description: The info about the newly created dataset version
           schema:
-            title: DatasetId
+            title: DatasetVersionId
             type: string
 
   /datasetVersions:
