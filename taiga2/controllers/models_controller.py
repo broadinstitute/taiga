@@ -593,11 +593,13 @@ def get_dataset_version_provenance(dataset_version_id,
 
 
 def get_latest_dataset_version_by_permaname(permaname, one_or_none=False):
-    q = db.session.query(DatasetVersion) \
+    dataset_version = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
-        .order_by(DatasetVersion.version.desc())
+        .order_by(DatasetVersion.version.desc())\
+        .first()
 
-    dataset_version = _fetch_respecting_one_or_none(q, one_or_none)
+    if not one_or_none and not dataset_version:
+        raise Exception("No dataset version found in this dataset")
 
     return dataset_version
 
