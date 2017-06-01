@@ -228,10 +228,13 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
         try:
             version_number = int(datasetVersionId)
         except ValueError:
+            # TODO: Log the error
             pass
 
         if version_number is not None:
             dataset_version = models_controller.get_dataset_version_by_permaname_and_version(datasetId, version_number, one_or_none=True)
+        else:
+            dataset_version = models_controller.get_latest_dataset_version_by_permaname(datasetId, one_or_none=True)
 
     if dataset_version is None:
         flask.abort(404)

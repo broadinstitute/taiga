@@ -592,11 +592,12 @@ def get_dataset_version_provenance(dataset_version_id,
     raise NotImplementedError
 
 
-def get_latest_dataset_version_by_permaname(permaname):
-    dataset_version = db.session.query(DatasetVersion) \
+def get_latest_dataset_version_by_permaname(permaname, one_or_none=False):
+    q = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
-        .order_by(DatasetVersion.version.desc()) \
-        .first()
+        .order_by(DatasetVersion.version.desc())
+
+    dataset_version = _fetch_respecting_one_or_none(q, one_or_none)
 
     return dataset_version
 
