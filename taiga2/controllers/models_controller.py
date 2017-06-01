@@ -592,14 +592,11 @@ def get_dataset_version_provenance(dataset_version_id,
     raise NotImplementedError
 
 
-def get_latest_dataset_version_by_permaname(permaname, one_or_none=False):
+def get_latest_dataset_version_by_permaname(permaname):
     dataset_version = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
         .order_by(DatasetVersion.version.desc())\
         .first()
-
-    if not one_or_none and not dataset_version:
-        raise Exception("No dataset version found in this dataset")
 
     return dataset_version
 
@@ -951,6 +948,7 @@ def _add_dl_name(url, dl_name):
 
     return new_p.geturl()
 
+
 def get_signed_urls_from_cache_entry(paths_as_json, dl_filename):
     # if there's urls on the cache entry, report those too after signing them
     if paths_as_json is None or paths_as_json == "":
@@ -970,6 +968,7 @@ def get_signed_urls_from_cache_entry(paths_as_json, dl_filename):
 
     signed_urls = [make_signed_url(url, dl_filename) for dl_filename, url in zip(dl_filenames, urls)]
     return signed_urls
+
 
 def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
     entry = _find_cache_entry(dataset_version_id, format, datafile_name)

@@ -234,7 +234,7 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
         if version_number is not None:
             dataset_version = models_controller.get_dataset_version_by_permaname_and_version(datasetId, version_number, one_or_none=True)
         else:
-            dataset_version = models_controller.get_latest_dataset_version_by_permaname(datasetId, one_or_none=True)
+            dataset_version = models_controller.get_latest_dataset_version_by_permaname(datasetId)
 
     if dataset_version is None:
         flask.abort(404)
