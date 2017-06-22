@@ -509,7 +509,7 @@ def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, de
             row_count += 1
 
             # check if we need to move onto the next output file
-            if flush_callback(row_count, fd.tell()):
+            if flush_callback(row_count, output.tell()):
                 output.close()
                 output_file = None
 
