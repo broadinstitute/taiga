@@ -1,11 +1,12 @@
 import {getInitialFileTypeFromMimeType, toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
 import {process} from "ts-jest/dist/preprocessor";
+// import TypeEnum = FolderEntries.TypeEnum;
 
 export class Folder {
     id: string;
     name: string;
-    folder_type: TypeEnum;
+    folder_type: TypeFolderEnum;
     type: FolderEntries;
     parents: Array<NamedId>;
     entries: Array<FolderEntries>;
@@ -14,7 +15,7 @@ export class Folder {
     acl: Acl;
 }
 
-export enum TypeEnum {
+export enum TypeFolderEnum {
     Folder = <any> 'folder',
     Trash = <any> 'trash',
     Home = <any> 'home'
@@ -56,6 +57,7 @@ export interface DatasetVersion {
     "dataset_id": string;
     "status": StatusEnum;
     "name": string;
+    "permanames": Array<string>;
     "version": string;
     "description"?: string;
     "creation_date": string;
@@ -280,12 +282,11 @@ export class BootstrapTableFolderEntry {
     processFolderEntryUrl(entry: FolderEntries, latestDatasetVersion?: DatasetVersion,
                           full_datasetVersion?: DatasetVersion) {
         let processedUrl = null;
-
         if (entry.type == FolderEntries.TypeEnum.Folder) {
             processedUrl = relativePath("folder/" + entry.id);
         }
         else if (entry.type == FolderEntries.TypeEnum.DatasetVersion) {
-            processedUrl = relativePath("dataset/" + full_datasetVersion.dataset_id + "/" + entry.id)
+            processedUrl = relativePath("dataset/" + full_datasetVersion.id + "/" + entry.id)
         }
         else if (entry.type == FolderEntries.TypeEnum.Dataset) {
             processedUrl = relativePath("dataset/" + entry.id + "/" + latestDatasetVersion.id)
@@ -360,19 +361,35 @@ export enum ConversionStatusEnum {
 
 export class AccessLog {
     user_id: string;
-    dataset: NamedId;
 
     // Used for presentation BootstrapTable
-    dataset_id: string;
-    dataset_name: string;
+    entry_id: string;
+    entry_name: string;
+    type: FolderEntries.TypeEnum;
 
+    url: string;
 
     last_access: string;
 
+    processAccessLogEntryUrl(serverAccessLog: any) {
+        let processedUrl = null;
+        // TODO: Fix this toLowerCase workaround to compare types
+        if (serverAccessLog.entry.type.toLowerCase() == FolderEntries.TypeEnum.Folder) {
+            processedUrl = relativePath("folder/" + serverAccessLog.entry.id);
+        }
+        else {
+            processedUrl = relativePath("dataset/" + serverAccessLog.entry.id);
+        }
+
+        return processedUrl;
+    }
+
     constructor(obj: any) {
         this.user_id = obj.user_id;
-        this.dataset_id = obj.dataset.id;
-        this.dataset_name = obj.dataset.name;
+        this.entry_id = obj.entry.id;
+        this.entry_name = obj.entry.name;
+        this.type = obj.type;
+        this.url = this.processAccessLogEntryUrl(obj);
         this.last_access = obj.last_access;
     }
 }

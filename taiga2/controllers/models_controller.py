@@ -93,41 +93,7 @@ def get_all_users():
     return users
 
 
-def add_or_update_dataset_access_log(dataset_id):
-    """Create or update, with the current datetime, the access log for the current user, on the dataset
-    passed in parameter"""
 
-    current_user = flask.g.current_user
-
-    try:
-        access_log = db.session.query(UserLog) \
-            .filter(UserLog.dataset_id == dataset_id) \
-            .filter(UserLog.user_id == current_user.id) \
-            .one_or_none()
-    except MultipleResultsFound:
-        log.error("When logging access to dataset (id {}) for user {}, we had multiple results instead of only one" \
-                  .format(dataset_id, current_user.email)
-                  )
-
-    if access_log:
-        access_log.last_access = datetime.utcnow()
-    else:
-        access_log = UserLog(user_id=current_user.id,
-                             dataset_id=dataset_id)
-
-    db.session.add(access_log)
-    db.session.commit()
-
-    return access_log
-
-
-def get_datasets_access_logs():
-    current_user = flask.g.current_user
-
-    array_access_logs = db.session.query(UserLog) \
-        .filter(UserLog.user_id == current_user.id).all()
-
-    return array_access_logs
 
 
 # </editor-fold>
@@ -148,8 +114,9 @@ def add_folder(name,
     return new_folder
 
 
-def get_folder(folder_id):
-    return db.session.query(Folder).filter(Folder.id == folder_id).one()
+def get_folder(folder_id, one_or_none=False):
+    query = db.session.query(Folder).filter(Folder.id == folder_id)
+    return _fetch_respecting_one_or_none(q=query, one_or_none=one_or_none)
 
 
 def get_folder_by_name(folder_name):
@@ -466,7 +433,41 @@ def delete_dataset(dataset_id):
     # Clean up
     # TODO: Shouldn't have to clean up, see Cascade and co
 
+def add_or_update_dataset_access_log(dataset_id):
+    """Create or update, with the current datetime, the access log for the current user, on the dataset
+    passed in parameter"""
 
+    current_user = flask.g.current_user
+
+    try:
+        access_log = db.session.query(UserLog) \
+            .filter(UserLog.dataset_id == dataset_id) \
+            .filter(UserLog.user_id == current_user.id) \
+            .one_or_none()
+    except MultipleResultsFound:
+        log.error("When logging access to dataset (id {}) for user {}, we had multiple results instead of only one" \
+                  .format(dataset_id, current_user.email)
+                  )
+
+    if access_log:
+        access_log.last_access = datetime.utcnow()
+    else:
+        access_log = UserLog(user_id=current_user.id,
+                             dataset_id=dataset_id)
+
+    db.session.add(access_log)
+    db.session.commit()
+
+    return access_log
+
+
+def get_datasets_access_logs():
+    current_user = flask.g.current_user
+
+    array_access_logs = db.session.query(UserLog) \
+        .filter(UserLog.user_id == current_user.id).all()
+
+    return array_access_logs
 # </editor-fold>
 
 # <editor-fold desc="DatasetVersion">
@@ -554,7 +555,9 @@ def create_new_dataset_version_from_session(session_id,
 
     return new_dataset_version
 
+
 def _fetch_respecting_one_or_none(q, one_or_none):
+    """If one_or_none is set, asks the query q to return none if NoResultFound, else raise the error"""
     if one_or_none:
         return q.one_or_none()
     else:
@@ -592,7 +595,7 @@ def get_dataset_version_provenance(dataset_version_id,
 def get_latest_dataset_version_by_permaname(permaname):
     dataset_version = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
-        .order_by(DatasetVersion.version.desc()) \
+        .order_by(DatasetVersion.version.desc())\
         .first()
 
     return dataset_version
@@ -670,7 +673,7 @@ def _action_to_folder(entry_ids, target_folder_id, entry_action, current_folder_
                 entry.parents.append(folder_to_action)
 
             db.session.add(entry)
-        # If the request action is EntryAction.copy:
+        # If the requested action is EntryAction.copy:
         # We create a new dataset, and we populate it with the datasetVersions and the datafiles
         elif entry_action == EntryAction.copy:
             # We check it is not already in
@@ -751,7 +754,6 @@ def changer_owner(entry_id, new_creator_id):
 
     db.session.add(entry)
     db.session.commit()
-
 
 # </editor-fold>
 
@@ -946,6 +948,7 @@ def _add_dl_name(url, dl_name):
 
     return new_p.geturl()
 
+
 def get_signed_urls_from_cache_entry(paths_as_json, dl_filename):
     # if there's urls on the cache entry, report those too after signing them
     if paths_as_json is None or paths_as_json == "":
@@ -965,6 +968,7 @@ def get_signed_urls_from_cache_entry(paths_as_json, dl_filename):
 
     signed_urls = [make_signed_url(url, dl_filename) for dl_filename, url in zip(dl_filenames, urls)]
     return signed_urls
+
 
 def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
     entry = _find_cache_entry(dataset_version_id, format, datafile_name)
@@ -1186,5 +1190,46 @@ def is_dataset_node_type(node_type):
 
 def _get_datetime_from_string(string_datetime):
     return datetime.strptime(string_datetime, "%Y-%m-%d %H:%M:%S.%f")
+
+# </editor-fold>
+
+# <editor-fold desc="UserLog">
+
+
+def get_entries_access_logs():
+    current_user = flask.g.current_user
+
+    array_access_logs = db.session.query(UserLog) \
+        .filter(UserLog.user_id == current_user.id).all()
+
+    return array_access_logs
+
+
+def add_or_update_entry_access_log(entry_id):
+    """Create or update, with the current datetime, the access log for the current user, on the entry
+    passed in parameter"""
+
+    current_user = flask.g.current_user
+
+    try:
+        access_log = db.session.query(UserLog) \
+            .filter(UserLog.entry_id == entry_id) \
+            .filter(UserLog.user_id == current_user.id) \
+            .one_or_none()
+    except MultipleResultsFound:
+        log.error("When logging access to dataset (id {}) for user {}, we had multiple results instead of only one" \
+                  .format(entry_id, current_user.email)
+                  )
+
+    if access_log:
+        access_log.last_access = datetime.utcnow()
+    else:
+        access_log = UserLog(user_id=current_user.id,
+                             entry_id=entry_id)
+
+    db.session.add(access_log)
+    db.session.commit()
+
+    return access_log
 
 # </editor-fold>

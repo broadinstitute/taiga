@@ -239,26 +239,26 @@ def test_get_dataset_two_ways(session: SessionBase, new_dataset):
 
 
 def test_create_access_log(session: SessionBase, new_dataset):
-    json_result = endpoint.create_or_update_dataset_access_log(new_dataset.id)
+    json_result = endpoint.create_or_update_entry_access_log(new_dataset.id)
     assert json_result.status_code == 200
 
 
 @pytest.fixture
 def dataset_create_access_log(session: SessionBase, new_dataset):
-    endpoint.create_or_update_dataset_access_log(new_dataset.id)
+    endpoint.create_or_update_entry_access_log(new_dataset.id)
     return new_dataset
 
 
 def test_update_access_log(session: SessionBase, dataset_create_access_log):
-    json_result = endpoint.create_or_update_dataset_access_log(dataset_create_access_log.id)
+    json_result = endpoint.create_or_update_entry_access_log(dataset_create_access_log.id)
     assert json_result.status_code == 200
 
 
 def test_retrieve_user_access_log(session: SessionBase, dataset_create_access_log):
-    json_response_result = endpoint.get_datasets_access_logs()
+    json_response_result = endpoint.get_entry_access_logs()
     json_data_result = flask.json.loads(json_response_result.data)
 
-    assert json_data_result[0]['dataset']['id'] == dataset_create_access_log.id
+    assert json_data_result[0]['entry']['id'] == dataset_create_access_log.id
 
 
 # TODO: We should also test the time logged and verify it matches when we called it

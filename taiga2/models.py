@@ -106,11 +106,11 @@ class UserLog(db.Model):
                            foreign_keys="UserLog.user_id",
                            backref="user")
 
-    dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
-    dataset = db.relationship("Dataset",
-                              foreign_keys="UserLog.dataset_id",
-                              backref="dataset")
-    # TODO: Setup the constraint of only having one (user, dataset) row
+    entry_id = db.Column(GUID, db.ForeignKey("entries.id"))
+    entry = db.relationship("Entry",
+                            foreign_keys="UserLog.entry_id",
+                            backref="entry")
+    # TODO: Setup the constraint of only having one (user, entry) row
 
     last_access = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 

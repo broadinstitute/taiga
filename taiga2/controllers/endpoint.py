@@ -77,7 +77,7 @@ def create_folder(metadata):
 
 def get_folder(folder_id):
     print("We received the request of this folder id: {}".format(folder_id))
-    folder = models_controller.get_folder(folder_id)
+    folder = models_controller.get_folder(folder_id, one_or_none=True)
     if folder is None:
         flask.abort(404)
 
@@ -180,6 +180,20 @@ def get_datasets_access_logs():
     return flask.jsonify(json_data_access_logs_current_user_datasets)
 
 
+def get_entry_access_logs():
+    array_access_logs = models_controller.get_entries_access_logs()
+
+    access_log_schema = schemas.AccessLogSchema(many=True)
+    json_data_access_logs_current_user_entries = access_log_schema.dump(array_access_logs).data
+
+    return flask.jsonify(json_data_access_logs_current_user_entries)
+
+
+def create_or_update_entry_access_log(entryId):
+    models_controller.add_or_update_entry_access_log(entryId)
+    return flask.jsonify({})
+
+
 def get_dataset_version(datasetVersion_id):
     dv = models_controller.get_dataset_version(dataset_version_id=datasetVersion_id, one_or_none=True)
     if dv is None:
@@ -214,10 +228,13 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
         try:
             version_number = int(datasetVersionId)
         except ValueError:
+            # TODO: Log the error
             pass
 
         if version_number is not None:
             dataset_version = models_controller.get_dataset_version_by_permaname_and_version(datasetId, version_number, one_or_none=True)
+        else:
+            dataset_version = models_controller.get_latest_dataset_version_by_permaname(datasetId)
 
     if dataset_version is None:
         flask.abort(404)
@@ -240,13 +257,6 @@ def update_dataset_version_description(datasetVersionId, DescriptionUpdate):
 
 
 def create_upload_session_file(S3UploadedFileMetadata, sid):
-    #      location:
-    #      eTag:
-    #      bucket:
-    #      key:
-    #      filename:
-    #      filetype:
-
     s3_bucket = S3UploadedFileMetadata['bucket']
 
     initial_file_type = S3UploadedFileMetadata['filetype']

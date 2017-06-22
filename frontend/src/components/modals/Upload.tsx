@@ -491,6 +491,20 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         return true;
     }
 
+    isExpandableRow(row) {
+        // TODO: Create a function which detects a failure. We now have two locations where we test this assetion
+        if (row instanceof FileUploadStatus && row.conversionProgress.startsWith("FAILURE")) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    expandComponent(row) {
+        return (<p>Hi: { row.conversionProgress }</p>);
+    }
+
     requestClose() {
         this.props.cancel();
     }
@@ -501,7 +515,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         const check_mode: SelectRowMode = 'checkbox';
         const selectRowProp = {
-            mode: check_mode
+            mode: check_mode,
+            clickToExpand: true
         };
 
         const options = {
@@ -509,8 +524,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             afterDeleteRow: (rowKeys: Array<string>) => this.onAfterDeleteRow(rowKeys) // A hook for after droping rows.
         };
 
+        const clickCellEdit: CellEditClickMode = 'click';
         const cellEditProp: CellEdit = {
-            mode: 'click'
+            mode: clickCellEdit
         };
 
         const fileTypeWidth = '170';
@@ -588,10 +604,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         // TODO: Use Colum Format to make a button on Remove boolean => http://allenfang.github.io/react-bootstrap-table/example.html#column-format -->
         let uploadedFiles = (
             <div>
-                <BootstrapTable data={filesStatus} deleteRow={ true }
+                <BootstrapTable data={filesStatus}
+                                deleteRow={ true }
                                 selectRow={ selectRowProp }
                                 options={ options }
-                                cellEdit={ cellEditProp }>
+                                cellEdit={ cellEditProp }
+                                expandableRow={ (row) => this.isExpandableRow(row) }
+                                expandComponent={ (row) => this.expandComponent(row) }>
                     <TableHeaderColumn isKey
                                        dataField='fileName'
                                        width="150"
@@ -630,6 +649,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         const selectRowPreviousProp = {
             mode: check_previous_mode,
             clickToSelect: true,
+            // clickToExpand: true,
             onSelect: (row: any, isSelected: Boolean, event: any) => this.onPreviousRowSelect(row, isSelected, event),
             onSelectAll: (isSelected: Boolean, rows: any) => this.onPreviousAllRowsSelect(isSelected, rows)
         };

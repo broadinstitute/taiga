@@ -43,6 +43,11 @@ class DatasetVersionSummarySchema(ma.ModelSchema):
         fields = ('id', 'name')
 
 
+class EntrySummarySchema(ma.ModelSchema):
+    class Meta:
+        fields = ('id', 'name', 'type')
+
+
 class EntrySchema(ma.ModelSchema):
     # TODO: We need to rethink this because Entry is not (yet?) aware about all these attributes
     # TODO: A dataset does not have a creator because the dataset version has...should we print the creator of the last datasetVersion?
@@ -208,6 +213,6 @@ class DatasetFullSchema(ma.ModelSchema):
 
 class AccessLogSchema(ma.ModelSchema):
     class Meta:
-        additional = ('user_id', 'dataset', 'last_access')
+        additional = ('user_id', 'entry', 'last_access')
 
-    dataset = ma.Nested(DatasetNamedIdSchema)
+    entry = ma.Nested(EntrySummarySchema)

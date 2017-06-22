@@ -88,7 +88,7 @@ class App extends React.Component<AppProps, any> {
                         Broad Institute, Cancer Program Data Science {(new Date()).getFullYear()}
                     </div>
                     <div className="login-box pull-right bottom-page-text">
-                        Rev 1.6.0
+                        Rev 2.9.3
                     </div>
                 </footer>
             </div>
@@ -214,6 +214,7 @@ tapi.get_user().then((user: User) => {
                 <IndexRoute component={Home}/>
                 <Route path="dataset/:datasetId" component={DatasetView as any}/>
                 <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any}/>
+                <Route path="dataset_version/:datasetVersionId" component={DatasetView as any}/>
                 <Route path="folder/:folderId" component={FolderView as any}/>
                 <Route path="token/" component={ Token as any }/>
                 <Route path="recentlyViewed/" component={ RecentlyViewed as any }/>
