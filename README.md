@@ -171,7 +171,11 @@ Install rhdf5 R library => http://bioconductor.org/packages/release/bioc/html/rh
 
 ## Deployment
 
-Coming soon
+Each commit on the master branch results in a Travis test/build. Travis, on test success, will build an image and push
+it to our AWS EC2 Taiga container.
+
+- Follow the AWS instructions to pull the latest image (once Travis as finished pushing it)
+- `systemctl restart taiga`
 
 ## Migrate the database
 
@@ -193,7 +197,7 @@ We use Git for versioning! If you don't know how to use it, we strongly recommen
 
 ## Authors
 
-- Philip Montgomery - Initial work + advising on the current development
+- Philip Montgomery - Initial work + advising on the current development + data processing
 - Remi Marenco - Prototype + current development
 
 ## Acknowledgments
