@@ -96,6 +96,31 @@ def _validate_columns(progress, col_header):
             progress.failed(message, None)
             raise Exception(message)
 
+def _determine_col_header(tcsv, dialect, progress):
+    tcsv.seek(0)
+    r = csv.reader(tcsv, dialect)
+    col_header = next(r)
+    first_row = next(r)
+
+    # Does the header line up with the number of columns in the row, or do we need to shift it by one? (Such as tables written by R)
+    if len(col_header) == len(first_row):
+        col_header = col_header[1:]
+    else:
+        if len(col_header) + 1 == len(first_row):
+            pass
+        else:
+            message = "On line 2: Expected %d columns, but found %d columns." % (
+                len(col_header), len(first_row))
+            progress.failed(message, None)
+            raise Exception(message)
+
+    # jump back to the beginning
+    tcsv.seek(0)
+    r = csv.reader(tcsv, dialect)
+    # this time skip the header
+    next(r)
+    return col_header, r
+
 
 def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=None, max_size_per_block=DEFAULT_MAX_ELEMENTS_PER_BLOCK, encoding="iso-8859-1"):
     # now we could resize the hdf5 matrix as necessary, or we can make two passes over the data.  Let's start with
@@ -105,13 +130,7 @@ def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=
         tcsv.seek(0)
         row_count, col_count, sha256 = _get_csv_dims(progress, src_csv_file, dialect, encoding)
 
-        tcsv.seek(0)
-        r = csv.reader(tcsv, dialect)
-        col_header = next(r)
-
-        # check to see, does the header line up with the number of columns in the row, or do we need to shift it by one?
-        first_column = 1 if col_header[0] == '' else 0
-        col_header = col_header[first_column:]
+        col_header, r = _determine_col_header(tcsv, dialect, progress)
 
         _validate_columns(progress, col_header)
 

@@ -11,7 +11,7 @@ from taiga2.models import User, Folder, Dataset, Entry, DatasetVersion, DataFile
 from taiga2.controllers import models_controller
 from taiga2.tasks import background_process_new_upload_session_file
 from taiga2.conv.imp import _get_csv_dims
-from taiga2.conv import csv_to_columnar, columnar_to_csv, columnar_to_rds
+from taiga2.conv import csv_to_columnar, columnar_to_csv, columnar_to_rds, csv_to_hdf5, hdf5_to_csv
 
 test_files_folder_path = 'taiga2/tests/test_files'
 
@@ -80,3 +80,20 @@ def test_non_utf8(tmpdir):
 
     # lastly, make sure we don't get an exception when converting to rds because R has its own ideas about encoding
     columnar_to_rds(None, dest, lambda: rds_dest)
+
+def test_matrix_with_full_header_import(tmpdir):
+    r_filename = tmpdir.join("r_style")
+    r_dest = tmpdir.join("r.hdf5")
+    r_final = tmpdir.join("r_final.csv")
+    r_filename.write_binary(b"a,b,c\nd,1,2,3\n")
+    csv_to_hdf5(ProgressStub(), str(r_filename), str(r_dest))
+    hdf5_to_csv(ProgressStub(), str(r_dest), lambda: str(r_final))
+
+    pandas_filename = tmpdir.join("pandas_style")
+    pandas_final = tmpdir.join("pandas_final.csv")
+    pandas_dest = tmpdir.join("pandas.hdf5")
+    pandas_filename.write_binary(b"i,a,b,c\nd,1,2,3\n")
+    csv_to_hdf5(ProgressStub(), str(pandas_filename), str(pandas_dest))
+    hdf5_to_csv(ProgressStub(), str(pandas_dest), lambda: str(pandas_final))
+
+    assert r_final.read_binary() == pandas_final.read_binary()

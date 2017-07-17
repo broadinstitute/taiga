@@ -3,6 +3,34 @@ from collections import namedtuple
 
 Column = namedtuple("Column", ["name", "type"])
 
+class TypeAggregator:
+    def __init__(self):
+        self.couldBeFloat = True
+        self.couldBeInt = True
+
+    def add(self, v):
+        if self.couldBeInt:
+            try:
+                int(v)
+            except ValueError:
+                self.couldBeInt = False
+
+        if not self.couldBeInt and self.couldBeFloat:
+            try:
+                float(v)
+            except ValueError:
+                self.couldBeFloat = False
+
+    def get_type(self):
+        if self.couldBeInt:
+            return int
+
+        if self.couldBeFloat:
+            return float
+
+        return str
+
+
 def sniff(filename, encoding, rows_to_check=None, delimiter="\t"):
     with open(filename, 'rU', encoding=encoding) as fd:
         r = csv.reader(fd, delimiter=delimiter)
@@ -15,11 +43,11 @@ def sniff(filename, encoding, rows_to_check=None, delimiter="\t"):
         else:
             raise Exception("First and second rows have different numbers of columns")
 
-        columnValues = [[] for x in row]
+        columnTypes = [TypeAggregator() for x in row]
         row_count = 0
         while rows_to_check is None or row_count < rows_to_check:
             for i, x in enumerate(row):
-                columnValues[i].append(x)
+                columnTypes[i].add(x)
 
             try:
                 row = next(r)
@@ -28,36 +56,10 @@ def sniff(filename, encoding, rows_to_check=None, delimiter="\t"):
                 break
 
     if hasRowNames:
-        del columnValues[0]
+        del columnTypes[0]
 
-    columns = [Column(col_header[i], determine_type(columnValues[i])) for i in range(len(columnValues))]
+    columns = [Column(col_header[i], columnTypes[i].get_type()) for i in range(len(columnTypes))]
 
     return hasRowNames, columns
 
 
-def determine_type(values):
-    couldBeFloat = True
-    couldBeInt = True
-    for v in values:
-        if couldBeInt:
-            try:
-                int(v)
-            except ValueError:
-                couldBeInt = False
-
-        if not couldBeInt and couldBeFloat:
-            try:
-                float(v)
-            except ValueError:
-                couldBeFloat = False
-
-        if not couldBeFloat and not couldBeInt:
-            break
-
-    if couldBeInt:
-        return int
-
-    if couldBeFloat:
-        return float
-
-    return str
