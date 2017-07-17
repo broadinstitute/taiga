@@ -396,7 +396,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             var folder: Folder.Folder = this.state.folder;
 
             var parent_links = folder.parents.map((p: Folder.NamedId, index: number) => {
-                return <Link key={index} to={relativePath("folder/"+p.id)}>{p.name}</Link>
+                return <span key={index}>
+                    <Link to={relativePath("folder/"+p.id)}>{p.name}</Link>
+                    {folder.parents.length != index + 1 &&
+                        <span>, </span>
+                    }
+                </span>
             });
 
             folderEntriesTableFormatted = folder.entries.map((entry: Folder.FolderEntries, index: number) => {
