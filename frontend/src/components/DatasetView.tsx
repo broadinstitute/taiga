@@ -477,6 +477,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
             let permaname = null;
             let r_block = null;
+            let python_block = null;
             let leftNavsDialogs = null;
 
             if (dataset && datasetVersion) {
@@ -491,6 +492,18 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         return `${r_name} <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
                     });
                     r_block += r_block_lines.join("\n")
+                }
+
+                python_block = "from taigapy import TaigaClient\n";
+                python_block += "tc = TaigaClient(token_path=myTxtWithTokenInside)\n";
+                if (datasetVersion.datafiles.length == 1) {
+                    python_block += `data = tc.get(name='${permaname}', version='${datasetVersion.version}')` ;
+                } else {
+                    let python_block_lines = datasetVersion.datafiles.map((df, index) => {
+                        let python_name = df.name;
+                        return `${python_name} = tc.get(data.name='${permaname}', data.version=${datasetVersion.version}, file='${df.name}')`;
+                    });
+                    python_block += python_block_lines.join("\n")
                 }
 
                 leftNavsDialogs = (
@@ -580,6 +593,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     </table>
                     <h2>Reading from R</h2>
                     <pre>{r_block}</pre>
+                    <h2>Reading from Python</h2>
+                    <pre>{python_block}</pre>
                 </span>
                     }
                 </div>
