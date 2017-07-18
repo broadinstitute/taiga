@@ -512,7 +512,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 } else {
                     let python_block_lines = datasetVersion.datafiles.map((df, index) => {
                         let python_name = df.name;
-                        return `${python_name} = tc.get(data.name='${permaname}', data.version=${datasetVersion.version}, file='${df.name}')`;
+                        return `${python_name} = tc.get(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')`;
                     });
                     python_block += python_block_lines.join("\n")
                 }
