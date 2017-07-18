@@ -385,7 +385,18 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             let entries = null;
             let weHaveProvenanceGraphs = null;
             if (datasetVersion) {
-                entries = datasetVersion.datafiles.map((df, index) => {
+                entries = datasetVersion.datafiles.sort((datafile_one, datafile_two) => {
+                    //
+                    if (datafile_one.name == datafile_two.name) {
+                        return 0;
+                    }
+                    else if (datafile_one.name > datafile_two.name ){
+                        return 1;
+                    }
+                    else {
+                        return -1;
+                    }
+                }).map((df, index) => {
                     let conversionTypesOutput = df.allowed_conversion_type.map((conversionType, index) => {
                         // TODO: If we have the same name for datafiles, we will run into troubles
                         return <span key={conversionType}>

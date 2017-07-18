@@ -171,7 +171,7 @@ Install rhdf5 R library => http://bioconductor.org/packages/release/bioc/html/rh
 
 ## Deployment
 
-Each commit on the master branch results in a Travis test/build. Travis, on test success, will build an image and push
+Each commit on the taiga2 branch results in a Travis test/build. Travis, on test success, will build an image and push
 it to our AWS EC2 Taiga container.
 
 - Follow the AWS instructions to pull the latest image (once Travis as finished pushing it)
