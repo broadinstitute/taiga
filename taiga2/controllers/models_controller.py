@@ -296,21 +296,13 @@ def get_first_dataset_version(dataset_id):
 
 
 def get_latest_dataset_version(dataset_id):
-    max_version_subquery = db.session.query(func.max(DatasetVersion.counter)).filter(
-        DatasetVersion.dataset_id == dataset_id)
-    dataset_version_latest = db.session.query(DatasetVersion).filter(DatasetVersion.dataset_id,
-                                                                     DatasetVersion.counter == max_version_subquery)
-
-    return dataset_version_latest
-
-
-def get_latest_dataset_version(dataset_id):
     dataset = get_dataset(dataset_id)
     max_version = 0
     dataset_version_latest_version = None
     for dataset_version in dataset.dataset_versions:
         if dataset_version.version > max_version:
             dataset_version_latest_version = dataset_version
+            max_version = dataset_version.version
 
     return dataset_version_latest_version
 
