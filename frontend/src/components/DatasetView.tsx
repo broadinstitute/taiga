@@ -386,11 +386,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             let weHaveProvenanceGraphs = null;
             if (datasetVersion) {
                 entries = datasetVersion.datafiles.sort((datafile_one, datafile_two) => {
-                    //
-                    if (datafile_one.name == datafile_two.name) {
+                    let datafile_one_upper = datafile_one.name.toUpperCase();
+                    let datafile_two_upper = datafile_two.name.toUpperCase();
+                    if (datafile_one_upper == datafile_two_upper) {
                         return 0;
                     }
-                    else if (datafile_one.name > datafile_two.name ){
+                    else if (datafile_one_upper > datafile_two_upper ){
                         return 1;
                     }
                     else {
