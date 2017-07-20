@@ -833,6 +833,9 @@ def copy_datafile(original_datafile_id):
     # Db will assign a new id
     _copy_datafile.id = None
 
+    # We also remove the link from the old dataset_version_id to prevent the unique constraint to trigger
+    _copy_datafile.dataset_version = None
+
     db.session.add(_copy_datafile)
     db.session.commit()
 
