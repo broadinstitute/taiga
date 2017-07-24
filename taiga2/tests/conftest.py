@@ -46,7 +46,9 @@ def app(request, mock_s3, mock_sts):
         'CELERY_RESULT_BACKEND': None,
         # TODO: Change this. http://docs.celeryproject.org/en/latest/userguide/testing.html
         'CELERY_ALWAYS_EAGER': True,
-        'S3_BUCKET': 'Test_Bucket'
+        'S3_BUCKET': 'Test_Bucket',
+        'ENV': 'Test',
+        'REPORT_EXCEPTIONS': False
     }
     api_app, _app = create_app(settings_override)
 
