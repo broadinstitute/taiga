@@ -20,4 +20,4 @@ S3_BUCKET = ''
 SQLALCHEMY_DATABASE_URI = 'sqlite://'
 
 # Exception to StackDriver
-REPORT_EXCEPTIONS = True
+REPORT_EXCEPTIONS = False
