@@ -407,7 +407,10 @@ def get_datafile_short_summary(dataset_permaname=None,
                                datafile_name=None):
     datafile = models_controller.find_datafile(dataset_permaname, version, dataset_version_id, datafile_name)
 
-    return datafile.short_summary
+    if datafile:
+        return flask.jsonify(datafile.short_summary)
+    else:
+        flask.abort(404)
 
 
 def entry_is_valid(entry):
