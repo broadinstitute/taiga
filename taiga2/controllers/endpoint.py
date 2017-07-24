@@ -401,6 +401,15 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
     return flask.jsonify(result)
 
 
+def get_datafile_short_summary(dataset_permaname=None,
+                               version=None,
+                               dataset_version_id=None,
+                               datafile_name=None):
+    datafile = models_controller.find_datafile(dataset_permaname, version, dataset_version_id, datafile_name)
+
+    return datafile.short_summary
+
+
 def entry_is_valid(entry):
     # while celery eager eval is enabled, we cannot use AsyncResult so just assume any existing
     # cache value is fine.
