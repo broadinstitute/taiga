@@ -19,7 +19,7 @@ setup(
         'celery==4.0.0',
         'connexion==1.0.129',
         'redis==2.10.5',
-        'requests==2.11.0',
+        'requests>=2.13.0',
         'six==1.10.0',
         'SQLAlchemy==1.1.4',
         'Flask-Migrate==2.0.3',
