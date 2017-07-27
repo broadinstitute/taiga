@@ -21,6 +21,10 @@ const inputTokenStyle = {
     width: '100%'
 };
 
+const antiPadding = {
+    paddingLeft: '0px'
+};
+
 const clipboardButtonStyle = {};
 
 let tapi: TaigaApi = null;
@@ -70,9 +74,17 @@ export class Token extends React.Component<TokenProps, TokenState> {
                         <h1>Your token</h1>
                     </Row>
                     <Row>
+                        <p>
+                            Please, place the string below in <code>`~/.taiga/token`</code> to use taigaR and taigaPy.
+                        </p>
+                        <p>
+                            <a href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse" target="_blank">More information.</a>
+                        </p>
+                    </Row>
+                    <Row>
                         <form>
                             <FormGroup>
-                                <Col xs={6} md={6}>
+                                <Col xs={6} md={6} style={antiPadding}>
                                     <InputGroup>
                                         <FormControl
                                             type="text"

@@ -507,7 +507,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 }
 
                 python_block = "from taigapy import TaigaClient\n";
-                python_block += "tc = TaigaClient(token_path=myTxtWithTokenInside)\n";
+                python_block += "tc = TaigaClient()\n";
                 if (datasetVersion.datafiles.length == 1) {
                     python_block += `data = tc.get(name='${permaname}', version='${datasetVersion.version}')` ;
                 } else {
@@ -603,9 +603,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         {entries}
                         </tbody>
                     </table>
-                    <h2>Reading from R</h2>
+                        <h2>Reading from R (<a href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse" target="_blank">TaigaR</a>)</h2>
                     <pre>{r_block}</pre>
-                    <h2>Reading from Python</h2>
+                        <h2>
+                            Reading from Python (<a href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse" target="_blank">Taigapy</a>)
+                        </h2>
                     <pre>{python_block}</pre>
                 </span>
                     }
