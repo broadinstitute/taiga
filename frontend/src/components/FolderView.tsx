@@ -17,10 +17,12 @@ import {LoadingOverlay} from "../utilities/loading";
 
 import {Glyphicon} from "react-bootstrap";
 import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit} from "react-bootstrap-table";
-import {Dataset} from "../models/models";
+import {Dataset, NamedId} from "../models/models";
 import {DatasetVersion} from "../models/models";
 import {isUndefined} from "util";
 import {DatasetFullDatasetVersions, BootstrapTableFolderEntry} from "../models/models";
+import int = DataPipeline.int;
+import {debug} from "util";
 
 export interface FolderViewProps {
     params: any
@@ -363,6 +365,34 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         this.setState({selection: updated_selection});
     }
 
+    wrap_parent_link(folder_named_id: NamedId, index: int, total_length: int) {
+        return <span key={index}>
+                    <Link to={relativePath("folder/"+folder_named_id.id)}>{folder_named_id.name}</Link>
+                    {total_length != index + 1 &&
+                    <span>, </span>
+                    }
+                </span>
+    }
+
+    get_parent_links(parents: Array<NamedId>, public_only: Boolean, is_owner: Boolean) {
+        let parent_links = [];
+        if(!public_only || is_owner) {
+            parent_links = parents.map((p: NamedId, index: number) => {
+                return this.wrap_parent_link(p, index, parents.length);
+            });
+        }
+        else {
+            // We only show the public folder if a parent is public
+            // TODO: Might need a recursivity here to check the parents of the parents of...if it is in public
+            let public_named_id_folder = parents.filter(function(parent_folder: NamedId) {
+               return parent_folder.id == 'public';
+            });
+            let link_parent_public = this.wrap_parent_link(public_named_id_folder[0], 0, 1);
+            parent_links.push(link_parent_public);
+        }
+        return parent_links;
+    }
+
     render() {
         let entriesOutput: Array<any> = [];
         let navItems: MenuItem[] = [];
@@ -395,14 +425,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
             var folder: Folder.Folder = this.state.folder;
 
-            var parent_links = folder.parents.map((p: Folder.NamedId, index: number) => {
-                return <span key={index}>
-                    <Link to={relativePath("folder/"+p.id)}>{p.name}</Link>
-                    {folder.parents.length != index + 1 &&
-                        <span>, </span>
-                    }
-                </span>
-            });
+            let parent_public = folder.parents.some((parent) => { return parent.id == 'public'; });
+            let is_owner = (folder.creator && folder.creator.id == currentUser);
+            var parent_links = this.get_parent_links(folder.parents, parent_public, is_owner);
 
             folderEntriesTableFormatted = folder.entries.map((entry: Folder.FolderEntries, index: number) => {
                 let latestDatasetVersion = this.state.datasetLastDatasetVersion[entry.id];
@@ -493,7 +518,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             isVisible={this.state.showEditDescription}
                             cancel={ () => { this.setState({showEditDescription: false})} }
                             save={ (description:string) => {
-                                this.setState({showEditDescription: false})
+                                this.setState({showEditDescription: false});
                                 this.updateDescription(description);
                             }}/>
 
