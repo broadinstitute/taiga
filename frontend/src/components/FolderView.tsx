@@ -1,6 +1,8 @@
 import * as React from "react";
 import {Link} from 'react-router';
 import * as update from 'immutability-helper';
+import {Glyphicon} from "react-bootstrap";
+import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit} from "react-bootstrap-table";
 
 import {LeftNav, MenuItem} from "./LeftNav";
 import * as Folder from "../models/models";
@@ -10,17 +12,17 @@ import * as Dialogs from "./Dialogs";
 import * as Upload from "./modals/Upload";
 import {NotFound} from "./NotFound";
 import {TreeView} from "./modals/TreeView";
+import {StarFavorite} from "./StarFavorite";
 
 import {toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
 import {LoadingOverlay} from "../utilities/loading";
 
-import {Glyphicon} from "react-bootstrap";
-import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit} from "react-bootstrap-table";
 import {Dataset, NamedId} from "../models/models";
 import {DatasetVersion} from "../models/models";
 import {isUndefined} from "util";
 import {DatasetFullDatasetVersions, BootstrapTableFolderEntry} from "../models/models";
+
 import int = DataPipeline.int;
 import {debug} from "util";
 
@@ -53,6 +55,8 @@ export interface FolderViewState {
     actionIntoFolderHelp?: string;
 
     loading?: boolean;
+
+    isFavorite?: boolean;
 }
 
 export class Conditional extends React.Component<any, any> {
@@ -100,6 +104,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         this.doFetch().then(() => {
             this.logAccess();
         });
+
+        // TODO: Change that once the api has been changed to receive the fact the folder is favorite or not
+        this.toggleFavorite();
     }
 
     doFetch() {
@@ -368,15 +375,15 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     wrap_parent_link(folder_named_id: NamedId, index: int, total_length: int) {
         return <span key={index}>
                     <Link to={relativePath("folder/"+folder_named_id.id)}>{folder_named_id.name}</Link>
-                    {total_length != index + 1 &&
-                    <span>, </span>
-                    }
+            {total_length != index + 1 &&
+            <span>, </span>
+            }
                 </span>
     }
 
     get_parent_links(parents: Array<NamedId>, public_only: Boolean, is_owner: Boolean) {
         let parent_links = [];
-        if(!public_only || is_owner) {
+        if (!public_only || is_owner) {
             parent_links = parents.map((p: NamedId, index: number) => {
                 return this.wrap_parent_link(p, index, parents.length);
             });
@@ -384,13 +391,28 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         else {
             // We only show the public folder if a parent is public
             // TODO: Might need a recursivity here to check the parents of the parents of...if it is in public
-            let public_named_id_folder = parents.filter(function(parent_folder: NamedId) {
-               return parent_folder.id == 'public';
+            let public_named_id_folder = parents.filter(function (parent_folder: NamedId) {
+                return parent_folder.id == 'public';
             });
             let link_parent_public = this.wrap_parent_link(public_named_id_folder[0], 0, 1);
             parent_links.push(link_parent_public);
         }
         return parent_links;
+    }
+
+    // Favorite section
+    toggleFavorite() {
+        if (this.state.isFavorite == true) {
+            this.setState({
+                isFavorite: false
+            })
+        }
+        else {
+            this.setState({
+                isFavorite: true
+            })
+        }
+
     }
 
     render() {
@@ -425,7 +447,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
             var folder: Folder.Folder = this.state.folder;
 
-            let parent_public = folder.parents.some((parent) => { return parent.id == 'public'; });
+            let parent_public = folder.parents.some((parent) => {
+                return parent.id == 'public';
+            });
             let is_owner = (folder.creator && folder.creator.id == currentUser);
             var parent_links = this.get_parent_links(folder.parents, parent_public, is_owner);
 
@@ -548,7 +572,10 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
                         />
 
-                        <h1>{folder.name}</h1>
+                        <h1>
+                            <StarFavorite isFavorite={this.state.isFavorite}
+                                          onFavoriteClick={ (e) => this.toggleFavorite()}/> {folder.name}
+                        </h1>
 
                         <Conditional show={ parent_links.length > 0 &&
                             ((folder.creator && folder.creator.id == currentUser) ||
