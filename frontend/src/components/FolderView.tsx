@@ -118,6 +118,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         let datasetsLatestDv: {[dataset_id: string]: Folder.DatasetVersion} = {};
         let datasetsVersion: {[datasetVersion_id: string]: Folder.DatasetVersion} = {};
         let _folder: Folder.Folder = null;
+
         return tapi.get_folder(this.props.params.folderId).then(folder => {
                 _folder = folder;
                 return folder.entries
