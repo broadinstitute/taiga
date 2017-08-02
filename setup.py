@@ -20,6 +20,7 @@ setup(
         'connexion==1.0.129',
         'redis==2.10.5',
         'requests==2.13.0',
+        'setuptools==35.0.2',
         'six==1.10.0',
         'SQLAlchemy==1.1.4',
         'Flask-Migrate==2.0.3',
