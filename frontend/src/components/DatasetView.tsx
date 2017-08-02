@@ -483,7 +483,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     }
                 },
                 {
-                    label: "Copy to...", action: () => {
+                    label: "Link to...", action: () => {
                     this.copyTo("");
                 }
                 }
@@ -560,7 +560,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     />
 
                     <Dialogs.InputFolderId
-                        actionDescription="copy this dataset into it"
+                        actionDescription="link this dataset into it"
                         isVisible={ this.state.showInputFolderId }
                         cancel={ () => { this.setState({showInputFolderId: false}) }}
                         save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}

@@ -219,9 +219,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         if (actionName == "move") {
             actionDescription = "move the selected file(s) into it";
         }
-        else if (actionName == "copy") {
+        else if (actionName == "link") {
             this.setState({initFolderId: ""});
-            actionDescription = "copy the selected file(s) into it";
+            actionDescription = "link the selected file(s) into it";
         }
         else if (actionName == "linkToHome") {
             this.setState({initFolderId: this.state.currentUser.home_folder_id});
@@ -249,7 +249,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         if (this.state.actionName == "move") {
             tapi.move_to_folder(this.state.selection, this.state.folder.id, folderId).then(() => this.afterAction());
         }
-        else if (this.state.actionName == "copy" || this.state.actionName == "linkToHome") {
+        else if (this.state.actionName == "link" || this.state.actionName == "linkToHome") {
             tapi.copy_to_folder(this.state.selection, folderId).then(() => this.afterAction());
         }
         else if (this.state.actionName == "currentFolderLinkToHome") {
@@ -508,8 +508,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     }
                 });
                 navItems.push({
-                    label: "Copy to...", action: () => {
-                        this.openActionTo("copy");
+                    label: "Link to...", action: () => {
+                        this.openActionTo("link");
                     }
                 });
             }
