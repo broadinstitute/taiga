@@ -19,7 +19,8 @@ setup(
         'celery==4.0.0',
         'connexion==1.0.129',
         'redis==2.10.5',
-        'requests==2.11.0',
+        'requests==2.13.0',
+        'setuptools==35.0.2',
         'six==1.10.0',
         'SQLAlchemy==1.1.4',
         'Flask-Migrate==2.0.3',
@@ -35,6 +36,7 @@ setup(
         'python-magic==0.4.12',
         'h5py==2.6.0',
         'numpy==1.11.3',
-        'psycopg2==2.6.2'
+        'psycopg2==2.6.2',
+        'google-cloud-error-reporting==0.25'
     ],
 )

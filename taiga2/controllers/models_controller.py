@@ -296,21 +296,13 @@ def get_first_dataset_version(dataset_id):
 
 
 def get_latest_dataset_version(dataset_id):
-    max_version_subquery = db.session.query(func.max(DatasetVersion.counter)).filter(
-        DatasetVersion.dataset_id == dataset_id)
-    dataset_version_latest = db.session.query(DatasetVersion).filter(DatasetVersion.dataset_id,
-                                                                     DatasetVersion.counter == max_version_subquery)
-
-    return dataset_version_latest
-
-
-def get_latest_dataset_version(dataset_id):
     dataset = get_dataset(dataset_id)
     max_version = 0
     dataset_version_latest_version = None
     for dataset_version in dataset.dataset_versions:
         if dataset_version.version > max_version:
             dataset_version_latest_version = dataset_version
+            max_version = dataset_version.version
 
     return dataset_version_latest_version
 
@@ -840,6 +832,9 @@ def copy_datafile(original_datafile_id):
     _copy_datafile = original_datafile
     # Db will assign a new id
     _copy_datafile.id = None
+
+    # We also remove the link from the old dataset_version_id to prevent the unique constraint to trigger
+    _copy_datafile.dataset_version = None
 
     db.session.add(_copy_datafile)
     db.session.commit()

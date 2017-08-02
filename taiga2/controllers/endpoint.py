@@ -298,8 +298,6 @@ def create_dataset(sessionDatasetInfo):
 
 
 def create_new_dataset_version(datasetVersionMetadata):
-    print("We asked to create a new dataset with these informations {}!".format(datasetVersionMetadata))
-
     session_id = datasetVersionMetadata['sessionId']
     dataset_id = datasetVersionMetadata['datasetId']
     new_description = datasetVersionMetadata['newDescription']
@@ -401,6 +399,18 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
         result['urls'] = urls
 
     return flask.jsonify(result)
+
+
+def get_datafile_short_summary(dataset_permaname=None,
+                               version=None,
+                               dataset_version_id=None,
+                               datafile_name=None):
+    datafile = models_controller.find_datafile(dataset_permaname, version, dataset_version_id, datafile_name)
+
+    if datafile:
+        return flask.jsonify(datafile.short_summary)
+    else:
+        flask.abort(404)
 
 
 def entry_is_valid(entry):

@@ -4,8 +4,11 @@ import logging
 
 from taiga2.auth import init_backend_auth
 from taiga2.conf import load_config
+from taiga2.utils.exception_reporter import ExceptionReporter
 
 log = logging.getLogger(__name__)
+
+exception_reporter = ExceptionReporter()
 
 
 def create_db():
@@ -45,10 +48,28 @@ def create_app(settings_override=None, settings_file=None):
 
     init_backend_auth(app)
 
+    # Exception report with StackDriver
+    exception_reporter.init_app(app=app, service_name="taiga-" + app.config["ENV"])
+    register_errorhandlers(app=app)
+
     return api_app, app
 
 
 def create_only_flask_app(settings_override=None, settings_file=None):
     api_app, app = create_app(settings_override=settings_override, settings_file=settings_file)
     return app
+
+
+def register_errorhandlers(app):
+    """Register error handlers."""
+    def render_error(error):
+        """Render error template."""
+        # submit this exception to stackdriver if properly configured
+        exception_reporter.report()
+        # If a HTTPException, pull the `code` attribute; default to 500
+        error_code = getattr(error, 'code', 500)
+        return error
+    for errcode in [401, 404, 500]:
+        app.errorhandler(errcode)(render_error)
+    return None
 

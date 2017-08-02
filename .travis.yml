@@ -23,6 +23,7 @@ install:
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment -c bioconda python=$TRAVIS_PYTHON_VERSION bioconductor-rhdf5 numpy=1.11.3 h5py=2.6.0 sqlalchemy=1.1.4 psycopg2=2.6.2 pyyaml=3.12
   - source activate test-environment
+  - pip install -U pip setuptools
   - python setup.py install
   # Add the aws cli for docker build/push
   - pip install awscli

@@ -8,7 +8,7 @@ from flask_migrate import Migrate
 from sqlalchemy import MetaData
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy import event
+from sqlalchemy import event, UniqueConstraint
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -226,6 +226,10 @@ class DataFile(db.Model):
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)
 
+    __table_args__ = (
+        UniqueConstraint("dataset_version_id", "name"),
+    )
+
 
 def get_allowed_conversion_type(datafile_type):
     if datafile_type == DataFile.DataFileType.HDF5:
@@ -271,6 +275,10 @@ class DatasetVersion(Entry):
 
     # Filled out by the server
     version = db.Column(db.Integer)
+
+    __table_args__ = (
+        UniqueConstraint("dataset_id", "version"),
+    )
 
     # TODO: See how to manage the status (persist.py)
 

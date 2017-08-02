@@ -13,6 +13,8 @@ interface InputFolderIdProps extends DialogProps {
 
     validationState?: "success" | "warning" | "error";
     help?: string;
+
+    initFolderId?: string;
 }
 
 interface InputFolderIdState extends DialogState {
@@ -196,17 +198,18 @@ export class InputFolderId extends React.Component<InputFolderIdProps, InputFold
 
     componentWillMount() {
         this.setState({
-            folderId: ""
+            folderId: this.props.initFolderId
         })
     }
 
     componentWillReceiveProps(nextProps: any) {
         // When we open the component, we reset it
-        if (nextProps.isVisible && this.props.isVisible != nextProps.isVisible) {
-            this.setState({
-                folderId: ""
-            })
-        }
+        this.setState({
+                folderId: nextProps.initFolderId
+        });
+        // if (nextProps.isVisible && this.props.isVisible != nextProps.isVisible) {
+        //
+        // }
     }
 
     handleChange(e) {

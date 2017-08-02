@@ -33,10 +33,13 @@ export interface DatasetViewState {
     exportError?: boolean;
     exportErrorInfo?: {datasetVersionId: string, datafileName: string, conversionType: string}
 
+    initInputFolderId?: string;
     showInputFolderId?: boolean;
     callbackIntoFolderAction?: Function;
 
     fetchError?: string;
+
+
 }
 
 const buttonUploadNewVersionStyle = {
@@ -280,10 +283,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     // Move/Copy
-    copyTo() {
+    copyTo(alreadyFilledFolderId: string) {
         // TODO: Change the string telling the action to an enum, like in the backend
-
         this.setState({
+            initInputFolderId: alreadyFilledFolderId,
             callbackIntoFolderAction: (folderId) => {
                 tapi.copy_to_folder([this.state.dataset.id], folderId).then(() => this.afterAction());
             },
@@ -385,7 +388,19 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             let entries = null;
             let weHaveProvenanceGraphs = null;
             if (datasetVersion) {
-                entries = datasetVersion.datafiles.map((df, index) => {
+                entries = datasetVersion.datafiles.sort((datafile_one, datafile_two) => {
+                    let datafile_one_upper = datafile_one.name.toUpperCase();
+                    let datafile_two_upper = datafile_two.name.toUpperCase();
+                    if (datafile_one_upper == datafile_two_upper) {
+                        return 0;
+                    }
+                    else if (datafile_one_upper > datafile_two_upper ){
+                        return 1;
+                    }
+                    else {
+                        return -1;
+                    }
+                }).map((df, index) => {
                     let conversionTypesOutput = df.allowed_conversion_type.map((conversionType, index) => {
                         // TODO: If we have the same name for datafiles, we will run into troubles
                         return <span key={conversionType}>
@@ -456,12 +471,20 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 // },
                 {
                     label: "Create new version", action: () => {
-                    this.showUploadNewVersion();
-                }
+                        this.showUploadNewVersion();
+                    }
                 },
                 {
-                    label: "Copy to...", action: () => {
-                    this.copyTo();
+                    label: "Link to Home", action: () => {
+                        // TODO: Fetch the current user only once, and reuse it as a state OR better, get it as a props from parent
+                        tapi.get_user().then(user => {
+                            this.copyTo(user.home_folder_id);
+                        })
+                    }
+                },
+                {
+                    label: "Link to...", action: () => {
+                    this.copyTo("");
                 }
                 }
                 // {
@@ -477,6 +500,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
             let permaname = null;
             let r_block = null;
+            let python_block = null;
             let leftNavsDialogs = null;
 
             if (dataset && datasetVersion) {
@@ -493,6 +517,18 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     r_block += r_block_lines.join("\n")
                 }
 
+                python_block = "from taigapy import TaigaClient\n";
+                python_block += "tc = TaigaClient()\n";
+                if (datasetVersion.datafiles.length == 1) {
+                    python_block += `data = tc.get(name='${permaname}', version='${datasetVersion.version}')` ;
+                } else {
+                    let python_block_lines = datasetVersion.datafiles.map((df, index) => {
+                        let python_name = df.name;
+                        return `${python_name} = tc.get(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')`;
+                    });
+                    python_block += python_block_lines.join("\n")
+                }
+
                 leftNavsDialogs = (
                     <span>
                     <Dialogs.EditName isVisible={this.state.showEditName}
@@ -502,7 +538,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             this.setState({showEditName: false});
                             this.updateName(name)
                             } }/>
-                    < Dialogs.EditDescription isVisible={this.state.showEditDescription}
+                    <Dialogs.EditDescription isVisible={this.state.showEditDescription}
                                               cancel={ () => { this.setState({showEditDescription: false}) } }
                                               initialValue={this.state.datasetVersion.description}
                                               save={ (description: string) => {
@@ -524,10 +560,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     />
 
                     <Dialogs.InputFolderId
-                        actionDescription="copy this dataset into it"
+                        actionDescription="link this dataset into it"
                         isVisible={ this.state.showInputFolderId }
                         cancel={ () => { this.setState({showInputFolderId: false}) }}
                         save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
+                        initFolderId={ this.state.initInputFolderId }
                     />
                 </span>
                 );
@@ -578,8 +615,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         {entries}
                         </tbody>
                     </table>
-                    <h2>Reading from R</h2>
+                        <h2>Reading from R (<a href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse" target="_blank">TaigaR</a>)</h2>
                     <pre>{r_block}</pre>
+                        <h2>
+                            Reading from Python (<a href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse" target="_blank">Taigapy</a>)
+                        </h2>
+                    <pre>{python_block}</pre>
                 </span>
                     }
                 </div>

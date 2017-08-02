@@ -1,6 +1,7 @@
 from datetime import datetime
 import flask
 import pytest
+import uuid
 
 from flask_sqlalchemy import SessionBase
 from freezegun import freeze_time
@@ -50,8 +51,9 @@ def test_create_upload_session_file(app, session: SessionBase, new_upload_sessio
 
     sid = new_upload_session.id
 
-    response_json_create_upload_session_file = endpoint.create_upload_session_file(S3UploadedFileMetadata=S3UploadedFileMetadata,
-                                                                                   sid=sid)
+    response_json_create_upload_session_file = endpoint.create_upload_session_file(
+        S3UploadedFileMetadata=S3UploadedFileMetadata,
+        sid=sid)
     task_id = get_data_from_flask_jsonify(response_json_create_upload_session_file)
 
     assert task_id is not None
@@ -77,7 +79,6 @@ def new_upload_session_file(session: SessionBase, new_upload_session):
         'filename': file_name
     }
 
-
     sid = new_upload_session.id
 
     endpoint.create_upload_session_file(S3UploadedFileMetadata=S3UploadedFileMetadata,
@@ -89,7 +90,8 @@ def new_upload_session_file(session: SessionBase, new_upload_session):
 def test_create_dataset(session: SessionBase, new_upload_session_file):
     _new_upload_session_id = new_upload_session_file.session.id
 
-    models_controller.update_upload_session_file_summaries(new_upload_session_file.id, "short_summary_test", "long_summary_test")
+    models_controller.update_upload_session_file_summaries(new_upload_session_file.id, "short_summary_test",
+                                                           "long_summary_test")
 
     dataset_name = 'Dataset Name'
     dataset_description = 'Dataset Description'
@@ -176,11 +178,11 @@ def new_datafile():
     new_datafile_url = "http://google.com"
 
     _new_datafile = models_controller.add_datafile(name=new_datafile_name,
-                                    s3_bucket="broadtaiga2prototype",
-                                    s3_key=models_controller.generate_convert_key(),
-                                    type=DataFile.DataFileType.Raw,
-                                    short_summary="short",
-                                    long_summary="long")
+                                                   s3_bucket="broadtaiga2prototype",
+                                                   s3_key=models_controller.generate_convert_key(),
+                                                   type=DataFile.DataFileType.Raw,
+                                                   short_summary="short",
+                                                   long_summary="long")
 
     return _new_datafile
 
@@ -192,11 +194,12 @@ def new_dataset(new_datafile):
     new_dataset_permaname = generate_permaname(new_dataset_name)
 
     _new_dataset = models_controller.add_dataset(name=new_dataset_name,
-                                  permaname=new_dataset_permaname,
-                                  description="New dataset description",
-                                  datafiles_ids=[new_datafile.id])
+                                                 permaname=new_dataset_permaname,
+                                                 description="New dataset description",
+                                                 datafiles_ids=[new_datafile.id])
 
     return _new_dataset
+
 
 def test_get_dataset_version_from_dataset(session: SessionBase, new_dataset):
     import werkzeug.exceptions
@@ -215,6 +218,7 @@ def test_get_dataset_version_from_dataset(session: SessionBase, new_dataset):
     # test fetching non-existant dataset results in 404
     with pytest.raises(werkzeug.exceptions.NotFound):
         endpoint.get_dataset_version_from_dataset("invalid", "invalid")
+
 
 def test_get_dataset_two_ways(session: SessionBase, new_dataset):
     import werkzeug.exceptions

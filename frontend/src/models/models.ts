@@ -318,7 +318,14 @@ export class BootstrapTableFolderEntry {
         this.url = this.processFolderEntryUrl(entry, latestDatasetVersion, fullDatasetVersion);
 
         this.creation_date = this.processCreationDate(entry, latestDatasetVersion);
-        this.creator_name = entry.creator.name;
+
+        // TODO: Think about what to do with an entry without a user
+        if (entry.creator && entry.creator.name) {
+            this.creator_name = entry.creator.name;
+        }
+        else {
+            this.creator_name = undefined;
+        }
 
         this.type = entry.type;
     }

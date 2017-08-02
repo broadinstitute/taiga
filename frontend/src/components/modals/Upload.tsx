@@ -129,6 +129,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             this.setState({
                 filesStatus: new Array<FileUploadStatus>(),
                 newDatasetVersion: undefined,
+                descriptionValue: this.props.previousDescription,
                 previousVersionFilesIdsSelected: [],
                 validationState: null,
                 help: null
