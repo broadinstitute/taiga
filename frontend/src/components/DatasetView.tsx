@@ -33,10 +33,13 @@ export interface DatasetViewState {
     exportError?: boolean;
     exportErrorInfo?: {datasetVersionId: string, datafileName: string, conversionType: string}
 
+    initInputFolderId?: string;
     showInputFolderId?: boolean;
     callbackIntoFolderAction?: Function;
 
     fetchError?: string;
+
+
 }
 
 const buttonUploadNewVersionStyle = {
@@ -280,10 +283,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     // Move/Copy
-    copyTo() {
+    copyTo(alreadyFilledFolderId: string) {
         // TODO: Change the string telling the action to an enum, like in the backend
-
         this.setState({
+            initInputFolderId: alreadyFilledFolderId,
             callbackIntoFolderAction: (folderId) => {
                 tapi.copy_to_folder([this.state.dataset.id], folderId).then(() => this.afterAction());
             },
@@ -468,12 +471,20 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 // },
                 {
                     label: "Create new version", action: () => {
-                    this.showUploadNewVersion();
-                }
+                        this.showUploadNewVersion();
+                    }
+                },
+                {
+                    label: "Link to Home", action: () => {
+                        // TODO: Fetch the current user only once, and reuse it as a state OR better, get it as a props from parent
+                        tapi.get_user().then(user => {
+                            this.copyTo(user.home_folder_id);
+                        })
+                    }
                 },
                 {
                     label: "Copy to...", action: () => {
-                    this.copyTo();
+                    this.copyTo("");
                 }
                 }
                 // {
@@ -527,7 +538,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             this.setState({showEditName: false});
                             this.updateName(name)
                             } }/>
-                    < Dialogs.EditDescription isVisible={this.state.showEditDescription}
+                    <Dialogs.EditDescription isVisible={this.state.showEditDescription}
                                               cancel={ () => { this.setState({showEditDescription: false}) } }
                                               initialValue={this.state.datasetVersion.description}
                                               save={ (description: string) => {
@@ -553,6 +564,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         isVisible={ this.state.showInputFolderId }
                         cancel={ () => { this.setState({showInputFolderId: false}) }}
                         save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
+                        initFolderId={ this.state.initInputFolderId }
                     />
                 </span>
                 );
