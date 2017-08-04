@@ -115,10 +115,13 @@ def write_str(output, s):
     write_int(output, len(bytes))
     output.write(bytes)
 
-def read_str(fd):
+def read_str(fd, max_len=None):
     length = read_int(fd)
     if length == None:
         return None
+
+    if max_len is not None and length > max_len:
+        raise Exception("In columnar read_str, attempted to read string with max length {}, but read a length of {}".format(max_len, length))
 
     bytes = fd.read(length)
     try:
@@ -345,7 +348,7 @@ def read_column_definitions(fd):
     columns = []
     for i in range(col_count):
         name = read_str(fd)
-        type_name = read_str(fd)
+        type_name = read_str(fd, max_len=10)
         if type_name == 'str':
             columns.append(ColumnDef(name, i, StringSerializer()))
         elif type_name == 'float':
