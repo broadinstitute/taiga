@@ -520,11 +520,30 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 python_block = "from taigapy import TaigaClient\n";
                 python_block += "tc = TaigaClient()\n";
                 if (datasetVersion.datafiles.length == 1) {
-                    python_block += `data = tc.get(name='${permaname}', version='${datasetVersion.version}')` ;
+                    let has_raw = datasetVersion.datafiles[0].allowed_conversion_type.some((conversion_type) => {
+                       return conversion_type === 'raw';
+                    });
+
+                    if (has_raw) {
+                        python_block += `data = tc.download_to_cache(name='${permaname}', version='${datasetVersion.version}')  # download_to_cache for raw`;
+                    }
+                    else {
+                        python_block += `data = tc.get(name='${permaname}', version='${datasetVersion.version}')`;
+                    }
                 } else {
                     let python_block_lines = datasetVersion.datafiles.map((df, index) => {
+                        let has_raw = df.allowed_conversion_type.some((conversion_type) => {
+                            return conversion_type === 'raw';
+                        });
+
                         let python_name = df.name;
-                        return `${python_name} = tc.get(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')`;
+
+                        if(has_raw) {
+                            return `${python_name} = tc.download_to_cache(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')  # download_to_cache for raw`;
+                        }
+                        else {
+                            return `${python_name} = tc.get(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')`;
+                        }
                     });
                     python_block += python_block_lines.join("\n")
                 }
