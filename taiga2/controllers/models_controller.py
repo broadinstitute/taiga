@@ -84,7 +84,8 @@ def get_user_by_email(user_email):
 
 
 def get_user_by_token(user_token):
-    user = db.session.query(User).filter(User.token == user_token).one()
+    q = db.session.query(User).filter(User.token == user_token)
+    user = _fetch_respecting_one_or_none(q, one_or_none=True)
     return user
 
 
