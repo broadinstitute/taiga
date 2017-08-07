@@ -37,6 +37,6 @@ setup(
         'h5py==2.6.0',
         'numpy==1.11.3',
         'psycopg2==2.6.2',
-        'google-cloud-error-reporting==0.25'
+        'google-cloud-error-reporting==0.26'
     ],
 )
