@@ -748,6 +748,23 @@ def changer_owner(entry_id, new_creator_id):
     db.session.add(entry)
     db.session.commit()
 
+
+def can_view(entry_id):
+    """Return True if the current user can view the entry"""
+    entry = get_entry(entry_id=entry_id)
+
+    current_user = get_current_session_user()
+
+    public_folder = get_entry('public')
+
+    if entry.creator == current_user:
+        return True
+    elif public_folder in entry.parents:
+        return True
+    else:
+        return False
+
+
 # </editor-fold>
 
 # <editor-fold desc="DataFile">

@@ -352,7 +352,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             </div>
         }
         else {
-
             let dataset = this.state.dataset;
             let datasetVersion = this.state.datasetVersion;
 
@@ -604,13 +603,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
                     <p>Versions: {versions} </p>
 
-                        { (datasetVersion.creator.id == currentUser ||
-                        dataset.folders.some((folder) => {
-                            return folder.id == "public"
-                        })) &&
                         <p>Contained within {folders}</p>
-                        }
-                        {/*{ancestor_section}*/}
 
                         { this.state.datasetVersion.description &&
                             Dialogs.renderDescription(this.state.datasetVersion.description)

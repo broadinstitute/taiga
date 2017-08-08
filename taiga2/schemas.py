@@ -1,4 +1,5 @@
 from flask_marshmallow import Marshmallow, fields
+from marshmallow import post_dump
 from marshmallow_enum import EnumField
 from marshmallow_oneofschema import OneOfSchema
 

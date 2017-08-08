@@ -35,8 +35,13 @@ def get_dataset(datasetId):
     if dataset is None:
         flask.abort(404)
 
+    # TODO: We should instead check in the controller, but did not want to repeat
+    # Remove folders that are not allowed to be seen
+    allowed_dataset = dataset
+    allowed_dataset.parents = filter_allowed_parents(dataset.parents)
+
     dataset_schema = schemas.DatasetSchema()
-    json_dataset_data = dataset_schema.dump(dataset).data
+    json_dataset_data = dataset_schema.dump(allowed_dataset).data
     return flask.jsonify(json_dataset_data)
 
 
@@ -240,6 +245,8 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
         flask.abort(404)
 
     dataset = dataset_version.dataset
+
+    dataset.parents = filter_allowed_parents(dataset.parents)
 
     json_dv_data = dataset_version_schema.dump(dataset_version).data
     json_dataset_data = dataset_schema.dump(dataset).data
@@ -531,3 +538,13 @@ def import_provenance(provenanceData):
                                    edge_id=edge_id)
 
     return flask.jsonify(new_graph.graph_id)
+
+
+def filter_allowed_parents(parents):
+    allowed_parents = parents
+
+    for index, folder in enumerate(parents):
+        if not models_controller.can_view(folder.id):
+            del allowed_parents[index]
+
+    return allowed_parents
