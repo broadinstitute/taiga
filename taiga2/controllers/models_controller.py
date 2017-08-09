@@ -94,9 +94,6 @@ def get_all_users():
     return users
 
 
-
-
-
 # </editor-fold>
 
 # <editor-fold desc="Folder">
@@ -289,6 +286,7 @@ def get_dataset_from_permaname(dataset_permaname, one_or_none=False):
 
     return _fetch_respecting_one_or_none(q, one_or_none)
 
+
 def get_first_dataset_version(dataset_id):
     dataset_version_first = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.dataset_id == dataset_id, DatasetVersion.version == 1).one()
@@ -426,6 +424,7 @@ def delete_dataset(dataset_id):
     # Clean up
     # TODO: Shouldn't have to clean up, see Cascade and co
 
+
 def add_or_update_dataset_access_log(dataset_id):
     """Create or update, with the current datetime, the access log for the current user, on the dataset
     passed in parameter"""
@@ -461,6 +460,8 @@ def get_datasets_access_logs():
         .filter(UserLog.user_id == current_user.id).all()
 
     return array_access_logs
+
+
 # </editor-fold>
 
 # <editor-fold desc="DatasetVersion">
@@ -588,7 +589,7 @@ def get_dataset_version_provenance(dataset_version_id,
 def get_latest_dataset_version_by_permaname(permaname):
     dataset_version = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
-        .order_by(DatasetVersion.version.desc())\
+        .order_by(DatasetVersion.version.desc()) \
         .first()
 
     return dataset_version
@@ -600,7 +601,7 @@ def get_dataset_version_by_permaname_and_version(permaname,
     # dataset = get_dataset_from_permaname(permaname)
     q = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.version == version) \
-        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
+        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname))
 
     return _fetch_respecting_one_or_none(q, one_or_none)
 
@@ -749,6 +750,19 @@ def changer_owner(entry_id, new_creator_id):
     db.session.commit()
 
 
+def already_seen(entry_id):
+    """Return True if the current user has already seen the entry"""
+    visited_list = db.session.query(UserLog) \
+        .filter(UserLog.entry_id == entry_id) \
+        .filter(UserLog.user == get_current_session_user()) \
+        .all()
+
+    if visited_list:
+        return True
+    else:
+        return False
+
+
 def can_view(entry_id):
     """Return True if the current user can view the entry"""
     entry = get_entry(entry_id=entry_id)
@@ -757,9 +771,14 @@ def can_view(entry_id):
 
     public_folder = get_entry('public')
 
+    # If we are the owner of the entry, we can view it
     if entry.creator == current_user:
         return True
+    # If the entry is in the public_folder, we can view it
     elif public_folder in entry.parents:
+        return True
+    # If the current_user has already seen this entry, via its access log, we can view it
+    elif already_seen(entry_id):
         return True
     else:
         return False
@@ -897,9 +916,9 @@ def get_upload_session_files_from_session(session_id):
 # <editor-fold desc="Upload Session File">
 class EnumS3FolderPath(enum.Enum):
     """Enum which could be useful to have a central way of manipulating the s3 prefixes"""
-    Upload = 'upload/'    # key prefix which all new uploads are put under.  These are transient until conversion completes
+    Upload = 'upload/'  # key prefix which all new uploads are put under.  These are transient until conversion completes
     Convert = 'convert/'  # key prefix used for data converted to canonical form.  These are the authorative source.
-    Export = 'export/'    # key prefix used for results converted for export.  These are transient because they can be re-generated.
+    Export = 'export/'  # key prefix used for results converted for export.  These are transient because they can be re-generated.
 
 
 def generate_convert_key():
@@ -954,10 +973,10 @@ def _add_dl_name(url, dl_name):
 
     p = urlparse(url)
     params = parse_qsl(p.query)
-    params.append( ("response-content-disposition", "attachment; filename=" + dl_name) )
+    params.append(("response-content-disposition", "attachment; filename=" + dl_name))
 
     new_p = ParseResult(scheme=p.scheme, netloc=p.netloc, path=p.path,
-            params=p.params, query=urlencode(params), fragment=p.fragment)
+                        params=p.params, query=urlencode(params), fragment=p.fragment)
 
     return new_p.geturl()
 
@@ -1160,8 +1179,8 @@ def add_node(graph_id,
 
 
 def get_provenance_node(node_id):
-    node = db.session.query(ProvenanceNode)\
-        .filter(ProvenanceNode.node_id == node_id)\
+    node = db.session.query(ProvenanceNode) \
+        .filter(ProvenanceNode.node_id == node_id) \
         .one_or_none()
 
     return node
@@ -1184,8 +1203,8 @@ def add_edge(from_node_id, to_node_id,
 
 
 def get_provenance_edge(edge_id):
-    edge = db.session.query(ProvenanceEdge)\
-        .filter(ProvenanceEdge.edge_id == edge_id)\
+    edge = db.session.query(ProvenanceEdge) \
+        .filter(ProvenanceEdge.edge_id == edge_id) \
         .one_or_none()
 
     return edge
@@ -1196,6 +1215,8 @@ def is_dataset_node_type(node_type):
         return True
     else:
         return False
+
+
 # </editor-fold>
 
 # <editor-fold desc="Utils">
@@ -1203,6 +1224,7 @@ def is_dataset_node_type(node_type):
 
 def _get_datetime_from_string(string_datetime):
     return datetime.strptime(string_datetime, "%Y-%m-%d %H:%M:%S.%f")
+
 
 # </editor-fold>
 
