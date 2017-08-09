@@ -86,6 +86,8 @@ def get_folder(folder_id):
     if folder is None:
         flask.abort(404)
 
+    folder.parents = filter_allowed_parents(folder.parents)
+
     folder_schema = schemas.FolderSchema()
     json_data_folder = folder_schema.dump(folder).data
     return flask.jsonify(json_data_folder)

@@ -397,20 +397,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     get_parent_links(parents: Array<NamedId>, public_only: Boolean, is_owner: Boolean) {
         let parent_links = [];
-        if (!public_only || is_owner) {
-            parent_links = parents.map((p: NamedId, index: number) => {
-                return this.wrap_parent_link(p, index, parents.length);
-            });
-        }
-        else {
-            // We only show the public folder if a parent is public
-            // TODO: Might need a recursivity here to check the parents of the parents of...if it is in public
-            let public_named_id_folder = parents.filter(function (parent_folder: NamedId) {
-                return parent_folder.id == 'public';
-            });
-            let link_parent_public = this.wrap_parent_link(public_named_id_folder[0], 0, 1);
-            parent_links.push(link_parent_public);
-        }
+        parent_links = parents.map((p: NamedId, index: number) => {
+            return this.wrap_parent_link(p, index, parents.length);
+        });
         return parent_links;
     }
 
