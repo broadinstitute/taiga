@@ -8,6 +8,7 @@ import {TaigaApi} from "../models/api";
 
 import * as Dialogs from "./Dialogs";
 import * as Upload from "./modals/Upload";
+import {EntryUsersPermissions} from "./modals/EntryUsersPermissions";
 import {NotFound} from "./NotFound";
 import {TreeView} from "./modals/TreeView";
 
@@ -37,10 +38,13 @@ export interface FolderViewState {
     folder?: Folder.Folder;
     datasetLastDatasetVersion?: {[dataset_id: string]: Folder.DatasetVersion}
     datasetsVersion?: {[datasetVersion_id: string]: Folder.DatasetVersion}
+
     showEditName?: boolean;
     showEditDescription?: boolean;
     showUploadDataset?: boolean;
     showCreateFolder?: boolean;
+    showEditPermissions?: boolean;
+
     error?: string;
     selection?: any;
 
@@ -478,6 +482,11 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         this.openActionTo("currentFolderLinkToHome");
                     }
                 });
+                navItems.push({
+                    label: "Edit permissions", action: () => {
+                        this.setState({showEditPermissions: true})
+                    }
+                });
                 navItems = navItems.concat(add_folder_items);
             } else {
                 // Don't display this if we are in the trash of the user
@@ -569,6 +578,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             cancel={ () => { this.setState({showInputFolderId: false}) }}
                             save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
                             initFolderId={ this.state.initFolderId }
+                        />
+
+                        <EntryUsersPermissions
+                            isVisible={ this.state.showEditPermissions }
+                            cancel={ () => { this.setState({showEditPermissions: false})}}
+                            entry_id={ this.state.folder.id }
                         />
 
                         <h1>{folder.name}</h1>

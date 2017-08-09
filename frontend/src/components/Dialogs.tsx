@@ -41,7 +41,7 @@ export interface DialogState {
 }
 
 // Don't forget to modify modalStyles in Upload.tsx if you change the code of modalStyles
-const modalStyles: any = {
+export const modalStyles: any = {
     content: {
         background: null,
         border: null

@@ -79,7 +79,13 @@ export class TaigaApi {
     }
 
     get_user_entry_access_log(): Promise<Array<AccessLog>> {
+        // TODO: Change this api to get a better meaning. We want all the entries for a specific user
         return this._fetch<Array<AccessLog>>("/entry/logAccess");
+    }
+
+    get_entry_access_log(entry_id): Promise<Array<AccessLog>> {
+        // We fetch all the AccessLog for a specific entry
+        return this._fetch<Array<AccessLog>>("/entry/" + entry_id + "/logAccess")
     }
 
     get_datasets(datasetIds: Array<string>): Promise<Array<DatasetFullDatasetVersions>> {
