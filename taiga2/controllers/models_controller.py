@@ -774,9 +774,6 @@ def can_view(entry_id):
     # If we are the owner of the entry, we can view it
     if entry.creator == current_user:
         return True
-    # If the entry is in the public_folder, we can view it
-    elif public_folder in entry.parents:
-        return True
     # If the current_user has already seen this entry, via its access log, we can view it
     elif already_seen(entry_id):
         return True
