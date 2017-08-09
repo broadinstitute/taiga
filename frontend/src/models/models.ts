@@ -368,6 +368,7 @@ export enum ConversionStatusEnum {
 
 export class AccessLog {
     user_id: string;
+    user_name: string;
 
     // Used for presentation BootstrapTable
     entry_id: string;
@@ -393,6 +394,7 @@ export class AccessLog {
 
     constructor(obj: any) {
         this.user_id = obj.user_id;
+        this.user_name = obj.user_name;
         this.entry_id = obj.entry.id;
         this.entry_name = obj.entry.name;
         this.type = obj.type;

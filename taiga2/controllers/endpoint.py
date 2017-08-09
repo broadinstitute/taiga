@@ -187,7 +187,16 @@ def get_datasets_access_logs():
     return flask.jsonify(json_data_access_logs_current_user_datasets)
 
 
-def get_entry_access_logs():
+def get_entry_access_logs(entryId):
+    array_access_logs = models_controller.get_entry_access_logs(entryId)
+
+    access_log_schema = schemas.AccessLogSchema(many=True)
+    json_data_access_logs_entry = access_log_schema.dump(array_access_logs).data
+
+    return flask.jsonify(json_data_access_logs_entry)
+
+
+def get_entries_access_logs():
     array_access_logs = models_controller.get_entries_access_logs()
 
     access_log_schema = schemas.AccessLogSchema(many=True)

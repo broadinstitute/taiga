@@ -259,7 +259,7 @@ def test_update_access_log(session: SessionBase, dataset_create_access_log):
 
 
 def test_retrieve_user_access_log(session: SessionBase, dataset_create_access_log):
-    json_response_result = endpoint.get_entry_access_logs()
+    json_response_result = endpoint.get_entries_access_logs()
     json_data_result = flask.json.loads(json_response_result.data)
 
     assert json_data_result[0]['entry']['id'] == dataset_create_access_log.id

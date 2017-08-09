@@ -1237,6 +1237,13 @@ def get_entries_access_logs():
     return array_access_logs
 
 
+def get_entry_access_logs(entryId):
+    array_access_logs = db.session.query(UserLog) \
+        .filter(UserLog.entry_id == entryId).all()
+
+    return array_access_logs
+
+
 def add_or_update_entry_access_log(entry_id):
     """Create or update, with the current datetime, the access log for the current user, on the entry
     passed in parameter"""

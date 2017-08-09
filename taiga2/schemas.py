@@ -217,3 +217,8 @@ class AccessLogSchema(ma.ModelSchema):
         additional = ('user_id', 'entry', 'last_access')
 
     entry = ma.Nested(EntrySummarySchema)
+    user_name = fields.fields.Method("get_user_name")
+
+    def get_user_name(self, obj):
+        return obj.user.name
+
