@@ -31,3 +31,13 @@ export function getInitialFileTypeFromMimeType(mimeTypeOrEnum: string|InitialFil
     return formattedType;
 }
 
+export function lastAccessFormatter(cell: any, row: any) {
+    // Formatter for Table Bootstrap
+    let _date = new Date(cell);
+    var options = {
+        month: "2-digit", day: "2-digit", year: "2-digit",
+        hour: "2-digit", minute: "2-digit"
+    };
+    return _date.toLocaleTimeString("en-us", options);
+}
+

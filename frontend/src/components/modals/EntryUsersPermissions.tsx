@@ -7,6 +7,7 @@ import {modalStyles} from "../Dialogs";
 import {TaigaApi} from "../../models/api"
 
 import {AccessLog} from "../../models/models";
+import {lastAccessFormatter} from "../../utilities/formats";
 
 interface EntryUsersPermissionsProps {
     isVisible: boolean;
@@ -49,7 +50,7 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
         // Return access logs for this folder
         return tapi.get_entry_access_log(this.props.entry_id).then((usersAccessLogs) => {
             // TODO: Think about not using it as State because it does not change during the page lifecycle
-
+            debugger;
             let mappedAL = usersAccessLogs.map((userAccessLogs) => {
                 return new AccessLog(userAccessLogs);
             });
@@ -106,7 +107,11 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
                         options={ options }>
                         <TableHeaderColumn dataField='user_id' isKey hidden>User Id</TableHeaderColumn>
                         <TableHeaderColumn dataField='user_name'>User Name</TableHeaderColumn>
-                        <TableHeaderColumn dataField="last_access">Last Access</TableHeaderColumn>
+                        <TableHeaderColumn
+                            dataField="last_access"
+                            dataFormat={ lastAccessFormatter }>
+                                Last Access
+                        </TableHeaderColumn>
                     </BootstrapTable>
                 </div>
                 <div className="modal-footer">
