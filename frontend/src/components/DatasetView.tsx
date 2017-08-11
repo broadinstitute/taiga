@@ -108,7 +108,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         return tapi.get_dataset_version_with_dataset(this.props.params.datasetId,
             this.props.params.datasetVersionId
         ).then((datasetAndDatasetVersion: Models.DatasetAndDatasetVersion | Models.Dataset) => {
-            debugger;
             let dataset: Models.Dataset;
             let datasetVersion: Models.DatasetVersion;
 
