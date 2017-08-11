@@ -463,17 +463,17 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             let navItems = [];
             navItems = [
                 {
-                    label: "Edit Name", action: () => {
+                    label: "Edit name", action: () => {
                     this.setState({showEditName: true})
                 }
                 },
                 {
-                    label: "Edit Description", action: () => {
+                    label: "Edit description", action: () => {
                     this.setState({showEditDescription: true})
                 }
                 },
                 {
-                    label: "Edit Permissions", action: () => {
+                    label: "Edit permissions", action: () => {
                         this.setState({showEditPermissions: true})
                 }
                 },
