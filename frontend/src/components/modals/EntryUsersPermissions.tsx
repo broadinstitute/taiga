@@ -13,6 +13,8 @@ interface EntryUsersPermissionsProps {
     cancel: () => void;
 
     entry_id: string;
+
+    handleDeletedRow: (arrayUserIds: Array<AccessLog>) => Promise;
 }
 
 interface EntryUsersPermissionsState {
@@ -37,6 +39,12 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
         this.doFetch();
     }
 
+    componentWillReceiveProps(nextProps: any, nextState: any) {
+        if(nextProps.entry_id != this.props.entry_id) {
+            this.doFetch();
+        }
+    }
+
     doFetch() {
         // Return access logs for this folder
         return tapi.get_entry_access_log(this.props.entry_id).then((usersAccessLogs) => {
@@ -52,10 +60,31 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
         })
     }
 
+    handleDeletedRow(rowKeys) {
+        let state_accessLogs = this.state.accessLogs;
+        let accessLogsToRemove = state_accessLogs.filter((accessLog) => {
+            // TODO: Optimize this to not loop through the accessLogs array for each item
+            for (let user_id: string of rowKeys) {
+                if (user_id == accessLog.user_id) {
+                    return true;
+                }
+            }
+            return false;
+        });
+        this.props.handleDeletedRow(accessLogsToRemove).then(() => {
+            // We update our list now
+            this.doFetch();
+        });
+    }
+
     render() {
         const check_mode: SelectRowMode = 'checkbox';
         const selectRowProp = {
             mode: check_mode
+        };
+
+        const options = {
+            afterDeleteRow: (rowKeys) => { this.handleDeletedRow(rowKeys) }
         };
 
         return <Modal
@@ -69,14 +98,19 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
                     <h3>Users Permissions</h3>
                 </div>
                 <div className="modal-body">
-                    <BootstrapTable data={ this.state.accessLogs } search selectRow={ selectRowProp } deleteRow>
+                    <BootstrapTable
+                        data={ this.state.accessLogs }
+                        search
+                        selectRow={ selectRowProp }
+                        deleteRow
+                        options={ options }>
                         <TableHeaderColumn dataField='user_id' isKey hidden>User Id</TableHeaderColumn>
                         <TableHeaderColumn dataField='user_name'>User Name</TableHeaderColumn>
                         <TableHeaderColumn dataField="last_access">Last Access</TableHeaderColumn>
                     </BootstrapTable>
                 </div>
                 <div className="modal-footer">
-                    <button type="button" className="btn btn-default">Close</button>
+                    <button type="button" className="btn btn-default" onClick={ this.props.cancel }>Close</button>
                 </div>
             </div>
         </Modal>

@@ -205,6 +205,11 @@ def get_entries_access_logs():
     return flask.jsonify(json_data_access_logs_current_user_entries)
 
 
+def accessLogs_remove(accessLogsToRemove):
+    models_controller.remove_accessLogs(accessLogsToRemove)
+    return flask.jsonify({})
+
+
 def create_or_update_entry_access_log(entryId):
     models_controller.add_or_update_entry_access_log(entryId)
     return flask.jsonify({})

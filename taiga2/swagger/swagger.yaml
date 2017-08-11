@@ -1030,6 +1030,8 @@ paths:
               properties:
                 user_id:
                   type: string
+                user_name:
+                  type: string
                 entry:
                   "$ref": "#/definitions/EntrySummary"
                 last_access:
@@ -1049,6 +1051,33 @@ paths:
       responses:
         200:
           description: Successfully created or updated
+
+  /entry/logAccess/remove/all:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: accessLogs_remove
+      description: Remove all the couple entry/user of the accessLog given in parameter
+      consumes:
+        - application/json
+      parameters:
+        - name: accessLogsToRemove
+          in: body
+          schema:
+            type: array
+            items:
+              title: AccessLog
+              type: object
+              required:
+                - user_id
+                - entry_id
+              properties:
+                user_id:
+                  type: string
+                entry_id:
+                  type: string
+      responses:
+        200:
+          description: Successfully removed
 
   /move:
     post:

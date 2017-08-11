@@ -3,7 +3,7 @@ import 'whatwg-fetch';
 import {
     User, Folder, Dataset, DatasetVersion, S3Credentials,
     TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId, DatasetFullDatasetVersions,
-    AccessLog, DatafileUrl, ProvenanceGraphFull
+    AccessLog, DatafileUrl, ProvenanceGraphFull, AccessLog
 } from './models';
 
 import { currentUserToken } from '../utilities/route';
@@ -86,6 +86,10 @@ export class TaigaApi {
     get_entry_access_log(entry_id): Promise<Array<AccessLog>> {
         // We fetch all the AccessLog for a specific entry
         return this._fetch<Array<AccessLog>>("/entry/" + entry_id + "/logAccess")
+    }
+
+    remove_entry_access_log(accessLogsToRemove: Array<AccessLog>) {
+        return this._post<void>("/entry/logAccess/remove/all", accessLogsToRemove);
     }
 
     get_datasets(datasetIds: Array<string>): Promise<Array<DatasetFullDatasetVersions>> {

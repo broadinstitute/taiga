@@ -25,6 +25,7 @@ import {DatasetFullDatasetVersions, BootstrapTableFolderEntry} from "../models/m
 import int = DataPipeline.int;
 import {debug} from "util";
 import {User} from "../models/models";
+import {AccessLog} from "../models/models";
 
 export interface FolderViewProps {
     params: any
@@ -407,6 +408,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         return parent_links;
     }
 
+    removeAccessLogs(arrayAccessLogs: Array<AccessLog>): Promise {
+        return tapi.remove_entry_access_log(arrayAccessLogs).then(() => {
+
+        });
+    }
+
     render() {
         let entriesOutput: Array<any> = [];
         let navItems: MenuItem[] = [];
@@ -476,17 +483,18 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         label: "Edit description", action: () => {
                         this.setState({showEditDescription: true})
                     }
-                    });
-                navItems.push({
-                    label: "Link to Home", action: () => {
-                        this.openActionTo("currentFolderLinkToHome");
-                    }
                 });
                 navItems.push({
                     label: "Edit permissions", action: () => {
                         this.setState({showEditPermissions: true})
                     }
                 });
+                navItems.push({
+                    label: "Link to Home", action: () => {
+                        this.openActionTo("currentFolderLinkToHome");
+                    }
+                });
+
                 navItems = navItems.concat(add_folder_items);
             } else {
                 // Don't display this if we are in the trash of the user
@@ -559,7 +567,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
                             onFileUploadedAndConverted={ (sid: string, name: string , description: string) =>
                                 this.filesUploadedAndConverted(sid, name, description) }
-                            currentFolderId={this.state.folder.id}
                             title="New Dataset"
                         />
 
@@ -584,6 +591,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             isVisible={ this.state.showEditPermissions }
                             cancel={ () => { this.setState({showEditPermissions: false})}}
                             entry_id={ this.state.folder.id }
+                            handleDeletedRow={ (arrayAccessLogs) => {return this.removeAccessLogs(arrayAccessLogs)} }
                         />
 
                         <h1>{folder.name}</h1>

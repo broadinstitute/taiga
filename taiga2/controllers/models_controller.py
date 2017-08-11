@@ -1271,4 +1271,14 @@ def add_or_update_entry_access_log(entry_id):
 
     return access_log
 
+
+def remove_accessLogs(array_access_log):
+    # TODO: Use better way of deleting this
+    for access_log in array_access_log:
+        db.session.query(UserLog)\
+            .filter(UserLog.entry_id == access_log['entry_id'])\
+            .filter(UserLog.user_id == access_log['user_id'])\
+            .delete()
+    db.session.commit()
+
 # </editor-fold>
