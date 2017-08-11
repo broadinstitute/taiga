@@ -1,20 +1,16 @@
 import * as React from "react";
 import {Link} from 'react-router';
-import * as update from 'immutability-helper';
 
-import {Button, Col, Glyphicon, Grid, Row, OverlayTrigger, Tooltip, Well} from 'react-bootstrap';
-import {InputGroup, InputGroupButton, FormGroup, FormControl} from 'react-bootstrap';
+import { Grid, Row } from 'react-bootstrap';
 
 import {BootstrapTable, TableHeaderColumn, SortOrder} from "react-bootstrap-table";
 
-import ClipboardButton from '../utilities/r-clipboard';
 import {LeftNav} from "./LeftNav"
 
 import {TaigaApi} from "../models/api"
-import {User, AccessLog} from "../models/models";
+import {AccessLog} from "../models/models";
 
-import {relativePath} from "../utilities/route";
-import {toLocalDateString} from "../utilities/formats";
+import {lastAccessFormatter} from "../utilities/formats";
 
 
 interface RecentlyViewedProps {
@@ -63,14 +59,7 @@ export class RecentlyViewed extends React.Component<RecentlyViewedProps, Recentl
         return <Link to={row.url}>{ cell }</Link>
     }
 
-    lastAccessFormatter(cell: any, row: any) {
-        let _date = new Date(cell);
-        var options = {
-            month: "2-digit", day: "2-digit", year: "2-digit",
-            hour: "2-digit", minute: "2-digit"
-        };
-        return _date.toLocaleTimeString("en-us", options);
-    }
+
 
     render() {
         let navItems: Array<any> = [];
@@ -97,7 +86,7 @@ export class RecentlyViewed extends React.Component<RecentlyViewedProps, Recentl
                     <TableHeaderColumn dataField='last_access'
                                        headerAlign="center"
                                        dataAlign='center'
-                                       dataFormat={ this.lastAccessFormatter }
+                                       dataFormat={ lastAccessFormatter }
                                        dataSort>Last access</TableHeaderColumn>
                 </BootstrapTable>
             );

@@ -2,7 +2,8 @@ import * as React from "react";
 import {Link} from 'react-router';
 import {Well} from "react-bootstrap";
 
-import {LeftNav} from "./LeftNav"
+import {LeftNav} from "./LeftNav";
+import {EntryUsersPermissions} from "./modals/EntryUsersPermissions";
 
 import * as Models from "../models/models"
 import {TaigaApi} from "../models/api"
@@ -25,8 +26,11 @@ export interface DatasetViewProps {
 export interface DatasetViewState {
     dataset?: Models.Dataset;
     datasetVersion?: Models.DatasetVersion;
+
     showEditName?: boolean;
     showEditDescription?: boolean;
+    showEditPermissions?: boolean;
+
     showUploadDataset?: boolean;
     loading?: boolean;
     loadingMessage?: string;
@@ -38,8 +42,6 @@ export interface DatasetViewState {
     callbackIntoFolderAction?: Function;
 
     fetchError?: string;
-
-
 }
 
 const buttonUploadNewVersionStyle = {
@@ -106,7 +108,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         return tapi.get_dataset_version_with_dataset(this.props.params.datasetId,
             this.props.params.datasetVersionId
         ).then((datasetAndDatasetVersion: Models.DatasetAndDatasetVersion | Models.Dataset) => {
-            debugger;
             let dataset: Models.Dataset;
             let datasetVersion: Models.DatasetVersion;
 
@@ -317,6 +318,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         })
     }
 
+    removeAccessLogs(arrayAccessLogs: Array<Models.AccessLog>): Promise {
+        return tapi.remove_entry_access_log(arrayAccessLogs).then(() => {
+
+        });
+    }
+
     // DatasetVersions
     compareDatasetVersionsByVersionNumber(a: NamedId, b: NamedId) {
         // VersionNumber == Name
@@ -465,6 +472,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     this.setState({showEditDescription: true})
                 }
                 },
+                {
+                    label: "Edit Permissions", action: () => {
+                        this.setState({showEditPermissions: true})
+                }
+                },
                 // {
                 //     label: "Add permaname", action: function () {
                 // }
@@ -583,6 +595,13 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         cancel={ () => { this.setState({showInputFolderId: false}) }}
                         save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
                         initFolderId={ this.state.initInputFolderId }
+                    />
+
+                    <EntryUsersPermissions
+                        isVisible={ this.state.showEditPermissions }
+                        cancel={ () => { this.setState({showEditPermissions: false})}}
+                        entry_id={ this.state.dataset.id }
+                        handleDeletedRow={ (arrayAccessLogs) => {return this.removeAccessLogs(arrayAccessLogs)} }
                     />
                 </span>
                 );
