@@ -106,6 +106,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         return tapi.get_dataset_version_with_dataset(this.props.params.datasetId,
             this.props.params.datasetVersionId
         ).then((datasetAndDatasetVersion: Models.DatasetAndDatasetVersion | Models.Dataset) => {
+            debugger;
             let dataset: Models.Dataset;
             let datasetVersion: Models.DatasetVersion;
 
@@ -569,7 +570,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         onFileUploadedAndConverted={ (sid: string, name: string, description: string, previousDatafileIds: Array<string>) =>
                             this.filesUploadedAndConverted(sid, name, description, previousDatafileIds)
                         }
-                        currentFolderId={this.state.dataset.folders[0].id}
                         title="New Dataset Version"
                         readOnlyName={ this.state.dataset.name }
                         previousDescription={ this.state.datasetVersion.description }
@@ -603,7 +603,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
                     <p>Versions: {versions} </p>
 
+                        { folders.length > 0 &&
                         <p>Contained within {folders}</p>
+                        }
 
                         { this.state.datasetVersion.description &&
                             Dialogs.renderDescription(this.state.datasetVersion.description)

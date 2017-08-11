@@ -28,7 +28,6 @@ import update = require("immutability-helper");
 
 interface DropzoneProps extends DialogProps {
     onFileUploadedAndConverted?: any;
-    currentFolderId: string;
 
     title: string;
     readOnlyName?: string;
