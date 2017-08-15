@@ -63,6 +63,8 @@ def get_datasets(datasetIdsDict):
 
 
 def create_folder(metadata):
+    """Create a folder given a metadata dictionary of this form:
+    metadata['name'], metadata['description'], metadata['parentId']"""
     # TODO: Add the add_folder_entry inside the add_folder function?
     folder_name = metadata['name']
     folder_description = metadata['description']

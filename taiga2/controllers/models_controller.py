@@ -94,6 +94,14 @@ def get_all_users():
     return users
 
 
+def _change_connected_user(new_user):
+    """Allows to change the connected user. Mainly for testing purpose"""
+    if new_user:
+        flask.g.current_user = new_user
+        return True
+    else:
+        return False
+
 # </editor-fold>
 
 # <editor-fold desc="Folder">

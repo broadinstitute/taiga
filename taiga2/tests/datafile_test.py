@@ -10,9 +10,11 @@ from flask_sqlalchemy import SessionBase
 
 MAX_TIME = 5
 
+
 class StubProgress:
     def progress(self, message):
         print(message)
+
 
 def create_matrix_dataset_version(tmpdir, mock_s3):
     from taiga2.conv import csv_to_hdf5
@@ -39,6 +41,7 @@ def create_matrix_dataset_version(tmpdir, mock_s3):
     ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
 
+
 def create_table_dataset_version(tmpdir, mock_s3):
     from taiga2.conv import csv_to_columnar
 
@@ -64,9 +67,11 @@ def create_table_dataset_version(tmpdir, mock_s3):
     ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
     return str(ds.dataset_versions[0].id)
 
+
 def _as_tsv(rows):
-    content = "".join(["\t".join(row)+"\r\n" for row in rows])
+    content = "".join(["\t".join(row) + "\r\n" for row in rows])
     return content.encode("utf8")
+
 
 @pytest.mark.parametrize("src_format, out_format, is_expected", [
     ("table", "csv", lambda x: x == b"a,b\r\n1,2\r\n"),
@@ -75,9 +80,9 @@ def _as_tsv(rows):
     ("matrix", "csv", lambda x: x == b",a,b\r\nc,1.0,2.0\r\n"),
     ("matrix", "tsv", lambda x: x == b"\ta\tb\r\nc\t1.0\t2.0\r\n"),
     ("matrix", "gct", lambda x: x == _as_tsv([["#1.2"],
-                                      ["1","2"],
-                                      ["Name", "Description", "a", "b"],
-                                      ["c", "c", "1.0", "2.0"]])),
+                                              ["1", "2"],
+                                              ["Name", "Description", "a", "b"],
+                                              ["c", "c", "1.0", "2.0"]])),
     ("matrix", "rds", lambda x: len(x) > 0)
 ])
 def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, out_format, is_expected):
@@ -92,7 +97,7 @@ def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, 
         start = time.time()
         resulting_urls = None
         while time.time() < start + MAX_TIME:
-            r = c.get("/datafile?dataset_version_id="+dataset_version_id+"&name=dfname&format="+out_format)
+            r = c.get("/datafile?dataset_version_id=" + dataset_version_id + "&name=dfname&format=" + out_format)
             assert r.status_code == 200
             response = json.loads(r.data.decode("utf8"))
 
@@ -119,10 +124,10 @@ def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, 
 def create_simple_dataset():
     # create datafile
     df = mc.add_datafile(name="df",
-                        s3_bucket="bucket",
-                        s3_key="converted/key",
-                        type=models.DataFile.DataFileType.Raw,
-                        short_summary="short",
+                         s3_bucket="bucket",
+                         s3_key="converted/key",
+                         type=models.DataFile.DataFileType.Raw,
+                         short_summary="short",
                          long_summary="long")
 
     ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
@@ -156,4 +161,3 @@ def test_find_datafile(session, db, user_id):
 
     # using dataset version id and dataset name
     assert find_datafile(None, None, dataset_version_id, "invalid") is None
-

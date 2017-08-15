@@ -1,5 +1,6 @@
 from datetime import datetime
 import flask
+import json
 import pytest
 import uuid
 
@@ -10,9 +11,117 @@ import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
 
 from taiga2.models import generate_permaname, DataFile
+from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
 from taiga2.schemas import AccessLogSchema
 
+
+# <editor-fold desc="Fixtures">
+
+@pytest.fixture
+def new_user():
+    user_name = "new user"
+    user_email = "new_user@email.com"
+    _new_user = models_controller.add_user(name=user_name, email=user_email)
+    return _new_user
+
+
+@pytest.fixture
+def new_upload_session():
+    response_json_new_upload_session_id = endpoint.create_new_upload_session()
+    new_upload_session_id = get_data_from_flask_jsonify(response_json_new_upload_session_id)
+    return models_controller.get_upload_session(new_upload_session_id)
+
+
+@pytest.fixture
+def new_upload_session_file(session: SessionBase, new_upload_session):
+    bucket = 'test_bucket'
+    filetype = 'Raw'
+    file_key = 'filekey'
+    file_name = file_key
+
+    S3UploadedFileMetadata = {
+        'bucket': bucket,
+        'filetype': filetype,
+        'key': file_key,
+        'filename': file_name
+    }
+
+    sid = new_upload_session.id
+
+    endpoint.create_upload_session_file(S3UploadedFileMetadata=S3UploadedFileMetadata,
+                                        sid=sid)
+    _new_upload_session_files = models_controller.get_upload_session_files_from_session(sid)
+    return _new_upload_session_files[0]
+
+
+@pytest.fixture
+def new_datafile():
+    # TODO: These tests should be using the endpoint and not the model
+    new_datafile_name = "New Datafile"
+
+    _new_datafile = models_controller.add_datafile(name=new_datafile_name,
+                                                   s3_bucket="broadtaiga2prototype",
+                                                   s3_key=models_controller.generate_convert_key(),
+                                                   type=DataFile.DataFileType.Raw,
+                                                   short_summary="short",
+                                                   long_summary="long")
+
+    return _new_datafile
+
+
+@pytest.fixture
+def new_dataset(new_datafile):
+    # TODO: These tests should be using the endpoint and not the model
+    new_dataset_name = "New Dataset"
+    new_dataset_permaname = generate_permaname(new_dataset_name)
+
+    _new_dataset = models_controller.add_dataset(name=new_dataset_name,
+                                                 permaname=new_dataset_permaname,
+                                                 description="New dataset description",
+                                                 datafiles_ids=[new_datafile.id])
+
+    return _new_dataset
+
+
+@pytest.fixture
+def dataset_create_access_log(session: SessionBase, new_dataset):
+    endpoint.create_or_update_entry_access_log(new_dataset.id)
+    return new_dataset
+
+
+@pytest.fixture
+def new_folder_in_home(session: SessionBase):
+    current_user = models_controller.get_current_session_user()
+    home_folder_id = current_user.home_folder_id
+    metadata = {
+        'name': "New folder in home",
+        'description': "Folder to create a folder inside a folder",
+        'parentId': home_folder_id
+    }
+    new_folder_json = endpoint.create_folder(metadata)
+    new_folder_id = json.loads(new_folder_json.get_data(as_text=True))['id']
+    _new_folder = models_controller.get_entry(new_folder_id)
+    return _new_folder
+
+
+@pytest.fixture(scope='function')
+def new_dataset_in_new_folder_in_home(session: SessionBase,
+                                      new_folder_in_home, new_datafile):
+    new_dataset_name = "New Dataset in a folder"
+    new_dataset_permaname = generate_permaname(new_dataset_name)
+
+    _new_dataset = models_controller.add_dataset(name=new_dataset_name,
+                                                 permaname=new_dataset_permaname,
+                                                 description="New dataset description",
+                                                 datafiles_ids=[new_datafile.id])
+
+    models_controller.move_to_folder([_new_dataset.id], None, new_folder_in_home.id)
+
+    return _new_dataset
+
+
+# </editor-fold>
 
 def get_data_from_flask_jsonify(flask_jsonified):
     return flask.json.loads(flask_jsonified.data.decode('UTF8'))
@@ -27,13 +136,6 @@ def test_create_new_upload_session(session: SessionBase):
     response_json_new_upload_session_id = endpoint.create_new_upload_session()
     new_upload_session_id = get_data_from_flask_jsonify(response_json_new_upload_session_id)
     assert models_controller.get_upload_session(new_upload_session_id) is not None
-
-
-@pytest.fixture
-def new_upload_session():
-    response_json_new_upload_session_id = endpoint.create_new_upload_session()
-    new_upload_session_id = get_data_from_flask_jsonify(response_json_new_upload_session_id)
-    return models_controller.get_upload_session(new_upload_session_id)
 
 
 def test_create_upload_session_file(app, session: SessionBase, new_upload_session):
@@ -63,28 +165,6 @@ def test_create_upload_session_file(app, session: SessionBase, new_upload_sessio
 
     assert len(_new_upload_session_files) == 1
     assert _new_upload_session_files[0].filename == file_name
-
-
-@pytest.fixture
-def new_upload_session_file(session: SessionBase, new_upload_session):
-    bucket = 'test_bucket'
-    filetype = 'Raw'
-    file_key = 'filekey'
-    file_name = file_key
-
-    S3UploadedFileMetadata = {
-        'bucket': bucket,
-        'filetype': filetype,
-        'key': file_key,
-        'filename': file_name
-    }
-
-    sid = new_upload_session.id
-
-    endpoint.create_upload_session_file(S3UploadedFileMetadata=S3UploadedFileMetadata,
-                                        sid=sid)
-    _new_upload_session_files = models_controller.get_upload_session_files_from_session(sid)
-    return _new_upload_session_files[0]
 
 
 def test_create_dataset(session: SessionBase, new_upload_session_file):
@@ -118,27 +198,6 @@ def test_create_dataset(session: SessionBase, new_upload_session_file):
     assert datafile.long_summary == "long_summary_test"
 
 
-@pytest.fixture
-def new_dataset(session: SessionBase, new_upload_session_file):
-    _new_upload_session_id = new_upload_session_file.session.id
-
-    dataset_name = 'Dataset Name'
-    dataset_description = 'Dataset Description'
-
-    home_folder_id = models_controller.get_current_session_user().home_folder.id
-
-    sessionDatasetInfo = {
-        'sessionId': _new_upload_session_id,
-        'datasetName': dataset_name,
-        'datasetDescription': dataset_description,
-        'currentFolderId': home_folder_id
-    }
-    response_json_create_dataset = endpoint.create_dataset(sessionDatasetInfo=sessionDatasetInfo)
-    _new_dataset_id = get_data_from_flask_jsonify(response_json_create_dataset)
-    _new_dataset = models_controller.get_dataset(_new_dataset_id)
-    return _new_dataset
-
-
 def test_create_new_dataset_version(session: SessionBase, new_dataset, new_upload_session_file):
     new_description = "My new description!"
 
@@ -169,36 +228,6 @@ def test_create_new_dataset_version(session: SessionBase, new_dataset, new_uploa
 
     assert _new_dataset_version.description == new_description
     # TODO: Check if the datafiles in the new dataset_version are the same (filename/name) than in the new_upload_session_file + in the previous_dataset_version_datafiles
-
-
-@pytest.fixture
-def new_datafile():
-    # TODO: These tests should be using the endpoint and not the model
-    new_datafile_name = "New Datafile"
-    new_datafile_url = "http://google.com"
-
-    _new_datafile = models_controller.add_datafile(name=new_datafile_name,
-                                                   s3_bucket="broadtaiga2prototype",
-                                                   s3_key=models_controller.generate_convert_key(),
-                                                   type=DataFile.DataFileType.Raw,
-                                                   short_summary="short",
-                                                   long_summary="long")
-
-    return _new_datafile
-
-
-@pytest.fixture
-def new_dataset(new_datafile):
-    # TODO: These tests should be using the endpoint and not the model
-    new_dataset_name = "New Dataset"
-    new_dataset_permaname = generate_permaname(new_dataset_name)
-
-    _new_dataset = models_controller.add_dataset(name=new_dataset_name,
-                                                 permaname=new_dataset_permaname,
-                                                 description="New dataset description",
-                                                 datafiles_ids=[new_datafile.id])
-
-    return _new_dataset
 
 
 def test_get_dataset_version_from_dataset(session: SessionBase, new_dataset):
@@ -247,22 +276,14 @@ def test_create_access_log(session: SessionBase, new_dataset):
     assert json_result.status_code == 200
 
 
-@pytest.fixture
-def dataset_create_access_log(session: SessionBase, new_dataset):
-    endpoint.create_or_update_entry_access_log(new_dataset.id)
-    return new_dataset
-
-
 def test_update_access_log(session: SessionBase, dataset_create_access_log):
     json_result = endpoint.create_or_update_entry_access_log(dataset_create_access_log.id)
     assert json_result.status_code == 200
 
 
 def test_retrieve_user_access_log(session: SessionBase, dataset_create_access_log):
-    json_response_result = endpoint.get_entries_access_logs()
-    json_data_result = flask.json.loads(json_response_result.data)
-
-    assert json_data_result[0]['entry']['id'] == dataset_create_access_log.id
+    entries_access_logs = get_dict_from_response_jsonify(endpoint.get_entries_access_logs())
+    assert entries_access_logs[0]['entry']['id'] == dataset_create_access_log.id
 
 
 # TODO: We should also test the time logged and verify it matches when we called it
@@ -309,5 +330,40 @@ def test_import_provenance(session: SessionBase, new_dataset):
 
     new_edge = models_controller.get_provenance_edge(new_node.from_edges[0].edge_id)
     assert new_edge.from_node == new_edge.to_node
+
+
+# </editor-fold>
+
+# <editor-fold desc="Security">
+
+def test_no_parents_access(new_dataset_in_new_folder_in_home, new_user):
+    """Check that a different user from the owner has no access to the parent's folders"""
+    models_controller._change_connected_user(new_user)
+    _dataset = new_dataset_in_new_folder_in_home
+    parents = get_dict_from_response_jsonify(endpoint.get_dataset(_dataset.id))['folders']
+    assert len(parents) == 0
+
+
+def test_parent_visited_access(new_folder_in_home, new_dataset_in_new_folder_in_home, new_user):
+    """Check that if not owner has visited the parent folder of dataset,
+    we have it in the parents list of the dataset"""
+    models_controller._change_connected_user(new_user)
+    _dataset = new_dataset_in_new_folder_in_home
+    _folder_in_home = new_folder_in_home
+
+    # Update a log access on this folder
+    endpoint.create_or_update_entry_access_log(_folder_in_home.id)
+
+    # Retrieve the dataset, which should contains a parent now
+    parents = get_dict_from_response_jsonify(endpoint.get_dataset(_dataset.id))['folders']
+
+    assert len(parents) == 1
+
+
+# </editor-fold>
+
+# <editor-fold desc="User">
+
+
 
 # </editor-fold>

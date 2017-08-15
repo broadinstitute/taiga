@@ -84,6 +84,7 @@ def db(app, request):
 
     # Return db and teardown
     yield _db
+    _db.drop_all()
 
 
 # Note: this is pretty much completely useless until _all_ calls to db.commit are removed from model_controller.
@@ -96,7 +97,6 @@ def session(db, request):
 
     options = dict(bind=connection, binds={})
     _session = db.create_scoped_session(options=options)
-
     db.session = _session
 
     # We call before_request
@@ -104,9 +104,9 @@ def session(db, request):
 
     # Return db and teardown
     yield _session
+    _session.remove()
     transaction.rollback()
     connection.close()
-    _session.remove()
 
 
 @pytest.fixture(scope="function")
