@@ -360,6 +360,30 @@ def test_parent_visited_access(new_folder_in_home, new_dataset_in_new_folder_in_
     assert len(parents) == 1
 
 
+def test_remove_entry_permission(new_folder_in_home, new_dataset_in_new_folder_in_home, new_user):
+    models_controller._change_connected_user(new_user)
+    _dataset = new_dataset_in_new_folder_in_home
+    _folder_in_home = new_folder_in_home
+
+    # Update a log access on this folder
+    endpoint.create_or_update_entry_access_log(_folder_in_home.id)
+
+    access_logs = get_dict_from_response_jsonify(endpoint.get_entry_access_logs(_folder_in_home.id))
+
+    assert len(access_logs) > 0
+
+    # TODO: We should not to have to format this
+    formatted_access_logs = map(lambda access_log: {'entry_id': access_log['entry']['id'],
+                                                    'user_id': access_log['user_id']},
+                                access_logs)
+
+    endpoint.accessLogs_remove(accessLogsToRemove=formatted_access_logs)
+
+    # Retrieve the dataset, which should not contain a parent anymore now
+    parents = get_dict_from_response_jsonify(endpoint.get_dataset(_dataset.id))['folders']
+
+    assert len(parents) == 0
+
 # </editor-fold>
 
 # <editor-fold desc="User">
