@@ -35,6 +35,8 @@ services:
 # Command to run tests
 script:
   - pytest
+
+after_success:
   # After tests have been successful, we build a new docker image and push it to ECR
   - if [ "$TRAVIS_BRANCH" == "taiga2" ]; then
       chmod ugo+x build_docker.sh;
