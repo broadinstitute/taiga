@@ -50,7 +50,6 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
         // Return access logs for this folder
         return tapi.get_entry_access_log(this.props.entry_id).then((usersAccessLogs) => {
             // TODO: Think about not using it as State because it does not change during the page lifecycle
-            debugger;
             let mappedAL = usersAccessLogs.map((userAccessLogs) => {
                 return new AccessLog(userAccessLogs);
             });

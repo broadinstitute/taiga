@@ -1,3 +1,31 @@
 --index-url https://pypi.python.org/simple/
 
--e .
+connexion==1.0.129
+boto3==1.4.2
+Flask==0.11.1
+MarkupSafe==1.0
+celery==4.0.0
+connexion==1.0.129
+redis==2.10.5
+requests==2.13.0
+setuptools==35.0.2
+six==1.10.0
+SQLAlchemy==1.1.4
+Flask-Migrate==2.0.3
+Flask-Script==2.0.5
+Flask-SQLAlchemy==2.1
+marshmallow==2.11.1
+marshmallow-sqlalchemy==0.12.1
+flask-marshmallow==0.7.0
+marshmallow-enum==1.0
+marshmallow-oneofschema==1.0.3
+pytest==3.0.5
+freezegun==0.3.8
+python-magic==0.4.12
+h5py==2.6.0
+numpy==1.11.3
+psycopg2==2.6.2
+
+google-cloud==0.31.0
+google-api-python-client==1.6.4
+google-auth-httplib2==0.0.3
