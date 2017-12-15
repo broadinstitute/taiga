@@ -88,7 +88,7 @@ class App extends React.Component<AppProps, any> {
                         Broad Institute, Cancer Program Data Science {(new Date()).getFullYear()}
                     </div>
                     <div className="login-box pull-right bottom-page-text">
-                        Rev 2.12.1
+                        Rev 2.12.2
                     </div>
                 </footer>
             </div>
@@ -165,7 +165,7 @@ const ProvenanceView = React.createClass({
                     <thead>
                     <tr>
                         <th>Label</th>
-                        <th>Dateset</th>
+                        <th>Dataset</th>
                         <th>Version</th>
                         <th>Filename</th>
                     </tr>
@@ -180,7 +180,7 @@ const ProvenanceView = React.createClass({
                     <thead>
                     <tr>
                         <th>Filenames</th>
-                        <th>Dateset</th>
+                        <th>Dataset</th>
                         <th>Version</th>
                     </tr>
                     </thead>
