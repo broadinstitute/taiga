@@ -11,7 +11,6 @@
   "dependencies": {
     "@types/clipboard": "^1.5.31",
     "@types/immutability-helper": "^2.0.15",
-    "@types/react-bootstrap-table": "^2.6.1",
     "@types/react-dropzone": "^0.0.32",
     "aws-sdk": "^2.7.17",
     "clipboard": "^1.6.0",

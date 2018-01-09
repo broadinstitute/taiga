@@ -15,7 +15,7 @@ interface EntryUsersPermissionsProps {
 
     entry_id: string;
 
-    handleDeletedRow: (arrayUserIds: Array<AccessLog>) => Promise;
+    handleDeletedRow: (arrayUserIds: Array<AccessLog>) => Promise<Function>;
 }
 
 interface EntryUsersPermissionsState {
@@ -64,7 +64,7 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
         let state_accessLogs = this.state.accessLogs;
         let accessLogsToRemove = state_accessLogs.filter((accessLog) => {
             // TODO: Optimize this to not loop through the accessLogs array for each item
-            for (let user_id: string of rowKeys) {
+            for (let user_id of rowKeys) {
                 if (user_id == accessLog.user_id) {
                     return true;
                 }
