@@ -6,8 +6,6 @@ import datetime
 from flask_migrate import Migrate
 
 from sqlalchemy import MetaData
-from sqlalchemy.types import TypeDecorator, CHAR
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import event, UniqueConstraint
 
 from flask_sqlalchemy import SQLAlchemy

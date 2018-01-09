@@ -70,9 +70,8 @@ def create_folder(metadata):
     folder_description = metadata['description']
     parent_id = metadata['parentId']
 
-    # TODO: Instead of the string 'folder', use the model.Folder.FolderType.folder
     new_folder = models_controller.add_folder(name=folder_name,
-                                              folder_type='folder',
+                                              folder_type=models_controller.Folder.FolderType.folder,
                                               description=folder_description)
     models_controller.add_folder_entry(parent_id, new_folder.id)
 

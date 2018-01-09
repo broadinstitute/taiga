@@ -102,6 +102,7 @@ def _change_connected_user(new_user):
     else:
         return False
 
+
 # </editor-fold>
 
 # <editor-fold desc="Folder">
@@ -678,36 +679,6 @@ def _action_to_folder(entry_ids, target_folder_id, entry_action, current_folder_
         # If the requested action is EntryAction.copy:
         # We create a new dataset, and we populate it with the datasetVersions and the datafiles
         elif entry_action == EntryAction.copy:
-            # We check it is not already in
-            # TODO: This behavior should be managed, as abstract, in Entry, and overriden in the sub-classes, so the copy mechanism is handled by the class and not here
-            # original_folder = entry
-            #
-            # new_folder = add_folder(name=original_folder.name,
-            #                         folder_type=Folder.FolderType.folder, # We only copy it as a regular folder
-            #                         description=original_folder.description)
-            # new_folder.parents = [folder_to_action]
-            #
-            # db.session.add(new_folder)
-            #
-            # # Recurvive for each element in folder
-            # original_folder_entries_ids = [_entry.id for _entry in original_folder.entries]
-            # _action_to_folder(entry_ids=original_folder_entries_ids, folder_id=new_folder.id, entry_action=entry_action)
-
-            #
-            # new_dataset = None
-            # for current_dataset_version in original_dataset.dataset_versions:
-            #     datafiles_ids_copy = []
-            #     for original_datafile in current_dataset_version.datafiles:
-            #         _copy_datafile = copy_datafile(original_datafile.id)
-            #         datafiles_ids_copy.append(_copy_datafile.id)
-            #
-            #     if current_dataset_version.version == 1:
-            #         new_dataset = add_dataset(name=original_dataset.name,
-            #                                   description=original_dataset.description,
-            #                                   datafiles_ids=datafiles_ids_copy)
-            #     else:
-            #         add_dataset_version(dataset_id=new_dataset.id,
-            #                             datafiles_ids=datafiles_ids_copy)
             # TODO: Think about changing the parents to a set instead of a simple array
             if folder_to_action not in entry.parents:
                 entry.parents.append(folder_to_action)
@@ -1283,9 +1254,9 @@ def add_or_update_entry_access_log(entry_id):
 def remove_accessLogs(array_access_log):
     # TODO: Use better way of deleting this
     for access_log in array_access_log:
-        db.session.query(UserLog)\
-            .filter(UserLog.entry_id == access_log['entry_id'])\
-            .filter(UserLog.user_id == access_log['user_id'])\
+        db.session.query(UserLog) \
+            .filter(UserLog.entry_id == access_log['entry_id']) \
+            .filter(UserLog.user_id == access_log['user_id']) \
             .delete()
     db.session.commit()
 
