@@ -47,6 +47,11 @@ folder_entry_association_table = db.Table('folder_entry_association',
                                           db.Column('entry_id', GUID, db.ForeignKey('entries.id'))
                                           )
 
+group_user_association_table = db.Table('group_user_association',
+                                        db.Column('group_id', db.INTEGER, db.ForeignKey('groups.id')),
+                                        db.Column('user_id', GUID, db.ForeignKey('users.id'))
+                                        )
+
 
 # End Associations #
 
@@ -441,4 +446,35 @@ class ProvenanceNode(db.Model):
 
     type = db.Column(db.Enum(NodeType))
 
-# <editor-fold>
+
+# </editor-fold>
+
+# <editor-fold desc="ACLs">
+
+
+class Group(db.Model):
+    __tablename__ = 'groups'
+
+    id = db.Column(db.INTEGER, primary_key=True, autoincrement=True)
+
+    name = db.Column(db.String(80))
+
+    users = db.relationship(User.__name__,
+                            secondary=group_user_association_table,
+                            backref=__tablename__)
+
+
+@event.listens_for(metadata, 'after_create')
+def admin_group_creation(*args, **kwargs):
+    """After we create the table Group, we also add the group 'Admin'"""
+    admin_group = Group(name='Admin')
+
+    db.session.add(admin_group)
+    db.session.commit()
+
+
+class EntryRightsEnum(enum.Enum):
+    can_edit = 'can_edit'
+    can_view = 'can_view'
+
+# </editor-fold>

@@ -5,6 +5,7 @@ from marshmallow_oneofschema import OneOfSchema
 
 from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile, get_allowed_conversion_type
 from taiga2.models import ProvenanceEdge, ProvenanceNode, ProvenanceGraph
+from taiga2.models import Group, EntryRightsEnum
 
 ma = Marshmallow()
 
@@ -70,24 +71,29 @@ class EntrySchema(ma.ModelSchema):
 
 
 class FolderSchema(ma.ModelSchema):
-    # TODO: Add the ACL
     class Meta:
         # We just don't take the folder_type because of the Enum
         additional = ('id', 'name', 'type', 'description',
                       'entries', 'creator', 'creation_date',
                       'parents')
 
+    # `Method` takes a method name (str), Function takes a callable
+    can_edit = fields.fields.Method('check_edition')
+    can_view = fields.fields.Method('check_view')
+
     entries = ma.Nested(EntrySchema, many=True)
     creator = ma.Nested(UserNamedIdSchema)
     folder_type = EnumField(Folder.FolderType)
     parents = ma.Nested(FolderNamedIdSchema, many=True)
 
-    # TODO: See how it has been resolved in Marshmallow. Temp workaround
-    def dispatch_entries(self, obj):
-        list_entries = []
-        entry_schema = EntrySchema()
+    def check_edition(self, folder):
+        """Check with the context if we can edit"""
+        return self.context['entry_user_right'] == EntryRightsEnum.can_edit
 
-        return list_entries
+    def check_view(self, folder):
+        """Check if we can view by looking at the context of the entry. If can_edit, we can view too"""
+        entry_user_right = self.context['entry_user_right']
+        return entry_user_right == EntryRightsEnum.can_view or entry_user_right == EntryRightsEnum.can_edit
 
 
 class ProvenanceEdgeSchema(ma.ModelSchema):
@@ -221,4 +227,3 @@ class AccessLogSchema(ma.ModelSchema):
 
     def get_user_name(self, obj):
         return obj.user.name
-

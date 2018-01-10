@@ -4,6 +4,8 @@ import flask
 import uuid
 import os
 
+from typing import AbstractSet
+
 import json
 
 from sqlalchemy import and_, update
@@ -11,10 +13,11 @@ from sqlalchemy import and_, update
 import taiga2.models as models
 from taiga2.models import db
 from taiga2 import aws
-from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
+from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry, Group
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
 from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
+from taiga2.models import Group, EntryRightsEnum
 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
@@ -71,7 +74,7 @@ def get_user(user_id):
     return db.session.query(User).filter(User.id == user_id).one()
 
 
-def get_current_session_user():
+def get_current_session_user() -> User:
     return flask.g.current_user
 
 
@@ -123,7 +126,24 @@ def add_folder(name,
 
 def get_folder(folder_id, one_or_none=False) -> Folder:
     query = db.session.query(Folder).filter(Folder.id == folder_id)
-    return _fetch_respecting_one_or_none(q=query, one_or_none=one_or_none)
+
+    folder_or_none = _fetch_respecting_one_or_none(q=query, one_or_none=one_or_none)
+
+
+
+    return folder_or_none
+
+def get_rights(entry_id):
+    entry = db.session.query(Entry).filter(Entry.id == entry_id).one()
+    # We check the rights of this user over this folder
+    current_user = get_current_session_user()
+
+    admin_group = db.session.query(Group).filter(Group.name == 'Admin').one()
+    # If the user is the owner or it is in the group of admins, allowed to edit
+    if entry.creator_id == current_user.id or current_user in admin_group.users:
+        return EntryRightsEnum.can_edit
+    else:
+        return EntryRightsEnum.can_view
 
 
 def get_folder_by_name(folder_name):
@@ -559,7 +579,7 @@ def create_new_dataset_version_from_session(session_id,
     return new_dataset_version
 
 
-def _fetch_respecting_one_or_none(q, one_or_none):
+def _fetch_respecting_one_or_none(q, one_or_none) -> Folder:
     """If one_or_none is set, asks the query q to return none if NoResultFound, else raise the error"""
     if one_or_none:
         return q.one_or_none()

@@ -459,35 +459,39 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
             let selectionCount = this.state.selection.length;
 
-            if (selectionCount == 0) {
-                let add_folder_items = [
-                    {
-                        label: "Create a subfolder", action: () => {
-                        this.setState({showCreateFolder: true})
-                    }
-                    },
-                    {
-                        label: "Upload dataset", action: () => {
-                        this.setState({showUploadDataset: true})
-                    }
-                    }
-                ];
-                navItems.push({
-                    label: "Edit name", action: () => {
-                        this.setState({showEditName: true})
-                    }
-                });
-                navItems.push(
-                    {
-                        label: "Edit description", action: () => {
-                        this.setState({showEditDescription: true})
-                    }
-                });
-                navItems.push({
-                    label: "Edit permissions", action: () => {
-                        this.setState({showEditPermissions: true})
-                    }
-                });
+            if (selectionCount === 0) {
+                let add_folder_items = [];
+                // If the user can edit, then it has access to the actions
+                if (folder.can_edit) {
+                    add_folder_items.push(
+                        {
+                            label: "Create a subfolder", action: () => {
+                                this.setState({showCreateFolder: true});
+                            }
+                        },
+                        {
+                            label: "Upload dataset", action: () => {
+                                this.setState({showUploadDataset: true});
+                            }
+                        }
+                    );
+                    navItems.push({
+                        label: "Edit name", action: () => {
+                            this.setState({showEditName: true})
+                        }
+                    });
+                    navItems.push(
+                        {
+                            label: "Edit description", action: () => {
+                            this.setState({showEditDescription: true})
+                        }
+                        });
+                    navItems.push({
+                        label: "Edit permissions", action: () => {
+                            this.setState({showEditPermissions: true})
+                        }
+                    });
+                }
                 navItems.push({
                     label: "Link to Home", action: () => {
                         this.openActionTo("currentFolderLinkToHome");
@@ -496,17 +500,20 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
                 navItems = navItems.concat(add_folder_items);
             } else {
-                // Don't display this if we are in the trash of the user
-                if (this.state.folder.folder_type != Folder.TypeFolderEnum.Trash) {
+                if (folder.can_edit) {
+                    // Don't display this if we are in the trash of the user
+                    if (this.state.folder.folder_type !== Folder.TypeFolderEnum.Trash) {
+                        navItems.push({
+                            label: "Move to trash", action: () => this.moveToTrash()
+                        });
+                    }
                     navItems.push({
-                        label: "Move to trash", action: () => this.moveToTrash()
+                        label: "Move to...", action: () => {
+                            this.openActionTo("move");
+                        }
                     });
                 }
-                navItems.push({
-                    label: "Move to...", action: () => {
-                        this.openActionTo("move");
-                    }
-                });
+
                 navItems.push({
                     label: "Link to Home", action: () => {
                         this.openActionTo("linkToHome");

@@ -13,6 +13,8 @@ export class Folder {
     description: string;
     creator: NamedId;
     acl: Acl;
+    can_view: boolean;
+    can_edit: boolean;
 }
 
 export enum TypeFolderEnum {
@@ -22,11 +24,11 @@ export enum TypeFolderEnum {
 }
 
 export class FolderEntries {
-    'type': FolderEntries.TypeEnum;
-    'id': string;
-    'name': string;
-    'creation_date': string;
-    'creator': NamedId;
+    type: FolderEntries.TypeEnum;
+    id: string;
+    name: string;
+    creation_date: string;
+    creator: NamedId;
 }
 
 export namespace FolderEntries {
@@ -38,8 +40,8 @@ export namespace FolderEntries {
 }
 
 export class NamedId {
-    'name': string;
-    'id': string;
+    name: string;
+    id: string;
 }
 
 export interface User {

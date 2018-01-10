@@ -82,15 +82,19 @@ def create_folder(metadata):
 
 
 def get_folder(folder_id):
-    print("We received the request of this folder id: {}".format(folder_id))
     folder = models_controller.get_folder(folder_id, one_or_none=True)
     if folder is None:
         flask.abort(404)
 
     folder.parents = filter_allowed_parents(folder.parents)
 
+    # Get the rights of the user over the folder
+    right = models_controller.get_rights(folder_id)
+
     folder_schema = schemas.FolderSchema()
+    folder_schema.context = {'entry_user_right': right}
     json_data_folder = folder_schema.dump(folder).data
+
     return flask.jsonify(json_data_folder)
 
 
