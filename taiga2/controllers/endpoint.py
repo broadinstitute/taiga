@@ -95,15 +95,15 @@ def get_folder(folder_id):
 
 
 def update_folder_name(folderId, NameUpdate):
-    updated_dataset = models_controller.update_folder_name(folderId, NameUpdate["name"])
-    # TODO: Return the dataset id
-    return flask.jsonify({})
+    updated_folder = models_controller.update_folder_name(folderId, NameUpdate["name"])
+
+    return flask.jsonify({updated_folder.id})
 
 
 def update_folder_description(folderId, DescriptionUpdate):
-    models_controller.update_folder_description(folderId, DescriptionUpdate["description"])
-    # TODO: Return the dataset id
-    return flask.jsonify({})
+    updated_folder = models_controller.update_folder_description(folderId, DescriptionUpdate["description"])
+
+    return flask.jsonify({updated_folder.id})
 
 
 def get_user():
@@ -164,19 +164,19 @@ def get_dataset_last(dataset_id):
 
 def update_dataset_name(datasetId, NameUpdate):
     updated_dataset = models_controller.update_dataset_name(datasetId, NameUpdate["name"])
-    # TODO: Return the dataset id
-    return flask.jsonify({})
+
+    return flask.jsonify({updated_dataset.id})
 
 
 def update_dataset_description(datasetId, DescriptionUpdate):
-    models_controller.update_dataset_description(datasetId, DescriptionUpdate["description"])
-    # TODO: Return the dataset id
-    return flask.jsonify({})
+    updated_dataset = models_controller.update_dataset_description(datasetId, DescriptionUpdate["description"])
+
+    return flask.jsonify({updated_dataset.id})
 
 
 def create_or_update_dataset_access_log(datasetId):
-    models_controller.add_or_update_dataset_access_log(datasetId)
-    return flask.jsonify({})
+    access_log = models_controller.add_or_update_dataset_access_log(datasetId)
+    return flask.jsonify({access_log.id})
 
 
 def get_datasets_access_logs():

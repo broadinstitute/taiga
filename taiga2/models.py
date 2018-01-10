@@ -154,6 +154,7 @@ class Folder(Entry):
 
     folder_type = db.Column(db.Enum(FolderType))
 
+    # TODO: This should be a set, not a list.
     entries = db.relationship("Entry",
                               secondary=folder_entry_association_table,
                               backref="parents")

@@ -121,7 +121,7 @@ def add_folder(name,
     return new_folder
 
 
-def get_folder(folder_id, one_or_none=False):
+def get_folder(folder_id, one_or_none=False) -> Folder:
     query = db.session.query(Folder).filter(Folder.id == folder_id)
     return _fetch_respecting_one_or_none(q=query, one_or_none=one_or_none)
 
@@ -145,7 +145,7 @@ def get_public_folder():
     return public_folder
 
 
-def update_folder_name(folder_id, new_name):
+def update_folder_name(folder_id, new_name) -> Folder:
     folder = get_folder(folder_id)
 
     folder.name = new_name
@@ -155,7 +155,7 @@ def update_folder_name(folder_id, new_name):
     return folder
 
 
-def update_folder_description(folder_id, new_description):
+def update_folder_description(folder_id, new_description) -> Folder:
     folder = get_folder(folder_id)
 
     folder.description = new_description
@@ -315,7 +315,7 @@ def get_latest_dataset_version(dataset_id):
     return dataset_version_latest_version
 
 
-def update_dataset_name(dataset_id, name):
+def update_dataset_name(dataset_id, name) -> Dataset:
     dataset = get_dataset(dataset_id)
 
     dataset.name = name
@@ -328,7 +328,7 @@ def update_dataset_name(dataset_id, name):
     return dataset
 
 
-def update_dataset_description(dataset_id, description):
+def update_dataset_description(dataset_id, description) -> Dataset:
     dataset = get_dataset(dataset_id)
 
     dataset.description = description
@@ -434,7 +434,7 @@ def delete_dataset(dataset_id):
     # TODO: Shouldn't have to clean up, see Cascade and co
 
 
-def add_or_update_dataset_access_log(dataset_id):
+def add_or_update_dataset_access_log(dataset_id) -> UserLog:
     """Create or update, with the current datetime, the access log for the current user, on the dataset
     passed in parameter"""
 
