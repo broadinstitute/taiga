@@ -143,6 +143,20 @@ class DatasetSchema(ma.ModelSchema):
                                  dump_to='versions')
     parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
 
+    # TODO: Repetitions of how we manage can_edit and can_view over the Schema, could make a superclass instead
+    # `Method` takes a method name (str), Function takes a callable
+    can_edit = fields.fields.Method('check_edition')
+    can_view = fields.fields.Method('check_view')
+
+    def check_edition(self, dataset):
+        """Check with the context if we can edit"""
+        return self.context['entry_user_right'] == EntryRightsEnum.can_edit
+
+    def check_view(self, dataset):
+        """Check if we can view by looking at the context of the entry. If can_edit, we can view too"""
+        entry_user_right = self.context['entry_user_right']
+        return entry_user_right == EntryRightsEnum.can_view or entry_user_right == EntryRightsEnum.can_edit
+
 
 class DataFileSummarySchema(ma.ModelSchema):
     class Meta:
@@ -177,6 +191,20 @@ class DatasetVersionSchema(ma.ModelSchema):
     datafiles = ma.Nested(DataFileSchema, many=True)
     # TODO: Consolidate the term between folders and parents
     parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
+
+    # TODO: Repetitions of how we manage can_edit and can_view over the Schema, could make a superclass instead
+    # `Method` takes a method name (str), Function takes a callable
+    can_edit = fields.fields.Method('check_edition')
+    can_view = fields.fields.Method('check_view')
+
+    def check_edition(self, dataset_version):
+        """Check with the context if we can edit"""
+        return self.context['entry_user_right'] == EntryRightsEnum.can_edit
+
+    def check_view(self, dataset_version):
+        """Check if we can view by looking at the context of the entry. If can_edit, we can view too"""
+        entry_user_right = self.context['entry_user_right']
+        return entry_user_right == EntryRightsEnum.can_view or entry_user_right == EntryRightsEnum.can_edit
 
 
 class DatasetVersionFullDatasetSchema(ma.ModelSchema):

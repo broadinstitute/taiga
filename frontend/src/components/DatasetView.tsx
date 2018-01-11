@@ -466,31 +466,39 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
 
             let navItems = [];
-            navItems = [
-                {
-                    label: "Edit name", action: () => {
-                    this.setState({showEditName: true})
-                }
-                },
-                {
-                    label: "Edit description", action: () => {
-                    this.setState({showEditDescription: true})
-                }
-                },
-                {
-                    label: "Edit permissions", action: () => {
-                    this.setState({showEditPermissions: true})
-                }
-                },
+
+            // TODO: Look into why we are here despite the fact dataset is undefined
+            if (dataset && dataset.can_edit) {
+                navItems.push({
+                        label: "Edit name", action: () => {
+                            this.setState({showEditName: true})
+                        }
+                    },
+                    {
+                        label: "Edit description", action: () => {
+                        this.setState({showEditDescription: true})
+                    }
+                    },
+                    {
+                        label: "Edit permissions", action: () => {
+                        this.setState({showEditPermissions: true})
+                    }
+                    });
+            }
+            if (datasetVersion && datasetVersion.can_edit) {
+                navItems.push({
+                    label: "Create new version", action: () => {
+                        this.showUploadNewVersion();
+                    }
+                });
+            }
+
+            navItems.push(
+
                 // {
                 //     label: "Add permaname", action: function () {
                 // }
                 // },
-                {
-                    label: "Create new version", action: () => {
-                    this.showUploadNewVersion();
-                }
-                },
                 {
                     label: "Link to Home", action: () => {
                     // TODO: Fetch the current user only once, and reuse it as a state OR better, get it as a props from parent
@@ -512,8 +520,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 //     label: "Show History", action: function () {
                 // }
                 // }
-            ]
-            ;
+            );
 
             let permaname = null;
             let r_block = null;

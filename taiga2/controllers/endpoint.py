@@ -40,7 +40,12 @@ def get_dataset(datasetId):
     allowed_dataset = dataset
     allowed_dataset.parents = filter_allowed_parents(dataset.parents)
 
+    # Get the rights of the user over the folder
+    right = models_controller.get_rights(datasetId)
+
     dataset_schema = schemas.DatasetSchema()
+    print("The right is: {}".format(right))
+    dataset_schema.context['entry_user_right'] = right
     json_dataset_data = dataset_schema.dump(allowed_dataset).data
     return flask.jsonify(json_dataset_data)
 
@@ -92,7 +97,7 @@ def get_folder(folder_id):
     right = models_controller.get_rights(folder_id)
 
     folder_schema = schemas.FolderSchema()
-    folder_schema.context = {'entry_user_right': right}
+    folder_schema.context['entry_user_right'] = right
     json_data_folder = folder_schema.dump(folder).data
 
     return flask.jsonify(json_data_folder)
@@ -225,7 +230,10 @@ def get_dataset_version(datasetVersion_id):
     if dv is None:
         flask.abort(404)
 
+    dataset_version_right = models_controller.get_rights(dv.id)
+
     dataset_version_schema = schemas.DatasetVersionSchema()
+    dataset_version_schema.context['entry_user_right'] = dataset_version_right
     json_dv_data = dataset_version_schema.dump(dv).data
 
     return flask.jsonify(json_dv_data)
@@ -236,6 +244,10 @@ def get_dataset_versions(datasetVersionIdsDict):
     dataset_versions = models_controller.get_dataset_versions_bulk(array_dataset_version_ids)
 
     dataset_version_schema = schemas.DatasetVersionSchema(many=True)
+
+    # TODO: IMPORTANT and bug potential => Manage here the missing context depending on the dataset_v
+    dataset_version_schema.context['entry_user_right'] = models_controller.EntryRightsEnum.can_view
+
     json_data_dataset_versions = dataset_version_schema.dump(dataset_versions).data
 
     return flask.jsonify(json_data_dataset_versions)
@@ -265,11 +277,17 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     if dataset_version is None:
         flask.abort(404)
 
+    dataset_version_right = models_controller.get_rights(dataset_version.id)
+
     dataset = dataset_version.dataset
+    dataset_right = models_controller.get_rights(dataset.id)
 
     dataset.parents = filter_allowed_parents(dataset.parents)
 
+    dataset_version_schema.context['entry_user_right'] = dataset_version_right
     json_dv_data = dataset_version_schema.dump(dataset_version).data
+
+    dataset_schema.context['entry_user_right'] = dataset_right
     json_dataset_data = dataset_schema.dump(dataset).data
 
     # Preparation of the dictonary to return both objects

@@ -129,9 +129,8 @@ def get_folder(folder_id, one_or_none=False) -> Folder:
 
     folder_or_none = _fetch_respecting_one_or_none(q=query, one_or_none=one_or_none)
 
-
-
     return folder_or_none
+
 
 def get_rights(entry_id):
     entry = db.session.query(Entry).filter(Entry.id == entry_id).one()
