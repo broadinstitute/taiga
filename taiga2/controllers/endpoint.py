@@ -158,7 +158,7 @@ def get_s3_credentials():
 def get_dataset_first(dataset_id):
     first_dataset_version = models_controller.get_first_dataset_version(dataset_id)
 
-    right = models_controller.get_rights(first_dataset_version)
+    right = models_controller.get_rights(first_dataset_version.id)
 
     dataset_version_schema = schemas.DatasetVersionSchema()
     dataset_version_schema.context['entry_user_right'] = right
@@ -169,7 +169,7 @@ def get_dataset_first(dataset_id):
 def get_dataset_last(dataset_id):
     last_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
 
-    right = models_controller.get_rights(last_dataset_version)
+    right = models_controller.get_rights(last_dataset_version.id)
 
     dataset_version_schema = schemas.DatasetVersionSchema()
     dataset_version_schema.context['entry_user_right'] = right
