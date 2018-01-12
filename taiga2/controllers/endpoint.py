@@ -41,7 +41,7 @@ def get_dataset(datasetId):
     allowed_dataset.parents = filter_allowed_parents(dataset.parents)
 
     # Get the rights of the user over the folder
-    right = models_controller.get_rights(datasetId)
+    right = models_controller.get_rights(dataset.id)
 
     dataset_schema = schemas.DatasetSchema()
     print("The right is: {}".format(right))
