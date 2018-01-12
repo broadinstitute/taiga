@@ -25,6 +25,7 @@ ADMIN_USER_ID = "admin"
 
 
 def get_dataset(datasetId):
+    # TODO: We could receive a datasetId being a permaname. This is not good as our function is not respecting the atomicity. Should handle the usage of a different function if permaname
     # try using ID
     dataset = models_controller.get_dataset(datasetId, one_or_none=True)
 
