@@ -168,6 +168,9 @@ class Folder(Entry):
         'polymorphic_identity': "Folder"
     }
 
+    def __repr__(self):
+        return "Folder name: {} and id: {}".format(self.name, self.id)
+
 
 @event.listens_for(metadata, 'after_create')
 def public_folder_creation(*args, **kwargs):
@@ -462,6 +465,9 @@ class Group(db.Model):
     users = db.relationship(User.__name__,
                             secondary=group_user_association_table,
                             backref=__tablename__)
+
+    def __repr__(self):
+        return "Group {}".format(self.name)
 
 
 @event.listens_for(metadata, 'after_create')

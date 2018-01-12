@@ -4,7 +4,7 @@ import flask
 import uuid
 import os
 
-from typing import AbstractSet
+from typing import List
 
 import json
 
@@ -132,7 +132,7 @@ def get_folder(folder_id, one_or_none=False) -> Folder:
     return folder_or_none
 
 
-def get_rights(entry_id):
+def get_rights(entry_id) -> EntryRightsEnum:
     entry = db.session.query(Entry).filter(Entry.id == entry_id).one()
     # We check the rights of this user over this folder
     current_user = get_current_session_user()
@@ -1278,5 +1278,21 @@ def remove_accessLogs(array_access_log):
             .filter(UserLog.user_id == access_log['user_id']) \
             .delete()
     db.session.commit()
+
+# </editor-fold>
+
+# <editor-fold desc="Group">
+
+
+def add_group(name):
+    new_group = Group(name=name)
+    db.session.add(new_group)
+    db.session.commit()
+
+    return new_group
+
+def get_all_groups() -> List[Group]:
+    all_groups = db.session.query(Group).all()
+    return all_groups
 
 # </editor-fold>
