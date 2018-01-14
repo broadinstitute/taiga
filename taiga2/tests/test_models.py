@@ -2,7 +2,6 @@ import datetime
 import pytest
 import uuid
 
-from freezegun import freeze_time
 from flask_sqlalchemy import SessionBase
 
 import flask
@@ -15,7 +14,7 @@ from taiga2.models import generate_permaname
 from taiga2.models import DataFile
 from taiga2.models import EntryRightsEnum
 
-from taiga2.tests.factories import GroupFactory, UserFactory, FolderFactory
+# from taiga2.tests.factories import GroupFactory, UserFactory, FolderFactory
 
 
 # TODO: Remove the domain tests and bring them to test_endpoint.py
@@ -478,11 +477,11 @@ def test_get_provenance_graph(session: SessionBase, new_graph):
 # <editor-fold desc="Group">
 
 
-def test_new_group(session: SessionBase):
-    name = "New group"
-    new_group = GroupFactory(name=name)
-
-    assert new_group.name == name
+# def test_new_group(session: SessionBase):
+#     name = "New group"
+#     new_group = GroupFactory(name=name)
+#
+#     assert new_group.name == name
 
 
 def test_admin_group_exists(session: SessionBase):
