@@ -4,6 +4,8 @@ import flask
 import uuid
 import os
 
+from typing import List
+
 import json
 
 from sqlalchemy import and_, update
@@ -11,10 +13,11 @@ from sqlalchemy import and_, update
 import taiga2.models as models
 from taiga2.models import db
 from taiga2 import aws
-from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry
+from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry, Group
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
 from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
+from taiga2.models import Group, EntryRightsEnum
 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
@@ -71,7 +74,7 @@ def get_user(user_id):
     return db.session.query(User).filter(User.id == user_id).one()
 
 
-def get_current_session_user():
+def get_current_session_user() -> User:
     return flask.g.current_user
 
 
@@ -102,6 +105,7 @@ def _change_connected_user(new_user):
     else:
         return False
 
+
 # </editor-fold>
 
 # <editor-fold desc="Folder">
@@ -120,9 +124,25 @@ def add_folder(name,
     return new_folder
 
 
-def get_folder(folder_id, one_or_none=False):
+def get_folder(folder_id, one_or_none=False) -> Folder:
     query = db.session.query(Folder).filter(Folder.id == folder_id)
-    return _fetch_respecting_one_or_none(q=query, one_or_none=one_or_none)
+
+    folder_or_none = _fetch_respecting_one_or_none(q=query, one_or_none=one_or_none)
+
+    return folder_or_none
+
+
+def get_rights(entry_id) -> EntryRightsEnum:
+    entry = db.session.query(Entry).filter(Entry.id == entry_id).one()
+    # We check the rights of this user over this folder
+    current_user = get_current_session_user()
+
+    admin_group = db.session.query(Group).filter(Group.name == 'Admin').one()
+    # If the user is the owner or it is in the group of admins, allowed to edit
+    if entry.creator_id == current_user.id or current_user in admin_group.users:
+        return EntryRightsEnum.can_edit
+    else:
+        return EntryRightsEnum.can_view
 
 
 def get_folder_by_name(folder_name):
@@ -144,7 +164,7 @@ def get_public_folder():
     return public_folder
 
 
-def update_folder_name(folder_id, new_name):
+def update_folder_name(folder_id, new_name) -> Folder:
     folder = get_folder(folder_id)
 
     folder.name = new_name
@@ -154,7 +174,7 @@ def update_folder_name(folder_id, new_name):
     return folder
 
 
-def update_folder_description(folder_id, new_description):
+def update_folder_description(folder_id, new_description) -> Folder:
     folder = get_folder(folder_id)
 
     folder.description = new_description
@@ -314,7 +334,7 @@ def get_latest_dataset_version(dataset_id):
     return dataset_version_latest_version
 
 
-def update_dataset_name(dataset_id, name):
+def update_dataset_name(dataset_id, name) -> Dataset:
     dataset = get_dataset(dataset_id)
 
     dataset.name = name
@@ -327,7 +347,7 @@ def update_dataset_name(dataset_id, name):
     return dataset
 
 
-def update_dataset_description(dataset_id, description):
+def update_dataset_description(dataset_id, description) -> Dataset:
     dataset = get_dataset(dataset_id)
 
     dataset.description = description
@@ -433,7 +453,7 @@ def delete_dataset(dataset_id):
     # TODO: Shouldn't have to clean up, see Cascade and co
 
 
-def add_or_update_dataset_access_log(dataset_id):
+def add_or_update_dataset_access_log(dataset_id) -> UserLog:
     """Create or update, with the current datetime, the access log for the current user, on the dataset
     passed in parameter"""
 
@@ -558,7 +578,7 @@ def create_new_dataset_version_from_session(session_id,
     return new_dataset_version
 
 
-def _fetch_respecting_one_or_none(q, one_or_none):
+def _fetch_respecting_one_or_none(q, one_or_none) -> Folder:
     """If one_or_none is set, asks the query q to return none if NoResultFound, else raise the error"""
     if one_or_none:
         return q.one_or_none()
@@ -678,36 +698,6 @@ def _action_to_folder(entry_ids, target_folder_id, entry_action, current_folder_
         # If the requested action is EntryAction.copy:
         # We create a new dataset, and we populate it with the datasetVersions and the datafiles
         elif entry_action == EntryAction.copy:
-            # We check it is not already in
-            # TODO: This behavior should be managed, as abstract, in Entry, and overriden in the sub-classes, so the copy mechanism is handled by the class and not here
-            # original_folder = entry
-            #
-            # new_folder = add_folder(name=original_folder.name,
-            #                         folder_type=Folder.FolderType.folder, # We only copy it as a regular folder
-            #                         description=original_folder.description)
-            # new_folder.parents = [folder_to_action]
-            #
-            # db.session.add(new_folder)
-            #
-            # # Recurvive for each element in folder
-            # original_folder_entries_ids = [_entry.id for _entry in original_folder.entries]
-            # _action_to_folder(entry_ids=original_folder_entries_ids, folder_id=new_folder.id, entry_action=entry_action)
-
-            #
-            # new_dataset = None
-            # for current_dataset_version in original_dataset.dataset_versions:
-            #     datafiles_ids_copy = []
-            #     for original_datafile in current_dataset_version.datafiles:
-            #         _copy_datafile = copy_datafile(original_datafile.id)
-            #         datafiles_ids_copy.append(_copy_datafile.id)
-            #
-            #     if current_dataset_version.version == 1:
-            #         new_dataset = add_dataset(name=original_dataset.name,
-            #                                   description=original_dataset.description,
-            #                                   datafiles_ids=datafiles_ids_copy)
-            #     else:
-            #         add_dataset_version(dataset_id=new_dataset.id,
-            #                             datafiles_ids=datafiles_ids_copy)
             # TODO: Think about changing the parents to a set instead of a simple array
             if folder_to_action not in entry.parents:
                 entry.parents.append(folder_to_action)
@@ -1283,10 +1273,26 @@ def add_or_update_entry_access_log(entry_id):
 def remove_accessLogs(array_access_log):
     # TODO: Use better way of deleting this
     for access_log in array_access_log:
-        db.session.query(UserLog)\
-            .filter(UserLog.entry_id == access_log['entry_id'])\
-            .filter(UserLog.user_id == access_log['user_id'])\
+        db.session.query(UserLog) \
+            .filter(UserLog.entry_id == access_log['entry_id']) \
+            .filter(UserLog.user_id == access_log['user_id']) \
             .delete()
     db.session.commit()
+
+# </editor-fold>
+
+# <editor-fold desc="Group">
+
+
+def add_group(name):
+    new_group = Group(name=name)
+    db.session.add(new_group)
+    db.session.commit()
+
+    return new_group
+
+def get_all_groups() -> List[Group]:
+    all_groups = db.session.query(Group).all()
+    return all_groups
 
 # </editor-fold>

@@ -10,19 +10,18 @@ import * as Dialogs from "./Dialogs";
 import * as Upload from "./modals/Upload";
 import {EntryUsersPermissions} from "./modals/EntryUsersPermissions";
 import {NotFound} from "./NotFound";
-import {TreeView} from "./modals/TreeView";
 
 import {toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
 import {LoadingOverlay} from "../utilities/loading";
 
 import {Glyphicon} from "react-bootstrap";
-import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit} from "react-bootstrap-table";
+import {BootstrapTable, TableHeaderColumn, SelectRow, SelectRowMode, Options, SortOrder, CellEditClickMode, CellEdit} from "react-bootstrap-table";
 import {Dataset, NamedId} from "../models/models";
 import {DatasetVersion} from "../models/models";
 import {isUndefined} from "util";
 import {DatasetFullDatasetVersions, BootstrapTableFolderEntry} from "../models/models";
-import int = DataPipeline.int;
+// import int = DataPipeline.int;
 import {debug} from "util";
 import {User} from "../models/models";
 import {AccessLog} from "../models/models";
@@ -391,7 +390,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         this.setState({selection: updated_selection});
     }
 
-    wrap_parent_link(folder_named_id: NamedId, index: int, total_length: int) {
+    wrap_parent_link(folder_named_id: NamedId, index: number, total_length: number) {
         return <span key={index}>
                     <Link to={relativePath("folder/"+folder_named_id.id)}>{folder_named_id.name}</Link>
             {total_length != index + 1 &&
@@ -408,7 +407,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         return parent_links;
     }
 
-    removeAccessLogs(arrayAccessLogs: Array<AccessLog>): Promise {
+    removeAccessLogs(arrayAccessLogs: Array<AccessLog>): Promise<any> {
         return tapi.remove_entry_access_log(arrayAccessLogs).then(() => {
 
         });
@@ -460,35 +459,39 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
             let selectionCount = this.state.selection.length;
 
-            if (selectionCount == 0) {
-                let add_folder_items = [
-                    {
-                        label: "Create a subfolder", action: () => {
-                        this.setState({showCreateFolder: true})
-                    }
-                    },
-                    {
-                        label: "Upload dataset", action: () => {
-                        this.setState({showUploadDataset: true})
-                    }
-                    }
-                ];
-                navItems.push({
-                    label: "Edit name", action: () => {
-                        this.setState({showEditName: true})
-                    }
-                });
-                navItems.push(
-                    {
-                        label: "Edit description", action: () => {
-                        this.setState({showEditDescription: true})
-                    }
-                });
-                navItems.push({
-                    label: "Edit permissions", action: () => {
-                        this.setState({showEditPermissions: true})
-                    }
-                });
+            if (selectionCount === 0) {
+                let add_folder_items = [];
+                // If the user can edit, then it has access to the actions
+                if (folder.can_edit) {
+                    add_folder_items.push(
+                        {
+                            label: "Create a subfolder", action: () => {
+                                this.setState({showCreateFolder: true});
+                            }
+                        },
+                        {
+                            label: "Upload dataset", action: () => {
+                                this.setState({showUploadDataset: true});
+                            }
+                        }
+                    );
+                    navItems.push({
+                        label: "Edit name", action: () => {
+                            this.setState({showEditName: true})
+                        }
+                    });
+                    navItems.push(
+                        {
+                            label: "Edit description", action: () => {
+                            this.setState({showEditDescription: true})
+                        }
+                        });
+                    navItems.push({
+                        label: "Edit permissions", action: () => {
+                            this.setState({showEditPermissions: true})
+                        }
+                    });
+                }
                 navItems.push({
                     label: "Link to Home", action: () => {
                         this.openActionTo("currentFolderLinkToHome");
@@ -497,17 +500,20 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
                 navItems = navItems.concat(add_folder_items);
             } else {
-                // Don't display this if we are in the trash of the user
-                if (this.state.folder.folder_type != Folder.TypeFolderEnum.Trash) {
+                if (folder.can_edit) {
+                    // Don't display this if we are in the trash of the user
+                    if (this.state.folder.folder_type !== Folder.TypeFolderEnum.Trash) {
+                        navItems.push({
+                            label: "Move to trash", action: () => this.moveToTrash()
+                        });
+                    }
                     navItems.push({
-                        label: "Move to trash", action: () => this.moveToTrash()
+                        label: "Move to...", action: () => {
+                            this.openActionTo("move");
+                        }
                     });
                 }
-                navItems.push({
-                    label: "Move to...", action: () => {
-                        this.openActionTo("move");
-                    }
-                });
+
                 navItems.push({
                     label: "Link to Home", action: () => {
                         this.openActionTo("linkToHome");
@@ -523,20 +529,23 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         // Bootstrap Table configuration
         const check_mode: SelectRowMode = 'checkbox';
-        const selectRowProp = {
+        const selectRowProp: SelectRow = {
             mode: check_mode,
-            onSelect: (row, isSelected, e) => {
-                this.onRowSelect(row, isSelected, e)
+            onSelect: (row: any, isSelected: Boolean, e: any) => {
+                this.onRowSelect(row, isSelected, e);
+                return true;
             },
-            onSelectAll: (isSelected: Boolean, rows: Array<BootstrapTableFolderEntry>) => {
-                this.onAllRowsSelect(isSelected, rows)
+            onSelectAll: (isSelected: Boolean, currentSelectedAndDisplayData: Array<BootstrapTableFolderEntry>) => {
+                this.onAllRowsSelect(isSelected, currentSelectedAndDisplayData)
+                return true;
             }
         };
 
-        const options = {
+        const desc_sortOrder: SortOrder = 'desc';
+        const options: Options = {
             noDataText: 'Nothing created yet',
             defaultSortName: 'creation_date',  // default sort column name
-            defaultSortOrder: 'desc'  // default sort order
+            defaultSortOrder: desc_sortOrder  // default sort order
         };
 
         return (

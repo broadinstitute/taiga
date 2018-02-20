@@ -13,6 +13,8 @@ export class Folder {
     description: string;
     creator: NamedId;
     acl: Acl;
+    can_view: boolean;
+    can_edit: boolean;
 }
 
 export enum TypeFolderEnum {
@@ -22,11 +24,11 @@ export enum TypeFolderEnum {
 }
 
 export class FolderEntries {
-    'type': FolderEntries.TypeEnum;
-    'id': string;
-    'name': string;
-    'creation_date': string;
-    'creator': NamedId;
+    type: FolderEntries.TypeEnum;
+    id: string;
+    name: string;
+    creation_date: string;
+    creator: NamedId;
 }
 
 export namespace FolderEntries {
@@ -38,8 +40,8 @@ export namespace FolderEntries {
 }
 
 export class NamedId {
-    'name': string;
-    'id': string;
+    name: string;
+    id: string;
 }
 
 export interface User {
@@ -53,22 +55,24 @@ export interface User {
 export type StatusEnum = "deleted" | "valid" | "deprecated";
 
 export interface DatasetVersion {
-    "id": string;
-    "dataset_id": string;
-    "status": StatusEnum;
-    "name": string;
-    "permanames": Array<string>;
-    "version": string;
-    "description"?: string;
-    "creation_date": string;
-    "creator": NamedId;
-    "datafiles": Array<DatasetVersionDatafiles>;
+    id: string;
+    dataset_id: string;
+    status: StatusEnum;
+    name: string;
+    permanames: Array<string>;
+    version: string;
+    description?: string;
+    creation_date: string;
+    creator: NamedId;
+    datafiles: Array<DatasetVersionDatafiles>;
     folders: Array<NamedId>;
+    can_edit: boolean;
+    can_view: boolean;
 }
 
 export interface DatasetAndDatasetVersion {
-    "dataset": Dataset;
-    "datasetVersion": DatasetVersion;
+    dataset: Dataset;
+    datasetVersion: DatasetVersion;
 }
 
 export interface DatasetVersionDatafiles {
@@ -88,25 +92,28 @@ export interface DatasetVersions {
 }
 
 export interface Dataset {
-    "id": string;
-    "name": string;
-    "permanames": Array<string>;
-    "description": string;
+    id: string;
+    name: string;
+    permanames: Array<string>;
+    description: string;
     // TODO: Rename this and rework it, since it is "DatasetVersionNamedId" and not a true DatasetVersion(s)
-    "versions": Array<DatasetVersions>;
+    versions: Array<DatasetVersions>;
     acl: Acl;
-    "folders": Array<NamedId>;
+    folders: Array<NamedId>;
+
+    can_edit: boolean;
+    can_view: boolean;
 }
 
 export interface DatasetFullDatasetVersions {
-    "id": string;
-    "name": string;
-    "permanames": Array<string>;
-    "description": string;
-    "versions": Array<DatasetVersion>;
+    id: string;
+    name: string;
+    permanames: Array<string>;
+    description: string;
+    versions: Array<DatasetVersion>;
     acl: Acl;
     // TODO: Should we stay without the full folders? Cyclic risks?
-    "folders": Array<NamedId>;
+    folders: Array<NamedId>;
 }
 
 interface Method {

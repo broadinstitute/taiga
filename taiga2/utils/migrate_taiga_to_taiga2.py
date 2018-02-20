@@ -107,7 +107,7 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
             except NoResultFound:
                 # If no result, it means we need to create the folder in the user space or in public
                 dataset_folder = models_controller.add_folder(name=dataset_folder_name,
-                                                              folder_type='folder',
+                                                              folder_type=models_controller.Folder.FolderType.folder,
                                                               description=None)
 
                 if is_public:

@@ -98,6 +98,7 @@ def session(db, request):
     options = dict(bind=connection, binds={})
     _session = db.create_scoped_session(options=options)
     db.session = _session
+    print(db.session)
 
     # We call before_request
     flask.current_app.preprocess_request()

@@ -620,7 +620,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                     <TableHeaderColumn dataField='fileType'
                                        width={fileTypeWidth}
                                        dataFormat={ this.typeFormatter }
-                                       customEditor={ { getElement: createTypeEditor }}>
+                                       customEditor={ { getElement: createTypeEditor }}
+                                       editColumnClassName='upload_type_edition'>
                         <Glyphicon glyph="pencil"/> Type (click to edit)
                     </TableHeaderColumn>
                     <TableHeaderColumn dataField='fileSize'

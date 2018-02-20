@@ -3,7 +3,7 @@ import 'whatwg-fetch';
 import {
     User, Folder, Dataset, DatasetVersion, S3Credentials,
     TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId, DatasetFullDatasetVersions,
-    AccessLog, DatafileUrl, ProvenanceGraphFull, AccessLog
+    AccessLog, DatafileUrl, ProvenanceGraphFull
 } from './models';
 
 import { currentUserToken } from '../utilities/route';

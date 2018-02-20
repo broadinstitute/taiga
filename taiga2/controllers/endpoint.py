@@ -25,6 +25,7 @@ ADMIN_USER_ID = "admin"
 
 
 def get_dataset(datasetId):
+    # TODO: We could receive a datasetId being a permaname. This is not good as our function is not respecting the atomicity. Should handle the usage of a different function if permaname
     # try using ID
     dataset = models_controller.get_dataset(datasetId, one_or_none=True)
 
@@ -40,7 +41,12 @@ def get_dataset(datasetId):
     allowed_dataset = dataset
     allowed_dataset.parents = filter_allowed_parents(dataset.parents)
 
+    # Get the rights of the user over the folder
+    right = models_controller.get_rights(dataset.id)
+
     dataset_schema = schemas.DatasetSchema()
+    print("The right is: {}".format(right))
+    dataset_schema.context['entry_user_right'] = right
     json_dataset_data = dataset_schema.dump(allowed_dataset).data
     return flask.jsonify(json_dataset_data)
 
@@ -70,9 +76,8 @@ def create_folder(metadata):
     folder_description = metadata['description']
     parent_id = metadata['parentId']
 
-    # TODO: Instead of the string 'folder', use the model.Folder.FolderType.folder
     new_folder = models_controller.add_folder(name=folder_name,
-                                              folder_type='folder',
+                                              folder_type=models_controller.Folder.FolderType.folder,
                                               description=folder_description)
     models_controller.add_folder_entry(parent_id, new_folder.id)
 
@@ -83,28 +88,32 @@ def create_folder(metadata):
 
 
 def get_folder(folder_id):
-    print("We received the request of this folder id: {}".format(folder_id))
     folder = models_controller.get_folder(folder_id, one_or_none=True)
     if folder is None:
         flask.abort(404)
 
     folder.parents = filter_allowed_parents(folder.parents)
 
+    # Get the rights of the user over the folder
+    right = models_controller.get_rights(folder_id)
+
     folder_schema = schemas.FolderSchema()
+    folder_schema.context['entry_user_right'] = right
     json_data_folder = folder_schema.dump(folder).data
+
     return flask.jsonify(json_data_folder)
 
 
 def update_folder_name(folderId, NameUpdate):
-    updated_dataset = models_controller.update_folder_name(folderId, NameUpdate["name"])
-    # TODO: Return the dataset id
-    return flask.jsonify({})
+    updated_folder = models_controller.update_folder_name(folderId, NameUpdate["name"])
+
+    return flask.jsonify({updated_folder.id})
 
 
 def update_folder_description(folderId, DescriptionUpdate):
-    models_controller.update_folder_description(folderId, DescriptionUpdate["description"])
-    # TODO: Return the dataset id
-    return flask.jsonify({})
+    updated_folder = models_controller.update_folder_description(folderId, DescriptionUpdate["description"])
+
+    return flask.jsonify({updated_folder.id})
 
 
 def get_user():
@@ -150,7 +159,10 @@ def get_s3_credentials():
 def get_dataset_first(dataset_id):
     first_dataset_version = models_controller.get_first_dataset_version(dataset_id)
 
+    right = models_controller.get_rights(first_dataset_version.id)
+
     dataset_version_schema = schemas.DatasetVersionSchema()
+    dataset_version_schema.context['entry_user_right'] = right
     json_data_first_dataset_version = dataset_version_schema.dump(first_dataset_version).data
     return flask.jsonify(json_data_first_dataset_version)
 
@@ -158,26 +170,29 @@ def get_dataset_first(dataset_id):
 def get_dataset_last(dataset_id):
     last_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
 
+    right = models_controller.get_rights(last_dataset_version.id)
+
     dataset_version_schema = schemas.DatasetVersionSchema()
+    dataset_version_schema.context['entry_user_right'] = right
     json_data_first_dataset_version = dataset_version_schema.dump(last_dataset_version).data
     return flask.jsonify(json_data_first_dataset_version)
 
 
 def update_dataset_name(datasetId, NameUpdate):
     updated_dataset = models_controller.update_dataset_name(datasetId, NameUpdate["name"])
-    # TODO: Return the dataset id
-    return flask.jsonify({})
+
+    return flask.jsonify({updated_dataset.id})
 
 
 def update_dataset_description(datasetId, DescriptionUpdate):
-    models_controller.update_dataset_description(datasetId, DescriptionUpdate["description"])
-    # TODO: Return the dataset id
-    return flask.jsonify({})
+    updated_dataset = models_controller.update_dataset_description(datasetId, DescriptionUpdate["description"])
+
+    return flask.jsonify({updated_dataset.id})
 
 
 def create_or_update_dataset_access_log(datasetId):
-    models_controller.add_or_update_dataset_access_log(datasetId)
-    return flask.jsonify({})
+    access_log = models_controller.add_or_update_dataset_access_log(datasetId)
+    return flask.jsonify({access_log.id})
 
 
 def get_datasets_access_logs():
@@ -222,7 +237,10 @@ def get_dataset_version(datasetVersion_id):
     if dv is None:
         flask.abort(404)
 
+    dataset_version_right = models_controller.get_rights(dv.id)
+
     dataset_version_schema = schemas.DatasetVersionSchema()
+    dataset_version_schema.context['entry_user_right'] = dataset_version_right
     json_dv_data = dataset_version_schema.dump(dv).data
 
     return flask.jsonify(json_dv_data)
@@ -233,6 +251,10 @@ def get_dataset_versions(datasetVersionIdsDict):
     dataset_versions = models_controller.get_dataset_versions_bulk(array_dataset_version_ids)
 
     dataset_version_schema = schemas.DatasetVersionSchema(many=True)
+
+    # TODO: IMPORTANT and bug potential => Manage here the missing context depending on the dataset_v
+    dataset_version_schema.context['entry_user_right'] = models_controller.EntryRightsEnum.can_view
+
     json_data_dataset_versions = dataset_version_schema.dump(dataset_versions).data
 
     return flask.jsonify(json_data_dataset_versions)
@@ -262,11 +284,17 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     if dataset_version is None:
         flask.abort(404)
 
+    dataset_version_right = models_controller.get_rights(dataset_version.id)
+
     dataset = dataset_version.dataset
+    dataset_right = models_controller.get_rights(dataset.id)
 
     dataset.parents = filter_allowed_parents(dataset.parents)
 
+    dataset_version_schema.context['entry_user_right'] = dataset_version_right
     json_dv_data = dataset_version_schema.dump(dataset_version).data
+
+    dataset_schema.context['entry_user_right'] = dataset_right
     json_dataset_data = dataset_schema.dump(dataset).data
 
     # Preparation of the dictonary to return both objects

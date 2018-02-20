@@ -6,8 +6,6 @@ import datetime
 from flask_migrate import Migrate
 
 from sqlalchemy import MetaData
-from sqlalchemy.types import TypeDecorator, CHAR
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import event, UniqueConstraint
 
 from flask_sqlalchemy import SQLAlchemy
@@ -48,6 +46,11 @@ folder_entry_association_table = db.Table('folder_entry_association',
                                           db.Column('folder_id', GUID, db.ForeignKey('folders.id')),
                                           db.Column('entry_id', GUID, db.ForeignKey('entries.id'))
                                           )
+
+group_user_association_table = db.Table('group_user_association',
+                                        db.Column('group_id', db.INTEGER, db.ForeignKey('groups.id')),
+                                        db.Column('user_id', GUID, db.ForeignKey('users.id'))
+                                        )
 
 
 # End Associations #
@@ -156,6 +159,7 @@ class Folder(Entry):
 
     folder_type = db.Column(db.Enum(FolderType))
 
+    # TODO: This should be a set, not a list.
     entries = db.relationship("Entry",
                               secondary=folder_entry_association_table,
                               backref="parents")
@@ -163,6 +167,9 @@ class Folder(Entry):
     __mapper_args__ = {
         'polymorphic_identity': "Folder"
     }
+
+    def __repr__(self):
+        return "Folder name: {} and id: {}".format(self.name, self.id)
 
 
 @event.listens_for(metadata, 'after_create')
@@ -442,4 +449,38 @@ class ProvenanceNode(db.Model):
 
     type = db.Column(db.Enum(NodeType))
 
-# <editor-fold>
+
+# </editor-fold>
+
+# <editor-fold desc="ACLs">
+
+
+class Group(db.Model):
+    __tablename__ = 'groups'
+
+    id = db.Column(db.INTEGER, primary_key=True, autoincrement=True)
+
+    name = db.Column(db.String(80))
+
+    users = db.relationship(User.__name__,
+                            secondary=group_user_association_table,
+                            backref=__tablename__)
+
+    def __repr__(self):
+        return "Group {}".format(self.name)
+
+
+@event.listens_for(metadata, 'after_create')
+def admin_group_creation(*args, **kwargs):
+    """After we create the table Group, we also add the group 'Admin'"""
+    admin_group = Group(name='Admin')
+
+    db.session.add(admin_group)
+    db.session.commit()
+
+
+class EntryRightsEnum(enum.Enum):
+    can_edit = 'can_edit'
+    can_view = 'can_view'
+
+# </editor-fold>

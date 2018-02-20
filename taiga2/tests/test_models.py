@@ -2,7 +2,6 @@ import datetime
 import pytest
 import uuid
 
-from freezegun import freeze_time
 from flask_sqlalchemy import SessionBase
 
 import flask
@@ -10,9 +9,12 @@ import flask
 import taiga2.controllers.models_controller as mc
 
 from taiga2.models import db
-from taiga2.models import User, Folder, Dataset, DatasetVersion
+from taiga2.models import User, Folder, Dataset, DatasetVersion, Group
 from taiga2.models import generate_permaname
 from taiga2.models import DataFile
+from taiga2.models import EntryRightsEnum
+
+# from taiga2.tests.factories import GroupFactory, UserFactory, FolderFactory
 
 
 # TODO: Remove the domain tests and bring them to test_endpoint.py
@@ -469,6 +471,64 @@ def test_get_provenance_graph(session: SessionBase, new_graph):
 #
 # def test_get_provenance_edge(session: SessionBase):
 #     return False
+
+# </editor-fold>
+
+# <editor-fold desc="Group">
+
+
+# def test_new_group(session: SessionBase):
+#     name = "New group"
+#     new_group = GroupFactory(name=name)
+#
+#     assert new_group.name == name
+
+
+def test_admin_group_exists(session: SessionBase):
+    get_groups = mc.get_all_groups()
+
+    assert len(get_groups) != 0
+
+
+def test_add_group_user_association(session: SessionBase):
+    new_user = mc.add_user("test", "test@group.com")
+
+    new_group = mc.add_group("test")
+    new_group.users.append(new_user)
+
+    assert new_user in new_group.users
+
+
+def test_view_not_owned(session: SessionBase):
+    new_user = mc.add_user("test", "test@group.com")
+    flask.g.current_user = new_user
+
+    new_user_not_tested = mc.add_user("test_useless", "test_useless@group.com")
+
+    # new_folder_not_owned = FolderFactory(creator=new_user_not_tested)
+    new_folder_not_owned = mc.add_folder(name="folder_not_owned",
+                                         folder_type=Folder.FolderType.folder,
+                                         description='')
+    new_folder_not_owned.creator = new_user_not_tested
+
+    right_not_owned = mc.get_rights(new_folder_not_owned.id)
+
+    assert right_not_owned == EntryRightsEnum.can_view
+
+
+def test_edit_owned(session: SessionBase):
+    new_user = mc.add_user("test", "test@group.com")
+    flask.g.current_user = new_user
+
+    # new_folder_owned = FolderFactory(creator=new_user)
+    new_folder_owned = mc.add_folder(name="Test folder",
+                                     folder_type=Folder.FolderType.folder,
+                                     description='')
+
+    right_owned = mc.get_rights(new_folder_owned.id)
+
+    assert right_owned == EntryRightsEnum.can_edit
+
 
 # </editor-fold>
 

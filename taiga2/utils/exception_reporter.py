@@ -1,7 +1,5 @@
 from google.cloud import error_reporting
-from google.cloud.error_reporting import build_flask_context
 from flask import request
-import os
 
 try:
     from flask import _app_ctx_stack as stack
@@ -28,7 +26,7 @@ class ExceptionReporter:
             return
 
         client = self._get_client()
-        client.report_exception(http_context=build_flask_context(request))
+        client.report_exception(http_context=error_reporting.build_flask_context(request))
 
     def _create_client(self):
         return error_reporting.Client(service=self.service_name)

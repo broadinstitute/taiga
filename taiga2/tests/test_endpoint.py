@@ -10,7 +10,7 @@ from freezegun import freeze_time
 import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
 
-from taiga2.models import generate_permaname, DataFile
+from taiga2.models import generate_permaname, DataFile, Dataset
 from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
 from taiga2.schemas import AccessLogSchema
@@ -266,6 +266,13 @@ def test_get_dataset_two_ways(session: SessionBase, new_dataset):
     # test fetching non-existant dataset results in 404
     with pytest.raises(werkzeug.exceptions.NotFound):
         endpoint.get_dataset("invalid")
+
+
+def test_get_dataset_permaname(session: SessionBase, new_dataset: Dataset):
+    ds = get_data_from_flask_jsonify(endpoint.get_dataset(new_dataset.permaname))
+
+    assert ds['permanames'][0] == new_dataset.permaname
+    assert ds['id'] == new_dataset.id
 
 
 # <editor-fold desc="Access Logs">
