@@ -66,8 +66,9 @@ def gct_to_hdf5(progress, src_gct_file, dst_hdf5_file, rows_per_block=None, max_
         line = gct.readline().strip()
         assert line == "#1.2"
         r = csv.reader(gct, csv.excel_tab)
-        dims = [int(x) for x in next(r)]
-        row_count, col_count = dims
+        dimline = next(r)
+        row_count = int(dimline[0])
+        col_count = int(dimline[1])
 
         col_header = next(r)
         # drop the id/description header column names
