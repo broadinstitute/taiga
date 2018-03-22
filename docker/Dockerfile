@@ -104,8 +104,8 @@ WORKDIR ..
 #RUN ln -s /usr/bin/nodejs /usr/bin/node
 #RUN node_modules/.bin/webpack
 RUN export PATH="$(yarn global bin):$PATH"
-RUN yarn add webpack --dev
-# We build the production version
+RUN yarn add webpack@2.2.1 --dev
+# We build the production version TODO: Remove the exit 0
 RUN ./node_modules/.bin/webpack --config webpack.config.prod.js; exit 0
 
 # Set celery as being able to run as root => Can find a better way
