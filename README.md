@@ -155,7 +155,7 @@ Starting the project is not yet straightforward, but will be in the near future:
 
         `taiga2 settings.cfg`
 
-        `export TAIGA2_SETTINGS=settings.cfg ; celery -A taiga2 worker -l info -E`
+        `export TAIGA2_SETTINGS=settings.cfg ; celery -A taiga2 worker -l INFO -E -n worker1@%h --max-memory-per-child 200000`
         
 7. Congratulations! You can now access to Taiga 2 through your browser at:
 
