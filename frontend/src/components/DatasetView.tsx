@@ -504,7 +504,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     // TODO: Fetch the current user only once, and reuse it as a state OR better, get it as a props from parent
                     tapi.get_user().then(user => {
                         this.copyTo(user.home_folder_id);
-                    })
+                    });
                 }
                 },
                 {

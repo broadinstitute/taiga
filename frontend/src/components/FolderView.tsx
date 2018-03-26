@@ -605,9 +605,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
                         <h1>{folder.name}</h1>
 
-                        <Conditional show={ parent_links.length > 0 &&
-                            ((folder.creator && folder.creator.id == currentUser) ||
-                            folder.parents.some((parent) => { return parent.id == 'public'; })) }>
+                        <Conditional show={ parent_links.length > 0 }>
                             <p>Parents: {parent_links}</p>
                         </Conditional>
 
