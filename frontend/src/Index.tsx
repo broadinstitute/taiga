@@ -90,7 +90,7 @@ class App extends React.Component<AppProps, any> {
                     <div className="login-box pull-right bottom-page-text">
                         <a href="https://github.com/broadinstitute/taiga"
                            target="_blank"
-                           className="headerTitle headerTitleMinor">Rev 2.13.3</a>
+                           className="headerTitle headerTitleMinor">Rev 2.13.5</a>
                     </div>
                 </footer>
             </div>
