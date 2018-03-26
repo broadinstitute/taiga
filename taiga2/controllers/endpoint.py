@@ -107,13 +107,13 @@ def get_folder(folder_id):
 def update_folder_name(folderId, NameUpdate):
     updated_folder = models_controller.update_folder_name(folderId, NameUpdate["name"])
 
-    return flask.jsonify({updated_folder.id})
+    return flask.jsonify(updated_folder.id)
 
 
 def update_folder_description(folderId, DescriptionUpdate):
     updated_folder = models_controller.update_folder_description(folderId, DescriptionUpdate["description"])
 
-    return flask.jsonify({updated_folder.id})
+    return flask.jsonify(updated_folder.id)
 
 
 def get_user():
