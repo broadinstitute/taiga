@@ -44,10 +44,16 @@ def gct_to_hdf5(progress, src_gct_file, dst_hdf5_file, rows_per_block=None,
                 max_size_per_block=DEFAULT_MAX_ELEMENTS_PER_BLOCK):
     sha256 = get_file_sha256(src_gct_file)
 
-    with open(src_gct_file, 'rt') as gct:
+    with open(src_gct_file, 'rb') as gct:
         line = gct.readline().strip()
-        assert line == "#1.2"
-        r = csv.reader(gct, csv.excel_tab)
+        # TODO: Check line is still #1.2 + Exception message
+        #assert line == "#1.2"
+
+        # Wrapping the tcsv file into TextIOWrapper to avoid disabling .tell() function on the file
+        textIO_gct = io.TextIOWrapper(io.BufferedReader(gct))
+
+        r = csv.reader(textIO_gct, csv.excel_tab)
+
         dimline = next(r)
         row_count = int(dimline[0])
         col_count = int(dimline[1])
@@ -68,7 +74,8 @@ def gct_to_hdf5(progress, src_gct_file, dst_hdf5_file, rows_per_block=None,
 
         na_count, row_header = _convert_to_hdf5_file(row_count, col_count, col_header, csv.excel_tab, dst_hdf5_file,
                                                      progress, rows_without_description(), rows_per_block,
-                                                     max_size_per_block, description_column=description_column)
+                                                     max_size_per_block, description_column=description_column,
+                                                     file=gct)
 
     return _make_import_result(col_count, col_header, na_count, row_count, row_header, sha256)
 
