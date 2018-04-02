@@ -166,8 +166,7 @@ Starting the project is not yet straightforward, but will be in the near future:
 
 Install rhdf5 R library => http://bioconductor.org/packages/release/bioc/html/rhdf5.html
 
-1. `cd taiga2/tests`
-2. `pytest`
+`pytest` from the root
 
 ## Deployment
 

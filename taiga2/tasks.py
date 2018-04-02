@@ -10,7 +10,12 @@ import taiga2.conv as conversion
 from taiga2.conv.util import Progress
 from taiga2.conv.util import make_temp_file_generator
 from taiga2.controllers import models_controller
+from taiga2.conv.util import tr
 from taiga2.conv.imp import ImportResult
+
+
+import os
+import psutil
 
 celery = Celery("taiga2")
 log = logging.getLogger()
@@ -22,6 +27,7 @@ def print_config():
 
 def _from_s3_convert_to_s3(progress, upload_session_file_id, s3_object, download_dest, converted_dest, converted_s3_object, converter):
     progress.progress("Downloading the file from S3")
+
     s3_object.download_fileobj(download_dest)
     download_dest.flush()
 
@@ -186,6 +192,7 @@ def _start_conversion_task(self, progress, bucket, key, src_format, dst_format, 
 
 @celery.task(bind=True)
 def start_conversion_task(self, bucket, key, src_format, dst_format, cache_entry_id):
+    log.info("Starting a Conversion task")
     try:
         return _start_conversion_task(self, Progress(self), bucket, key, src_format, dst_format, cache_entry_id)
     except:

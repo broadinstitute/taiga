@@ -3,6 +3,7 @@ import contextlib
 import os
 import tempfile
 
+
 @contextlib.contextmanager
 def make_temp_file_generator():
     filenames = []
@@ -27,13 +28,13 @@ class Progress:
 
     def failed(self, message, filename=None):
         self.celery_instance.update_state(state='FAILURE',
-                                     meta={'current': 0, 'total': '0',
-                                           'message': message, 'fileName': filename})
+                                          meta={'current': 0, 'total': '0',
+                                                'message': message, 'fileName': filename})
 
     def progress(self, message, filename=None, current=0):
         self.celery_instance.update_state(state='PROGRESS',
-                                     meta={'current': current, 'total': '0',
-                                           'message': message, 'fileName': filename})
+                                          meta={'current': current, 'total': '0',
+                                                'message': message, 'fileName': filename})
 
 
 def _to_string_with_nan_mask(x):
@@ -52,16 +53,19 @@ def shortened_list(l):
     else:
         return ", ".join(l)
 
+
 import hashlib
 
 from collections import namedtuple
+
 ImportResult = namedtuple("ImportResult", "sha256 short_summary long_summary")
+
 
 def get_file_sha256(filename):
     hash = hashlib.sha256()
     with open(filename, "rb") as fd:
         while True:
-            buffer = fd.read(1024*1024)
+            buffer = fd.read(1024 * 1024)
             if len(buffer) == 0:
                 break
             hash.update(buffer)

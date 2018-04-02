@@ -24,9 +24,16 @@ csv_file_path = os.path.join(test_files_folder_path, csv_file_name)
 nonutf8_file_name = "non-utf8-table.csv"
 nonutf8_file_path = os.path.join(test_files_folder_path, nonutf8_file_name)
 
+# Not included in the git repository for space reasons. Add your own large numerical matrix in `test_files_folder_path`
+# And uncomment where this file is used in tests
+large_numerical_matrix_name = "large_numerical_matrix.csv"
+large_numerical_matrix_path = os.path.join(test_files_folder_path, large_numerical_matrix_name)
+
+
 @pytest.mark.parametrize("filename, initial_file_type", [
     (raw_file_path, InitialFileType.Raw.value),
-    (csv_file_path, InitialFileType.NumericMatrixCSV.value)
+    (csv_file_path, InitialFileType.NumericMatrixCSV.value),
+    #(large_numerical_matrix_path, InitialFileType.NumericMatrixCSV.value)
 ])
 def test_upload_session_file(filename, initial_file_type, session: SessionBase, user_id):
     print("initial_file_type", initial_file_type, filename)
@@ -44,10 +51,12 @@ def test_upload_session_file(filename, initial_file_type, session: SessionBase, 
     initial_s3_key = s3_raw_uploaded_file.key
 
     session = models_controller.add_new_upload_session()
-    upload_session_file = models_controller.add_upload_session_file(session.id, os.path.basename(filename), initial_file_type, initial_s3_key, bucket_name)
+    upload_session_file = models_controller.add_upload_session_file(session.id, os.path.basename(filename),
+                                                                    initial_file_type, initial_s3_key, bucket_name)
 
-    background_process_new_upload_session_file.delay(upload_session_file.id, initial_s3_key, initial_file_type, bucket_name,
-                                                   converted_s3_key).wait()
+    background_process_new_upload_session_file.delay(upload_session_file.id, initial_s3_key, initial_file_type,
+                                                     bucket_name,
+                                                     converted_s3_key).wait()
 
     # confirm the converted object was published back to s3
     assert aws.s3.Object(bucket_name, converted_s3_key).download_as_bytes() is not None
@@ -60,6 +69,7 @@ def test_get_csv_dims(tmpdir):
     assert row_count == 1
     assert col_count == 3
     assert sha256 == "629910bba467f4d6f518d309b3d2a99e316d7d5ef1faa744a7c5a6a084219255"
+
 
 def test_non_utf8(tmpdir):
     dest = str(tmpdir.join("dest.columnar"))
@@ -80,6 +90,7 @@ def test_non_utf8(tmpdir):
 
     # lastly, make sure we don't get an exception when converting to rds because R has its own ideas about encoding
     columnar_to_rds(None, dest, lambda: rds_dest)
+
 
 def test_matrix_with_full_header_import(tmpdir):
     r_filename = tmpdir.join("r_style")
