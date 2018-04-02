@@ -10,12 +10,8 @@ import taiga2.conv as conversion
 from taiga2.conv.util import Progress
 from taiga2.conv.util import make_temp_file_generator
 from taiga2.controllers import models_controller
-from taiga2.conv.util import tr
 from taiga2.conv.imp import ImportResult
 
-
-import os
-import psutil
 
 celery = Celery("taiga2")
 log = logging.getLogger()
