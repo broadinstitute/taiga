@@ -47,7 +47,7 @@ def gct_to_hdf5(progress, src_gct_file, dst_hdf5_file, rows_per_block=None,
     with open(src_gct_file, 'rb') as gct:
         line = gct.readline().strip()
         # TODO: Check line is still #1.2 + Exception message
-        #assert line == "#1.2"
+        # assert line == "#1.2"
 
         # Wrapping the tcsv file into TextIOWrapper to avoid disabling .tell() function on the file
         textIO_gct = io.TextIOWrapper(io.BufferedReader(gct))
