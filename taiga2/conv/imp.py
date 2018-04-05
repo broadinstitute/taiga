@@ -4,6 +4,8 @@ import numpy as np
 import logging
 from taiga2.conv.util import ImportResult, shortened_list, get_file_sha256
 
+from taiga2.conv import BYTES_PER_STR_OBJECT, MAX_MB_PER_CHUNK
+
 import os
 import psutil
 

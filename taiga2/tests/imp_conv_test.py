@@ -29,11 +29,15 @@ nonutf8_file_path = os.path.join(test_files_folder_path, nonutf8_file_name)
 large_numerical_matrix_name = "large_numerical_matrix.csv"
 large_numerical_matrix_path = os.path.join(test_files_folder_path, large_numerical_matrix_name)
 
+large_table_name = "large_table.csv"
+large_table_path = os.path.join(test_files_folder_path, large_table_name)
+
 
 @pytest.mark.parametrize("filename, initial_file_type", [
     (raw_file_path, InitialFileType.Raw.value),
     (csv_file_path, InitialFileType.NumericMatrixCSV.value),
-    #(large_numerical_matrix_path, InitialFileType.NumericMatrixCSV.value)
+    #(large_numerical_matrix_path, InitialFileType.NumericMatrixCSV.value),
+    #(large_table_path, InitialFileType.TableCSV.value)
 ])
 def test_upload_session_file(filename, initial_file_type, session: SessionBase, user_id):
     print("initial_file_type", initial_file_type, filename)

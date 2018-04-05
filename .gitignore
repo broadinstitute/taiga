@@ -47,3 +47,7 @@ taiga2/tests/test_files/migration/*
 
 # Ignore the provenance folder in test_files
 taiga2/tests/test_files/provenance/*
+
+# Ignore some files in test_files (because of the size)
+taiga2/tests/test_files/large_numerical_matrix.csv
+taiga2/tests/test_files/large_table.csv

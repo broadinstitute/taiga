@@ -8,7 +8,9 @@ from io import StringIO
 from io import BytesIO
 import logging
 import subprocess
+import sys
 from taiga2.conv.util import r_escape_str, shortened_list, ImportResult, get_file_sha256
+from taiga2.conv import BYTES_PER_STR_OBJECT, MAX_MB_PER_CHUNK
 
 log = logging.getLogger(__name__)
 
@@ -433,10 +435,15 @@ def get_long_summary(input_file):
             b.write("\t\"{}\" {}\n".format(c.name, c.persister.type_name))
         return b.getvalue()
 
-def convert_csv_to_tabular(input_file, output_file, delimiter, encoding, rows_per_block=100000):
+def convert_csv_to_tabular(input_file, output_file, delimiter, encoding, rows_per_block=None):
     sha256 = get_file_sha256(input_file)
     hasRowNames, datafile_columns = sniff.sniff(input_file, encoding, delimiter=delimiter)
 
+    if not rows_per_block:
+        rows_per_block = MAX_MB_PER_CHUNK / ((BYTES_PER_STR_OBJECT * len(datafile_columns)) / 1024**2)
+
+    # print("Before conversion")
+    # tr.print_diff()
     with open(input_file, 'rU', encoding=encoding) as fd:
         reader = csv.reader(fd, delimiter=delimiter)
 
@@ -452,8 +459,8 @@ def convert_csv_to_tabular(input_file, output_file, delimiter, encoding, rows_pe
             if len(datafile_columns) != len(row):
                 raise Exception(
                     "line %d column count mismatches: cols (%r) mismatches (%r)" % (line_number, datafile_columns, row))
-
             w.append(row)
+
         w.close()
 
     long_summary="Column names: {}\n".format(shortened_list([c.name for c in datafile_columns]))

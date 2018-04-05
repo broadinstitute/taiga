@@ -1,3 +1,6 @@
+BYTES_PER_STR_OBJECT = 60
+MAX_MB_PER_CHUNK = 50
+
 # These three must all have the same signature: ( input_file, temp_file_generator: "() -> str" ) -> list of files
 from taiga2.conv.columnar import columnar_to_rds
 
