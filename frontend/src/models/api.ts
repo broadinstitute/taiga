@@ -3,7 +3,7 @@ import 'whatwg-fetch';
 import {
     User, Folder, Dataset, DatasetVersion, S3Credentials,
     TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId, DatasetFullDatasetVersions,
-    AccessLog, DatafileUrl, ProvenanceGraphFull
+    AccessLog, DatafileUrl, ProvenanceGraphFull, SearchResult
 } from './models';
 
 import { currentUserToken } from '../utilities/route';
@@ -40,7 +40,7 @@ export class TaigaApi {
             })
             .then<T>((response: Response) => {
                 return response.json();
-            })
+            });
     }
 
     _post<T>(url: string, args: any): Promise<T> {
@@ -233,5 +233,10 @@ export class TaigaApi {
 
     get_provenance_graph(graph_id: string): Promise<ProvenanceGraphFull> {
         return this._fetch<ProvenanceGraphFull>("/provenance/" + graph_id);
+    }
+
+    // Search
+    get_folder_search(current_folder_id: string, search_query: string): Promise<SearchResult> {
+        return this._fetch<SearchResult>("/search/" + current_folder_id + "/" + search_query);
     }
 }

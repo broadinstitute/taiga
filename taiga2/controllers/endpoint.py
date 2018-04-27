@@ -20,7 +20,6 @@ log = logging.getLogger(__name__)
 from flask import render_template, request, redirect, url_for
 import os, json
 
-
 ADMIN_USER_ID = "admin"
 
 
@@ -277,7 +276,8 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
             pass
 
         if version_number is not None:
-            dataset_version = models_controller.get_dataset_version_by_permaname_and_version(datasetId, version_number, one_or_none=True)
+            dataset_version = models_controller.get_dataset_version_by_permaname_and_version(datasetId, version_number,
+                                                                                             one_or_none=True)
         else:
             dataset_version = models_controller.get_latest_dataset_version_by_permaname(datasetId)
 
@@ -385,11 +385,12 @@ def _no_transform_needed(requested_format, datafile_type):
 
 def _make_dl_name(datafile_name, dataset_version_version, dataset_name, format):
     if format != 'raw':
-        suffix = '.'+format
+        suffix = '.' + format
     else:
         suffix = ""
 
-    name = "{}_v{}-{}{}".format(normalize_name(dataset_name), dataset_version_version, normalize_name(datafile_name), suffix)
+    name = "{}_v{}-{}{}".format(normalize_name(dataset_name), dataset_version_version, normalize_name(datafile_name),
+                                suffix)
     return name
 
 
@@ -540,7 +541,7 @@ def get_provenance_graph(gid):
             datafile = models_controller.get_datafile(provenance_node['datafile_id'])
             provenance_node['url'] = datafile.dataset_version_id
         except NoResultFound:
-            log.info("The node {} with datafile_id {} has been ignored because no datafile was matching"\
+            log.info("The node {} with datafile_id {} has been ignored because no datafile was matching" \
                      .format(provenance_node['node_id'], provenance_node['datafile_id']))
 
     return flask.jsonify(json_graph_data)
@@ -594,3 +595,131 @@ def filter_allowed_parents(parents):
             del allowed_parents[index]
 
     return allowed_parents
+
+
+# Search
+def search_within_folder(current_folder_id, search_query):
+    """Given a folder id and a search query (string), will return all the datasets and folders that are matching the query inside the folder
+
+    Example of json output:
+    {
+        'current_folder': {
+            "name": folder.name,
+            "id": folder.id
+        },
+        'name': "Search results for " + search_query + " within " + folder.name,
+        'entries': [
+            {
+                "type": "folder",
+                "id": "de0fbbfe942f4734b9aa3bf0e31f5595",
+                "name": "Test_admin",
+                "creation_date": "06/06/2017",
+                "creator": {
+                    "name": "rmarenco",
+                    "id": "f54bc68c8619403eab4a6a0e768c9721"
+                },
+                "breadcrumbs": [
+                    {
+                        "order": 1,
+                        "name": "Public",
+                        "id": "public"
+                    }
+                ]
+            },
+            {
+                "type": "dataset_version",
+                "id": "6f16a4a01a89487e9f6f7b7a9913df58",
+                "name": "Dataset admin",
+                "creation_date": "06/06/2017",
+                "creator": {
+                    "name": "rmarenco",
+                    "id": "f54bc68c8619403eab4a6a0e768c9721"
+                },
+                "breadcrumbs": [
+                    {
+                        "order": 1,
+                        "name": "Public",
+                        "id": "public"
+                    },
+                    {
+                        "order": 2,
+                        "name": "Test_admin",
+                        "id": "de0fbbfe942f4734b9aa3bf0e31f5595"
+                    }
+                ]
+            }
+        ]
+    }
+    """
+    # Get the folder
+    folder = models_controller.get_folder(current_folder_id, one_or_none=True)
+    if folder is None:
+        flask.abort(404)
+
+    # Search inside the folder
+    # TODO: Logic should be in controller
+    from taiga2.models import Folder, Dataset, DatasetVersion
+
+    all_matching_entries = []
+
+    def find_matching_name(root_folder, breadcrumbs):
+        matching_entries = []
+        # Can't append on a copy()??
+        local_breadcrumbs = breadcrumbs.copy()
+        local_breadcrumbs.append({"order": len(breadcrumbs) + 1,
+                                  "name": root_folder.name,
+                                  "id": root_folder.id
+                                  })
+
+        for entry in root_folder.entries:
+            if search_query.lower() in entry.name.lower():
+                # If this is a dataset, return the latest dataset version instead
+                if isinstance(entry, Dataset):
+                    tmp_entry = models_controller.get_latest_dataset_version(entry.id)
+                    entry_type = "dataset_version"
+                else:
+                    # TODO: Add also the fact we can have a dataset_version (even if it should not happen in theory since we only store dataset in folders)
+                    tmp_entry = entry
+                    entry_type = "folder"
+
+                matching_entries.append({
+                    "type": entry_type,
+                    "id": tmp_entry.id,
+                    "name": entry.name,
+                    "creation_date": tmp_entry.creation_date,
+                    "creator": {
+                        "name": tmp_entry.creator.name,
+                        "id": tmp_entry.creator.id
+                    },
+                    "breadcrumbs": local_breadcrumbs
+                })
+
+            # If this is a folder, we enter into it and search inside it
+            if isinstance(entry, Folder):
+                # We need to be mindful about the same folder being in itself => Infinite recursion
+                already_in = any([breadcrumb["id"] == entry.id for breadcrumb in local_breadcrumbs])
+
+                if not already_in:
+                    matching_entries.extend(find_matching_name(entry, local_breadcrumbs))
+
+        return matching_entries
+
+    breadcrumbs = []
+    all_matching_entries = find_matching_name(folder, breadcrumbs=breadcrumbs)
+
+    return_response = {
+        'current_folder': {
+            "name": folder.name,
+            "id": folder.id
+        },
+        'name': "Search results for " + search_query + " within " + folder.name,
+        'entries': all_matching_entries
+    }
+
+    # type: FolderEntries.TypeEnum
+    # id: string;
+    # name: string;
+    # creation_date: string;
+    # creator: NamedId;
+    # breadcrumbs: Array<OrderedNamedId>
+    return flask.jsonify(return_response)

@@ -5,6 +5,7 @@ import { RouteProps, Router, Route, Link, IndexRoute, browserHistory } from "rea
 
 import {FolderView} from "./components/FolderView";
 import {DatasetView} from "./components/DatasetView";
+import {SearchView} from "./components/SearchView";
 
 import {TaigaApi} from "./models/api";
 import {User} from "./models/models";
@@ -219,6 +220,7 @@ tapi.get_user().then((user: User) => {
                 <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any}/>
                 <Route path="dataset_version/:datasetVersionId" component={DatasetView as any}/>
                 <Route path="folder/:folderId" component={FolderView as any}/>
+                <Route path="search/:currentFolderId/:searchQuery" component={SearchView as any}/>
                 <Route path="token/" component={ Token as any }/>
                 <Route path="recentlyViewed/" component={ RecentlyViewed as any }/>
                 <Route path="provenance/:graphId" component={Provenance as any}/>

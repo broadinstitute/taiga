@@ -1256,6 +1256,28 @@ paths:
         200:
           description: Successfully imported
 
+  /search/{current_folder_id}/{search_query}:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: search_within_folder
+      description: With current folder id and a search query, will return a list of SearchResult that contains datasets and folders
+      parameters:
+        - name: current_folder_id
+          in: path
+          type: string
+          description: Folder ID we want to perform the search into/from
+          required: true
+        - name: search_query
+          in: path
+          type: string
+          description: Search query we are looking for in the name of a dataset or folder
+          required: true
+      responses:
+        200:
+          description: A SearchResult that contains Entries and breadcrumb
+          schema:
+            "$ref": "#/definitions/SearchResult"
+
 definitions:
   Dataset:
     type: object
@@ -1482,6 +1504,16 @@ definitions:
       id:
         type: string
 
+  OrderedNamedId:
+    type: object
+    properties:
+      name:
+        type: string
+      id:
+        type: string
+      order:
+        type: integer
+
   EntrySummary:
     type: object
     properties:
@@ -1523,3 +1555,44 @@ definitions:
         type: string
       filetype:
         type: string
+
+  SearchResult:
+    type: object
+    required:
+      - current_folder_id
+      - name
+      - entries
+    properties:
+      current_folder_id:
+        "$ref": "#/definitions/NamedId"
+      name:
+        type: string
+      entries:
+        type: array
+        items:
+          "$ref": "#/definitions/SearchEntry"
+
+  SearchEntry:
+    type: object
+    required:
+      - type
+      - id
+      - name
+      - creation_date
+      - creator
+      - breadcrumb
+    properties:
+      type:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      creation_date:
+        type: string
+      creator:
+        "$ref": "#/definitions/NamedId"
+      breadcrumb:
+        type: array
+        items:
+          "$ref": "#/definitions/OrderedNamedId"
