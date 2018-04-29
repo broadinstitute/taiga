@@ -15,7 +15,8 @@ import {toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
 import {LoadingOverlay} from "../utilities/loading";
 
-import {Glyphicon} from "react-bootstrap";
+import {Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button} from "react-bootstrap";
+import {Grid, Row, Col} from "react-bootstrap";
 import {BootstrapTable, TableHeaderColumn, SelectRow, SelectRowMode, Options, SortOrder, CellEditClickMode, CellEdit} from "react-bootstrap-table";
 import {Dataset, NamedId} from "../models/models";
 import {DatasetVersion} from "../models/models";
@@ -61,6 +62,8 @@ export interface FolderViewState {
     loading?: boolean;
 
     currentUser?: User;
+
+    searchQuery?: string;
 }
 
 export class Conditional extends React.Component<any, any> {
@@ -105,6 +108,10 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     componentDidMount() {
         tapi = (this.context as any).tapi;
         currentUser = (this.context as any).currentUser;
+        this.setState({
+           searchQuery: ""
+        });
+
         this.doFetch().then(() => {
             this.logAccess();
         });
@@ -413,6 +420,25 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         });
     }
 
+    // Search
+    executeSearch(){
+        let _search = this.state.searchQuery;
+        let url = relativePath("search/" + this.state.folder.id + "/" + _search);
+        window.location.href = url;
+    }
+
+    handleChangeSearchQuery(e) {
+        this.setState({
+           searchQuery: e.target.value
+        });
+    }
+
+    searchKeyPress(event) {
+        if (event.key === "Enter") {
+            this.executeSearch();
+        }
+    }
+
     render() {
         let entriesOutput: Array<any> = [];
         let navItems: MenuItem[] = [];
@@ -422,8 +448,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             return <div>
                 <LeftNav items={[]}/>
                 <div id="main-content"/>
-            </div>
-        } else if (this.state.error && this.state.error.toUpperCase() == "NOT FOUND".toUpperCase()) {
+            </div>;
+        } else if (this.state.error && this.state.error.toUpperCase() === "NOT FOUND".toUpperCase()) {
             let message = "The folder " + this.props.params.folderId + " does not exist. Please check this id " +
                 "is correct. We are also available via the feedback button.";
             return <div>
@@ -557,7 +583,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                                           initialValue={ this.state.folder.name }
                                           cancel={ () => { this.setState({showEditName: false})} }
                                           save={ (name:string) => {
-                                this.setState({showEditName: false})
+                                this.setState({showEditName: false});
                                 this.updateName(name);
                         } }/>
 
@@ -609,7 +635,32 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             <p>Parents: {parent_links}</p>
                         </Conditional>
 
-                        { Dialogs.renderDescription(this.state.folder.description) }
+                        <Grid fluid={true} style={{
+                            padding: "0px"
+                        }}>
+                          <Row className="show-grid">
+                            <Col md={8}>
+                              { Dialogs.renderDescription(this.state.folder.description) }
+                            </Col>
+                            <Col md={4}>
+                                <Form inline onSubmit={ e => { e.preventDefault(); } }>
+                                  <FormGroup controlId="formInlineSearch">
+                                    <FormControl type="text" placeholder="Search by name"
+                                        value={this.state.searchQuery}
+                                        onChange={(event) => this.handleChangeSearchQuery(event)}
+                                        onKeyPress={(event) => this.searchKeyPress(event)}
+                                    />
+                                  </FormGroup>{" "}
+                                  <Button type="button" onClick={ () => this.executeSearch() }>
+                                      Search
+                                  </Button>
+                                </Form>
+                                <br/>
+                            </Col>
+                          </Row>
+                        </Grid>
+
+
 
                         <BootstrapTable data={ folderEntriesTableFormatted }
                                         bordered={ false }

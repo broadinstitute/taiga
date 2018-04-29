@@ -15,7 +15,8 @@ import {toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
 import {LoadingOverlay} from "../utilities/loading";
 
-import {Glyphicon} from "react-bootstrap";
+import {Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button} from "react-bootstrap";
+import {Grid, Row, Col} from "react-bootstrap";
 import {
     BootstrapTable,
     TableHeaderColumn,
@@ -75,6 +76,8 @@ export interface SearchViewState {
     folder?: Models.NamedId;
     name?: string;
     searchEntries?: Array<Models.SearchEntry>;
+
+    searchQuery?: string;
 }
 
 export class Conditional extends React.Component<any, any> {
@@ -103,17 +106,6 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
     private bootstrapTable: any;
 
     componentDidUpdate(prevProps: SearchViewProps) {
-        // respond to parameter change in scenario 3
-        // let oldId = prevProps.params.folderId;
-        // let newId = this.props.params.folderId;
-        // if (newId !== oldId) {
-        //     this.doFetch().then(() => {
-        //         this.logAccess();
-        //     });
-        //
-        //     // Clean selected
-        //     this.bootstrapTable.cleanSelected();
-        // }
     }
 
     componentDidMount() {
@@ -146,205 +138,6 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
         return tapi.get_folder_search(this.props.params.currentFolderId, this.props.params.searchQuery);
     }
 
-    // doFetch() {
-    //     this.setState({
-    //         loading: true
-    //     });
-    //     // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
-    //     let datasetsLatestDv: {[dataset_id: string]: Models.DatasetVersion} = {};
-    //     let datasetsVersion: {[datasetVersion_id: string]: Models.DatasetVersion} = {};
-    //     let _folder: Models.Folder = null;
-    //
-    //     return tapi.get_folder(this.props.params.folderId).then(folder => {
-    //             _folder = folder;
-    //             return folder.entries;
-    //         }
-    //     ).then((entries: Array<Models.FolderEntries>) => {
-    //         // We want to ask the server a bulk of the datasets and the datasetVersions
-    //         let datasetIds = entries.filter((entry: Models.FolderEntries) => {
-    //             return entry.type === Models.FolderEntries.TypeEnum.Dataset;
-    //         }).map((datasetEntry: Models.FolderEntries) => {
-    //             return datasetEntry.id;
-    //         });
-    //         let datasetVersionIds = entries.filter((entry: Models.FolderEntries) => {
-    //             return entry.type === Models.FolderEntries.TypeEnum.DatasetVersion;
-    //         }).map((datasetVersionEntry: Models.FolderEntries) => {
-    //             return datasetVersionEntry.id;
-    //         });
-    //
-    //         // First we ask the dataset bulk
-    //
-    //         return tapi.get_datasets(datasetIds).then((arrayDatasets: Array<DatasetFullDatasetVersions>) => {
-    //             arrayDatasets.forEach((dataset: DatasetFullDatasetVersions) => {
-    //                 // We get the latest datasetVersion
-    //                 let latestDatasetVersion: DatasetVersion = dataset.versions[0];
-    //                 dataset.versions.forEach((datasetVersion: DatasetVersion) => {
-    //                     if (latestDatasetVersion.version < datasetVersion.version) {
-    //                         latestDatasetVersion = datasetVersion;
-    //                     }
-    //                 });
-    //                 datasetsLatestDv[dataset.id] = latestDatasetVersion;
-    //             });
-    //         }).then(() => {
-    //             // Then we ask the datasetVersion bulk
-    //             return tapi.get_datasetVersions(datasetVersionIds).then((arrayDatasetVersions: Array<DatasetVersion>) => {
-    //                 arrayDatasetVersions.forEach((datasetVersion: DatasetVersion) => {
-    //                     datasetsVersion[datasetVersion.id] = datasetVersion;
-    //                 });
-    //             });
-    //         });
-    //     }).then(() => {
-    //         this.setState({
-    //             folder: _folder,
-    //             selection: new Array<string>(),
-    //             datasetLastDatasetVersion: datasetsLatestDv,
-    //             datasetsVersion: datasetsVersion,
-    //             loading: false
-    //         });
-    //     }).catch((error) => {
-    //         this.setState({
-    //             error: error.message
-    //         });
-    //         console.log("Error: " + error.stack);
-    //     });
-    // }
-
-    // TODO: Refactor logAccess in an util or in RecentlyViewed class
-    logAccess() {
-        return tapi.create_or_update_entry_access_log(this.state.folder.id).then(() => {
-        });
-    }
-
-    updateName(name: string) {
-        // tapi.update_folder_name(this.state.folder.id, name).then(() => {
-        //     return this.doFetch();
-        // });
-    }
-
-    updateDescription(description: string) {
-        // tapi.update_folder_description(this.state.folder.id, description).then(() => {
-        //     return this.doFetch();
-        // });
-    }
-
-    createFolder(name: string, description: string) {
-        const current_folder_id: string = this.state.folder.id;
-        // TODO: To fetch instead the current user once we have the authentication
-        const current_creator_id: string = currentUser;
-
-        // tapi.create_folder(current_folder_id, current_creator_id, name, description).then(() => {
-        //     return this.doFetch();
-        // });
-    }
-
-    moveToTrash() {
-        // move_to_folder takes the entryIds, the current folder id and the target folder id as parameters
-        // If the target folder is null, the backend will move this symbolic link to the trash
-        // tapi.move_to_folder(this.state.selection, this.state.folder.id, null).then(() => {
-        //     return this.doFetch();
-        // }).catch((err: any) => {
-        //     console.log("Error when moving to trash :/ : " + err);
-        // });
-    }
-
-    openActionTo(actionName: string) {
-        // TODO: Change the string telling the action to an enum, like in the backend
-
-        let actionDescription = "";
-
-        if (actionName === "move") {
-            actionDescription = "move the selected file(s) into it";
-        }
-        else if (actionName === "link") {
-            this.setState({initFolderId: ""});
-            actionDescription = "link the selected file(s) into it";
-        }
-        else if (actionName === "linkToHome") {
-            this.setState({initFolderId: this.state.currentUser.home_folder_id});
-            actionDescription = "Link the selected file(s) into your Home folder";
-        }
-        else if (actionName === "currentFolderLinkToHome") {
-            this.setState({initFolderId: this.state.currentUser.home_folder_id});
-            actionDescription = "Link the current folder into your Home folder";
-        }
-
-        this.setState({
-            callbackIntoFolderAction: (folderId) => this.actionIntoFolder(folderId),
-            actionName: actionName,
-            inputFolderIdActionDescription: actionDescription,
-            showInputFolderId: true,
-            actionIntoFolderValidation: null,
-            actionIntoFolderHelp: null
-        });
-    }
-
-    actionIntoFolder(folderId: string) {
-        // TODO: Call to move the files
-
-        // TODO: Find the right way to put the function in a variable but not carry this into tapi
-        if (this.state.actionName === "move") {
-            tapi.move_to_folder(this.state.selection, this.state.folder.id, folderId).then(() => this.afterAction());
-        }
-        else if (this.state.actionName === "link" || this.state.actionName === "linkToHome") {
-            tapi.copy_to_folder(this.state.selection, folderId).then(() => this.afterAction());
-        }
-        else if (this.state.actionName === "currentFolderLinkToHome") {
-            tapi.copy_to_folder([this.props.params.folderId], folderId).then(() => this.afterAction());
-        }
-    }
-
-    afterAction() {
-        // TODO: We don't need to do that if we are copying
-        // this.doFetch().then(() => {
-        //     this.setState({
-        //         showInputFolderId: false
-        //     });
-        // }).catch((err) => {
-        //     console.log(err);
-        //
-        //     // If we receive 422 error
-        //     if (err.message === "UNPROCESSABLE ENTITY") {
-        //         let err_message_user = "Folder id is not valid. Please check it and retry :)";
-        //         this.setState({
-        //             actionIntoFolderValidation: "error",
-        //             actionIntoFolderHelp: err_message_user
-        //         });
-        //     }
-        // });
-    }
-
-    // Upload
-    filesUploadedAndConverted(sid: string, datasetName: string, datasetDescription: string) {
-        // We ask to create the dataset
-        return tapi.create_dataset(sid,
-            datasetName,
-            datasetDescription,
-            this.state.folder.id
-        ).then((dataset_id) => {
-            // We fetch the datasetVersion of the newly created dataset and change the state of it
-            // return tapi.get_dataset_version_first(dataset_id).then((newDatasetVersion) => {
-            //     this.doFetch();
-            //     return Promise.resolve(newDatasetVersion);
-            // });
-        }).catch((err: any) => {
-            console.log(err);
-            return Promise.reject(err);
-        });
-    }
-
-    getMostRecentDateEntry(entry: Models.FolderEntries) {
-        // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
-        if (entry.type === Models.FolderEntries.TypeEnum.Folder) {
-            return entry.creation_date;
-        }
-        else if (entry.type === Models.FolderEntries.TypeEnum.Dataset) {
-            let latestDatasetVersion = this.state.datasetLastDatasetVersion[entry.id];
-            return latestDatasetVersion.creation_date;
-        }
-        else if (entry.type === Models.FolderEntries.TypeEnum.DatasetVersion) {
-            return entry.creation_date;
-        }
-    }
 
     // BootstrapTable Entries
     nameUrlFormatter(cell, row: BootstrapTableSearchEntry) {
@@ -422,26 +215,16 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
         this.setState({selection: updated_selection});
     }
 
-    wrap_parent_link(folder_named_id: NamedId, index: number, total_length: number) {
-        return <span key={index}>
-                    <Link to={relativePath("folder/" + folder_named_id.id)}>{folder_named_id.name}</Link>
-            {total_length !== index + 1 &&
-            <span>, </span>
-            }
-                </span>;
+    // Search
+    executeSearch(){
+        let _search = this.state.searchQuery;
+        let url = relativePath("search/" + this.state.folder.id + "/" + _search);
+        window.location.href = url;
     }
 
-    get_parent_links(parents: Array<NamedId>, public_only: Boolean, is_owner: Boolean) {
-        let parent_links = [];
-        parent_links = parents.map((p: NamedId, index: number) => {
-            return this.wrap_parent_link(p, index, parents.length);
-        });
-        return parent_links;
-    }
-
-    removeAccessLogs(arrayAccessLogs: Array<AccessLog>): Promise<any> {
-        return tapi.remove_entry_access_log(arrayAccessLogs).then(() => {
-
+    handleChangeSearchQuery(e) {
+        this.setState({
+           searchQuery: e.target.value
         });
     }
 
@@ -502,12 +285,36 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
             defaultSortOrder: desc_sortOrder  // default sort order
         };
 
+
         return (
             <div>
                 <LeftNav items={navItems}/>
                 <div id="main-content">
                     {folder && <span>
                         <h1>{this.state.name}</h1>
+
+
+                        <Grid fluid={true} style={{
+                            padding: "0px"
+                        }}>
+                          <Row className="show-grid">
+                            <Col md={8}>
+
+                            </Col>
+                            <Col md={4}>
+                                <Form inline onSubmit={ e => { e.preventDefault(); } }>
+                                  <FormGroup controlId="formInlineSearch">
+                                    <FormControl type="text" placeholder="Search by name"
+                                        value={this.state.searchQuery}
+                                        onChange={(event) => this.handleChangeSearchQuery(event)}
+                                    />
+                                  </FormGroup>{" "}
+                                  <Button type="button" onClick={ () => this.executeSearch() }>Search</Button>
+                                </Form>
+                                <br/>
+                            </Col>
+                          </Row>
+                        </Grid>
 
                         <BootstrapTable data={folderEntriesTableFormatted}
                                         bordered={false}
