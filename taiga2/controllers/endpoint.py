@@ -8,7 +8,7 @@ from sqlalchemy.orm.exc import NoResultFound
 import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 import taiga2.conv as conversion
-from taiga2.models import DataFile, normalize_name
+from taiga2.models import DataFile, normalize_name, SearchResult
 
 from taiga2.aws import aws
 from taiga2.aws import create_signed_get_obj
@@ -657,55 +657,20 @@ def search_within_folder(current_folder_id, search_query):
         flask.abort(404)
 
     # Search inside the folder
-    # TODO: Logic should be in controller
-    from taiga2.models import Folder, Dataset, DatasetVersion
-
-    all_matching_entries = []
-
-    def find_matching_name(root_folder, breadcrumbs):
-        matching_entries = []
-        # Can't append on a copy()??
-        local_breadcrumbs = breadcrumbs.copy()
-        local_breadcrumbs.append({"order": len(breadcrumbs) + 1,
-                                  "name": root_folder.name,
-                                  "id": root_folder.id
-                                  })
-
-        for entry in root_folder.entries:
-            if search_query.lower() in entry.name.lower():
-                # If this is a dataset, return the latest dataset version instead
-                if isinstance(entry, Dataset):
-                    tmp_entry = models_controller.get_latest_dataset_version(entry.id)
-                    entry_type = "dataset_version"
-                else:
-                    # TODO: Add also the fact we can have a dataset_version (even if it should not happen in theory since we only store dataset in folders)
-                    tmp_entry = entry
-                    entry_type = "folder"
-
-                matching_entries.append({
-                    "type": entry_type,
-                    "id": tmp_entry.id,
-                    "name": entry.name,
-                    "creation_date": tmp_entry.creation_date,
-                    "creator": {
-                        "name": tmp_entry.creator.name,
-                        "id": tmp_entry.creator.id
-                    },
-                    "breadcrumbs": local_breadcrumbs
-                })
-
-            # If this is a folder, we enter into it and search inside it
-            if isinstance(entry, Folder):
-                # We need to be mindful about the same folder being in itself => Infinite recursion
-                already_in = any([breadcrumb["id"] == entry.id for breadcrumb in local_breadcrumbs])
-
-                if not already_in:
-                    matching_entries.extend(find_matching_name(entry, local_breadcrumbs))
-
-        return matching_entries
-
     breadcrumbs = []
-    all_matching_entries = find_matching_name(folder, breadcrumbs=breadcrumbs)
+    all_matching_entries = models_controller.find_matching_name(root_folder=folder,
+                                                                breadcrumbs=breadcrumbs,
+                                                                search_query=search_query)
+
+    # TODO: Should also encapsulate this search to return a SearchResult we ask Marshmallow to jsonify
+    search_name = "Search results for " + search_query + " within " + folder.name
+    search_result = SearchResult(current_folder=folder,
+                                 name=search_name,
+                                 entries=all_matching_entries)
+
+    # Jsonify through Marshmallow
+    search_result_schema = schemas.SearchResultSchema()
+    result = search_result_schema.dump(search_result).data
 
     return_response = {
         'current_folder': {
@@ -713,7 +678,8 @@ def search_within_folder(current_folder_id, search_query):
             "id": folder.id
         },
         'name': "Search results for " + search_query + " within " + folder.name,
-        'entries': all_matching_entries
+        # 'entries': all_matching_entries
+        'entries': []
     }
 
     # type: FolderEntries.TypeEnum
@@ -722,4 +688,4 @@ def search_within_folder(current_folder_id, search_query):
     # creation_date: string;
     # creator: NamedId;
     # breadcrumbs: Array<OrderedNamedId>
-    return flask.jsonify(return_response)
+    return flask.jsonify(result)

@@ -255,3 +255,26 @@ class AccessLogSchema(ma.ModelSchema):
 
     def get_user_name(self, obj):
         return obj.user.name
+
+
+# <editor-fold desc="Search">
+class BreadcrumbSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('order',)
+
+    folder = ma.Nested(FolderNamedIdSchema)
+
+
+class SearchEntrySchema(ma.ModelSchema):
+    entry = ma.Nested(EntrySchema)
+    breadcrumbs = ma.Nested(BreadcrumbSchema, many=True)
+
+
+class SearchResultSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('name',)
+
+    current_folder = ma.Nested(FolderNamedIdSchema)
+    entries = ma.Nested(SearchEntrySchema, many=True)
+
+# </editor-fold>

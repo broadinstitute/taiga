@@ -422,7 +422,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     // Search
-    executeSearch(searchQuery){
+    executeSearch(searchQuery) {
         let url = relativePath("search/" + this.state.folder.id + "/" + searchQuery);
         window.location.href = url;
     }

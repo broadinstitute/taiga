@@ -18,9 +18,9 @@ export class Folder {
 }
 
 export enum TypeFolderEnum {
-    Folder = <any> 'folder',
-    Trash = <any> 'trash',
-    Home = <any> 'home'
+    Folder = <any> "folder",
+    Trash = <any> "trash",
+    Home = <any> "home"
 }
 
 export class FolderEntries {
@@ -33,9 +33,9 @@ export class FolderEntries {
 
 export namespace FolderEntries {
     export enum TypeEnum {
-        Folder = <any> 'folder',
-        Dataset = <any> 'dataset',
-        DatasetVersion = <any> 'dataset_version'
+        Folder = <any> "folder",
+        Dataset = <any> "dataset",
+        DatasetVersion = <any> "dataset_version"
     }
 }
 
@@ -53,6 +53,14 @@ export interface User {
 }
 
 export type StatusEnum = "deleted" | "valid" | "deprecated";
+
+export interface Entry {
+    type: FolderEntries.TypeEnum;
+    id: string;
+    name: string;
+    creation_date: string;
+    creator: NamedId;
+}
 
 export interface DatasetVersion {
     id: string;
@@ -347,79 +355,79 @@ export class BootstrapTableSearchEntry {
 
     type: FolderEntries.TypeEnum;
 
-    processBreadCrumbName(entry: SearchEntry) {
+    processBreadCrumbName(searchEntry: SearchEntry) {
         let breadcrumbedName = "";
 
         // Fetch per order the names while current_order != length of the breadcrumb list
         let current_order = 0;
-        while (current_order !== entry.breadcrumbs.length) {
-            breadcrumbedName += entry.breadcrumbs.find((breadcrumb: OrderedNamedId) => {
+        while (current_order !== searchEntry.breadcrumbs.length) {
+            breadcrumbedName += searchEntry.breadcrumbs.find((breadcrumb: OrderedNamedId) => {
                 return breadcrumb.order === current_order + 1;
-            }).name + " > ";
+            }).folder.name + " > ";
             current_order += 1;
         }
 
         // Now we add the name of the entry
-        breadcrumbedName += entry.name;
+        breadcrumbedName += searchEntry.entry.name;
 
         return breadcrumbedName;
     }
 
-    processFolderEntryUrl(entry: SearchEntry) {
+    processFolderEntryUrl(searchEntry: SearchEntry) {
         let processedUrl = null;
-        if (entry.type === FolderEntries.TypeEnum.Folder) {
-            processedUrl = relativePath("folder/" + entry.id);
+        if (searchEntry.entry.type === FolderEntries.TypeEnum.Folder) {
+            processedUrl = relativePath("folder/" + searchEntry.entry.id);
         }
-        else if (entry.type === FolderEntries.TypeEnum.DatasetVersion) {
-            processedUrl = relativePath("dataset/fromSearch" + "/" + entry.id);
+        else if (searchEntry.entry.type === FolderEntries.TypeEnum.Dataset) {
+            processedUrl = relativePath("dataset/" + searchEntry.entry.id);
         }
 
         return processedUrl;
     }
 
-    processCreationDate(entry: SearchEntry) {
+    processCreationDate(searchEntry: SearchEntry) {
         let processedCreationDate: Date = new Date();
 
-        processedCreationDate.setTime(Date.parse(entry.creation_date));
+        processedCreationDate.setTime(Date.parse(searchEntry.entry.creation_date));
         // processedCreationDate = toLocalDateString(entry.creation_date);
 
         return processedCreationDate;
     }
 
-    constructor(entry: SearchEntry) {
-        this.id = entry.id;
-        this.name = this.processBreadCrumbName(entry);
+    constructor(searchEntry: SearchEntry) {
+        this.id = searchEntry.entry.id;
+        this.name = this.processBreadCrumbName(searchEntry);
 
-        this.url = this.processFolderEntryUrl(entry);
+        this.url = this.processFolderEntryUrl(searchEntry);
 
-        this.creation_date = this.processCreationDate(entry);
+        this.creation_date = this.processCreationDate(searchEntry);
 
         // TODO: Think about what to do with an entry without a user
-        if (entry.creator && entry.creator.name) {
-            this.creator_name = entry.creator.name;
+        if (searchEntry.entry.creator && searchEntry.entry.creator.name) {
+            this.creator_name = searchEntry.entry.creator.name;
         }
         else {
             this.creator_name = undefined;
         }
 
-        this.type = entry.type;
+        this.type = searchEntry.entry.type;
     }
 }
 
 // IMPORTANT: Need to sync with backend for each changes
 export enum InitialFileType {
-    NumericMatrixCSV = <any> 'NumericMatrixCSV',
-    NumericMatrixTSV = <any> 'NumericMatrixTSV',
-    TableCSV = <any> 'TableCSV',
-    TableTSV = <any> 'TableTSV',
-    GCT = <any> 'GCT',
-    Raw = <any> 'Raw'
+    NumericMatrixCSV = <any> "NumericMatrixCSV",
+    NumericMatrixTSV = <any> "NumericMatrixTSV",
+    TableCSV = <any> "TableCSV",
+    TableTSV = <any> "TableTSV",
+    GCT = <any> "GCT",
+    Raw = <any> "Raw"
 }
 
 export enum DataFileType {
-    Raw = <any> 'Raw',
-    HDF5 = <any> 'HDF5',
-    Columnar = <any> 'Columnar'
+    Raw = <any> "Raw",
+    HDF5 = <any> "HDF5",
+    Columnar = <any> "Columnar"
 }
 
 export interface DatafileUrl {
@@ -485,15 +493,12 @@ export class SearchResult {
 }
 
 export class SearchEntry {
-    type: FolderEntries.TypeEnum;
-    id: string;
-    name: string;
-    creation_date: string;
-    creator: NamedId;
+    entry: Entry;
     breadcrumbs: Array<OrderedNamedId>; // Array of folders
 }
 
-export class OrderedNamedId extends NamedId {
+export class OrderedNamedId {
+    folder: NamedId;
     order: Number; // Order in which the breadcrumb should appear
 }
 

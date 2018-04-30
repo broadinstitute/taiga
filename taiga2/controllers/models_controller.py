@@ -18,6 +18,7 @@ from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
 from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
 from taiga2.models import Group, EntryRightsEnum
+from taiga2.models import SearchResult, SearchEntry, Breadcrumb
 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
@@ -1279,6 +1280,7 @@ def remove_accessLogs(array_access_log):
             .delete()
     db.session.commit()
 
+
 # </editor-fold>
 
 # <editor-fold desc="Group">
@@ -1291,8 +1293,58 @@ def add_group(name):
 
     return new_group
 
+
 def get_all_groups() -> List[Group]:
     all_groups = db.session.query(Group).all()
     return all_groups
 
+
 # </editor-fold>
+
+# <editor-fold desc="">
+
+def find_matching_name(root_folder, breadcrumbs, search_query) -> List[SearchEntry]:
+    matching_entries = []
+    # Can't append on a copy()??
+    local_breadcrumbs = breadcrumbs.copy()
+    local_breadcrumbs.append(Breadcrumb(order=len(breadcrumbs) + 1,
+                                        folder=root_folder))
+
+    for entry in root_folder.entries:
+        if search_query.lower() in entry.name.lower():
+            # If this is a dataset, return the latest dataset version instead
+            if isinstance(entry, Dataset):
+                tmp_entry = get_latest_dataset_version(entry.id)
+                # Not needed anymore, will be handled by Marshmallow
+                entry_type = "dataset_version"
+            else:
+                # TODO: Add also the fact we can have a dataset_version (even if it should not happen in theory since we only store dataset in folders)
+                tmp_entry = entry
+                # Not needed anymore, will be handled by Marshmallow
+                entry_type = "folder"
+
+            # {
+            #     "type": entry_type,
+            #     "id": tmp_entry.id,
+            #     "name": entry.name,
+            #     "creation_date": tmp_entry.creation_date,
+            #     "creator": {
+            #         "name": tmp_entry.creator.name,
+            #         "id": tmp_entry.creator.id
+            #     },
+            #     "breadcrumbs": local_breadcrumbs
+            # }
+            search_entry = SearchEntry(entry=entry, breadcrumbs=local_breadcrumbs)
+            matching_entries.append(search_entry)
+
+        # If this is a folder, we enter into it and search inside it
+        if isinstance(entry, Folder):
+            # We need to be mindful about the same folder being in itself => Infinite recursion
+            already_in = any([breadcrumb.folder.id == entry.id for breadcrumb in local_breadcrumbs])
+
+            if not already_in:
+                matching_entries.extend(find_matching_name(entry, local_breadcrumbs, search_query))
+
+    return matching_entries
+
+# </editor-fold
