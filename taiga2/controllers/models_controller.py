@@ -1312,28 +1312,6 @@ def find_matching_name(root_folder, breadcrumbs, search_query) -> List[SearchEnt
 
     for entry in root_folder.entries:
         if search_query.lower() in entry.name.lower():
-            # If this is a dataset, return the latest dataset version instead
-            if isinstance(entry, Dataset):
-                tmp_entry = get_latest_dataset_version(entry.id)
-                # Not needed anymore, will be handled by Marshmallow
-                entry_type = "dataset_version"
-            else:
-                # TODO: Add also the fact we can have a dataset_version (even if it should not happen in theory since we only store dataset in folders)
-                tmp_entry = entry
-                # Not needed anymore, will be handled by Marshmallow
-                entry_type = "folder"
-
-            # {
-            #     "type": entry_type,
-            #     "id": tmp_entry.id,
-            #     "name": entry.name,
-            #     "creation_date": tmp_entry.creation_date,
-            #     "creator": {
-            #         "name": tmp_entry.creator.name,
-            #         "id": tmp_entry.creator.id
-            #     },
-            #     "breadcrumbs": local_breadcrumbs
-            # }
             search_entry = SearchEntry(entry=entry, breadcrumbs=local_breadcrumbs)
             matching_entries.append(search_entry)
 
