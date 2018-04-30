@@ -10,6 +10,7 @@ import * as Dialogs from "./Dialogs";
 import * as Upload from "./modals/Upload";
 import {EntryUsersPermissions} from "./modals/EntryUsersPermissions";
 import {NotFound} from "./NotFound";
+import {SearchInput} from "./Search";
 
 import {toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
@@ -28,7 +29,7 @@ import {User} from "../models/models";
 import {AccessLog} from "../models/models";
 
 export interface FolderViewProps {
-    params: any
+    params: any;
 }
 
 const tableEntriesStyle: any = {
@@ -421,21 +422,14 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     // Search
-    executeSearch(){
-        let _search = this.state.searchQuery;
-        let url = relativePath("search/" + this.state.folder.id + "/" + _search);
+    executeSearch(searchQuery){
+        let url = relativePath("search/" + this.state.folder.id + "/" + searchQuery);
         window.location.href = url;
     }
 
-    handleChangeSearchQuery(e) {
-        this.setState({
-           searchQuery: e.target.value
-        });
-    }
-
-    searchKeyPress(event) {
+    searchKeyPress(event, searchQuery) {
         if (event.key === "Enter") {
-            this.executeSearch();
+            this.executeSearch(searchQuery);
         }
     }
 
@@ -474,7 +468,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             let parent_public = folder.parents.some((parent) => {
                 return parent.id == 'public';
             });
-            let is_owner = (folder.creator && folder.creator.id == currentUser);
+            let is_owner = (folder.creator && folder.creator.id === currentUser);
             var parent_links = this.get_parent_links(folder.parents, parent_public, is_owner);
 
             folderEntriesTableFormatted = folder.entries.map((entry: Folder.FolderEntries, index: number) => {
@@ -636,25 +630,15 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         </Conditional>
 
                         <Grid fluid={true} style={{
-                            padding: "0px"
+                            padding: "0px 15px 0px 0px"
                         }}>
                           <Row className="show-grid">
                             <Col md={8}>
                               { Dialogs.renderDescription(this.state.folder.description) }
                             </Col>
                             <Col md={4}>
-                                <Form inline onSubmit={ e => { e.preventDefault(); } }>
-                                  <FormGroup controlId="formInlineSearch">
-                                    <FormControl type="text" placeholder="Search by name"
-                                        value={this.state.searchQuery}
-                                        onChange={(event) => this.handleChangeSearchQuery(event)}
-                                        onKeyPress={(event) => this.searchKeyPress(event)}
-                                    />
-                                  </FormGroup>{" "}
-                                  <Button type="button" onClick={ () => this.executeSearch() }>
-                                      Search
-                                  </Button>
-                                </Form>
+                                <SearchInput onKeyPress={(event, searchQuery) => this.searchKeyPress(event, searchQuery)}
+                                            onClick={(searchQuery) => this.executeSearch(searchQuery)}/>
                                 <br/>
                             </Col>
                           </Row>

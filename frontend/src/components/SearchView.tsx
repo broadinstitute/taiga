@@ -10,6 +10,7 @@ import * as Dialogs from "./Dialogs";
 import * as Upload from "./modals/Upload";
 import {EntryUsersPermissions} from "./modals/EntryUsersPermissions";
 import {NotFound} from "./NotFound";
+import {SearchInput} from "./Search";
 
 import {toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
@@ -216,16 +217,15 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
     }
 
     // Search
-    executeSearch(){
-        let _search = this.state.searchQuery;
-        let url = relativePath("search/" + this.state.folder.id + "/" + _search);
+    executeSearch(searchQuery){
+        let url = relativePath("search/" + this.state.folder.id + "/" + searchQuery);
         window.location.href = url;
     }
 
-    handleChangeSearchQuery(e) {
-        this.setState({
-           searchQuery: e.target.value
-        });
+    searchKeyPress(event, searchQuery) {
+        if (event.key === "Enter") {
+            this.executeSearch(searchQuery);
+        }
     }
 
     render() {
@@ -295,22 +295,15 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
 
 
                         <Grid fluid={true} style={{
-                            padding: "0px"
+                            padding: "0px 15px 0px 0px"
                         }}>
                           <Row className="show-grid">
                             <Col md={8}>
 
                             </Col>
                             <Col md={4}>
-                                <Form inline onSubmit={ e => { e.preventDefault(); } }>
-                                  <FormGroup controlId="formInlineSearch">
-                                    <FormControl type="text" placeholder="Search by name"
-                                        value={this.state.searchQuery}
-                                        onChange={(event) => this.handleChangeSearchQuery(event)}
-                                    />
-                                  </FormGroup>{" "}
-                                  <Button type="button" onClick={ () => this.executeSearch() }>Search</Button>
-                                </Form>
+                                <SearchInput onKeyPress={(event, searchQuery) => this.searchKeyPress(event, searchQuery)}
+                                             onClick={(searchQuery) => this.executeSearch(searchQuery)}/>
                                 <br/>
                             </Col>
                           </Row>
