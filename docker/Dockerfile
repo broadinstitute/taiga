@@ -28,7 +28,7 @@ RUN apt-get install -y libpq-dev
 
 # Pre-install the python packages needed by the app, so we don't have to reinstall them each time
 # But still install new ones in case we need them
-RUN pip3 install -q attrs==16.2.0 \
+RUN pip3 install attrs==16.2.0 \
         connexion==1.0.129 \
         boto3==1.4.2 \
         Flask==0.11.1 \
