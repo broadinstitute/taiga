@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:xenial-20170619
 
 RUN apt-get update -y
 
