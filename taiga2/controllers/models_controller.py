@@ -654,6 +654,38 @@ def update_dataset_version_description(dataset_version_id,
     return dataset_version
 
 
+def deprecate_dataset_version(dataset_version_id):
+    """Change the current state of a DatasetVersion to deprecate (see DatasetVersionState)
+    :param dataset_version_id ID of the dataset version to deprecate
+    :return The new DatasetVersionState (should be deprecated)
+    """
+    dataset_version = get_dataset_version(dataset_version_id)
+
+    dataset_version.state = models.DatasetVersion.DatasetVersionState.deprecated
+
+    db.session.add(dataset_version)
+    db.session.commit()
+
+    return dataset_version.state
+
+
+def approve_dataset_version(dataset_version_id):
+    """Change the current state of a DatasetVersion to approve (see DatasetVersionState).
+    It should be the state by default
+    :param dataset_version_id ID of the dataset version to deprecate
+    :return The new DatasetVersionState (should be approved)
+    """
+    # TODO: Could merge into a function the change of the state instead of doing the same code between deprecate and approve (later delete)
+    dataset_version = get_dataset_version(dataset_version_id)
+
+    dataset_version.state = models.DatasetVersion.DatasetVersionState.approved
+
+    db.session.add(dataset_version)
+    db.session.commit()
+
+    return dataset_version.state
+
+
 # </editor-fold>
 
 # <editor-fold desc="Entry">

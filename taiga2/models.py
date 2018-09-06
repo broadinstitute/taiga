@@ -266,6 +266,11 @@ def find_converted_type_by_initial_type(initial_type):
 
 
 class DatasetVersion(Entry):
+    class DatasetVersionState(enum.Enum):
+        approved = "Approved"
+        deprecated = "Deprecated"
+        deleted = "Deleted"
+
     # Missing the permaname of the DatasetVersion
     __tablename__ = 'dataset_versions'
 
@@ -283,6 +288,9 @@ class DatasetVersion(Entry):
 
     # Filled out by the server
     version = db.Column(db.Integer)
+
+    # State of the version
+    state = db.Column(db.Enum(DatasetVersionState), default=DatasetVersionState.approved)
 
     __table_args__ = (
         UniqueConstraint("dataset_id", "version"),

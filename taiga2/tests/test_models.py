@@ -349,6 +349,7 @@ def test_add_dataset_version(session: SessionBase):
     assert new_dataset_version.name == new_dataset_version_name
     assert new_dataset_version.creator == flask.g.current_user
     assert new_dataset_version.dataset == new_dataset
+    assert new_dataset_version.state == DatasetVersion.DatasetVersionState.approved
     # TODO: Be careful with timezone between the database and the testing machine
     # assert new_dataset_version.creation_date.date() == datetime.datetime.now().date()
 
@@ -385,6 +386,33 @@ def test_get_dataset_version_by_dataset_id_and_dataset_version_id(session: Sessi
 
     assert test_dataset_version == new_dataset_version
 
+
+def test_state_approved_to_deprecated(session: SessionBase,
+                                      new_dataset,
+                                      new_dataset_version):
+    assert new_dataset_version.state == DatasetVersion.DatasetVersionState.approved
+
+    dataset_version_id = new_dataset_version.id
+    mc.deprecate_dataset_version(dataset_version_id)
+
+    updated_dataset_version = mc.get_dataset_version(dataset_version_id=dataset_version_id)
+
+    assert updated_dataset_version.state == DatasetVersion.DatasetVersionState.deprecated
+
+
+def test_state_deprecated_to_approved(session: SessionBase,
+                                      new_dataset,
+                                      new_dataset_version):
+    dataset_version_id = new_dataset_version.id
+
+    # TODO: Might not be the best way to test this, since we rely on the deprecation function to work
+    mc.deprecate_dataset_version(new_dataset_version.id)
+
+    assert new_dataset_version.state == DatasetVersion.DatasetVersionState.deprecated
+
+    mc.approve_dataset_version(dataset_version_id)
+
+    assert new_dataset_version.state == DatasetVersion.DatasetVersionState.approved
 
 # </editor-fold>
 
