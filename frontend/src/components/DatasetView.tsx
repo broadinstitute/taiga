@@ -14,13 +14,13 @@ import * as Upload from "./modals/Upload";
 import {toLocalDateString} from "../utilities/formats";
 import {LoadingOverlay} from "../utilities/loading";
 import {relativePath} from "../utilities/route";
-import {DatafileUrl, ConversionStatusEnum} from "../models/models";
+import {DatafileUrl, ConversionStatusEnum, StatusEnum} from "../models/models";
 import {DatasetVersion} from "../models/models";
 import {NotFound} from "./NotFound";
 import {NamedId} from "../models/models";
 
 export interface DatasetViewProps {
-    params: any
+    params: any;
 }
 
 export interface DatasetViewState {
@@ -35,7 +35,7 @@ export interface DatasetViewState {
     loading?: boolean;
     loadingMessage?: string;
     exportError?: boolean;
-    exportErrorInfo?: { datasetVersionId: string, datafileName: string, conversionType: string }
+    exportErrorInfo?: { datasetVersionId: string, datafileName: string, conversionType: string };
 
     initInputFolderId?: string;
     showInputFolderId?: boolean;
@@ -47,7 +47,15 @@ export interface DatasetViewState {
 }
 
 const buttonUploadNewVersionStyle = {
-    margin: '0 0 10px'
+    margin: "0 0 10px"
+};
+
+const deprecationStyle = {
+    color: "orange"
+};
+
+const deprecation_title = {
+  color: "orange"
 };
 
 let tapi: TaigaApi = null;
@@ -476,13 +484,13 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     },
                     {
                         label: "Edit description", action: () => {
-                        this.setState({showEditDescription: true})
-                    }
+                            this.setState({showEditDescription: true})
+                        }
                     },
                     {
                         label: "Edit permissions", action: () => {
-                        this.setState({showEditPermissions: true})
-                    }
+                            this.setState({showEditPermissions: true})
+                        }
                     });
             }
             if (datasetVersion && datasetVersion.can_edit) {
@@ -494,23 +502,22 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             }
 
             navItems.push(
-
                 // {
                 //     label: "Add permaname", action: function () {
                 // }
                 // },
                 {
                     label: "Link to Home", action: () => {
-                    // TODO: Fetch the current user only once, and reuse it as a state OR better, get it as a props from parent
-                    tapi.get_user().then(user => {
-                        this.copyTo(user.home_folder_id);
-                    });
-                }
+                        // TODO: Fetch the current user only once, and reuse it as a state OR better, get it as a props from parent
+                        tapi.get_user().then(user => {
+                            this.copyTo(user.home_folder_id);
+                        });
+                    }
                 },
                 {
                     label: "Link to...", action: () => {
-                    this.copyTo("");
-                }
+                        this.copyTo("");
+                    }
                 }
                 // {
                 //     label: "Deprecate version", action: function () {
@@ -645,7 +652,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
                         <h1>
                             {dataset.name}
-                            <small>{permaname}</small>
+                            &nbsp;<small>{permaname}</small>
+                            {this.state.datasetVersion.state === StatusEnum.Deprecated &&
+                            <span>&nbsp;<small className="glyphicon glyphicon-warning-sign" style={deprecation_title}>Deprecated</small></span>
+                            }
                         </h1>
                     <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
                         &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
@@ -655,9 +665,18 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         <p>Contained within {folders}</p>
                         }
 
+                        {this.state.datasetVersion.state === StatusEnum.Deprecated &&
+                        <div className="well well-sm" style={deprecationStyle}>
+                            <i>Deprecation reason:</i>
+                            <br/>
+                            <span>&emsp;{this.state.datasetVersion.reason_state}</span>
+                        </div>
+                        }
+
                         {this.state.datasetVersion.description &&
                         Dialogs.renderDescription(this.state.datasetVersion.description)
                         }
+
 
                         <h2>Contents</h2>
                     <table className="table">
@@ -682,7 +701,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     <pre>{r_block}</pre>
                         <h2>
                             Reading from Python (<a
-                            href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse" target="_blank">Taigapy</a>)
+                            href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse"
+                            target="_blank">Taigapy</a>)
                         </h2>
                     <pre>{python_block}</pre>
                 </span>

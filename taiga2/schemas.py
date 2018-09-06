@@ -185,12 +185,13 @@ class DatasetVersionSchema(ma.ModelSchema):
         # WARNING: long_summary is pretty heavy. Don't include it here, but create your own schema
         additional = ('id', 'name', 'dataset_id',
                       'creation_date', 'creator', 'datafiles',
-                      'description', 'version', 'parents')
+                      'description', 'version', 'parents', 'reason_state')
 
     creator = ma.Nested(UserNamedIdSchema)
     datafiles = ma.Nested(DataFileSchema, many=True)
     # TODO: Consolidate the term between folders and parents
     parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
+    state = EnumField(DatasetVersion.DatasetVersionState)
 
     # TODO: Repetitions of how we manage can_edit and can_view over the Schema, could make a superclass instead
     # `Method` takes a method name (str), Function takes a callable
@@ -211,25 +212,27 @@ class DatasetVersionFullDatasetSchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'name', 'dataset',
                       'creation_date', 'creator', 'datafiles',
-                      'description', 'version', 'parents')
+                      'description', 'version', 'parents', 'reason_state')
 
     dataset = ma.Nested(DatasetSchema)
     creator = ma.Nested(UserNamedIdSchema)
     datafiles = ma.Nested(DataFileSummarySchema, many=True)
     # TODO: Consolidate the term between folders and parents
     parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
+    state = EnumField(DatasetVersion.DatasetVersionState)
 
 
 class DatasetVersionLightSchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'name', 'dataset_id',
                       'creation_date', 'creator',
-                      'description', 'version')
+                      'description', 'version', 'reason_state')
 
     creator = ma.Nested(UserNamedIdSchema)
     # datafiles = ma.Nested(DataFileSummarySchema, many=True)
     # TODO: Consolidate the term between folders and parents
     # parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
+    state = EnumField(DatasetVersion.DatasetVersionState)
 
 
 class DatasetFullSchema(ma.ModelSchema):

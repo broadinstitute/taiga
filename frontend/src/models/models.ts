@@ -52,7 +52,11 @@ export interface User {
     "token": string;
 }
 
-export type StatusEnum = "deleted" | "valid" | "deprecated";
+export enum StatusEnum {
+  Deleted = "deleted",
+  Approved = "approved",
+  Deprecated = "deprecated"
+}
 
 export interface Entry {
     type: FolderEntries.TypeEnum;
@@ -65,7 +69,8 @@ export interface Entry {
 export interface DatasetVersion {
     id: string;
     dataset_id: string;
-    status: StatusEnum;
+    state: StatusEnum;
+    reason_state: string;
     name: string;
     permanames: Array<string>;
     version: string;

@@ -274,6 +274,7 @@ def test_get_dataset_permaname(session: SessionBase, new_dataset: Dataset):
     assert ds['permanames'][0] == new_dataset.permaname
     assert ds['id'] == new_dataset.id
 
+# TODO: Test deprecation and de-deprecation
 
 # <editor-fold desc="Access Logs">
 

@@ -1385,8 +1385,6 @@ definitions:
           "$ref": "#/definitions/NamedId"
       dataset_id:
           type: string
-      status:
-        "$ref": "#/definitions/StatusEnum"
       name:
         type: string
       version:
@@ -1427,6 +1425,10 @@ definitions:
               type: string
       provenance:
         "$ref": "#/definitions/Provenance"
+      state:
+        "$ref": "#/definitions/StatusEnum"
+      reason_state:
+        type: string
 
   ProvenanceEdge:
     type: object
@@ -1572,7 +1574,7 @@ definitions:
     enum:
       - deprecated # Discourage use.  Warn when fetching
       - deleted    # Underlying data has been deleted
-      - valid
+      - approved
 
   # Match the S3 Data object returned by ManagedUpload
   # https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3/ManagedUpload.html#constructor-property
