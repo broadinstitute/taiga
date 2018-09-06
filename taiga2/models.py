@@ -291,6 +291,8 @@ class DatasetVersion(Entry):
 
     # State of the version
     state = db.Column(db.Enum(DatasetVersionState), default=DatasetVersionState.approved)
+    # Reason for the state of the version. Should be empty if approved
+    reason_state = db.Column(db.Text)
 
     __table_args__ = (
         UniqueConstraint("dataset_id", "version"),

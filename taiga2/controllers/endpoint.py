@@ -309,6 +309,19 @@ def update_dataset_version_description(datasetVersionId, DescriptionUpdate):
     return flask.jsonify({})
 
 
+def deprecate_dataset_version(datasetVersionId, deprecationReasonObj):
+    reason = deprecationReasonObj['deprecationReason']
+    models_controller.deprecate_dataset_version(datasetVersionId, reason)
+
+    return flask.jsonify({})
+
+
+def de_deprecate_dataset_version(datasetVersionId):
+    models_controller.approve_dataset_version(datasetVersionId)
+
+    return flask.jsonify({})
+
+
 def create_upload_session_file(S3UploadedFileMetadata, sid):
     s3_bucket = S3UploadedFileMetadata['bucket']
 

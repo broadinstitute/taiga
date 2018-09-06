@@ -393,7 +393,7 @@ def test_state_approved_to_deprecated(session: SessionBase,
     assert new_dataset_version.state == DatasetVersion.DatasetVersionState.approved
 
     dataset_version_id = new_dataset_version.id
-    mc.deprecate_dataset_version(dataset_version_id)
+    mc.deprecate_dataset_version(dataset_version_id, "test deprecation")
 
     updated_dataset_version = mc.get_dataset_version(dataset_version_id=dataset_version_id)
 
@@ -406,7 +406,7 @@ def test_state_deprecated_to_approved(session: SessionBase,
     dataset_version_id = new_dataset_version.id
 
     # TODO: Might not be the best way to test this, since we rely on the deprecation function to work
-    mc.deprecate_dataset_version(new_dataset_version.id)
+    mc.deprecate_dataset_version(new_dataset_version.id, "test deprecation")
 
     assert new_dataset_version.state == DatasetVersion.DatasetVersionState.deprecated
 

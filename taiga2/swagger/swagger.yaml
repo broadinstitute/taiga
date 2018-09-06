@@ -813,6 +813,49 @@ paths:
         200:
           description: Successfully updated
 
+  /datasetVersion/{datasetVersionId}/deprecate:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: deprecate_dataset_version
+      description: Deprecate a dataset version
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetVersionId
+          in: path
+          type: string
+          description: Dataset Version ID
+          required: true
+        - in: body
+          name: deprecationReasonObj
+          schema:
+            type: object
+            required:
+              - deprecationReason
+            properties:
+              description:
+                type: string
+      responses:
+        200:
+          description: Successfully deprecated
+
+  /datasetVersion/{datasetVersionId}/de-deprecate:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: de_deprecate_dataset_version
+      description: De-deprecate a dataset version (making it approved)
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetVersionId
+          in: path
+          type: string
+          description: Dataset Version ID
+          required: true
+      responses:
+        200:
+          description: Successfully de-deprecated
+
   /datafile/{sid}:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
