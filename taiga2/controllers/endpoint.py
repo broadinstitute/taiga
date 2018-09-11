@@ -310,6 +310,7 @@ def update_dataset_version_description(datasetVersionId, DescriptionUpdate):
 
 
 def deprecate_dataset_version(datasetVersionId, deprecationReasonObj):
+    # import pdb; pdb.set_trace()
     reason = deprecationReasonObj['deprecationReason']
     models_controller.deprecate_dataset_version(datasetVersionId, reason)
 
@@ -317,6 +318,7 @@ def deprecate_dataset_version(datasetVersionId, deprecationReasonObj):
 
 
 def de_deprecate_dataset_version(datasetVersionId):
+    # import pdb; pdb.set_trace()
     models_controller.approve_dataset_version(datasetVersionId)
 
     return flask.jsonify({})

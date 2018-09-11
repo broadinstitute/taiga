@@ -239,4 +239,17 @@ export class TaigaApi {
     get_folder_search(current_folder_id: string, search_query: string): Promise<SearchResult> {
         return this._fetch<SearchResult>("/search/" + current_folder_id + "/" + search_query);
     }
+
+    // Deprecation
+    // TODO: Promise should return an ack or a failure
+    deprecate_dataset_version(dataset_version_id: string, reason: string): Promise<void>{
+        return this._post<void>(
+            "/datasetVersion/" + dataset_version_id + "/deprecate",
+            {deprecationReason: reason});
+    }
+
+    de_deprecate_dataset_version(dataset_version_id: string): Promise<void> {
+        return this._post<void>(
+            "/datasetVersion/" + dataset_version_id + "/de-deprecate", {});
+    }
 }

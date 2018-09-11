@@ -44,6 +44,8 @@ export interface DatasetViewState {
     actionIntoFolderHelp?: string;
 
     fetchError?: string;
+
+    showDeprecationReason?: boolean;
 }
 
 const buttonUploadNewVersionStyle = {
@@ -55,7 +57,7 @@ const deprecationStyle = {
 };
 
 const deprecation_title = {
-  color: "orange"
+    color: "orange"
 };
 
 let tapi: TaigaApi = null;
@@ -171,12 +173,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     updateDescription(description: string) {
         tapi.update_dataset_version_description(this.state.datasetVersion.id, description).then(() => {
             return this.doFetch();
-        })
+        });
     }
 
     getLinkOrNot(dataset_version: NamedId) {
         let dataset = this.state.dataset;
-        if (dataset_version.id == this.state.datasetVersion.id) {
+        if (dataset_version.id === this.state.datasetVersion.id) {
             return <span>{dataset_version.name}</span>
         }
         else {
@@ -192,7 +194,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     showUploadNewVersion() {
         this.setState({
             showUploadDataset: true
-        })
+        });
     }
 
     filesUploadedAndConverted(sid: string, name: string, description: string, previousDatafileIds: Array<string>) {
@@ -320,10 +322,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             console.log(err);
 
             // If we receive 422 error
-            if (err.message == "UNPROCESSABLE ENTITY") {
+            if (err.message === "UNPROCESSABLE ENTITY") {
                 let err_message_user = "Folder id is not valid. Please check it and retry :)";
                 this.setState({
-                    actionIntoFolderValidation: 'error',
+                    actionIntoFolderValidation: "error",
                     actionIntoFolderHelp: err_message_user
                 });
             }
@@ -350,6 +352,39 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         else {
             return 0;
         }
+    }
+
+    // Deprecation
+    askDeprecationReason() {
+        // Fetch the deprecation pop-up
+        this.setState({
+            showDeprecationReason: true
+        });
+    }
+
+    closeDeprecationReason() {
+        this.setState({
+            showDeprecationReason: false
+        });
+    }
+
+    cancelDeprecation(){
+        this.closeDeprecationReason();
+    }
+
+    deprecateDatasetVersion(reason: string) {
+        // Send the deprecation to the server
+        tapi.deprecate_dataset_version(this.state.datasetVersion.id, reason).then(() => {
+            this.doFetch();
+            this.closeDeprecationReason();
+        });
+    }
+
+    deDeprecateDatasetVersion() {
+        tapi.de_deprecate_dataset_version(this.state.datasetVersion.id).then(() => {
+            this.doFetch();
+            this.closeDeprecationReason();
+        });
     }
 
     render() {
@@ -384,7 +419,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 versions = dataset.versions.map((dataset_version: NamedId, index: any) => {
                     return <span key={dataset_version.id}>
                     {this.getLinkOrNot(dataset_version)}
-                        {dataset.versions.length != index + 1 &&
+                        {dataset.versions.length !== index + 1 &&
                         <span>, </span>
                         }
                 </span>;
@@ -396,7 +431,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         <Link to={relativePath("folder/" + f.id)}>
                             {f.name}
                         </Link>
-                            {dataset.folders.length != index + 1 &&
+                            {dataset.folders.length !== index + 1 &&
                             <span>, </span>
                             }
                     </span>
@@ -410,7 +445,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 entries = datasetVersion.datafiles.sort((datafile_one, datafile_two) => {
                     let datafile_one_upper = datafile_one.name.toUpperCase();
                     let datafile_two_upper = datafile_two.name.toUpperCase();
-                    if (datafile_one_upper == datafile_two_upper) {
+                    if (datafile_one_upper === datafile_two_upper) {
                         return 0;
                     }
                     else if (datafile_one_upper > datafile_two_upper) {
@@ -499,6 +534,19 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         this.showUploadNewVersion();
                     }
                 });
+                if (datasetVersion.state === StatusEnum.Approved) {
+                    navItems.push({
+                        label: "Deprecate this version", action: () => {
+                            this.askDeprecationReason();
+                        }
+                    });
+                } else if (datasetVersion.state === StatusEnum.Deprecated) {
+                    navItems.push({
+                        label: "De-deprecate this version", action: () => {
+                            this.deDeprecateDatasetVersion();
+                        }
+                    });
+                }
             }
 
             navItems.push(
@@ -652,9 +700,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
                         <h1>
                             {dataset.name}
-                            &nbsp;<small>{permaname}</small>
+                            &nbsp;
+                            <small>{permaname}</small>
                             {this.state.datasetVersion.state === StatusEnum.Deprecated &&
-                            <span>&nbsp;<small className="glyphicon glyphicon-warning-sign" style={deprecation_title}>Deprecated</small></span>
+                            <span>&nbsp;
+                                <small className="glyphicon glyphicon-warning-sign"
+                                       style={deprecation_title}>Deprecated</small></span>
                             }
                         </h1>
                     <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
@@ -713,7 +764,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                      cancel={() => this.setState({exportError: false})}
                                      retry={() => this.forceExport()}
                                      message={this.state.loadingMessage}/>
-            </div>
+
+                <Dialogs.DeprecationReason isVisible={this.state.showDeprecationReason}
+                                           cancel={() => this.cancelDeprecation()}
+                                           save={(reason) => this.deprecateDatasetVersion(reason)}
+                />
+            </div>;
         }
     }
 }

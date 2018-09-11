@@ -62,7 +62,6 @@ export class EditName extends React.Component<EditStringProps, any> {
     textInput: any;
 
     render() {
-        //className="Modal__Bootstrap modal-dialog"
         return <Modal
             style={ modalStyles }
             closeTimeoutMS={150}
@@ -138,7 +137,6 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
     textArea: any;
 
     render() {
-        //className="Modal__Bootstrap modal-dialog"
         return <Modal
             style={ modalStyles }
             closeTimeoutMS={150}
@@ -287,6 +285,7 @@ const exportErrorStyle: any = {
     }
 };
 
+// region Export Error section
 export interface ExportErrorProps extends DialogProps {
     isVisible: boolean;
     cancel: () => void;
@@ -326,3 +325,67 @@ export class ExportError extends React.Component<ExportErrorProps, ExportErrorSt
         )
     }
 }
+// endregion
+
+// region Deprecation
+export interface DeprecationReasonProps extends DialogProps {
+    isVisible: boolean;
+    cancel: () => void;
+    save: (reason) => void;
+}
+
+export interface DeprecationReasonState extends DialogState {
+    reason: string;
+}
+
+export class DeprecationReason extends React.Component<DeprecationReasonProps, DeprecationReasonState> {
+    constructor(props){
+        super(props);
+        this.state = {reason: ""};
+    }
+
+    componentDidUpdate(prevProps) {
+        if (this.props.isVisible !== prevProps.isVisible){
+            this.setState({reason: ""});
+        }
+    }
+
+    save() {
+        this.props.save(this.state.reason);
+    }
+
+    handleChange(e) {
+        this.setState({reason: e.target.value});
+    }
+
+    render() {
+        return (
+            <Modal
+                style={ modalStyles }
+                closeTimeoutMS={150}
+                isOpen={this.props.isVisible}
+                onRequestClose={this.props.cancel}
+                contentLabel="Deprecation Reason">
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h2 ref="subtitle">Reason to deprecate this dataset version</h2>
+                    </div>
+                    <form>
+                        <div className="modal-body">
+                            <input type="text" placeholder="Reason for deprecation"
+                                   className="form-control"
+                                   value={this.state.reason}
+                                   onChange={(e) => this.handleChange(e)}
+                                    />
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
+                            <button type="button" className="btn btn-primary" onClick={(e) => this.save()}>Save changes</button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
+        );
+    }
+}
+// endregion
