@@ -313,6 +313,33 @@ def test_error_deprecate_dataset_version(session: SessionBase, new_dataset: Data
     assert error_raised, 'Error not raised despite no deprecation reason passed'
 
 
+def test_de_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
+    # Deprecate the dataset version first
+    dataset_version_id = new_dataset.dataset_versions[0].id
+    models_controller.deprecate_dataset_version(dataset_version_id, 'Test de-deprecation')
+
+    flask_answer = endpoint.de_deprecate_dataset_version(dataset_version_id)
+    ack = get_data_from_flask_jsonify(flask_answer)
+
+    updated_dataset_version = models_controller.get_dataset_version(dataset_version_id)
+
+    assert updated_dataset_version.state == DatasetVersion.DatasetVersionState.approved
+    assert updated_dataset_version.reason_state == ''
+
+
+def test_error_de_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
+    # Deprecate the dataset version first
+    dataset_version_id = new_dataset.dataset_versions[0].id
+    models_controller.deprecate_dataset_version(dataset_version_id, 'Test de-deprecation')
+
+    error_raised = False
+    try:
+        endpoint.de_deprecate_dataset_version('')
+    except:
+        error_raised = True
+
+    assert error_raised, 'Error not raised despite no dataset_version id passed'
+
 # <editor-fold desc="Access Logs">
 
 
