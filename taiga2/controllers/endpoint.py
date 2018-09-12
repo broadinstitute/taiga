@@ -1,5 +1,6 @@
 import flask
 import logging
+import sys
 import time
 
 from sqlalchemy.orm.exc import NoResultFound
@@ -310,16 +311,25 @@ def update_dataset_version_description(datasetVersionId, DescriptionUpdate):
 
 
 def deprecate_dataset_version(datasetVersionId, deprecationReasonObj):
-    # import pdb; pdb.set_trace()
     reason = deprecationReasonObj['deprecationReason']
-    models_controller.deprecate_dataset_version(datasetVersionId, reason)
+
+    try:
+        models_controller.deprecate_dataset_version(datasetVersionId, reason)
+    # TODO: Manage case by case exceptions => NotFound for example
+    except:
+        error = sys.exc_info()[1]
+        flask.abort(500, 'Error in deprecate_dataset_version: {}'.format(error))
 
     return flask.jsonify({})
 
 
 def de_deprecate_dataset_version(datasetVersionId):
-    # import pdb; pdb.set_trace()
-    models_controller.approve_dataset_version(datasetVersionId)
+    try:
+        models_controller.approve_dataset_version(datasetVersionId)
+    #TODO: Manage case by case exceptions => NotFound for example
+    except:
+        error = sys.exc_info()[0]
+        flask.abort(500, 'Error in approve_dataset_version: {}'.format(error))
 
     return flask.jsonify({})
 

@@ -10,7 +10,7 @@ from freezegun import freeze_time
 import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
 
-from taiga2.models import generate_permaname, DataFile, Dataset
+from taiga2.models import generate_permaname, DataFile, Dataset, DatasetVersion
 from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
 from taiga2.schemas import AccessLogSchema
@@ -274,7 +274,44 @@ def test_get_dataset_permaname(session: SessionBase, new_dataset: Dataset):
     assert ds['permanames'][0] == new_dataset.permaname
     assert ds['id'] == new_dataset.id
 
+
 # TODO: Test deprecation and de-deprecation
+def test_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
+    """Check if deprecation was a success"""
+    dataset_version_id = new_dataset.dataset_versions[0].id
+    reason_state = 'Test deprecation'
+    deprecationReasonObj = {'deprecationReason': reason_state}
+
+    flask_answer = endpoint.deprecate_dataset_version(dataset_version_id, deprecationReasonObj=deprecationReasonObj)
+    ack = get_data_from_flask_jsonify(flask_answer)
+
+    updated_dataset_version = models_controller.get_dataset_version(dataset_version_id)
+
+    assert updated_dataset_version.state == DatasetVersion.DatasetVersionState.deprecated
+    assert updated_dataset_version.reason_state == reason_state
+
+
+def test_error_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
+    dataset_version_id = new_dataset.dataset_versions[0].id
+    reason_state = 'Test deprecation'
+    deprecationReasonObj = {'deprecationReason': reason_state}
+
+    error_raised = False
+    try:
+        endpoint.deprecate_dataset_version('', deprecationReasonObj=deprecationReasonObj)
+    except:
+        error_raised = True
+
+    assert error_raised, 'Error not raised despite no dataset_version id passed'
+
+    error_raised = False
+    try:
+        endpoint.deprecate_dataset_version(dataset_version_id, deprecationReasonObj={'deprecationReason': None})
+    except:
+        error_raised = True
+
+    assert error_raised, 'Error not raised despite no deprecation reason passed'
+
 
 # <editor-fold desc="Access Logs">
 
