@@ -833,8 +833,9 @@ paths:
             required:
               - deprecationReason
             properties:
-              description:
+              deprecationReason:
                 type: string
+
       responses:
         200:
           description: Successfully deprecated
