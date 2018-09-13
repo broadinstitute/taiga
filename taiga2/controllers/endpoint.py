@@ -466,13 +466,16 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
         urls = models_controller.get_signed_urls_from_cache_entry(entry.urls_as_json, dl_filename)
         conversion_status = entry.status
 
+    # TODO: This should be handled by a Marshmallow schema and not created on the fly
     result = dict(dataset_name=dataset_name,
                   dataset_permaname=dataset_permaname,
                   dataset_version=dataset_version_version,
                   dataset_id=dataset_id,
                   dataset_version_id=dataset_version_id,
                   datafile_name=datafile_name,
-                  status=conversion_status)
+                  status=conversion_status,
+                  state=dataset_version.state.value,
+                  reason_state=dataset_version.reason_state)
 
     if urls is not None:
         result['urls'] = urls
