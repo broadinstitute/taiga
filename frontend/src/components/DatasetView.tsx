@@ -166,8 +166,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     updateName(name: string) {
         tapi.update_dataset_name(this.state.datasetVersion.dataset_id, name).then(() => {
-            return this.doFetch()
-        })
+            return this.doFetch();
+        });
     }
 
     updateDescription(description: string) {
@@ -179,14 +179,16 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     getLinkOrNot(dataset_version: NamedId) {
         let dataset = this.state.dataset;
         if (dataset_version.id === this.state.datasetVersion.id) {
-            return <span>{dataset_version.name}</span>
+            return <span>{dataset_version.name}</span>;
         }
         else {
             let last_index_dataset_permaname = dataset.permanames.length - 1;
             let url = relativePath("/dataset/" +
                 dataset.permanames[last_index_dataset_permaname] +
                 "/" + dataset_version.name);
-            return <Link to={url}>{dataset_version.name}</Link>
+
+            let link = <Link to={url}>{dataset_version.name}</Link>;
+            return link;
         }
     }
 
@@ -387,6 +389,13 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         });
     }
 
+    hasRaw(df){
+        let has_raw = df.allowed_conversion_type.some((conversion_type) => {
+            return conversion_type === "raw";
+        });
+        return has_raw;
+    }
+
     render() {
         if (!this.state) {
             return <div>
@@ -404,7 +413,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 <div id="main-content">
                     <NotFound message={message}/>
                 </div>
-            </div>
+            </div>;
         }
         else {
             let dataset = this.state.dataset;
@@ -555,7 +564,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 // }
                 // },
                 {
-                    label: "Link to Home", action: () => {
+                    label: "Add to Home", action: () => {
                         // TODO: Fetch the current user only once, and reuse it as a state OR better, get it as a props from parent
                         tapi.get_user().then(user => {
                             this.copyTo(user.home_folder_id);
@@ -563,7 +572,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     }
                 },
                 {
-                    label: "Link to...", action: () => {
+                    label: "Add to a folder", action: () => {
                         this.copyTo("");
                     }
                 }
@@ -586,46 +595,31 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 permaname = dataset.permanames[dataset.permanames.length - 1];
                 r_block = "library(taigr);\n";
 
-                if (datasetVersion.datafiles.length == 1) {
-                    r_block += `data <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version})`;
-                } else {
-                    let r_block_lines = datasetVersion.datafiles.map((df, index) => {
-                        let r_name = df.name.replace(/[^A-Za-z0-9]+/g, ".");
+                let r_block_lines = datasetVersion.datafiles.map((df, index) => {
+                    let r_name = df.name.replace(/[^A-Za-z0-9]+/g, ".");
+                    if (this.hasRaw(df)) {
+                        return `${r_name} <- download.raw.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
+                    }
+                    else {
                         return `${r_name} <- load.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
-                    });
-                    r_block += r_block_lines.join("\n")
-                }
+                    }
+                });
+                r_block += r_block_lines.join("\n");
 
                 python_block = "from taigapy import TaigaClient\n";
                 python_block += "tc = TaigaClient()\n";
-                if (datasetVersion.datafiles.length == 1) {
-                    let has_raw = datasetVersion.datafiles[0].allowed_conversion_type.some((conversion_type) => {
-                        return conversion_type === 'raw';
-                    });
 
-                    if (has_raw) {
-                        python_block += `data = tc.download_to_cache(name='${permaname}', version='${datasetVersion.version}')  # download_to_cache for raw`;
+                let python_block_lines = datasetVersion.datafiles.map((df, index) => {
+                    let python_name = df.name;
+
+                    if (this.hasRaw(df)) {
+                        return `${python_name} = tc.download_to_cache(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')  # download_to_cache for raw`;
                     }
                     else {
-                        python_block += `data = tc.get(name='${permaname}', version='${datasetVersion.version}')`;
+                        return `${python_name} = tc.get(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')`;
                     }
-                } else {
-                    let python_block_lines = datasetVersion.datafiles.map((df, index) => {
-                        let has_raw = df.allowed_conversion_type.some((conversion_type) => {
-                            return conversion_type === 'raw';
-                        });
-
-                        let python_name = df.name;
-
-                        if (has_raw) {
-                            return `${python_name} = tc.download_to_cache(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')  # download_to_cache for raw`;
-                        }
-                        else {
-                            return `${python_name} = tc.get(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')`;
-                        }
-                    });
-                    python_block += python_block_lines.join("\n")
-                }
+                });
+                python_block += python_block_lines.join("\n");
 
                 leftNavsDialogs = (
                     <span>
@@ -665,7 +659,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     />
 
                     <Dialogs.InputFolderId
-                        actionDescription="link this dataset into it"
+                        actionDescription="Link this dataset into the chosen folder"
                         isVisible={this.state.showInputFolderId}
                         cancel={() => {
                             this.setState({showInputFolderId: false})
@@ -747,13 +741,13 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         {entries}
                         </tbody>
                     </table>
-                        <h2>Reading from R (<a href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse"
-                                               target="_blank">TaigaR</a>)</h2>
+                        <h2>Direct access from R (<a href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse"
+                                               target="_blank">TaigR Documentation</a>)</h2>
                     <pre>{r_block}</pre>
                         <h2>
-                            Reading from Python (<a
+                            Direct access from Python (<a
                             href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse"
-                            target="_blank">Taigapy</a>)
+                            target="_blank">Taigapy Documentation</a>)
                         </h2>
                     <pre>{python_block}</pre>
                 </span>

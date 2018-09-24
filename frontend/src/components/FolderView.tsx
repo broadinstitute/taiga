@@ -27,6 +27,7 @@ import {DatasetFullDatasetVersions, BootstrapTableFolderEntry} from "../models/m
 import {debug} from "util";
 import {User} from "../models/models";
 import {AccessLog} from "../models/models";
+import {ShareEntries} from "./Dialogs";
 
 export interface FolderViewProps {
     params: any;
@@ -46,6 +47,7 @@ export interface FolderViewState {
     showUploadDataset?: boolean;
     showCreateFolder?: boolean;
     showEditPermissions?: boolean;
+    showShareFolder?: boolean;
 
     error?: string;
     selection?: any;
@@ -228,20 +230,24 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         let actionDescription = "";
 
-        if (actionName == "move") {
-            actionDescription = "move the selected file(s) into it";
+        if (actionName === "move") {
+            actionDescription = "Move the selected file(s) into the chosen folder";
         }
-        else if (actionName == "link") {
+        else if (actionName === "link") {
             this.setState({initFolderId: ""});
-            actionDescription = "link the selected file(s) into it";
+            actionDescription = "Add the selected file(s) into the chosen folder";
         }
-        else if (actionName == "linkToHome") {
+        else if (actionName === "linkToHome") {
             this.setState({initFolderId: this.state.currentUser.home_folder_id});
-            actionDescription = "Link the selected file(s) into your Home folder";
+            actionDescription = "Add the selected file(s) into your Home folder";
         }
-        else if (actionName == "currentFolderLinkToHome") {
+        else if (actionName === "currentFolderLinkToHome") {
             this.setState({initFolderId: this.state.currentUser.home_folder_id});
-            actionDescription = "Link the current folder into your Home folder";
+            actionDescription = "Add the current folder into your Home folder";
+        }
+        else if (actionName === "currentFolderLink") {
+            this.setState({initFolderId: ""});
+            actionDescription = "Add the current folder into another folder";
         }
 
         this.setState({
@@ -258,13 +264,13 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         // TODO: Call to move the files
 
         // TODO: Find the right way to put the function in a variable but not carry this into tapi
-        if (this.state.actionName == "move") {
+        if (this.state.actionName === "move") {
             tapi.move_to_folder(this.state.selection, this.state.folder.id, folderId).then(() => this.afterAction());
         }
-        else if (this.state.actionName == "link" || this.state.actionName == "linkToHome") {
+        else if (this.state.actionName === "link" || this.state.actionName == "linkToHome") {
             tapi.copy_to_folder(this.state.selection, folderId).then(() => this.afterAction());
         }
-        else if (this.state.actionName == "currentFolderLinkToHome") {
+        else if (this.state.actionName === "currentFolderLinkToHome") {
             tapi.copy_to_folder([this.props.params.folderId], folderId).then(() => this.afterAction());
         }
     }
@@ -481,6 +487,13 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
             if (selectionCount === 0) {
                 let add_folder_items = [];
+
+                navItems.push({
+                        label: "Share folder", action: () => {
+                            this.setState({showShareFolder: true});
+                        }
+                });
+
                 // If the user can edit, then it has access to the actions
                 if (folder.can_edit) {
                     add_folder_items.push(
@@ -513,8 +526,13 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     });
                 }
                 navItems.push({
-                    label: "Link to Home", action: () => {
+                    label: "Add to Home", action: () => {
                         this.openActionTo("currentFolderLinkToHome");
+                    }
+                });
+                navItems.push({
+                    label: "Add to a folder", action: () => {
+                        this.openActionTo("currentFolderLink");
                     }
                 });
 
@@ -535,12 +553,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 }
 
                 navItems.push({
-                    label: "Link to Home", action: () => {
+                    label: "Add to Home", action: () => {
                         this.openActionTo("linkToHome");
                     }
                 });
                 navItems.push({
-                    label: "Link to...", action: () => {
+                    label: "Add to a folder", action: () => {
                         this.openActionTo("link");
                     }
                 });
@@ -621,6 +639,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             cancel={ () => { this.setState({showEditPermissions: false})}}
                             entry_id={ this.state.folder.id }
                             handleDeletedRow={ (arrayAccessLogs) => {return this.removeAccessLogs(arrayAccessLogs)} }
+                        />
+
+                        <Dialogs.ShareEntries
+                            isVisible={ this.state.showShareFolder }
+                            cancel={ () => {this.setState({showShareFolder: false});}}
+                            entries={ [this.state.folder] }
                         />
 
                         <h1>{folder.name}</h1>

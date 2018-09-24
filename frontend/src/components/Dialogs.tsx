@@ -5,6 +5,8 @@ import * as Showdown from "showdown";
 import {ControlLabel, FormControl, FormGroup, HelpBlock} from "react-bootstrap";
 import {isUndefined} from "util";
 import {isNullOrUndefined} from "util";
+import {relativePath} from "../utilities/route";
+import {Dataset, Folder, FolderEntries} from "../models/models";
 
 interface InputFolderIdProps extends DialogProps {
     cancel: () => void;
@@ -227,8 +229,14 @@ export class InputFolderId extends React.Component<InputFolderIdProps, InputFold
                 isOpen={this.props.isVisible}
                 onRequestClose={this.props.cancel}
                 contentLabel="InputFolderId">
-                <form>
-                    <div className="modal-content">
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h2>{ this.props.actionDescription }</h2>
+                        <p>Pleaser enter below the id of the folder. It can be found by going into the folder page, and
+                        getting the string after '/folder/'. E.G.: `cds.team/taiga/folder/<i>hash_id</i>`
+                        </p>
+                    </div>
+                    <form>
                         <div className="modal-body">
                             <FormGroup validationState={this.props.validationState}>
                                 <ControlLabel>Folder ID</ControlLabel>
@@ -247,13 +255,13 @@ export class InputFolderId extends React.Component<InputFolderIdProps, InputFold
                                 Close
                             </button>
                             <button type="button" className="btn btn-primary" onClick={ (e) => {
-                                formSubmitSave(this, e, this.state.folderId, null);
-                            }}>
+                                                                                                   formSubmitSave(this, e, this.state.folderId, null);
+                                                                                                   }}>
                                 Save changes
                             </button>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </Modal>
         )
     }
@@ -388,4 +396,55 @@ export class DeprecationReason extends React.Component<DeprecationReasonProps, D
         );
     }
 }
+// endregion
+
+// region Sharing
+export interface ShareEntriesProps extends DialogProps {
+    entries: Array<any>;
+}
+
+export interface ShareEntriesState extends DialogState {
+}
+
+export class ShareEntries extends React.Component<ShareEntriesProps, ShareEntriesState> {
+    render() {
+        return (
+            <Modal
+                style={ modalStyles }
+                closeTimeoutMS={150}
+                isOpen={this.props.isVisible}
+                onRequestClose={this.props.cancel}
+                contentLabel="Share entries">
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h2 ref="subtitle">Sharing urls</h2>
+                    </div>
+                    <div className="modal-body">
+                        { this.props.entries.map((entry: any) => {
+                            // TODO: Could add the relativePath as a function of an entry in models.ts
+                            let entryUrl = null;
+                            if (entry instanceof Folder) {
+                                entryUrl = relativePath("/folder/" + entry.id);
+                            }
+                            else if (entry instanceof FolderEntries) {
+                                if (entry.type === FolderEntries.TypeEnum.Dataset) {
+                                    entryUrl = relativePath("/dataset/" + entry.id);
+                                }
+                            }
+                            else {
+                                entryUrl = relativePath("/folder/" + entry.id);
+                            }
+
+                            return <p key={ entry.id }>{ entry.name }: <a href={ entryUrl }>{ entryUrl }</a></p>;
+                        })}
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
+                    </div>
+                </div>
+            </Modal>
+        )
+    }
+}
+
 // endregion

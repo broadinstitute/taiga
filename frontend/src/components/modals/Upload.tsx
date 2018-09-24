@@ -596,7 +596,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                             console.log("Error received: "+err);
                         });
                     }}>
-                Upload
+                Upload all
             </button>
         );
 
@@ -678,14 +678,15 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             <div className="modal-content">
                 <div className="modal-header">
                     <h2 ref="subtitle">{ this.props.title }</h2>
+                    <p>A dataset can contain one or multiple files.</p>
+                    <p>Drag and drop your files below. Hit Upload when you have all your files.</p>
                 </div>
                 <Form horizontal>
                     <div className="modal-body">
                         <div className="dataset-metadata">
-
                             <FormGroup controlId="formName" validationState={this.state.validationState}>
                                 <Col componentClass={ ControlLabel } sm={2}>
-                                    Name
+                                    Dataset name
                                 </Col>
                                 <Col sm={10}>
                                     { inputName }
@@ -696,7 +697,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                             </FormGroup>
                             <FormGroup controlId="formDescription">
                                 <Col componentClass={ControlLabel} sm={2}>
-                                    Description
+                                    Dataset description
                                 </Col>
                                 <Col sm={10}>
                                     { inputDescription }
