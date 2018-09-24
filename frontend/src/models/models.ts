@@ -15,6 +15,20 @@ export class Folder {
     acl: Acl;
     can_view: boolean;
     can_edit: boolean;
+
+    constructor(data) {
+        for (let key in data) {
+            this[key] = data[key];
+        }
+
+        this.entries.forEach((entry, index) => {
+           this.entries[index] = new FolderEntries(entry);
+        });
+    }
+
+    getRelativeLink() {
+        return relativePath("/folder/" + this.id);
+    }
 }
 
 export enum TypeFolderEnum {
@@ -29,6 +43,24 @@ export class FolderEntries {
     name: string;
     creation_date: string;
     creator: NamedId;
+
+    constructor(data) {
+        for (let key in data) {
+            this[key] = data[key];
+        }
+    }
+
+    getRelativeLink() {
+        if (this.type === FolderEntries.TypeEnum.Dataset) {
+            return relativePath("/dataset/" + this.id);
+        }
+        else if (this.type === FolderEntries.TypeEnum.Folder) {
+            return relativePath("/folder/" + this.id);
+        }
+        else {
+            return "Not Implemented yet";
+        }
+    }
 }
 
 export namespace FolderEntries {

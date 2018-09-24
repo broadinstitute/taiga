@@ -400,7 +400,7 @@ export class DeprecationReason extends React.Component<DeprecationReasonProps, D
 
 // region Sharing
 export interface ShareEntriesProps extends DialogProps {
-    entries: Array<any>;
+    entries: Array<Folder | FolderEntries>;
 }
 
 export interface ShareEntriesState extends DialogState {
@@ -418,24 +418,14 @@ export class ShareEntries extends React.Component<ShareEntriesProps, ShareEntrie
                 <div className="modal-content">
                     <div className="modal-header">
                         <h2 ref="subtitle">Sharing urls</h2>
+                        <p>Share easily these urls with your collaborators</p>
                     </div>
                     <div className="modal-body">
-                        { this.props.entries.map((entry: any) => {
+                        { this.props.entries.map((entry: Folder | FolderEntries) => {
                             // TODO: Could add the relativePath as a function of an entry in models.ts
-                            let entryUrl = null;
-                            if (entry instanceof Folder) {
-                                entryUrl = relativePath("/folder/" + entry.id);
-                            }
-                            else if (entry instanceof FolderEntries) {
-                                if (entry.type === FolderEntries.TypeEnum.Dataset) {
-                                    entryUrl = relativePath("/dataset/" + entry.id);
-                                }
-                            }
-                            else {
-                                entryUrl = relativePath("/folder/" + entry.id);
-                            }
+                            let entryUrl = entry.getRelativeLink();
 
-                            return <p key={ entry.id }>{ entry.name }: <a href={ entryUrl }>{ entryUrl }</a></p>;
+                            return <p key={ entry.id }>{ entry.name }: <a href={ entryUrl } target="_blank">{ entryUrl }</a></p>;
                         })}
                     </div>
                     <div className="modal-footer">
@@ -443,7 +433,7 @@ export class ShareEntries extends React.Component<ShareEntriesProps, ShareEntrie
                     </div>
                 </div>
             </Modal>
-        )
+        );
     }
 }
 

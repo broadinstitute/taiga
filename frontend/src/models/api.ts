@@ -71,7 +71,7 @@ export class TaigaApi {
 
     // TODO: Replace with FolderFullDatasetVersions
     get_folder(folderId: string): Promise<Folder> {
-        return this._fetch<Folder>("/folder/" + folderId)
+        return this._fetch<Folder>("/folder/" + folderId);
     }
 
     get_dataset(dataset_id: string): Promise<Dataset> {

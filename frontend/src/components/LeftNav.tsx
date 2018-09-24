@@ -1,12 +1,12 @@
 import * as React from "react";
 
 export interface MenuItem {
-    label : string;
-    action : () => void;
+    label: string;
+    action: () => void;
 }
 
-export interface LeftNavProps { 
-    items : MenuItem[];
+export interface LeftNavProps {
+    items: MenuItem[];
 }
 
 export class LeftNav extends React.Component<LeftNavProps, {}> {

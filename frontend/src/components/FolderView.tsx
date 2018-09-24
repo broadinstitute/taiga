@@ -19,7 +19,7 @@ import {LoadingOverlay} from "../utilities/loading";
 import {Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button} from "react-bootstrap";
 import {Grid, Row, Col} from "react-bootstrap";
 import {BootstrapTable, TableHeaderColumn, SelectRow, SelectRowMode, Options, SortOrder, CellEditClickMode, CellEdit} from "react-bootstrap-table";
-import {Dataset, NamedId} from "../models/models";
+import {Dataset, FolderEntries, NamedId} from "../models/models";
 import {DatasetVersion} from "../models/models";
 import {isUndefined} from "util";
 import {DatasetFullDatasetVersions, BootstrapTableFolderEntry} from "../models/models";
@@ -48,6 +48,8 @@ export interface FolderViewState {
     showCreateFolder?: boolean;
     showEditPermissions?: boolean;
     showShareFolder?: boolean;
+
+    sharingEntries?: Array<Folder.Folder | FolderEntries>;
 
     error?: string;
     selection?: any;
@@ -121,7 +123,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         tapi.get_user().then(user => {
             this.setState({currentUser: user});
-        })
+        });
     }
 
     doFetch() {
@@ -134,8 +136,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         let _folder: Folder.Folder = null;
 
         return tapi.get_folder(this.props.params.folderId).then(folder => {
-                _folder = folder;
-                return folder.entries
+                _folder = new Folder.Folder(folder);
+                this.setState({sharingEntries: [_folder]});
+                return folder.entries;
             }
         ).then((entries: Array<Folder.FolderEntries>) => {
             // We want to ask the server a bulk of the datasets and the datasetVersions
@@ -195,13 +198,13 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     updateName(name: string) {
         tapi.update_folder_name(this.state.folder.id, name).then(() => {
-            return this.doFetch()
+            return this.doFetch();
         })
     }
 
     updateDescription(description: string) {
         tapi.update_folder_description(this.state.folder.id, description).then(() => {
-            return this.doFetch()
+            return this.doFetch();
         })
     }
 
@@ -373,7 +376,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         let updated_selection: Array<string>;
 
         let index = original_selection.indexOf(select_key);
-        if (index != -1) {
+        if (index !== -1) {
             updated_selection = update(original_selection, {$splice: [[index, 1]]});
         }
         else {
@@ -439,6 +442,33 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
     }
 
+    // region Sharing
+
+    loadSelectionAndShare(){
+        // Process the selection into Folder | FolderEntries
+        if (this.state.selection.length === 0) {
+            this.setState({
+                sharingEntries: [this.state.folder]
+            });
+        }
+        else {
+            debugger;
+            let selectedEntries = this.state.selection.map((entryID) => {
+                return this.state.folder.entries.find((folderEntry) => {
+                   return folderEntry.id === entryID;
+                });
+            });
+            this.setState({
+                sharingEntries: selectedEntries
+            });
+        }
+
+        // Show share dialog
+        this.setState({showShareFolder: true});
+    }
+
+    // endregion
+
     render() {
         let entriesOutput: Array<any> = [];
         let navItems: MenuItem[] = [];
@@ -490,7 +520,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
                 navItems.push({
                         label: "Share folder", action: () => {
-                            this.setState({showShareFolder: true});
+                            this.loadSelectionAndShare();
                         }
                 });
 
@@ -538,6 +568,11 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
                 navItems = navItems.concat(add_folder_items);
             } else {
+                navItems.push({
+                    label: "Share selected items", action: () => {
+                        this.loadSelectionAndShare();
+                    }
+                });
                 if (folder.can_edit) {
                     // Don't display this if we are in the trash of the user
                     if (this.state.folder.folder_type !== Folder.TypeFolderEnum.Trash) {
@@ -562,6 +597,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         this.openActionTo("link");
                     }
                 });
+
             }
         }
 
@@ -574,7 +610,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 return true;
             },
             onSelectAll: (isSelected: Boolean, currentSelectedAndDisplayData: Array<BootstrapTableFolderEntry>) => {
-                this.onAllRowsSelect(isSelected, currentSelectedAndDisplayData)
+                this.onAllRowsSelect(isSelected, currentSelectedAndDisplayData);
                 return true;
             }
         };
@@ -644,7 +680,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                         <Dialogs.ShareEntries
                             isVisible={ this.state.showShareFolder }
                             cancel={ () => {this.setState({showShareFolder: false});}}
-                            entries={ [this.state.folder] }
+                            entries={ this.state.sharingEntries }
                         />
 
                         <h1>{folder.name}</h1>
@@ -667,8 +703,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             </Col>
                           </Row>
                         </Grid>
-
-
 
                         <BootstrapTable data={ folderEntriesTableFormatted }
                                         bordered={ false }
