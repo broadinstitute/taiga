@@ -120,19 +120,19 @@ export class TaigaApi {
     }
 
     get_dataset_version_first(dataset_id: string): Promise<DatasetVersion> {
-        return this._fetch<DatasetVersion>("/dataset/" + dataset_id + "/first")
+        return this._fetch<DatasetVersion>("/dataset/" + dataset_id + "/first");
     }
 
     get_dataset_version_last(dataset_id: string): Promise<DatasetVersion> {
-        return this._fetch<DatasetVersion>("/dataset/" + dataset_id + "/last")
+        return this._fetch<DatasetVersion>("/dataset/" + dataset_id + "/last");
     }
 
     get_s3_credentials(): Promise<S3Credentials> {
-        return this._fetch<S3Credentials>("/credentials_s3")
+        return this._fetch<S3Credentials>("/credentials_s3");
     }
 
     get_upload_session(): Promise<string> {
-        return this._fetch<string>("/upload_session")
+        return this._fetch<string>("/upload_session");
     }
 
     update_dataset_name(dataset_id: string, name: string) {

@@ -102,9 +102,9 @@ export enum StatusEnum {
 
 export class DatasetVersion extends Entry {
     dataset_id: string;
+    dataset: Dataset;
     state: StatusEnum;
     reason_state: string;
-    permanames: Array<string>;
     version: string;
     description?: string;
     datafiles: Array<DatasetVersionDatafiles>;
@@ -112,11 +112,14 @@ export class DatasetVersion extends Entry {
     can_edit: boolean;
     can_view: boolean;
 
-    getRelativeLink() {
-        return relativePath("/dataset/" + this.dataset_id + "/" + this.version);
+    constructor(data, dataset) {
+        super(data);
+        this.dataset = dataset;
     }
 
-
+    getRelativeLink() {
+        return relativePath("/dataset/" + this.dataset.permanames[0] + "/" + this.version);
+    }
 
     getName() {
         // TODO: Retrieve the dataset to be able to print dataset name + version
@@ -145,9 +148,7 @@ export interface DatasetVersions {
     "status": StatusEnum;
 }
 
-export interface Dataset {
-    id: string;
-    name: string;
+export class Dataset extends Entry {
     permanames: Array<string>;
     description: string;
     // TODO: Rename this and rework it, since it is "DatasetVersionNamedId" and not a true DatasetVersion(s)
@@ -157,6 +158,10 @@ export interface Dataset {
 
     can_edit: boolean;
     can_view: boolean;
+
+    getRelativeLink() {
+        return relativePath("/dataset/" + this.permanames[0]);
+    }
 }
 
 export interface DatasetFullDatasetVersions {
