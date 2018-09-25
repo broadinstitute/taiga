@@ -16,6 +16,11 @@ export abstract class Entry {
     }
 
     abstract getRelativeLink();
+
+    getFullUrl() {
+        return window.location.origin + this.getRelativeLink();
+    }
+
     getName() {
         return this.name;
     }
@@ -110,6 +115,8 @@ export class DatasetVersion extends Entry {
     getRelativeLink() {
         return relativePath("/dataset/" + this.dataset_id + "/" + this.version);
     }
+
+
 
     getName() {
         // TODO: Retrieve the dataset to be able to print dataset name + version
