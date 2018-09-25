@@ -452,7 +452,6 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             });
         }
         else {
-            debugger;
             let selectedEntries = this.state.selection.map((entryID) => {
                 return this.state.folder.entries.find((folderEntry) => {
                    return folderEntry.id === entryID;

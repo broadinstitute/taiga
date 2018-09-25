@@ -48,7 +48,7 @@ export interface DatasetViewState {
 
     showDeprecationReason?: boolean;
 
-    showShareFolder?: boolean;
+    showShareDatasetVersion?: boolean;
     sharingEntries?: Array<Entry>;
 }
 
@@ -131,8 +131,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
             if ((datasetAndDatasetVersion as Models.DatasetAndDatasetVersion).dataset) {
                 datasetAndDatasetVersion = (datasetAndDatasetVersion as Models.DatasetAndDatasetVersion);
+                // TODO: Build also this Dataset as a Dataset Entry object
                 dataset = datasetAndDatasetVersion.dataset;
-                datasetVersion = datasetAndDatasetVersion.datasetVersion;
+                datasetVersion = new DatasetVersion(datasetAndDatasetVersion.datasetVersion);
 
                 this.setState({
                     dataset: dataset, datasetVersion: datasetVersion
@@ -523,6 +524,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
             let navItems = [];
 
+            navItems.push({
+               label: "Share dataset", action: () => {
+                   this.setState({showShareDatasetVersion: true});
+                }
+            });
+
             // TODO: Look into why we are here despite the fact dataset is undefined
             if (dataset && dataset.can_edit) {
                 navItems.push({
@@ -684,6 +691,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             return this.removeAccessLogs(arrayAccessLogs)
                         }}
                     />
+                    <Dialogs.ShareEntries isVisible={ this.state.showShareDatasetVersion }
+                                          cancel={ () => {this.setState({showShareDatasetVersion: false});}}
+                                          entries={ [this.state.datasetVersion] }
+                    />
                 </span>
                 );
             }
@@ -767,6 +778,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                            cancel={() => this.cancelDeprecation()}
                                            save={(reason) => this.deprecateDatasetVersion(reason)}
                 />
+
+
             </div>;
         }
     }

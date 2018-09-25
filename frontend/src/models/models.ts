@@ -16,6 +16,9 @@ export abstract class Entry {
     }
 
     abstract getRelativeLink();
+    getName() {
+        return this.name;
+    }
 }
 
 export class Folder extends Entry {
@@ -46,6 +49,7 @@ export enum TypeFolderEnum {
     Home = <any> "home"
 }
 
+// TODO: Remove to instead use Entry and DatasetVersion/Dataset(/Folder) extending Entry
 export class FolderEntries extends Entry {
     constructor(data) {
         super(data);
@@ -91,21 +95,26 @@ export enum StatusEnum {
 
 
 
-export interface DatasetVersion {
-    id: string;
+export class DatasetVersion extends Entry {
     dataset_id: string;
     state: StatusEnum;
     reason_state: string;
-    name: string;
     permanames: Array<string>;
     version: string;
     description?: string;
-    creation_date: string;
-    creator: NamedId;
     datafiles: Array<DatasetVersionDatafiles>;
     folders: Array<NamedId>;
     can_edit: boolean;
     can_view: boolean;
+
+    getRelativeLink() {
+        return relativePath("/dataset/" + this.dataset_id + "/" + this.version);
+    }
+
+    getName() {
+        // TODO: Retrieve the dataset to be able to print dataset name + version
+        return "Version " + this.version;
+    }
 }
 
 export interface DatasetAndDatasetVersion {

@@ -425,7 +425,7 @@ export class ShareEntries extends React.Component<ShareEntriesProps, ShareEntrie
                             // TODO: Could add the relativePath as a function of an entry in models.ts
                             let entryUrl = entry.getRelativeLink();
 
-                            return <p key={ entry.id }>{ entry.name }: <a href={ entryUrl } target="_blank">{ entryUrl }</a></p>;
+                            return <p key={ entry.id }>{ entry.getName() }: <a href={ entryUrl } target="_blank">{ entryUrl }</a></p>;
                         })}
                     </div>
                     <div className="modal-footer">
