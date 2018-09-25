@@ -710,7 +710,7 @@ def search_within_folder(current_folder_id, search_query):
         'entries': []
     }
 
-    # type: FolderEntries.TypeEnum
+    # type: FolderEntriesTypeEnum
     # id: string;
     # name: string;
     # creation_date: string;

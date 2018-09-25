@@ -1,25 +1,34 @@
 import {getInitialFileTypeFromMimeType, toLocalDateString} from "../utilities/formats";
 import {relativePath} from "../utilities/route";
 import {process} from "ts-jest/dist/preprocessor";
-// import TypeEnum = FolderEntries.TypeEnum;
 
-export class Folder {
+export abstract class Entry {
+    type: FolderEntriesTypeEnum;
     id: string;
     name: string;
+    creation_date: string;
+    creator: NamedId;
+
+    constructor(data) {
+       for (let key in data) {
+        this[key] = data[key];
+        }
+    }
+
+    abstract getRelativeLink();
+}
+
+export class Folder extends Entry {
     folder_type: TypeFolderEnum;
-    type: FolderEntries;
     parents: Array<NamedId>;
     entries: Array<FolderEntries>;
     description: string;
-    creator: NamedId;
     acl: Acl;
     can_view: boolean;
     can_edit: boolean;
 
     constructor(data) {
-        for (let key in data) {
-            this[key] = data[key];
-        }
+        super(data);
 
         this.entries.forEach((entry, index) => {
            this.entries[index] = new FolderEntries(entry);
@@ -37,24 +46,16 @@ export enum TypeFolderEnum {
     Home = <any> "home"
 }
 
-export class FolderEntries {
-    type: FolderEntries.TypeEnum;
-    id: string;
-    name: string;
-    creation_date: string;
-    creator: NamedId;
-
+export class FolderEntries extends Entry {
     constructor(data) {
-        for (let key in data) {
-            this[key] = data[key];
-        }
+        super(data);
     }
 
     getRelativeLink() {
-        if (this.type === FolderEntries.TypeEnum.Dataset) {
+        if (this.type === FolderEntriesTypeEnum.Dataset) {
             return relativePath("/dataset/" + this.id);
         }
-        else if (this.type === FolderEntries.TypeEnum.Folder) {
+        else if (this.type === FolderEntriesTypeEnum.Folder) {
             return relativePath("/folder/" + this.id);
         }
         else {
@@ -63,12 +64,10 @@ export class FolderEntries {
     }
 }
 
-export namespace FolderEntries {
-    export enum TypeEnum {
-        Folder = <any> "folder",
-        Dataset = <any> "dataset",
-        DatasetVersion = <any> "dataset_version"
-    }
+export enum FolderEntriesTypeEnum {
+    Folder = <any> "folder",
+    Dataset = <any> "dataset",
+    DatasetVersion = <any> "dataset_version"
 }
 
 export class NamedId {
@@ -90,13 +89,7 @@ export enum StatusEnum {
   Deprecated = "deprecated"
 }
 
-export interface Entry {
-    type: FolderEntries.TypeEnum;
-    id: string;
-    name: string;
-    creation_date: string;
-    creator: NamedId;
-}
+
 
 export interface DatasetVersion {
     id: string;
@@ -329,18 +322,18 @@ export class BootstrapTableFolderEntry {
     creation_date: Date;
     creator_name: string;
 
-    type: FolderEntries.TypeEnum;
+    type: FolderEntriesTypeEnum;
 
     processFolderEntryUrl(entry: FolderEntries, latestDatasetVersion?: DatasetVersion,
                           full_datasetVersion?: DatasetVersion) {
         let processedUrl = null;
-        if (entry.type === FolderEntries.TypeEnum.Folder) {
+        if (entry.type === FolderEntriesTypeEnum.Folder) {
             processedUrl = relativePath("folder/" + entry.id);
         }
-        else if (entry.type === FolderEntries.TypeEnum.DatasetVersion) {
+        else if (entry.type === FolderEntriesTypeEnum.DatasetVersion) {
             processedUrl = relativePath("dataset/" + full_datasetVersion.id + "/" + entry.id);
         }
-        else if (entry.type === FolderEntries.TypeEnum.Dataset) {
+        else if (entry.type === FolderEntriesTypeEnum.Dataset) {
             processedUrl = relativePath("dataset/" + entry.id + "/" + latestDatasetVersion.id);
         }
 
@@ -350,7 +343,7 @@ export class BootstrapTableFolderEntry {
     processCreationDate(entry: FolderEntries, latestDatasetVersion?: DatasetVersion) {
         let processedCreationDate: Date = new Date();
 
-        if (entry.type == FolderEntries.TypeEnum.Dataset) {
+        if (entry.type === FolderEntriesTypeEnum.Dataset) {
 
             processedCreationDate.setTime(Date.parse(latestDatasetVersion.creation_date));
             // processedCreationDate = toLocalDateString(latestDatasetVersion.creation_date);
@@ -390,7 +383,7 @@ export class BootstrapTableSearchEntry {
     creation_date: Date;
     creator_name: string;
 
-    type: FolderEntries.TypeEnum;
+    type: FolderEntriesTypeEnum;
 
     processBreadCrumbName(searchEntry: SearchEntry) {
         let breadcrumbedName = "";
@@ -412,10 +405,10 @@ export class BootstrapTableSearchEntry {
 
     processFolderEntryUrl(searchEntry: SearchEntry) {
         let processedUrl = null;
-        if (searchEntry.entry.type === FolderEntries.TypeEnum.Folder) {
+        if (searchEntry.entry.type === FolderEntriesTypeEnum.Folder) {
             processedUrl = relativePath("folder/" + searchEntry.entry.id);
         }
-        else if (searchEntry.entry.type === FolderEntries.TypeEnum.Dataset) {
+        else if (searchEntry.entry.type === FolderEntriesTypeEnum.Dataset) {
             processedUrl = relativePath("dataset/" + searchEntry.entry.id);
         }
 
@@ -492,7 +485,7 @@ export class AccessLog {
     // Used for presentation BootstrapTable
     entry_id: string;
     entry_name: string;
-    type: FolderEntries.TypeEnum;
+    type: FolderEntriesTypeEnum;
 
     url: string;
 
@@ -501,7 +494,7 @@ export class AccessLog {
     processAccessLogEntryUrl(serverAccessLog: any) {
         let processedUrl = null;
         // TODO: Fix this toLowerCase workaround to compare types
-        if (serverAccessLog.entry.type.toLowerCase() == FolderEntries.TypeEnum.Folder) {
+        if (serverAccessLog.entry.type.toLowerCase() === FolderEntriesTypeEnum.Folder) {
             processedUrl = relativePath("folder/" + serverAccessLog.entry.id);
         }
         else {

@@ -1,23 +1,24 @@
 import * as React from "react";
-import {Link} from 'react-router';
+import {Link} from "react-router";
 import {Well} from "react-bootstrap";
 
 import {LeftNav} from "./LeftNav";
 import {EntryUsersPermissions} from "./modals/EntryUsersPermissions";
 
-import * as Models from "../models/models"
-import {TaigaApi} from "../models/api"
+import * as Models from "../models/models";
+import {TaigaApi} from "../models/api";
 
-import * as Dialogs from "./Dialogs"
+import * as Dialogs from "./Dialogs";
 import * as Upload from "./modals/Upload";
 
 import {toLocalDateString} from "../utilities/formats";
 import {LoadingOverlay} from "../utilities/loading";
 import {relativePath} from "../utilities/route";
-import {DatafileUrl, ConversionStatusEnum, StatusEnum} from "../models/models";
+import {DatafileUrl, ConversionStatusEnum, StatusEnum, Entry} from "../models/models";
 import {DatasetVersion} from "../models/models";
 import {NotFound} from "./NotFound";
 import {NamedId} from "../models/models";
+import {FolderEntries} from "../models/models";
 
 export interface DatasetViewProps {
     params: any;
@@ -46,6 +47,9 @@ export interface DatasetViewState {
     fetchError?: string;
 
     showDeprecationReason?: boolean;
+
+    showShareFolder?: boolean;
+    sharingEntries?: Array<Entry>;
 }
 
 const buttonUploadNewVersionStyle = {

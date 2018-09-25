@@ -19,7 +19,7 @@ import {LoadingOverlay} from "../utilities/loading";
 import {Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button} from "react-bootstrap";
 import {Grid, Row, Col} from "react-bootstrap";
 import {BootstrapTable, TableHeaderColumn, SelectRow, SelectRowMode, Options, SortOrder, CellEditClickMode, CellEdit} from "react-bootstrap-table";
-import {Dataset, FolderEntries, NamedId} from "../models/models";
+import {Dataset, Entry, FolderEntries, NamedId} from "../models/models";
 import {DatasetVersion} from "../models/models";
 import {isUndefined} from "util";
 import {DatasetFullDatasetVersions, BootstrapTableFolderEntry} from "../models/models";
@@ -49,7 +49,7 @@ export interface FolderViewState {
     showEditPermissions?: boolean;
     showShareFolder?: boolean;
 
-    sharingEntries?: Array<Folder.Folder | FolderEntries>;
+    sharingEntries?: Array<Entry>;
 
     error?: string;
     selection?: any;
@@ -143,12 +143,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         ).then((entries: Array<Folder.FolderEntries>) => {
             // We want to ask the server a bulk of the datasets and the datasetVersions
             let datasetIds = entries.filter((entry: Folder.FolderEntries) => {
-                return entry.type == Folder.FolderEntries.TypeEnum.Dataset;
+                return entry.type === Folder.FolderEntriesTypeEnum.Dataset;
             }).map((datasetEntry: Folder.FolderEntries) => {
                 return datasetEntry.id;
             });
             let datasetVersionIds = entries.filter((entry: Folder.FolderEntries) => {
-                return entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion;
+                return entry.type === Folder.FolderEntriesTypeEnum.DatasetVersion;
             }).map((datasetVersionEntry: Folder.FolderEntries) => {
                 return datasetVersionEntry.id;
             });
@@ -319,14 +319,14 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     getMostRecentDateEntry(entry: Folder.FolderEntries) {
         // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
-        if (entry.type == Folder.FolderEntries.TypeEnum.Folder) {
+        if (entry.type === Folder.FolderEntriesTypeEnum.Folder) {
             return entry.creation_date;
         }
-        else if (entry.type == Folder.FolderEntries.TypeEnum.Dataset) {
+        else if (entry.type === Folder.FolderEntriesTypeEnum.Dataset) {
             let latestDatasetVersion = this.state.datasetLastDatasetVersion[entry.id];
             return latestDatasetVersion.creation_date;
         }
-        else if (entry.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
+        else if (entry.type === Folder.FolderEntriesTypeEnum.DatasetVersion) {
             return entry.creation_date;
         }
     }
@@ -335,13 +335,13 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     nameUrlFormatter(cell, row: BootstrapTableFolderEntry) {
         // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
         let glyphicon = null;
-        if (row.type == Folder.FolderEntries.TypeEnum.Folder) {
+        if (row.type === Folder.FolderEntriesTypeEnum.Folder) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-folder-close"/>
         }
-        else if (row.type == Folder.FolderEntries.TypeEnum.Dataset) {
+        else if (row.type === Folder.FolderEntriesTypeEnum.Dataset) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-inbox"/>
         }
-        else if (row.type == Folder.FolderEntries.TypeEnum.DatasetVersion) {
+        else if (row.type === Folder.FolderEntriesTypeEnum.DatasetVersion) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-file"/>
         }
 

@@ -145,13 +145,13 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
     nameUrlFormatter(cell, row: BootstrapTableSearchEntry) {
         // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
         let glyphicon = null;
-        if (row.type === Models.FolderEntries.TypeEnum.Folder) {
+        if (row.type === Models.FolderEntriesTypeEnum.Folder) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-folder-close"/>;
         }
-        else if (row.type === Models.FolderEntries.TypeEnum.Dataset) {
+        else if (row.type === Models.FolderEntriesTypeEnum.Dataset) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-inbox"/>;
         }
-        else if (row.type === Models.FolderEntries.TypeEnum.DatasetVersion) {
+        else if (row.type === Models.FolderEntriesTypeEnum.DatasetVersion) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-file"/>;
         }
 

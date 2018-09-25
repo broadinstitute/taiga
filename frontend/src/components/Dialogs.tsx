@@ -6,7 +6,7 @@ import {ControlLabel, FormControl, FormGroup, HelpBlock} from "react-bootstrap";
 import {isUndefined} from "util";
 import {isNullOrUndefined} from "util";
 import {relativePath} from "../utilities/route";
-import {Dataset, Folder, FolderEntries} from "../models/models";
+import {Dataset, Entry, Folder, FolderEntries} from "../models/models";
 
 interface InputFolderIdProps extends DialogProps {
     cancel: () => void;
@@ -400,7 +400,7 @@ export class DeprecationReason extends React.Component<DeprecationReasonProps, D
 
 // region Sharing
 export interface ShareEntriesProps extends DialogProps {
-    entries: Array<Folder | FolderEntries>;
+    entries: Array<Entry>;
 }
 
 export interface ShareEntriesState extends DialogState {
@@ -421,7 +421,7 @@ export class ShareEntries extends React.Component<ShareEntriesProps, ShareEntrie
                         <p>Share easily these urls with your collaborators</p>
                     </div>
                     <div className="modal-body">
-                        { this.props.entries.map((entry: Folder | FolderEntries) => {
+                        { this.props.entries.map((entry: Entry) => {
                             // TODO: Could add the relativePath as a function of an entry in models.ts
                             let entryUrl = entry.getRelativeLink();
 
