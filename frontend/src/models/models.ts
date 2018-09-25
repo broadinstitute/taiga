@@ -113,7 +113,7 @@ export class DatasetVersion extends Entry {
     can_view: boolean;
 
     getRelativeLink() {
-        return relativePath("/dataset/" + this.dataset_id + "/" + this.version);
+        return relativePath("/dataset/" + this.dataset_id + "/" + this.id);
     }
 
 

@@ -144,7 +144,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 // TODO: get_dataset_version_with_dataset should really return a dataset with datasetVersion, and we should not do this extra step
                 dataset = (datasetAndDatasetVersion as Models.Dataset);
                 return tapi.get_dataset_version_last(dataset.id).then((last_datasetVersion) => {
-                    datasetVersion = last_datasetVersion;
+                    datasetVersion = new DatasetVersion(last_datasetVersion);
                 }).then(() => {
                     this.setState({
                         dataset: dataset, datasetVersion: datasetVersion
