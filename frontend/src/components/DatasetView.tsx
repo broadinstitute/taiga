@@ -84,7 +84,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 showUploadDataset: false,
                 loading: false,
                 exportError: false
-            })
+            });
         }
     }
 
