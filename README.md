@@ -145,13 +145,13 @@ Starting the project is not yet straightforward, but will be in the near future:
 
     a. In the root folder:
 
-        `npm run build --progress --colors --watch` or `./node_modules/.bin/webpack --progress --colors --watch`
+        `./node_modules/.bin/webpack --progress --colors --watch`
 
     b. In your redis folder, with your redis configuration file redis.conf:
 
         `redis-server <redis.conf>`
 
-    c. In the taiga2 folder:
+    c. In the root folder:
 
         `taiga2 settings.cfg`
 
