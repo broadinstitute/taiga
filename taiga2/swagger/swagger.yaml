@@ -1326,10 +1326,27 @@ paths:
 
   # Aliaset
   /aliaset:
+    get:
+      summary: Retrieve an aliaset by its permaname
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_aliaset
+      description: Create a new aliaset and returns the aliaset permaname
+      consumes:
+        - application/json
+      parameters:
+        - name: permaname
+          in: query
+          type: string
+          description: Permaname of the aliaset
+      responses:
+        200:
+          description: Returns the aliaset object
+          schema:
+            $ref: '#/definitions/Aliaset'
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: create_new_aliaset
-      description: Create a new aliaset and returns the aliaset permaname 
+      description: Create a new aliaset and returns the aliaset permaname
       consumes:
         - application/json
       parameters:
@@ -1353,20 +1370,6 @@ paths:
           schema:
             title: aliaset_permaname
             type: string
-    get:
-      summary:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_aliaset
-      parameters:
-        - in: query
-          name: permaname
-          schema:
-            type: string
-      responses:
-        200:
-          description: Returns the aliaset object
-          schema:
-            $ref: '#/definitions/Aliaset'
 
   /aliaset/all:
     get:

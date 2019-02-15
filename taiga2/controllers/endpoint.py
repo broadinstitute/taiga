@@ -717,3 +717,23 @@ def search_within_folder(current_folder_id, search_query):
     # creator: NamedId;
     # breadcrumbs: Array<OrderedNamedId>
     return flask.jsonify(result)
+
+#region Aliaset
+
+
+def get_aliaset(permaname):
+    raise NotImplementedError()
+
+
+def create_new_aliaset(name, aliases):
+    raise NotImplementedError()
+
+
+def get_all_aliasets():
+    raise NotImplementedError()
+
+
+def get_datafile_from_alias(aliaset_permaname, version, alias):
+    raise NotImplementedError()
+
+#endregion
