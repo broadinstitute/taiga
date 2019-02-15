@@ -914,6 +914,8 @@ paths:
           description: "if set to 'Y' will kick off this conversion even if on already has been done/started"
       responses:
         200:
+          # TODO: Use instead DataFileUrl object
+          # DON'T MODIFY THIS! Replace with DataFileUrl Object and modify #/definitions/DataFileUrl
           description: Will kick off conversion if not data in that form is not already availible.  Once reformated data is available, the location(s) will be returned in urls.  Multiple urls are returned because the data may need to be stored in seperate chunks, depending on format.
           schema:
             title: Datafileurl
@@ -1322,6 +1324,94 @@ paths:
           schema:
             "$ref": "#/definitions/SearchResult"
 
+  # Aliaset
+  /aliaset:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: create_new_aliaset
+      description: Create a new aliaset and returns the aliaset permaname 
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: aliasetData
+          schema:
+            type: object
+            required:
+              - name
+              - aliases
+            properties:
+              name:
+                type: string
+              aliases:
+                type: array
+                items:
+                  $ref: "#/definitions/Alias"
+      responses:
+        200:
+          description: Returns the aliaset permaname newly created
+          schema:
+            title: aliaset_permaname
+            type: string
+    get:
+      summary:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_aliaset
+      parameters:
+        - in: query
+          name: permaname
+          schema:
+            type: string
+      responses:
+        200:
+          description: Returns the aliaset object
+          schema:
+            $ref: '#/definitions/Aliaset'
+
+  /aliaset/all:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_all_aliasets
+      description: Retrieve all the aliasets the user has access to
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: Returning a list of all aliasets permaname
+          schema:
+            title: users_aliasets
+            type: array
+            items:
+              $ref: '#/definitions/Aliaset'
+
+  /alias:
+    get:
+      summary: Retrieve a datafile linked by an alias in an aliaset
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_datafile_from_alias
+      consumes:
+        - application/json
+      parameters:
+        - name: aliaset_permaname
+          in: query
+          type: string
+          description: Permaname of the aliaset your alias is in
+          required: true
+        - name: version
+          in: query
+          type: string
+          description: Version of the aliaset
+        - name: alias_name
+          in: query
+          type: string
+          description: Name of the alias which link to the datafile
+      responses:
+        200:
+          description: Returning the DataFileUrl object asked by alias
+          schema:
+            $ref: '#/definitions/DataFileUrl'
+
+
 definitions:
   Dataset:
     type: object
@@ -1471,6 +1561,35 @@ definitions:
             name:
               type: string
               description: The name of the datafile within the dataset_version
+
+  DataFileUrl:
+    type: object
+    required:
+      - dataset_name
+      - dataset_version
+      - dataset_id
+      - dataset_version_id
+      - datafile_name
+      - status
+    properties:
+      dataset_permaname:
+        type: string
+      dataset_name:
+        type: string
+      dataset_version:
+        type: string
+      dataset_id:
+        type: string
+      dataset_version_id:
+        type: string
+      datafile_name:
+        type: string
+      urls:
+        type: array
+        items:
+          type: string
+      status:
+        type: string
 
   DataFileSubmission:
     type: object
@@ -1642,3 +1761,43 @@ definitions:
         type: array
         items:
           "$ref": "#/definitions/OrderedNamedId"
+
+  Aliaset:
+    type: object
+    required:
+      - permaname
+      - aliases
+    properties:
+      permaname:
+        type: string
+      aliases:
+        type: array
+        items:
+          $ref: '#/definitions/Alias'
+
+  Alias:
+    type: object
+    required:
+      - name
+      - DatafilePath
+    properties:
+      name:
+        type: string
+      DatafilePath:
+        "$ref": "#/definitions/DatafilePath"
+
+  DatafilePath:
+    type: object
+    required:
+      - dataset_permaname
+      - dataset_version
+      - datafile_name
+    properties:
+      dataset_permaname:
+        type: string
+      dataset_version:
+        type: string
+      datafile_name:
+        type: string
+
+
