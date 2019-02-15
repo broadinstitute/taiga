@@ -1,6 +1,6 @@
 import * as React from "react";
 import {Link} from "react-router";
-import {Well} from "react-bootstrap";
+import {OverlayTrigger, Tooltip} from "react-bootstrap";
 
 import {LeftNav} from "./LeftNav";
 import {EntryUsersPermissions} from "./modals/EntryUsersPermissions";
@@ -19,6 +19,7 @@ import {DatasetVersion} from "../models/models";
 import {NotFound} from "./NotFound";
 import {NamedId} from "../models/models";
 import {FolderEntries} from "../models/models";
+import ClipboardButton from "../utilities/r-clipboard";
 
 export interface DatasetViewProps {
     params: any;
@@ -192,7 +193,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 dataset.permanames[last_index_dataset_permaname] +
                 "/" + dataset_version.name);
 
-            let link = <Link to={url}>{dataset_version.name}</Link>;
+            let link = null;
+
+            link = <Link to={url}>{dataset_version.name}</Link>;
+
             return link;
         }
     }
@@ -449,7 +453,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             <span>, </span>
                             }
                     </span>
-                    )
+                    );
                 });
             }
 
@@ -501,11 +505,23 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         });
                     }
 
+                    let clipboard_content = dataset.permanames + "." + datasetVersion.version + "/" + df.name;
+                    const tooltip_copied = (
+                        <Tooltip id="token_copy_confirmation"><strong>Copied!</strong></Tooltip>
+                    );
+
                     return <tr key={index}>
                         <td>{df.name}</td>
                         <td>{df.short_summary}</td>
                         <td>
                             {conversionTypesOutput}
+                        </td>
+                        <td>
+                            <OverlayTrigger placement="left" trigger="click" overlay={tooltip_copied} rootClose={true}>
+                                <ClipboardButton data-clipboard-text={clipboard_content}  className="btn btn-default">
+                                    Copy
+                                </ClipboardButton>
+                            </OverlayTrigger>
                         </td>
 
                         {df.provenance_nodes.length > 0 &&
@@ -746,6 +762,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             {/*<th>Description</th>*/}
                             <th>Summary</th>
                             <th>Download</th>
+                            <th>Datafile Id</th>
 
                             {weHaveProvenanceGraphs &&
                             <th>Provenance Graph</th>

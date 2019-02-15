@@ -1,12 +1,12 @@
 import * as React from "react";
 
-import {Button, Col, Glyphicon, Grid, Row, OverlayTrigger, Tooltip, Well} from 'react-bootstrap';
-import {InputGroup, InputGroupButton, FormGroup, FormControl} from 'react-bootstrap';
+import {Button, Col, Glyphicon, Grid, Row, OverlayTrigger, Tooltip, Well} from "react-bootstrap";
+import {InputGroup, InputGroupButton, FormGroup, FormControl} from "react-bootstrap";
 
-import ClipboardButton from '../utilities/r-clipboard';
-import {LeftNav} from "./LeftNav"
+import ClipboardButton from "../utilities/r-clipboard";
+import {LeftNav} from "./LeftNav";
 
-import {TaigaApi} from "../models/api"
+import {TaigaApi} from "../models/api";
 import {User} from "../models/models";
 
 export interface TokenProps {
