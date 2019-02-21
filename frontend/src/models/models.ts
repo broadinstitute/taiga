@@ -282,7 +282,7 @@ export class S3UploadedFileMetadata {
     }
 }
 
-function dropExtension(filename: string): string {
+export function dropExtension(filename: string): string {
     var i = filename.lastIndexOf(".")
     if (i > 0) {
         filename = filename.substring(0, i);

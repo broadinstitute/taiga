@@ -18,7 +18,8 @@ import {relativePath} from "../../utilities/route";
 
 import {
     S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,
-    S3UploadedFileMetadata, S3UploadedData, DatasetVersion, DatasetVersionDatafiles
+    S3UploadedFileMetadata, S3UploadedData, DatasetVersion, DatasetVersionDatafiles,
+    dropExtension
 } from "../../models/models";
 
 import {TaigaApi} from "../../models/api";
@@ -59,7 +60,7 @@ interface DropzoneState extends DialogState {
     newDatasetVersion?: DatasetVersion;
 
     // For Previous datafile selection
-    previousVersionFilesIdsSelected?: Array<DatasetVersionDatafiles>;
+    previousVersionFilesIdsSelected?: Array<string>;
 
     validationState?: "success" | "warning" | "error";
     help?: string;
@@ -155,9 +156,32 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     // When files are put in the drop zone
     onDrop(acceptedFiles: Array<File>, rejectedFiles: Array<File>) {
+        debugger;
+        // Get the name of the selected files
+        let selected_previous_files_names = this.state.previousVersionFilesIdsSelected.map((selected_previous_id) => {
+            // TODO: Could improve this, but list is small enough to not be a huge deal
+            return this.props.previousVersionFiles.filter((previous_file) => {
+                return previous_file.id === selected_previous_id;
+            })[0].name;
+        });
+        // We first check that none of the acceptFiles names are the same as previousSelected
+        let colliding_accepted_file: Array<File> = [];
+
+        let non_colliding_accepted_files = acceptedFiles.filter((file) => {
+            // If the name is not in the list, we can return it
+            // If it is not, we will store it in another list and notify the user later on
+            let dropped_extension_file_name = dropExtension(file.name);
+           if (selected_previous_files_names.indexOf(dropped_extension_file_name) > -1) {
+               colliding_accepted_file.push(file);
+           } else {
+               return file;
+           }
+        });
+        // TODO: Also check, after selecting previous that it does not collide with a filesStatus object
+
         // We construct the FileStatusUpload object for each accepted files
         let currentFilesUploadStatus = this.state.filesStatus;
-        let newFilesUploadStatus = acceptedFiles.map((file) => {
+        let newFilesUploadStatus = non_colliding_accepted_files.map((file) => {
             return new FileUploadStatus(file, credentials.prefix);
         });
         // We append to the existing files the new ones
@@ -170,6 +194,20 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             disableUpload: false,
             datasetFormDisabled: false
         });
+
+        let colliding_file_names_pretty_print = colliding_accepted_file.map((file) => {
+           return "- " + file.name;
+        });
+        let colliding_length = colliding_accepted_file.length;
+        if (colliding_length === 1) {
+            alert("The following file: \n\n" + colliding_file_names_pretty_print.join("\n") +
+                "\n\nhas the same name than a previous version datafile you selected. " +
+                "Please unselect it in the previous section if you want a new version of it");
+        } else if (colliding_length > 1) {
+            alert("The following files: \n\n" + colliding_file_names_pretty_print.join("\n") +
+                "\n\nhave the same name than previous version ones you selected. " +
+                "Please unselect the ones you want a new version of");
+        }
     }
 
     // Ask the credentials to be able to upload
