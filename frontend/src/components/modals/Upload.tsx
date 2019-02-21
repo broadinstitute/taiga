@@ -156,7 +156,6 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     // When files are put in the drop zone
     onDrop(acceptedFiles: Array<File>, rejectedFiles: Array<File>) {
-        debugger;
         // Get the name of the selected files
         let selected_previous_files_names = this.state.previousVersionFilesIdsSelected.map((selected_previous_id) => {
             // TODO: Could improve this, but list is small enough to not be a huge deal
@@ -485,6 +484,20 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         const previousVersionFilesIdsSelected = this.state.previousVersionFilesIdsSelected;
         const clickedId = row['id'];
 
+        // If the file has the same name than one dropped, unselect and notify user
+        const clickedName = row['name'];
+        let found_collide = this.state.filesStatus.find((fileStatus) => {
+            if (fileStatus.fileName === clickedName) {
+                return true;
+            }
+            return false;
+        });
+        if (found_collide) {
+            alert("The file: " + clickedName + " also exists in the new file list." +
+                " Please delete the file if you want a previous version instead. Unselecting this.");
+            return false;
+        }
+
         let newPreviousVersionFilesIdsSelected = null;
         if (isSelected) {
             newPreviousVersionFilesIdsSelected = update(previousVersionFilesIdsSelected,
@@ -501,12 +514,28 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         return true;
     }
 
-    onPreviousAllRowsSelect(isSelected: Boolean, rows: any){
+    onPreviousAllRowsSelect(isSelected: Boolean, rows: any) {
         const previousVersionFilesIdsSelected = this.state.previousVersionFilesIdsSelected;
 
         let newPreviousVersionFilesIdsSelected = previousVersionFilesIdsSelected;
         let clickedId = null;
         if (isSelected) {
+            // If one file has the same name than one dropped, unselect and notify user
+            let already_added_files: Array<FileUploadStatus> = [];
+            rows.forEach((row) => {
+                // Using the spread operator to pass all the elements found in filesStatus that match the selected one
+                 already_added_files.push(...this.state.filesStatus.filter((fileStatus) => {
+                    return fileStatus.fileName === row["name"];
+                 }));
+            });
+            if (already_added_files.length > 0) {
+                alert("The following file or files also exist in the new files list:\n\n" +
+                    already_added_files.map((fileStatus) => {return "- " + fileStatus.fileName}).join("\n") +
+                    "\n\nPlease delete the files if you want a previous version instead.");
+                return false;
+            }
+
+            // If no file name colliding, adding the files and setting all rows
             rows.forEach((row) => {
                 clickedId = row['id'];
                 newPreviousVersionFilesIdsSelected = update(newPreviousVersionFilesIdsSelected,
