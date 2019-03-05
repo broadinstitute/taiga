@@ -461,5 +461,11 @@ def test_remove_entry_permission(new_folder_in_home, new_dataset_in_new_folder_i
 # <editor-fold desc="User">
 
 
-
 # </editor-fold>
+
+#region JumpTo
+
+def test_jumpto_dataset_permaname(session: SessionBase, new_dataset: Dataset):
+    assert models_controller.get_dataset_version_id_from_any(new_dataset.id)
+
+#endregion

@@ -491,6 +491,15 @@ def get_datasets_access_logs():
     return array_access_logs
 
 
+def get_dataset_version_id_from_any(submitted_by_user_data: str):
+    """
+    Try to retrieve the dataset version id from a user entered string.
+    Can be of form:
+    -
+    """
+    raise NotImplementedError()
+
+
 # </editor-fold>
 
 # <editor-fold desc="DatasetVersion">
@@ -1339,7 +1348,7 @@ def get_all_groups() -> List[Group]:
 
 # </editor-fold>
 
-# <editor-fold desc="">
+# <editor-fold desc="Misc">
 
 def find_matching_name(root_folder, breadcrumbs, search_query) -> List[SearchEntry]:
     matching_entries = []
