@@ -124,7 +124,6 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
         this.doFetchSearch().then((searchResult: Models.SearchResult) => {
             console.log("Received the search results!");
             console.log("=> " + searchResult);
-            debugger;
 
             this.setState({
                 folder: searchResult.current_folder,

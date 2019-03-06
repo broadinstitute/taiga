@@ -16,14 +16,22 @@ import {RecentlyViewed} from "./components/RecentlyViewed";
 import {relativePath} from "./utilities/route";
 import {isNullOrUndefined} from "util";
 import {Provenance} from "./components/Provenance";
+import {FormControl, Overlay, Popover, Tooltip, OverlayTrigger} from "react-bootstrap";
 
 interface AppProps {
     route?: any;
 }
 
+interface AppState {
+    jumpToValue?: string;
+    show?: boolean;
+    target?: any;
+    message?: string;
+}
+
 const tapi = new TaigaApi(relativePath("api"));
 
-class App extends React.Component<AppProps, any> {
+class App extends React.Component<AppProps, AppState> {
     static childContextTypes = {
         tapi: React.PropTypes.object,
         currentUser: React.PropTypes.string
@@ -31,6 +39,13 @@ class App extends React.Component<AppProps, any> {
 
     constructor(props: any) {
         super(props);
+
+        this.state = {
+            jumpToValue: "",
+            show: false,
+            target: null,
+            message: ""
+        };
     }
 
     getChildContext() {
@@ -40,8 +55,59 @@ class App extends React.Component<AppProps, any> {
         };
     }
 
+    componentWillMount() {
+    }
+
     componentDidMount() {
         // TODO: We should find a way to only get_user once, instead of in Home and in App
+    }
+
+    // TODO: Create a component for jumpTo instead
+    jumpToHandleChange(e) {
+        // if e is enter, then fetch result and change page
+        this.setState({
+            jumpToValue: e.target.value
+        });
+    }
+
+    jumpToKeyPress(e) {
+        if (e.nativeEvent.key === "Enter") {
+            let escaped_entry = e.target.value.replace(/\//g, "%2F");
+            tapi.get_dataset_version_id(escaped_entry).then((dataset_version_id) => {
+                let url = relativePath("/dataset/" +
+                    "placeholder" +
+                    "/" + dataset_version_id);
+                location.replace(url);
+            }).catch((reason) => {
+                let error_message = undefined;
+                // TODO: Find a better way to catch the error properly and not use a string
+                if (reason.message === "NOT FOUND") {
+                    error_message = [<p>This dataset or dataset version id was not found</p>];
+                } else {
+                    error_message = [<p>Unknown error: + {reason.message}</p>];
+                }
+
+                // Indication of how to use it
+                error_message.push(<p>Usage:
+                    <br/>   - dataset_permaname
+                    <br/>   - dataset_permaname.version
+                    <br/>   - dataset_permaname/version
+                    <br/>
+                    <br/>   - dataset_id
+                    <br/>   - dataset_id.version
+                    <br/>   - dataset_id/version
+                    <br/>
+                    <br/>   - dataset_version_id
+                </p>);
+                // error_message += "</br>  - {dataset_id}.{version}";
+
+                // error_message += "</p>";
+                this.setState({
+                    show: true,
+                    message: error_message;
+                });
+            });
+        }
     }
 
     render() {
@@ -49,6 +115,12 @@ class App extends React.Component<AppProps, any> {
         const trash_link: any = (this.props.route.user &&
             <Link to={relativePath("folder/" + this.props.route.user.trash_folder_id)}
                 className="headerTitle">Trash</Link>
+        );
+
+        const tooltip =(
+            <Tooltip placement="right" className="in">
+                Hi
+            </Tooltip>
         );
 
         return (
@@ -65,6 +137,32 @@ class App extends React.Component<AppProps, any> {
                         {trash_link}
                         <span className="headerSpan"></span>
                         <Link className="headerTitle" to={relativePath("recentlyViewed/")}>Recently Viewed</Link>
+
+                        <FormControl
+                            ref={(button) => {
+                                this.state.target = button;
+                            }}
+                            type="text"
+                            value={this.state.jumpToValue}
+                            placeholder="Enter dataset and version (with . or / separator)"
+                            onChange={(event) => this.jumpToHandleChange(event)}
+                            onKeyPress={(event) => this.jumpToKeyPress(event)}
+                            className="headerJumpTo"
+                        />
+
+                        <Overlay
+                          show={this.state.show}
+                          rootClose={true}
+                          onHide={() => this.setState({ show: false })}
+                          placement="bottom"
+                          container={this}
+                          target={() => ReactDOM.findDOMNode(this.state.target)}
+                        >
+                            <Popover>
+                                {this.state.message}
+                            </Popover>
+                        </Overlay>
+
                     </div>
 
                     <div className="login-box pull-right">
@@ -91,7 +189,7 @@ class App extends React.Component<AppProps, any> {
                     <div className="login-box pull-right bottom-page-text">
                         <a href="https://github.com/broadinstitute/taiga"
                            target="_blank"
-                           className="headerTitle headerTitleMinor">Rev 2.4.4</a>
+                           className="headerTitle headerTitleMinor">Rev 2.5.0</a>
                     </div>
                 </footer>
             </div>
@@ -131,10 +229,10 @@ const Home = React.createClass({
         }
     }
 });
+
 Home.contextTypes = {
     tapi: React.PropTypes.object
 };
-
 
 const ActivityView = React.createClass({
     render() {

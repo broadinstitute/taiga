@@ -296,7 +296,7 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
     return added_dataset
 
 
-def get_dataset(dataset_id, one_or_none=False):
+def get_dataset(dataset_id, one_or_none=False) -> Dataset:
     q = db.session.query(Dataset) \
         .filter(Dataset.id == dataset_id)
     return _fetch_respecting_one_or_none(q, one_or_none)
@@ -491,13 +491,53 @@ def get_datasets_access_logs():
     return array_access_logs
 
 
-def get_dataset_version_id_from_any(submitted_by_user_data: str):
+def get_dataset_version_id_from_any(submitted_by_user__data: str):
     """
     Try to retrieve the dataset version id from a user entered string.
     Can be of form:
-    -
+    - dataset_id
+    - dataset_id.version
+    - dataset_id/version
+    - dataset_permaname
+    - dataset_permaname.version
+    - dataset_permaname/version
+    - dataset_version_id
+
+    Raise NotFound exception if dataset_id nor dataset_version_id matches something existing
     """
-    raise NotImplementedError()
+    # TODO: Do a function to extract this pattern . and /
+    version = None
+    if "." in submitted_by_user__data:
+        dataset_id, version = submitted_by_user__data.split('.')
+    elif "/" in submitted_by_user__data:
+        dataset_id, version = submitted_by_user__data.split('/')
+    else:
+        # TODO: implement dataset_id or dataset_version_id
+        dataset_id = submitted_by_user__data
+
+    dataset = get_dataset(dataset_id, one_or_none=True)
+
+    # If no result from dataset, trying dataset_version
+    if not dataset:
+        # Try permaname, and if still doesn't work, maybe it is a dataset_version_id
+        dataset = get_dataset_from_permaname(dataset_id, one_or_none=True)
+
+        if not dataset:
+            # TODO: It seems weird, but user could enter the dataset version id in the jump box. We have to confirm it is the right id
+            dataset_version_id = dataset_id
+            dataset_version = get_dataset_version(dataset_version_id=dataset_version_id, one_or_none=True)
+
+    if dataset:
+        if not version:
+            dataset_version = get_latest_dataset_version(dataset.id)
+        else:
+            dataset_version = get_dataset_version_by_permaname_and_version(dataset.permaname, version, one_or_none=True)
+
+    # We did not find anything matching
+    if not dataset_version:
+        return None
+
+    return dataset_version.id
 
 
 # </editor-fold>

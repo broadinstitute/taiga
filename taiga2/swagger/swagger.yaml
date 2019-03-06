@@ -1322,6 +1322,26 @@ paths:
           schema:
             "$ref": "#/definitions/SearchResult"
 
+  /datasetVersion/id/find:
+    get:
+      description: Return the dataset_version id of the entry_identifier passed in parameter (no folder)
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_dataset_version_id_by_user_entry
+      consumes:
+        - application/json
+      parameters:
+        - name: entry_submitted_by_user
+          in: query
+          type: string
+          description: Dataset (id or permaname, with or without version '.' or '/') or dataset_version id
+          required: true
+      responses:
+        200:
+          description: A dataset version id
+        404:
+          description: No dataset version id exists for this entry
+
+
 definitions:
   Dataset:
     type: object

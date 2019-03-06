@@ -1,11 +1,9 @@
-from datetime import datetime
 import flask
 import json
 import pytest
-import uuid
 
 from flask_sqlalchemy import SessionBase
-from freezegun import freeze_time
+import werkzeug.exceptions
 
 import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
@@ -13,10 +11,8 @@ import taiga2.controllers.models_controller as models_controller
 from taiga2.models import generate_permaname, DataFile, Dataset, DatasetVersion
 from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
-from taiga2.schemas import AccessLogSchema
 
-
-# <editor-fold desc="Fixtures">
+# <editor-fold desc="Fixtures and utils">
 
 @pytest.fixture
 def new_user():
@@ -121,6 +117,38 @@ def new_dataset_in_new_folder_in_home(session: SessionBase,
     return _new_dataset
 
 
+def add_version(dataset, new_upload_session_file) -> DatasetVersion:
+    """
+
+    :param dataset:
+    :param new_upload_session_file:
+    :return: DatasetVersion
+    """
+    new_description = "My new description!"
+
+    session_id = new_upload_session_file.session.id
+
+    # TODO: Get instead the last datasetVersion
+    latest_dataset_version = dataset.dataset_versions[0]
+
+    # We fetch the datafiles from the first dataset_version
+    datafile_ids = [datafile.id
+                    for datafile in latest_dataset_version.datafiles]
+
+    datasetVersionMetadata = {
+        'sessionId': session_id,
+        'datasetId': dataset.id,
+        'newDescription': new_description,
+        'datafileIds': datafile_ids
+    }
+
+    response_json_create_new_dataset_version_id = endpoint.create_new_dataset_version(datasetVersionMetadata)
+    new_dataset_version_id = get_data_from_flask_jsonify(response_json_create_new_dataset_version_id)
+
+    _new_dataset_version = models_controller.get_dataset_version(new_dataset_version_id)
+
+    return _new_dataset_version
+
 # </editor-fold>
 
 def get_data_from_flask_jsonify(flask_jsonified):
@@ -206,6 +234,7 @@ def test_create_new_dataset_version(session: SessionBase, new_dataset, new_uploa
     # TODO: Get instead the last datasetVersion
     latest_dataset_version = new_dataset.dataset_versions[0]
 
+    # TODO: Use add_version()
     # We fetch the datafiles from the first dataset_version
     datafile_ids = [datafile.id
                     for datafile in latest_dataset_version.datafiles]
@@ -231,8 +260,6 @@ def test_create_new_dataset_version(session: SessionBase, new_dataset, new_uploa
 
 
 def test_get_dataset_version_from_dataset(session: SessionBase, new_dataset):
-    import werkzeug.exceptions
-
     dataset_version_id = new_dataset.dataset_versions[0].id
 
     # test fetch by dataset version id
@@ -465,7 +492,67 @@ def test_remove_entry_permission(new_folder_in_home, new_dataset_in_new_folder_i
 
 #region JumpTo
 
-def test_jumpto_dataset_permaname(session: SessionBase, new_dataset: Dataset):
-    assert models_controller.get_dataset_version_id_from_any(new_dataset.id)
+#TODO: How to make this more easily parametrized
+def test_jumpto_dataset_id(session: SessionBase, new_dataset: Dataset):
+    param_dataset_id = new_dataset.id
+    param_latest_dataset_version = models_controller.get_latest_dataset_version(param_dataset_id)
+    param_latest_dataset_version_id = param_latest_dataset_version.id
+
+    returned_latest_dataset_version_id = models_controller.get_dataset_version_id_from_any(param_dataset_id)
+
+    assert param_latest_dataset_version_id == returned_latest_dataset_version_id
+
+
+def test_jumpto_dataset_version_id(session: SessionBase, new_dataset: Dataset):
+    param_latest_dataset_version = models_controller.get_latest_dataset_version(new_dataset.id)
+    param_latest_dataset_version_id = param_latest_dataset_version.id
+
+    returned_latest_dataset_version_id = models_controller.get_dataset_version_id_from_any(param_latest_dataset_version_id)
+
+    assert param_latest_dataset_version_id == returned_latest_dataset_version_id
+
+
+@pytest.mark.parametrize('dataset_identifier', [
+    'id',
+    'permaname'
+])
+@pytest.mark.parametrize('separator', [
+    '.',
+    '/'
+])
+def test_jumpto_dataset_id_with_separator_version_latest(session: SessionBase, new_dataset: Dataset,
+                                                         new_upload_session_file, separator: str,
+                                                         dataset_identifier: str):
+    param_dataset_version = add_version(dataset=new_dataset, new_upload_session_file=new_upload_session_file)
+    param_latest_dataset_version_id = param_dataset_version.id
+    identifier_and_version = getattr(new_dataset, dataset_identifier) + separator + str(param_dataset_version.version)
+
+    returned_latest_dataset_version_id = models_controller.get_dataset_version_id_from_any(identifier_and_version)
+
+    assert param_latest_dataset_version_id == returned_latest_dataset_version_id
+
+
+@pytest.mark.parametrize('dataset_identifier', [
+    'id',
+    'permaname'
+])
+@pytest.mark.parametrize('separator', [
+    '.',
+    '/'
+])
+def test_jumpto_dataset_id_with_separator_version_first(session: SessionBase, new_dataset: Dataset,
+                                                        new_upload_session_file, separator: str,
+                                                        dataset_identifier: str):
+    # Adding a dataset_version to check we return the first one and not the last one
+    add_version(dataset=new_dataset, new_upload_session_file=new_upload_session_file)
+
+    param_first_dataset_version = new_dataset.dataset_versions[0]
+    param_first_dataset_version_id = param_first_dataset_version.id
+    identifier_and_version = getattr(new_dataset, dataset_identifier) + separator + str(param_first_dataset_version.version)
+
+    returned_first_dataset_version_id = models_controller.get_dataset_version_id_from_any(identifier_and_version)
+
+    assert param_first_dataset_version_id == returned_first_dataset_version_id
+
 
 #endregion

@@ -2,6 +2,7 @@ import flask
 import logging
 import sys
 import time
+import urllib
 
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -624,6 +625,15 @@ def filter_allowed_parents(parents):
 
     return allowed_parents
 
+
+def get_dataset_version_id_by_user_entry(entry_submitted_by_user: str):
+    # TODO: Sanity check?
+    dataset_version_id = models_controller.get_dataset_version_id_from_any(entry_submitted_by_user)
+
+    if not dataset_version_id:
+        flask.abort(404, "No entry found matching this submission")
+
+    return flask.jsonify(dataset_version_id)
 
 # Search
 def search_within_folder(current_folder_id, search_query):
