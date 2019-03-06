@@ -72,8 +72,8 @@ RUN apt-get install -y supervisor
 RUN apt-get install -y wget
 WORKDIR redis
 RUN wget http://download.redis.io/releases/redis-4.0.13.tar.gz
-RUN tar xvzf redis-stable.tar.gz
-WORKDIR redis-stable
+RUN tar xvzf redis-4.0.13.tar.gz
+WORKDIR redis-4.0.13
 RUN make
 RUN cp src/redis-server /usr/bin/
 RUN cp src/redis-cli /usr/bin/
