@@ -33,6 +33,7 @@ RUN pip3 install attrs==16.2.0 \
         boto3==1.4.2 \
         Flask==0.11.1 \
         celery==4.1.1 \
+        kombu==4.2.1 \
         connexion==1.0.129 \
         redis==2.10.5 \
         requests==2.11.0 \
