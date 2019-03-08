@@ -398,6 +398,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         });
     }
 
+    // Deletion
+    deleteDatasetVersion() {
+        throw new Error("Not implemented");
+    }
+
     hasRaw(df){
         let has_raw = df.allowed_conversion_type.some((conversion_type) => {
             return conversion_type === "raw";
@@ -582,6 +587,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             this.deDeprecateDatasetVersion();
                         }
                     });
+                    navItems.push({
+                        label: "Delete this version", action: () => {
+                            this.deleteDatasetVersion();
+                        }
+                    })
                 }
             }
 

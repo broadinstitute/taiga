@@ -302,7 +302,6 @@ def test_get_dataset_permaname(session: SessionBase, new_dataset: Dataset):
     assert ds['id'] == new_dataset.id
 
 
-# TODO: Test deprecation and de-deprecation
 def test_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
     """Check if deprecation was a success"""
     dataset_version_id = new_dataset.dataset_versions[0].id
@@ -366,6 +365,23 @@ def test_error_de_deprecate_dataset_version(session: SessionBase, new_dataset: D
         error_raised = True
 
     assert error_raised, 'Error not raised despite no dataset_version id passed'
+
+
+def test_delete_dataset_version(session: SessionBase, new_dataset: Dataset):
+    dataset_version = new_dataset.dataset_versions[0]
+    endpoint.delete_dataset_version(dataset_version.id)
+
+    assert dataset_version.state == DatasetVersion.DatasetVersionState.deleted
+
+
+def test_de_delete_dataset_version(session: SessionBase, new_dataset: Dataset):
+    dataset_version = new_dataset.dataset_versions[0]
+    dataset_version_id = dataset_version.id
+    models_controller.deprecate_dataset_version(dataset_version_id=dataset_version_id,
+                                                reason="Testing de-deletion")
+    endpoint.de_delete_dataset_version(dataset_version_id)
+
+    assert dataset_version.state == DatasetVersion.DatasetVersionState.deprecated
 
 # <editor-fold desc="Access Logs">
 

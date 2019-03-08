@@ -723,7 +723,7 @@ def change_dataset_version_state(dataset_version_id: str, datasetVersionState: D
     return dataset_version
 
 
-def deprecate_dataset_version(dataset_version_id: str, reason: str):
+def deprecate_dataset_version(dataset_version_id: str, reason: str) -> DatasetVersion.DatasetVersionState:
     """Change the current state of a DatasetVersion to deprecate (see DatasetVersionState)
     :param dataset_version_id: ID of the dataset version to deprecate
     :param reason: Reason for deprecating a dataset
@@ -739,7 +739,21 @@ def deprecate_dataset_version(dataset_version_id: str, reason: str):
     return dataset_version.state
 
 
-def approve_dataset_version(dataset_version_id: str):
+def deprecate_dataset_version_from_delete_state(dataset_version_id: str) -> DatasetVersion.DatasetVersionState:
+    """
+    This function is mainly here to retrieve the reason message of deprecation (so if deletion was a mistake,
+    we have nothing specific to do
+    :param dataset_version_id:
+    :return: The new DatasetVersionState (should be deprecated)
+    """
+    dataset_version = get_dataset_version(dataset_version_id=dataset_version_id)
+    deprecate_dataset_version(dataset_version_id=dataset_version_id,
+                              reason=dataset_version.reason_state)
+
+    return dataset_version.state
+
+
+def approve_dataset_version(dataset_version_id: str) -> DatasetVersion.DatasetVersionState:
     """Change the current state of a DatasetVersion to approve (see DatasetVersionState).
     It should be the state by default
     :param dataset_version_id: ID of the dataset version to approve
@@ -751,7 +765,7 @@ def approve_dataset_version(dataset_version_id: str):
     return dataset_version.state
 
 
-def delete_dataset_version(dataset_version_id: str):
+def delete_dataset_version(dataset_version_id: str) -> DatasetVersion.DatasetVersionState:
     """Change the current state of a DatasetVersion to deleted (see DatasetVersionState).
     :param dataset_version_id: ID of the dataset version to delete
     :return The new DatasetVersionState (should be deleted)

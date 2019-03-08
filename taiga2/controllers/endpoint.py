@@ -335,6 +335,19 @@ def de_deprecate_dataset_version(datasetVersionId):
     return flask.jsonify({})
 
 
+def delete_dataset_version(datasetVersionId):
+    # TODO: Manage errors to let the user know
+    new_state = models_controller.delete_dataset_version(dataset_version_id=datasetVersionId)
+
+    return flask.jsonify({})
+
+
+def de_delete_dataset_version(datasetVersionId):
+    new_state = models_controller.deprecate_dataset_version_from_delete_state(dataset_version_id=datasetVersionId)
+
+    return flask.jsonify({})
+
+
 def create_upload_session_file(S3UploadedFileMetadata, sid):
     s3_bucket = S3UploadedFileMetadata['bucket']
 

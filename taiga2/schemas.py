@@ -198,8 +198,6 @@ class DatasetVersionSchema(ma.ModelSchema):
     can_edit = fields.fields.Method('check_edition')
     can_view = fields.fields.Method('check_view')
 
-    #
-
     def check_edition(self, dataset_version):
         """Check with the context if we can edit"""
         return self.context['entry_user_right'] == EntryRightsEnum.can_edit
@@ -208,6 +206,33 @@ class DatasetVersionSchema(ma.ModelSchema):
         """Check if we can view by looking at the context of the entry. If can_edit, we can view too"""
         entry_user_right = self.context['entry_user_right']
         return entry_user_right == EntryRightsEnum.can_view or entry_user_right == EntryRightsEnum.can_edit
+
+
+class DatasetVersionLightSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('id', 'name', 'dataset_id',
+                      'creation_date', 'creator',
+                      'description', 'version', 'reason_state')
+
+    creator = ma.Nested(UserNamedIdSchema)
+    # datafiles = ma.Nested(DataFileSummarySchema, many=True)
+    # TODO: Consolidate the term between folders and parents
+    # parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
+    state = EnumField(DatasetVersion.DatasetVersionState)
+
+
+class DatasetFullSchema(ma.ModelSchema):
+    # TODO: Change the name to DatasetWithVersionSchema, because we skip a few fields
+    class Meta:
+        additional = ('id', 'name', 'description',
+                      'permaname', 'dataset_versions')
+
+    # TODO: Change this field to properly handle multiple permanames (a new permaname is added when we change the name of the dataset)
+    permaname = fields.fields.Function(lambda obj: [obj.permaname], dump_to='permanames')
+    dataset_versions = ma.Nested(DatasetVersionLightSchema(),
+                                 many=True,
+                                 dump_to='versions')
+    # parents = ma.Nested(FolderNamedIdSchema(), dump_to='folders', many=True)
 
 
 class AccessLogSchema(ma.ModelSchema):
