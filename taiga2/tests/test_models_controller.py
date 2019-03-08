@@ -14,6 +14,9 @@ from taiga2.models import generate_permaname
 from taiga2.models import DataFile
 from taiga2.models import EntryRightsEnum
 
+from taiga2.tests.test_endpoint import add_version, new_upload_session_file, new_upload_session
+
+
 # from taiga2.tests.factories import GroupFactory, UserFactory, FolderFactory
 
 
@@ -414,6 +417,19 @@ def test_state_deprecated_to_approved(session: SessionBase,
 
     assert new_dataset_version.state == DatasetVersion.DatasetVersionState.approved
 
+
+def test_state_to_deleted(session: SessionBase,
+                                     new_dataset,
+                                     new_dataset_version):
+    # TODO: Could benefit of parametrizing the state of the datasetVersion in case some switch are not allowed
+    dataset_version_id = new_dataset_version.id
+    mc.delete_dataset_version(dataset_version_id)
+
+    updated_dataset_version = mc.get_dataset_version(dataset_version_id=dataset_version_id)
+
+    assert updated_dataset_version.state == DatasetVersion.DatasetVersionState.deleted
+
+
 # </editor-fold>
 
 # <editor-fold desc="DataFile Tests">
@@ -483,6 +499,7 @@ def test_get_provenance_graph(session: SessionBase, new_graph):
     _test_graph = mc.get_provenance_graph(new_graph.graph_id)
 
     assert _test_graph.graph_id == new_graph.graph_id
+
 
 # TODO: Implement node and edge tests
 # def test_add_provenance_node(session: SessionBase):
@@ -563,3 +580,70 @@ def test_edit_owned(session: SessionBase):
 # <editor-fold desc="Test Utilities">
 # TODO: Test generate_name
 # </editor-fold>
+
+# <editor-fold desc="JumpTo"?
+
+def test_jumpto_dataset_id(session: SessionBase, new_dataset: Dataset):
+    param_dataset_id = new_dataset.id
+    param_latest_dataset_version = mc.get_latest_dataset_version(param_dataset_id)
+    param_latest_dataset_version_id = param_latest_dataset_version.id
+
+    returned_latest_dataset_version_id = mc.get_dataset_version_id_from_any(param_dataset_id)
+
+    assert param_latest_dataset_version_id == returned_latest_dataset_version_id
+
+
+def test_jumpto_dataset_version_id(session: SessionBase, new_dataset: Dataset):
+    param_latest_dataset_version = mc.get_latest_dataset_version(new_dataset.id)
+    param_latest_dataset_version_id = param_latest_dataset_version.id
+
+    returned_latest_dataset_version_id = mc.get_dataset_version_id_from_any(
+        param_latest_dataset_version_id)
+
+    assert param_latest_dataset_version_id == returned_latest_dataset_version_id
+
+
+@pytest.mark.parametrize('dataset_identifier', [
+    'id',
+    'permaname'
+])
+@pytest.mark.parametrize('separator', [
+    '.',
+    '/'
+])
+def test_jumpto_dataset_id_with_separator_version_latest(session: SessionBase, new_dataset: Dataset,
+                                                         new_upload_session_file, separator: str,
+                                                         dataset_identifier: str):
+    param_dataset_version = add_version(dataset=new_dataset, new_upload_session_file=new_upload_session_file)
+    param_latest_dataset_version_id = param_dataset_version.id
+    identifier_and_version = getattr(new_dataset, dataset_identifier) + separator + str(param_dataset_version.version)
+
+    returned_latest_dataset_version_id = mc.get_dataset_version_id_from_any(identifier_and_version)
+
+    assert param_latest_dataset_version_id == returned_latest_dataset_version_id
+
+
+@pytest.mark.parametrize('dataset_identifier', [
+    'id',
+    'permaname'
+])
+@pytest.mark.parametrize('separator', [
+    '.',
+    '/'
+])
+def test_jumpto_dataset_id_with_separator_version_first(session: SessionBase, new_dataset: Dataset,
+                                                        new_upload_session_file, separator: str,
+                                                        dataset_identifier: str):
+    # Adding a dataset_version to check we return the first one and not the last one
+    add_version(dataset=new_dataset, new_upload_session_file=new_upload_session_file)
+
+    param_first_dataset_version = new_dataset.dataset_versions[0]
+    param_first_dataset_version_id = param_first_dataset_version.id
+    identifier_and_version = getattr(new_dataset, dataset_identifier) + separator + str(
+        param_first_dataset_version.version)
+
+    returned_first_dataset_version_id = mc.get_dataset_version_id_from_any(identifier_and_version)
+
+    assert param_first_dataset_version_id == returned_first_dataset_version_id
+
+# </editor-fold

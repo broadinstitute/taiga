@@ -635,6 +635,7 @@ def get_dataset_version_id_by_user_entry(entry_submitted_by_user: str):
 
     return flask.jsonify(dataset_version_id)
 
+
 # Search
 def search_within_folder(current_folder_id, search_query):
     """Given a folder id and a search query (string), will return all the datasets and folders that are matching the query inside the folder

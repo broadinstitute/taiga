@@ -104,7 +104,7 @@ class App extends React.Component<AppProps, AppState> {
                 // error_message += "</p>";
                 this.setState({
                     show: true,
-                    message: error_message;
+                    message: error_message
                 });
             });
         }
@@ -189,7 +189,7 @@ class App extends React.Component<AppProps, AppState> {
                     <div className="login-box pull-right bottom-page-text">
                         <a href="https://github.com/broadinstitute/taiga"
                            target="_blank"
-                           className="headerTitle headerTitleMinor">Rev 2.5.0</a>
+                           className="headerTitle headerTitleMinor">Rev 2.6.0</a>
                     </div>
                 </footer>
             </div>

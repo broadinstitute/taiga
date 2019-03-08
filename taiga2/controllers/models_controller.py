@@ -703,6 +703,26 @@ def update_dataset_version_description(dataset_version_id,
     return dataset_version
 
 
+def change_dataset_version_state(dataset_version_id: str, datasetVersionState: DatasetVersion.DatasetVersionState,
+                                 reason: str="") -> DatasetVersion:
+    """Function to change the state of a DatasetVersion
+    :param dataset_version_id:
+    :param datasetVersionState:
+    :param reason:
+    :return:
+    """
+    # TODO: Could live in models.py as a method of a DatasetVersion
+    dataset_version = get_dataset_version(dataset_version_id)
+
+    dataset_version.state = datasetVersionState
+    dataset_version.reason_state = reason
+
+    db.session.add(dataset_version)
+    db.session.commit()
+
+    return dataset_version
+
+
 def deprecate_dataset_version(dataset_version_id: str, reason: str):
     """Change the current state of a DatasetVersion to deprecate (see DatasetVersionState)
     :param dataset_version_id: ID of the dataset version to deprecate
@@ -712,13 +732,9 @@ def deprecate_dataset_version(dataset_version_id: str, reason: str):
     # Check reason is not empty
     assert reason, "Reason can't be empty when deprecating a dataset version"
 
-    dataset_version = get_dataset_version(dataset_version_id)
-
-    dataset_version.state = models.DatasetVersion.DatasetVersionState.deprecated
-    dataset_version.reason_state = reason
-
-    db.session.add(dataset_version)
-    db.session.commit()
+    dataset_version = change_dataset_version_state(dataset_version_id=dataset_version_id,
+                                                   datasetVersionState=DatasetVersion.DatasetVersionState.deprecated,
+                                                   reason=reason)
 
     return dataset_version.state
 
@@ -726,19 +742,25 @@ def deprecate_dataset_version(dataset_version_id: str, reason: str):
 def approve_dataset_version(dataset_version_id: str):
     """Change the current state of a DatasetVersion to approve (see DatasetVersionState).
     It should be the state by default
-    :param dataset_version_id: ID of the dataset version to deprecate
+    :param dataset_version_id: ID of the dataset version to approve
     :return The new DatasetVersionState (should be approved)
     """
-    # TODO: Could merge into a function the change of the state instead of doing the same code between deprecate and approve (later delete)
-    dataset_version = get_dataset_version(dataset_version_id)
-
-    dataset_version.state = models.DatasetVersion.DatasetVersionState.approved
-    dataset_version.reason_state = ""
-
-    db.session.add(dataset_version)
-    db.session.commit()
+    dataset_version = change_dataset_version_state(dataset_version_id=dataset_version_id,
+                                                   datasetVersionState=DatasetVersion.DatasetVersionState.approved)
 
     return dataset_version.state
+
+
+def delete_dataset_version(dataset_version_id: str):
+    """Change the current state of a DatasetVersion to deleted (see DatasetVersionState).
+    :param dataset_version_id: ID of the dataset version to delete
+    :return The new DatasetVersionState (should be deleted)
+    """
+    dataset_version = change_dataset_version_state(dataset_version_id=dataset_version_id,
+                                                   datasetVersionState=DatasetVersion.DatasetVersionState.deleted)
+
+    return dataset_version.state
+
 
 
 # </editor-fold>

@@ -271,7 +271,7 @@ class DatasetVersion(Entry):
         deprecated = "Deprecated"
         deleted = "Deleted"
 
-    # Missing the permaname of the DatasetVersion
+    # TODO: Missing the permaname of the DatasetVersion
     __tablename__ = 'dataset_versions'
 
     id = db.Column(GUID,
