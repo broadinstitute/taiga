@@ -254,6 +254,12 @@ export class TaigaApi {
             );
     }
 
+    delete_dataset_version(dataset_version_id: string): Promise<void> {
+        return this._post<void>(
+            "/datasetVersion/" + dataset_version_id + "/delete", {}
+            );
+    }
+
     get_dataset_version_id(any_entry_identifier: string): Promise<string> {
         return this._fetch(
             "/datasetVersion/id/find?entry_submitted_by_user=" + any_entry_identifier

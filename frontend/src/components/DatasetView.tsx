@@ -379,7 +379,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         });
     }
 
-    cancelDeprecation(){
+    cancelDeprecation() {
         this.closeDeprecationReason();
     }
 
@@ -400,10 +400,55 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     // Deletion
     deleteDatasetVersion() {
-        throw new Error("Not implemented");
+        tapi.delete_dataset_version(this.state.datasetVersion.id).then(() => {
+            // Change the labels on the right. Remove deprecation and remove deletion
+            this.doFetch();
+        });
     }
 
-    hasRaw(df){
+    getCopyButton(datafile) {
+        if (this.state.datasetVersion.state !== StatusEnum.Deleted) {
+            let dataset = this.state.dataset;
+            let datasetVersion = this.state.datasetVersion;
+
+
+            let clipboard_content = dataset.permanames + "." + datasetVersion.version + "/" + datafile.name;
+            const tooltip_copied = (
+                <Tooltip id="token_copy_confirmation"><strong>Copied!</strong></Tooltip>
+            );
+
+            return <OverlayTrigger placement="left" trigger="click" overlay={tooltip_copied} rootClose={true}>
+                <ClipboardButton data-clipboard-text={clipboard_content} className="btn btn-default">
+                    Copy
+                </ClipboardButton>
+            </OverlayTrigger>;
+        }
+    }
+
+    getConversionTypesOutput(datafile) {
+        if (this.state.datasetVersion.state !== StatusEnum.Deleted) {
+            datafile.allowed_conversion_type.map((conversionType, index) => {
+                let dataset = this.state.dataset;
+                let datasetVersion = this.state.datasetVersion;
+
+                // TODO: If we have the same name for datafiles, we will run into troubles
+                return <span key={conversionType}>
+                    <a href="#" onClick={() => {
+                        this.setLoadingMessage("Sent the request to the server...");
+                        return this.getOrLaunchConversion(undefined, undefined,
+                            datasetVersion.id, datafile.name, conversionType, "N");
+                    }}>
+                        {conversionType}
+                        </a>
+                    {datafile.allowed_conversion_type.length !== index + 1 &&
+                    <span>, </span>
+                    }
+                </span>;
+            });
+        }
+    }
+
+    hasRaw(df) {
         let has_raw = df.allowed_conversion_type.some((conversion_type) => {
             return conversion_type === "raw";
         });
@@ -478,22 +523,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         return -1;
                     }
                 }).map((df, index) => {
-                    let conversionTypesOutput = df.allowed_conversion_type.map((conversionType, index) => {
-                        // TODO: If we have the same name for datafiles, we will run into troubles
-                        return <span key={conversionType}>
-                    <a href="#" onClick={() => {
-                        this.setLoadingMessage("Sent the request to the server...");
-                        return this.getOrLaunchConversion(undefined, undefined,
-                            datasetVersion.id, df.name, conversionType, 'N');
-                    }}>
-                        {conversionType}
-                        </a>
-                            {df.allowed_conversion_type.length != index + 1 &&
-                            <span>, </span>
-                            }
-                </span>
-                    });
 
+                    let conversionTypesOutput = this.getConversionTypesOutput(df);
+                    let copy_button = this.getCopyButton(df);
 
                     let provenanceGraphs = null;
                     if (df.provenance_nodes) {
@@ -510,10 +542,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         });
                     }
 
-                    let clipboard_content = dataset.permanames + "." + datasetVersion.version + "/" + df.name;
-                    const tooltip_copied = (
-                        <Tooltip id="token_copy_confirmation"><strong>Copied!</strong></Tooltip>
-                    );
 
                     return <tr key={index}>
                         <td>{df.name}</td>
@@ -522,11 +550,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             {conversionTypesOutput}
                         </td>
                         <td>
-                            <OverlayTrigger placement="left" trigger="click" overlay={tooltip_copied} rootClose={true}>
-                                <ClipboardButton data-clipboard-text={clipboard_content}  className="btn btn-default">
-                                    Copy
-                                </ClipboardButton>
-                            </OverlayTrigger>
+                            {copy_button}
                         </td>
 
                         {df.provenance_nodes.length > 0 &&
@@ -534,7 +558,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             {provenanceGraphs}
                         </td>
                         }
-                    </tr>
+                    </tr>;
                 });
 
                 weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
@@ -546,8 +570,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             let navItems = [];
 
             navItems.push({
-               label: "Share dataset", action: () => {
-                   this.setState({showShareDatasetVersion: true});
+                label: "Share dataset", action: () => {
+                    this.setState({showShareDatasetVersion: true});
                 }
             });
 
@@ -591,7 +615,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         label: "Delete this version", action: () => {
                             this.deleteDatasetVersion();
                         }
-                    })
+                    });
+                } else if (datasetVersion.state === StatusEnum.Deleted) {
+                    // Don't add anything so we can't change the state anymore
                 }
             }
 
@@ -717,9 +743,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             return this.removeAccessLogs(arrayAccessLogs)
                         }}
                     />
-                    <Dialogs.ShareEntries isVisible={ this.state.showShareDatasetVersion }
-                                          cancel={ () => {this.setState({showShareDatasetVersion: false});}}
-                                          entries={ [this.state.datasetVersion] }
+                    <Dialogs.ShareEntries isVisible={this.state.showShareDatasetVersion}
+                                          cancel={() => {
+                                              this.setState({showShareDatasetVersion: false});
+                                          }}
+                                          entries={[this.state.datasetVersion]}
                     />
                 </span>
                 );
@@ -783,8 +811,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         {entries}
                         </tbody>
                     </table>
-                        <h2>Direct access from R (<a href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse"
-                                               target="_blank">TaigR Documentation</a>)</h2>
+                        <h2>Direct access from R (<a
+                            href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse"
+                            target="_blank">TaigR Documentation</a>)</h2>
                     <pre>{r_block}</pre>
                         <h2>
                             Direct access from Python (<a

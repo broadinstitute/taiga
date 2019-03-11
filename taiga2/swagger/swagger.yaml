@@ -857,6 +857,24 @@ paths:
         200:
           description: Successfully de-deprecated
 
+
+  /datasetVersion/{datasetVersionId}/delete:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: delete_dataset_version
+      description: Delete a dataset version so the datafiles can't be accessed anymore
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetVersionId
+          in: path
+          type: string
+          description: Dataset Version ID
+          required: true
+      responses:
+        200:
+          description: Successfully de-deprecated
+
   /datafile/{sid}:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
