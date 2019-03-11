@@ -61,8 +61,16 @@ const deprecationStyle = {
     color: "orange"
 };
 
-const deprecation_title = {
+const deprecationTitle = {
     color: "orange"
+};
+
+const deletionStyle = {
+    color: "red"
+};
+
+const deletionTitle = {
+    color: "red"
 };
 
 let tapi: TaigaApi = null;
@@ -400,10 +408,14 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     // Deletion
     deleteDatasetVersion() {
-        tapi.delete_dataset_version(this.state.datasetVersion.id).then(() => {
-            // Change the labels on the right. Remove deprecation and remove deletion
-            this.doFetch();
-        });
+        let confirmation_deletion = confirm("You are about to delete permanently this version of the dataset. Are you sure?");
+
+        if (confirmation_deletion) {
+            tapi.delete_dataset_version(this.state.datasetVersion.id).then(() => {
+                // Change the labels on the right. Remove deprecation and remove deletion
+                this.doFetch();
+            });
+        }
     }
 
     getCopyButton(datafile) {
@@ -427,7 +439,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     getConversionTypesOutput(datafile) {
         if (this.state.datasetVersion.state !== StatusEnum.Deleted) {
-            datafile.allowed_conversion_type.map((conversionType, index) => {
+            return datafile.allowed_conversion_type.map((conversionType, index) => {
                 let dataset = this.state.dataset;
                 let datasetVersion = this.state.datasetVersion;
 
@@ -541,7 +553,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                </span>
                         });
                     }
-
 
                     return <tr key={index}>
                         <td>{df.name}</td>
@@ -753,7 +764,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 );
             }
 
-
             return <div>
                 <LeftNav items={navItems}/>
                 <div id="main-content">
@@ -768,7 +778,14 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             {this.state.datasetVersion.state === StatusEnum.Deprecated &&
                             <span>&nbsp;
                                 <small className="glyphicon glyphicon-warning-sign"
-                                       style={deprecation_title}>Deprecated</small></span>
+                                       style={deprecationTitle}>Deprecated</small>
+                            </span>
+                            }
+                            {this.state.datasetVersion.state === StatusEnum.Deleted &&
+                            <span>&nbsp;
+                                <small className="glyphicon glyphicon-exclamation-sign"
+                                       style={deletionTitle}>Deleted</small>
+                            </span>
                             }
                         </h1>
                     <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
@@ -834,8 +851,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                            cancel={() => this.cancelDeprecation()}
                                            save={(reason) => this.deprecateDatasetVersion(reason)}
                 />
-
-
             </div>;
         }
     }

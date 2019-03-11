@@ -350,7 +350,7 @@ def test_de_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset
     updated_dataset_version = models_controller.get_dataset_version(dataset_version_id)
 
     assert updated_dataset_version.state == DatasetVersion.DatasetVersionState.approved
-    assert updated_dataset_version.reason_state == ''
+    assert updated_dataset_version.reason_state == 'Test de-deprecation'
 
 
 def test_error_de_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
@@ -377,11 +377,17 @@ def test_delete_dataset_version(session: SessionBase, new_dataset: Dataset):
 def test_de_delete_dataset_version(session: SessionBase, new_dataset: Dataset):
     dataset_version = new_dataset.dataset_versions[0]
     dataset_version_id = dataset_version.id
-    models_controller.deprecate_dataset_version(dataset_version_id=dataset_version_id,
-                                                reason="Testing de-deletion")
-    endpoint.de_delete_dataset_version(dataset_version_id)
+
+    deprecation_reason = "DeprecationReason"
+    reason_obj_should_not_be = {"deprecationReason": "ShouldNotBeSet"}
+
+    models_controller.deprecate_dataset_version(dataset_version_id=dataset_version_id, reason="DeprecationReason")
+
+    models_controller.delete_dataset_version(dataset_version_id=dataset_version_id)
+    endpoint.deprecate_dataset_version(dataset_version_id, deprecationReasonObj=reason_obj_should_not_be)
 
     assert dataset_version.state == DatasetVersion.DatasetVersionState.deprecated
+    assert dataset_version.reason_state == deprecation_reason
 
 # <editor-fold desc="Access Logs">
 
@@ -440,8 +446,6 @@ def test_import_provenance(session: SessionBase, new_dataset):
 
     new_node = models_controller.get_provenance_node(new_graph.provenance_nodes[0].node_id)
     assert new_node.datafile_id == datafile_from_dataset.id
-
-    # import pdb; pdb.set_trace()
 
     new_edge = models_controller.get_provenance_edge(new_node.from_edges[0].edge_id)
     assert new_edge.from_node == new_edge.to_node

@@ -636,7 +636,7 @@ def _fetch_respecting_one_or_none(q, one_or_none) -> Folder:
         return q.one()
 
 
-def get_dataset_version(dataset_version_id, one_or_none=False):
+def get_dataset_version(dataset_version_id, one_or_none=False) -> DatasetVersion:
     q = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.id == dataset_version_id)
 
@@ -704,7 +704,7 @@ def update_dataset_version_description(dataset_version_id,
 
 
 def change_dataset_version_state(dataset_version_id: str, datasetVersionState: DatasetVersion.DatasetVersionState,
-                                 reason: str="") -> DatasetVersion:
+                                 reason: str=None) -> DatasetVersion:
     """Function to change the state of a DatasetVersion
     :param dataset_version_id:
     :param datasetVersionState:
@@ -715,7 +715,10 @@ def change_dataset_version_state(dataset_version_id: str, datasetVersionState: D
     dataset_version = get_dataset_version(dataset_version_id)
 
     dataset_version.state = datasetVersionState
-    dataset_version.reason_state = reason
+
+    # We don't touch reason if it is not set (to keep deprecation state in deletion => deprecation workflow)
+    if reason:
+        dataset_version.reason_state = reason
 
     db.session.add(dataset_version)
     db.session.commit()
@@ -729,13 +732,18 @@ def deprecate_dataset_version(dataset_version_id: str, reason: str) -> DatasetVe
     :param reason: Reason for deprecating a dataset
     :return: The new DatasetVersionState (should be deprecated)
     """
-    # Check reason is not empty
-    assert reason, "Reason can't be empty when deprecating a dataset version"
+    dataset_version = get_dataset_version(dataset_version_id=dataset_version_id)
 
-    dataset_version = change_dataset_version_state(dataset_version_id=dataset_version_id,
-                                                   datasetVersionState=DatasetVersion.DatasetVersionState.deprecated,
-                                                   reason=reason)
+    if dataset_version.state == DatasetVersion.DatasetVersionState.deleted:
+        # TODO: We could do better here, since deprecate_dataset_version_from_delete_state is now only internally used
+        deprecate_dataset_version_from_delete_state(dataset_version_id)
+    elif dataset_version.state == DatasetVersion.DatasetVersionState.approved:
+        # Check reason is not empty
+        assert reason, "Reason can't be empty when deprecating a dataset version"
 
+        dataset_version = change_dataset_version_state(dataset_version_id=dataset_version_id,
+                                                       datasetVersionState=DatasetVersion.DatasetVersionState.deprecated,
+                                                       reason=reason)
     return dataset_version.state
 
 
@@ -747,8 +755,10 @@ def deprecate_dataset_version_from_delete_state(dataset_version_id: str) -> Data
     :return: The new DatasetVersionState (should be deprecated)
     """
     dataset_version = get_dataset_version(dataset_version_id=dataset_version_id)
-    deprecate_dataset_version(dataset_version_id=dataset_version_id,
-                              reason=dataset_version.reason_state)
+
+    dataset_version = change_dataset_version_state(dataset_version_id=dataset_version_id,
+                                                   datasetVersionState=DatasetVersion.DatasetVersionState.deprecated,
+                                                   reason=dataset_version.reason_state)
 
     return dataset_version.state
 
@@ -774,7 +784,6 @@ def delete_dataset_version(dataset_version_id: str) -> DatasetVersion.DatasetVer
                                                    datasetVersionState=DatasetVersion.DatasetVersionState.deleted)
 
     return dataset_version.state
-
 
 
 # </editor-fold>
