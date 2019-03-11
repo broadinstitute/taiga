@@ -187,6 +187,15 @@ Example (but use accordingly to the state of you database, see [Alembic](http://
 - `taiga2/manage.py -c settings.cfg db migrate`
 - `taiga2/manage.py -c settings.cfg db upgrade`
 
+## Undeletion
+
+Users are able to delete datasets through the UI. We do not allow the undeletion directly, but in some extreme cases,
+we have a way of un-deleting:
+The api has the deprecation endpoint (`/datasetVersion/{datasetVersionId}/deprecate`) which could be use to turn a
+deleted dataset version to a deprecated one.
+
+You can use a curl request, e.g `curl -d '{"deprecationReason":"notNeeded"}' -H "Content-Type: application/json" -X POST http://cds.team/taiga/api/datasetVersion/{datasetVersionId_here}/deprecate`
+
 ## Contributing
 
 Feel free to make a contribution and then submit a Pull Request!
