@@ -639,8 +639,8 @@ def create_virtual_dataset(name,
                                               creation_date=creation_date)
 
     db.session.add(new_dataset_version)
-
-    add_folder_entry(folder_id, new_dataset.id)
+    if folder_id is not None:
+        add_folder_entry(folder_id, new_dataset.id)
 
     return new_dataset
 
