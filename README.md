@@ -125,7 +125,7 @@ Starting the project is not yet straightforward, but will be in the near future:
 
 2. Checkout the Taiga 2 branch:
 
-        `git checkout taiga2`
+        `git checkout master`
 
 3. Install all the dependencies:
 

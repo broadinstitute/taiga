@@ -505,7 +505,79 @@ def test_remove_entry_permission(new_folder_in_home, new_dataset_in_new_folder_i
 
 # </editor-fold>
 
+def _create_dataset_with_a_file():
+    _new_datafile = models_controller.add_datafile(name="datafile",
+                                    s3_bucket="broadtaiga2prototype",
+                                    s3_key=models_controller.generate_convert_key(),
+                                    type=models_controller.DataFile.DataFileType.Raw,
+                                    short_summary='short',
+                                    long_summary='long')
+
+    dataset = models_controller.add_dataset(name="dataset",
+                                  description="",
+                                  datafiles_ids=[_new_datafile.id])
+
+    return dataset
+
+
+
+def test_create_virtual_dataset_endpoint(session: SessionBase):
+    dataset1 = _create_dataset_with_a_file()
+    dataset2 = _create_dataset_with_a_file()
+
+    data_file_1 = "{}.1/datafile".format(dataset1.permaname)
+    data_file_2 = "{}.1/datafile".format(dataset2.permaname)
+
+    folder = models_controller.add_folder("folder", models_controller.Folder.FolderType.folder, "folder desc")
+
+    session.flush()
+
+    virtualDatasetInfo = {
+        "datasetName": "name",
+        "newDescription": "desc",
+        "currentFolderId": folder.id,
+        "files": [
+            {
+                "name": "alias",
+                "data_file_id": data_file_1
+            }
+        ]
+    }
+    virtual_dataset_id = get_data_from_flask_jsonify(endpoint.create_virtual_dataset(virtualDatasetInfo))
+
+    versionInfo = {
+        "datasetId": virtual_dataset_id,
+        "newDescription": "updated desc",
+        "files": [
+            {
+                "name": "alias",
+                "data_file_id": data_file_2
+            }
+        ]
+    }
+
+    endpoint.create_virtual_dataset_version(versionInfo)
+
+    v = models_controller.get_virtual_dataset(virtual_dataset_id)
+    assert v.name == "name"
+    assert v.description == "desc"
+
+    assert len(v.virtual_dataset_versions) == 2
+
+    # check each version
+    version = v.virtual_dataset_versions[0]
+    assert version.version == 1
+    assert len(version.virtual_dataset_entries) == 1
+    entry = version.virtual_dataset_entries[0]
+    assert entry.name == "alias"
+    data_file_id_1 = entry.data_file_id
+
+    version = v.virtual_dataset_versions[1]
+    assert version.version == 2
+    assert len(version.virtual_dataset_entries) == 1
+    entry = version.virtual_dataset_entries[0]
+    assert entry.name == "alias"
+    assert entry.data_file_id != data_file_id_1
+
 # <editor-fold desc="User">
-
-
 # </editor-fold>

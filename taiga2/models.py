@@ -304,6 +304,72 @@ class DatasetVersion(Entry):
         'polymorphic_identity': "DatasetVersion"
     }
 
+# Virtual dataset models
+
+class VirtualDataset(Entry):
+    __tablename__ = 'virtual_datasets'
+
+    id = db.Column(GUID, db.ForeignKey('entries.id'), primary_key=True)
+
+    permaname = db.Column(db.Text)
+
+    __mapper_args__ = {
+        'polymorphic_identity': "VirtualDataset"
+    }
+
+class VirtualDatasetVersion(Entry):
+    __tablename__ = 'virtual_dataset_versions'
+
+    id = db.Column(GUID,
+                   db.ForeignKey('entries.id'),
+                   primary_key=True)
+
+    virtual_dataset_id = db.Column(GUID, db.ForeignKey("virtual_datasets.id"))
+
+    virtual_dataset = db.relationship("VirtualDataset",
+                              foreign_keys=[virtual_dataset_id],
+                              backref=db.backref(__tablename__),
+                              single_parent=True)
+
+    # Filled out by the server
+    version = db.Column(db.Integer)
+
+    __table_args__ = (
+        UniqueConstraint("virtual_dataset_id", "version"),
+    )
+
+    __mapper_args__ = {
+        'polymorphic_identity': "VirtualDatasetVersion"
+    }
+
+
+class VirtualDatasetEntry(db.Model):
+    __tablename__ = 'virtual_dataset_entries'
+
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+
+    name = db.Column(db.String(80), nullable=False)
+
+    virtual_dataset_version_id = db.Column(GUID, db.ForeignKey("virtual_dataset_versions.id"))
+
+    virtual_dataset_version = db.relationship("VirtualDatasetVersion",
+                                      foreign_keys=[virtual_dataset_version_id],
+                                      backref=db.backref(__tablename__))
+
+    data_file_id = db.Column(GUID, db.ForeignKey("datafiles.id"), nullable=False)
+
+
+    __table_args__ = (
+        UniqueConstraint("virtual_dataset_version_id", "name"),
+    )
+
+
+#   keeping the above a one sided relationship
+#    data_file = db.relationship("DataFile",
+#                                      foreign_keys=[data_file_id], backref=db.backref(__tablename__))
+
+
+#########
 
 class Activity(db.Model):
     class ActivityType(enum.Enum):

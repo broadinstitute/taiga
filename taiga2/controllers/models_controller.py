@@ -13,7 +13,8 @@ from sqlalchemy import and_, update
 import taiga2.models as models
 from taiga2.models import db
 from taiga2 import aws
-from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry, Group
+from taiga2.models import User, Folder, Dataset, DataFile, DatasetVersion, Entry, Group, \
+    VirtualDataset, VirtualDatasetVersion, VirtualDatasetEntry
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
 from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
@@ -23,6 +24,8 @@ from taiga2.models import SearchResult, SearchEntry, Breadcrumb
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
 from sqlalchemy.sql.expression import func
+from collections import namedtuple
+DataFileAlias = namedtuple("DataFileAlias", "name data_file_id")
 
 import logging
 
@@ -599,6 +602,102 @@ def add_dataset_version(dataset_id,
 
     return new_dataset_version
 
+def get_virtual_dataset(virtual_dataset_id, one_or_none=False):
+    q = db.session.query(VirtualDataset) \
+        .filter(VirtualDataset.id == virtual_dataset_id)
+
+    return _fetch_respecting_one_or_none(q, one_or_none)
+
+
+def create_virtual_dataset(name,
+                description,
+                data_file_aliases,
+                permaname=None,
+                creation_date=None,
+                           folder_id=None):
+    assert len(data_file_aliases) > 0
+
+    if not permaname:
+        permaname = models.generate_permaname(name)
+
+    creator = get_current_session_user()
+
+    assert name is not None
+    new_dataset = VirtualDataset(name=name,
+                          permaname=permaname,
+                          description=description,
+                          creator=creator,
+                          creation_date=creation_date)
+
+    db.session.add(new_dataset)
+
+
+    db.session.flush()
+    new_dataset_version = add_virtual_dataset_version(virtual_dataset_id=new_dataset.id,
+                                              data_file_aliases=data_file_aliases,
+                                              new_description=description,
+                                              creation_date=creation_date)
+
+    db.session.add(new_dataset_version)
+
+    add_folder_entry(folder_id, new_dataset.id)
+
+    return new_dataset
+
+def get_latest_virtual_dataset_version(virtual_dataset_id):
+    dataset_version = db.session.query(VirtualDatasetVersion) \
+        .filter(VirtualDatasetVersion.virtual_dataset_id == virtual_dataset_id) \
+        .order_by(VirtualDatasetVersion.version.desc()) \
+        .first()
+
+    return dataset_version
+
+def add_virtual_dataset_version(virtual_dataset_id, data_file_aliases, new_description, creation_date=None):
+    assert len(data_file_aliases) > 0
+    assert isinstance(data_file_aliases, list)
+
+    creator = get_current_session_user()
+
+    virtual_dataset = get_entry(virtual_dataset_id)
+
+    # datafiles = db.session.query(DataFile) \
+    #     .filter(DataFile.id.in_([x.datafile_id for x in data_file_aliases])).all()
+    #
+    # datafiles_by_id = {x.id: x for x in datafiles}
+
+    latest_virtual_dataset_version = get_latest_virtual_dataset_version(virtual_dataset_id)
+    if latest_virtual_dataset_version:
+        version = latest_virtual_dataset_version.version + 1
+    else:
+        version = 1
+
+    # _description = new_description
+    #
+    # if _description is None:
+    #     _description = virtual_dataset.description
+
+    # Create the DatasetVersion object
+    new_virtual_dataset_version = VirtualDatasetVersion(name=str(version),
+                                                        creator=creator,
+                                         virtual_dataset=virtual_dataset,
+                                         description=new_description,
+                                         version=version,
+                                         creation_date=creation_date)
+
+    db.session.add(new_virtual_dataset_version)
+    db.session.flush()
+
+    for data_file_alias in data_file_aliases:
+        assert data_file_alias.name is not None
+        entry = VirtualDatasetEntry(name=data_file_alias.name,
+                                    virtual_dataset_version_id= new_virtual_dataset_version.id,
+                                    data_file_id=data_file_alias.data_file_id)
+        db.session.add(entry)
+
+    db.session.commit()
+
+    return new_virtual_dataset_version
+
 
 def create_new_dataset_version_from_session(session_id,
                                             dataset_id,
@@ -611,8 +710,6 @@ def create_new_dataset_version_from_session(session_id,
                                      for original_datafile in existing_datafiles_id]
 
     all_datafile_ids = added_datafile_ids + copied_existing_datafiles_ids
-
-    _description = None
 
     # If the description if filled it means we want to change it, otherwise we take the dataset one
     # TODO: It would be less dangerous to take the latest datasetVersion description
@@ -628,7 +725,7 @@ def create_new_dataset_version_from_session(session_id,
     return new_dataset_version
 
 
-def _fetch_respecting_one_or_none(q, one_or_none) -> Folder:
+def _fetch_respecting_one_or_none(q, one_or_none):
     """If one_or_none is set, asks the query q to return none if NoResultFound, else raise the error"""
     if one_or_none:
         return q.one_or_none()
@@ -950,10 +1047,11 @@ def add_datafile(s3_bucket,
     return new_datafile
 
 
-def get_datafile_by_version_and_name(dataset_version_id, name):
-    return db.session.query(DataFile).filter(DataFile.name == name) \
-        .filter(DataFile.dataset_version_id == dataset_version_id) \
-        .one()
+def get_datafile_by_version_and_name(dataset_version_id, name, one_or_none=False):
+    q = db.session.query(DataFile).filter(DataFile.name == name) \
+        .filter(DataFile.dataset_version_id == dataset_version_id)
+
+    return _fetch_respecting_one_or_none(q, one_or_none)
 
 
 def get_datafile(datafile_id):

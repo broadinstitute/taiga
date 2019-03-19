@@ -7,6 +7,7 @@ from flask_sqlalchemy import SessionBase
 import flask
 
 import taiga2.controllers.models_controller as mc
+from taiga2.controllers.models_controller import DataFileAlias
 
 from taiga2.models import db
 from taiga2.models import User, Folder, Dataset, DatasetVersion, Group
@@ -647,3 +648,41 @@ def test_jumpto_dataset_id_with_separator_version_first(session: SessionBase, ne
     assert param_first_dataset_version_id == returned_first_dataset_version_id
 
 # </editor-fold
+
+# <editor-fold desc="Test Virtual datasets">
+def test_create_virtual_dataset(session: SessionBase):
+    # create mock data of a single dataset and a virtual dataset which references the files but with a different name
+    _new_datafile = mc.add_datafile(name="underlying-datafile",
+                                    s3_bucket="broadtaiga2prototype",
+                                    s3_key=mc.generate_convert_key(),
+                                    type=mc.DataFile.DataFileType.Raw,
+                                    short_summary='short',
+                                    long_summary='long')
+
+    mc.add_dataset(name="underlying-dataset",
+                                  description="",
+                                  datafiles_ids=[_new_datafile.id])
+
+    virtual_dataset = mc.create_virtual_dataset(name="virtual-dataset",
+                           description="desc",
+                           data_file_aliases=[DataFileAlias("alias", _new_datafile.id)])
+
+    # make sure the subsequent queries can find new objects
+    session.flush()
+
+    assert virtual_dataset.id is not None
+
+    v = mc.get_virtual_dataset(virtual_dataset.id)
+    assert v.name == "virtual-dataset"
+
+    assert len(v.virtual_dataset_versions) == 1
+
+    version = v.virtual_dataset_versions[0]
+    assert len(version.virtual_dataset_entries)
+
+    entry = version.virtual_dataset_entries[0]
+    assert entry.name == "alias"
+    assert entry.data_file_id == _new_datafile.id
+
+# </editor-fold
+

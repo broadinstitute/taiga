@@ -3,6 +3,7 @@ import logging
 import sys
 import time
 import urllib
+import re
 
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -11,6 +12,7 @@ import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import DataFile, normalize_name, SearchResult
+from taiga2.controllers.models_controller import DataFileAlias
 
 from taiga2.aws import aws
 from taiga2.aws import create_signed_get_obj
@@ -374,6 +376,64 @@ def create_new_upload_session():
     upload_session = models_controller.add_new_upload_session()
     return flask.jsonify(upload_session.id)
 
+def _find_data_file_id(data_file_id):
+    "given a data file id of the form <dataset-permaname>.<version>/<filename> return the internal file id"
+    m = re.match("([a-zA-Z0-9-]+)\\.([0-9]+)/(.*)", data_file_id)
+    if m is None:
+        return None
+    permaname = m.group(1)
+    version = int(m.group(2))
+    filename = m.group(3)
+
+    version = models_controller.get_dataset_version_by_permaname_and_version(permaname, version, True)
+    if version is None:
+        return None
+
+    data_file = models_controller.get_datafile_by_version_and_name(version.id, filename, one_or_none=True)
+    if data_file is None:
+        return None
+
+    return data_file.id
+
+def _parse_data_file_aliases(files):
+    result = []
+    for file in files:
+        orig_file_id = file['data_file_id']
+        data_file_id = _find_data_file_id(orig_file_id)
+        if data_file_id is None:
+            raise Exception("Could not find data file for {}".format(orig_file_id))
+        result.append(DataFileAlias(name=file['name'], data_file_id=data_file_id))
+    return result
+
+def create_virtual_dataset(virtualDatasetInfo):
+    dataset_name = virtualDatasetInfo['datasetName']
+    new_description = virtualDatasetInfo['newDescription']
+    current_folder_id = virtualDatasetInfo['currentFolderId']
+    files = virtualDatasetInfo['files']
+
+    data_file_aliases = _parse_data_file_aliases(files)
+
+    virtual_dataset = models_controller.create_virtual_dataset(name=dataset_name,
+                                             description=new_description,
+                                             data_file_aliases=data_file_aliases,
+                                            folder_id= current_folder_id
+                                            )
+
+    return flask.jsonify(virtual_dataset.id)
+
+def create_virtual_dataset_version(virtualDatasetInfo):
+    dataset_id = virtualDatasetInfo['datasetId']
+    new_description = virtualDatasetInfo['newDescription']
+    files = virtualDatasetInfo['files']
+
+    data_file_aliases = _parse_data_file_aliases(files)
+
+    virtual_dataset_version = models_controller.add_virtual_dataset_version(virtual_dataset_id=dataset_id,
+                                             new_description=new_description,
+                                             data_file_aliases=data_file_aliases
+                                            )
+
+    return flask.jsonify(virtual_dataset_version.id)
 
 def create_dataset(sessionDatasetInfo):
     session_id = sessionDatasetInfo['sessionId']
