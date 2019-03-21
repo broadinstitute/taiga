@@ -307,7 +307,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             this.state.folder.id
         ).then((dataset_id) => {
             // We fetch the datasetVersion of the newly created dataset and change the state of it
-            return tapi.get_dataset_version_first(dataset_id).then((newDatasetVersion) => {
+            return tapi.get_dataset_version_last(dataset_id).then((newDatasetVersion) => {
                 this.doFetch();
                 return Promise.resolve(newDatasetVersion);
             });

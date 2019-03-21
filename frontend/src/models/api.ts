@@ -119,10 +119,6 @@ export class TaigaApi {
         return dsAndDv;
     }
 
-    get_dataset_version_first(dataset_id: string): Promise<DatasetVersion> {
-        return this._fetch<DatasetVersion>("/dataset/" + dataset_id + "/first");
-    }
-
     get_dataset_version_last(dataset_id: string): Promise<DatasetVersion> {
         return this._fetch<DatasetVersion>("/dataset/" + dataset_id + "/last");
     }
