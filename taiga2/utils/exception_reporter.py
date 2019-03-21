@@ -37,3 +37,4 @@ class ExceptionReporter:
             if not hasattr(ctx, 'stackdriver_client'):
                 ctx.stackdriver_client = self._create_client()
             return ctx.stackdriver_client
+        raise Exception("Missing context")
