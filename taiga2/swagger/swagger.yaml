@@ -76,6 +76,7 @@ paths:
                         - folder
                         - dataset
                         - dataset_version
+                        - virtual_dataset
                     id:
                       type: string
                     # populated for dataset and datasetVersion.  Useful to know what the latest version of a dataset is.

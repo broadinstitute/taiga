@@ -3,7 +3,7 @@ from marshmallow import post_dump
 from marshmallow_enum import EnumField
 from marshmallow_oneofschema import OneOfSchema
 
-from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile, get_allowed_conversion_type
+from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile, get_allowed_conversion_type,VirtualDataset
 from taiga2.models import ProvenanceEdge, ProvenanceNode, ProvenanceGraph
 from taiga2.models import Group, EntryRightsEnum
 
@@ -64,10 +64,14 @@ class EntrySchema(ma.ModelSchema):
     def get_lowercase_type(self, obj):
         if isinstance(obj, Folder):
             return "folder"
+        elif isinstance(obj, VirtualDataset):
+            return "virtual_dataset"
         elif isinstance(obj, Dataset):
             return "dataset"
         elif isinstance(obj, DatasetVersion):
             return "dataset_version"
+        else:
+            raise Exception("Object with unexpected type: {}".format(type(obj)))
 
 
 class FolderSchema(ma.ModelSchema):

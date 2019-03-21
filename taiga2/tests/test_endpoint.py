@@ -519,7 +519,39 @@ def _create_dataset_with_a_file():
 
     return dataset
 
+def test_get_folder_containing_virtual_dataset(session: SessionBase):
+    dataset1 = _create_dataset_with_a_file()
+    data_file_1 = "{}.1/datafile".format(dataset1.permaname)
+    folder = models_controller.add_folder("folder", models_controller.Folder.FolderType.folder, "folder desc")
 
+    virtualDatasetInfo = {
+        "datasetName": "virtual",
+        "newDescription": "desc",
+        "currentFolderId": folder.id,
+        "files": [
+            {
+                "name": "alias",
+                "data_file_id": data_file_1
+            }
+        ]
+    }
+    virtual_dataset_id = get_data_from_flask_jsonify(endpoint.create_virtual_dataset(virtualDatasetInfo))
+
+    folder_contents = get_data_from_flask_jsonify(endpoint.get_folder(folder.id))
+
+    assert len(folder_contents["entries"]) == 1
+    assert folder_contents["entries"][0]['type'] == 'virtual_dataset'
+
+    # verify that get_dataset accomodates virtual_dataset_ids the same as real datasets
+    dataset = get_data_from_flask_jsonify(endpoint.get_dataset(virtual_dataset_id))
+    assert dataset['name'] == 'virtual'
+    assert len(dataset['versions']) == 1
+
+    virtual_dataset_version_id = dataset['versions'][0]['id']
+
+    # verify that get_dataset_version also works with virtual_dataset_ids
+    dataset_version = get_data_from_flask_jsonify(endpoint.get_dataset_version_from_dataset(virtual_dataset_id, virtual_dataset_version_id))
+    assert len(dataset_version['datafiles']) == 1
 
 def test_create_virtual_dataset_endpoint(session: SessionBase):
     dataset1 = _create_dataset_with_a_file()

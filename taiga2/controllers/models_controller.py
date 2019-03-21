@@ -306,10 +306,7 @@ def get_dataset(dataset_id, one_or_none=False) -> Dataset:
 
 
 def get_datasets(array_dataset_ids):
-    datasets = db.session.query(Dataset) \
-        .filter(Dataset.id.in_(array_dataset_ids)).all()
-
-    return datasets
+    return [get_dataset(id) for id in array_dataset_ids]
 
 
 def get_dataset_from_permaname(dataset_permaname, one_or_none=False):
@@ -734,10 +731,16 @@ def _fetch_respecting_one_or_none(q, one_or_none):
 
 
 def get_dataset_version(dataset_version_id, one_or_none=False) -> DatasetVersion:
-    q = db.session.query(DatasetVersion) \
-        .filter(DatasetVersion.id == dataset_version_id)
+    q = db.session.query(Entry) \
+        .filter(Entry.id == dataset_version_id)
 
-    return _fetch_respecting_one_or_none(q, one_or_none)
+    result = _fetch_respecting_one_or_none(q, one_or_none)
+
+    if result is None:
+        return None
+
+    assert isinstance(result, VirtualDatasetVersion, DatasetVersion)
+    return result
 
 
 def get_dataset_versions(dataset_id):
