@@ -83,8 +83,8 @@ def set_current_user_from_bearer_token():
             token = m.group(1)
             user = bearer_token_lookup(token)
             if not user:
-                # If we did not find the user, we return a not found error
-                flask.abort(404)
+                # If we did not find the user, we return unauthorized
+                flask.abort(401)
             log.debug("Got token %s which mapped to user %s", token, user.email)
         else:
             log.warning("Authorization header malformed: %s", bearer_token)

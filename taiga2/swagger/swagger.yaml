@@ -296,15 +296,15 @@ paths:
               files:
                 type: array
                 items:
-                type: object
-                required:
-                  - name
-                  - datafile
-                properties:
-                  name:
-                    type: string
-                  datafile:
-                    type: string
+                  type: object
+                  required:
+                    - name
+                    - datafile
+                  properties:
+                    name:
+                      type: string
+                    datafile:
+                      type: string
       responses:
         200:
           description: The info about the newly created dataset
@@ -338,15 +338,15 @@ paths:
               files:
                 type: array
                 items:
-                type: object
-                required:
-                  - name
-                  - datafile
-                properties:
-                  name:
-                    type: string
-                  datafile:
-                    type: string
+                  type: object
+                  required:
+                    - name
+                    - datafile
+                  properties:
+                    name:
+                      type: string
+                    datafile:
+                      type: string
       responses:
         200:
           description: The info about the newly created dataset version
