@@ -657,21 +657,13 @@ def add_virtual_dataset_version(virtual_dataset_id, data_file_aliases, new_descr
 
     virtual_dataset = get_entry(virtual_dataset_id)
 
-    # datafiles = db.session.query(DataFile) \
-    #     .filter(DataFile.id.in_([x.datafile_id for x in data_file_aliases])).all()
-    #
-    # datafiles_by_id = {x.id: x for x in datafiles}
-
     latest_virtual_dataset_version = get_latest_virtual_dataset_version(virtual_dataset_id)
     if latest_virtual_dataset_version:
         version = latest_virtual_dataset_version.version + 1
+        if new_description is None:
+            new_description = latest_virtual_dataset_version.description
     else:
         version = 1
-
-    # _description = new_description
-    #
-    # if _description is None:
-    #     _description = virtual_dataset.description
 
     # Create the DatasetVersion object
     new_virtual_dataset_version = VirtualDatasetVersion(name=str(version),

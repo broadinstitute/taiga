@@ -386,7 +386,7 @@ def _find_data_file_id(data_file_id):
 def _parse_data_file_aliases(files):
     result = []
     for file in files:
-        orig_file_id = file['data_file_id']
+        orig_file_id = file['datafile']
         data_file_id = _find_data_file_id(orig_file_id)
         if data_file_id is None:
             raise Exception("Could not find data file for {}".format(orig_file_id))
@@ -394,9 +394,9 @@ def _parse_data_file_aliases(files):
     return result
 
 def create_virtual_dataset(virtualDatasetInfo):
-    dataset_name = virtualDatasetInfo['datasetName']
-    new_description = virtualDatasetInfo['newDescription']
-    current_folder_id = virtualDatasetInfo['currentFolderId']
+    dataset_name = virtualDatasetInfo['name']
+    new_description = virtualDatasetInfo['description']
+    current_folder_id = virtualDatasetInfo['folderId']
     files = virtualDatasetInfo['files']
 
     data_file_aliases = _parse_data_file_aliases(files)
@@ -409,9 +409,8 @@ def create_virtual_dataset(virtualDatasetInfo):
 
     return flask.jsonify(virtual_dataset.id)
 
-def create_virtual_dataset_version(virtualDatasetInfo):
-    dataset_id = virtualDatasetInfo['datasetId']
-    new_description = virtualDatasetInfo['newDescription']
+def create_virtual_dataset_version(dataset_id, virtualDatasetInfo):
+    new_description = virtualDatasetInfo.get('description', None)
     files = virtualDatasetInfo['files']
 
     data_file_aliases = _parse_data_file_aliases(files)

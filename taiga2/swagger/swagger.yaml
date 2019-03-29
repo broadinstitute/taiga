@@ -268,6 +268,88 @@ paths:
               sid:
                 type: string
 
+  /virtual:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: create_virtual_dataset
+      description: Create a virtual dataset in which files are aliases to other files within Taiga
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: virtualDatasetInfo
+          required: true
+          schema:
+            type: object
+            required:
+              - name
+              - description
+              - folderId
+              - files
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              folderId:
+                type: string
+              files:
+                type: object
+                required:
+                  - name
+                  - datafile
+                properties:
+                  name:
+                    type: string
+                  datafile:
+                    type: string
+      responses:
+        200:
+          description: The info about the newly created dataset
+          schema:
+            title: DatasetId
+            type: string
+
+  /virtual/{dataset_id}:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: create_virtual_dataset_version
+      description: Create a new version on an existing virtual dataset
+      consumes:
+        - application/json
+      parameters:
+        - name: dataset_id
+          in: path
+          type: string
+          description: Dataset ID
+          required: true
+        - in: body
+          name: virtualDatasetInfo
+          required: true
+          schema:
+            type: object
+            required:
+              - files
+            properties:
+              description:
+                type: string
+              files:
+                type: object
+                required:
+                  - name
+                  - datafile
+                properties:
+                  name:
+                    type: string
+                  datafile:
+                    type: string
+      responses:
+        200:
+          description: The info about the newly created dataset version
+          schema:
+            title: DatasetId
+            type: string
+
   /dataset:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint

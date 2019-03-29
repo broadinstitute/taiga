@@ -527,13 +527,13 @@ def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
 
     vdatafile_name = "alias"
     virtualDatasetInfo = {
-        "datasetName": "virtual",
-        "newDescription": "desc",
-        "currentFolderId": folder.id,
+        "name": "virtual",
+        "description": "desc",
+        "folderId": folder.id,
         "files": [
             {
                 "name": vdatafile_name,
-                "data_file_id": data_file_1
+                "datafile": data_file_1
             }
         ]
     }
@@ -596,30 +596,29 @@ def test_create_virtual_dataset_endpoint(session: SessionBase):
     session.flush()
 
     virtualDatasetInfo = {
-        "datasetName": "name",
-        "newDescription": "desc",
-        "currentFolderId": folder.id,
+        "name": "name",
+        "description": "desc",
+        "folderId": folder.id,
         "files": [
             {
                 "name": "alias",
-                "data_file_id": data_file_1
+                "datafile": data_file_1
             }
         ]
     }
     virtual_dataset_id = get_data_from_flask_jsonify(endpoint.create_virtual_dataset(virtualDatasetInfo))
 
     versionInfo = {
-        "datasetId": virtual_dataset_id,
-        "newDescription": "updated desc",
+        "description": "updated desc",
         "files": [
             {
                 "name": "alias",
-                "data_file_id": data_file_2
+                "datafile": data_file_2
             }
         ]
     }
 
-    endpoint.create_virtual_dataset_version(versionInfo)
+    endpoint.create_virtual_dataset_version(virtual_dataset_id, versionInfo)
 
     v = models_controller.get_virtual_dataset(virtual_dataset_id)
     assert v.name == "name"
