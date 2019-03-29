@@ -294,6 +294,8 @@ paths:
               folderId:
                 type: string
               files:
+                type: array
+                items:
                 type: object
                 required:
                   - name
@@ -334,6 +336,8 @@ paths:
               description:
                 type: string
               files:
+                type: array
+                items:
                 type: object
                 required:
                   - name
