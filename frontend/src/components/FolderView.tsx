@@ -143,12 +143,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         ).then((entries: Array<Folder.FolderEntries>) => {
             // We want to ask the server a bulk of the datasets and the datasetVersions
             let datasetIds = entries.filter((entry: Folder.FolderEntries) => {
-                return entry.type === Folder.FolderEntriesTypeEnum.Dataset;
+                return (entry.type === Folder.FolderEntriesTypeEnum.Dataset) || (entry.type === Folder.FolderEntriesTypeEnum.VirtualDataset);
             }).map((datasetEntry: Folder.FolderEntries) => {
                 return datasetEntry.id;
             });
             let datasetVersionIds = entries.filter((entry: Folder.FolderEntries) => {
-                return entry.type === Folder.FolderEntriesTypeEnum.DatasetVersion;
+                return (entry.type === Folder.FolderEntriesTypeEnum.DatasetVersion) || (entry.type === Folder.FolderEntriesTypeEnum.VirtualDatasetVersion);
             }).map((datasetVersionEntry: Folder.FolderEntries) => {
                 return datasetVersionEntry.id;
             });
@@ -322,7 +322,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         if (entry.type === Folder.FolderEntriesTypeEnum.Folder) {
             return entry.creation_date;
         }
-        else if (entry.type === Folder.FolderEntriesTypeEnum.Dataset) {
+        else if (entry.type === Folder.FolderEntriesTypeEnum.Dataset || entry.type == Folder.FolderEntriesTypeEnum.VirtualDataset) {
             let latestDatasetVersion = this.state.datasetLastDatasetVersion[entry.id];
             return latestDatasetVersion.creation_date;
         }
@@ -343,6 +343,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
         else if (row.type === Folder.FolderEntriesTypeEnum.DatasetVersion) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-file"/>
+        } else {
+            console.log("unknown type:", row.type)
         }
 
         return (

@@ -76,7 +76,9 @@ export class FolderEntries extends Entry {
 export enum FolderEntriesTypeEnum {
     Folder = <any> "folder",
     Dataset = <any> "dataset",
-    DatasetVersion = <any> "dataset_version"
+    DatasetVersion = <any> "dataset_version",
+    VirtualDataset = <any> "virtual_dataset",
+    VirtualDatasetVersion = <any> "virtual_dataset_version"
 }
 
 export class NamedId {
@@ -354,7 +356,7 @@ export class BootstrapTableFolderEntry {
         else if (entry.type === FolderEntriesTypeEnum.DatasetVersion) {
             processedUrl = relativePath("dataset/" + full_datasetVersion.id + "/" + entry.id);
         }
-        else if (entry.type === FolderEntriesTypeEnum.Dataset) {
+        else if (entry.type === FolderEntriesTypeEnum.Dataset || entry.type === FolderEntriesTypeEnum.VirtualDataset) {
             processedUrl = relativePath("dataset/" + entry.id + "/" + latestDatasetVersion.id);
         }
 
