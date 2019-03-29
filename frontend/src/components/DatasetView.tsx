@@ -564,7 +564,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             {copy_button}
                         </td>
 
-                        {df.provenance_nodes.length > 0 &&
+                        {df.provenance_nodes && df.provenance_nodes.length > 0 &&
                         <td>
                             {provenanceGraphs}
                         </td>
@@ -573,7 +573,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 });
 
                 weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
-                    return element.provenance_nodes.length > 0;
+                    return element.provenance_nodes && element.provenance_nodes.length > 0;
                 });
             }
 
