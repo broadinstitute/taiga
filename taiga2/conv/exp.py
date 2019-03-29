@@ -112,9 +112,6 @@ def hdf5_to_csv(progress, src_path, temp_file_generator):
 def hdf5_to_tsv(progress, src_path, temp_file_generator):
     return _hdf5_to_tcsv(progress, src_path, temp_file_generator, "\t")
 
-def columnar_to_tcsv(input_file, output_file, delimiter):
-    columnar.convert_tabular_to_csv(input_file, output_file, delimiter)
-
 def hdf5_to_gct(progress, src_path, temp_file_generator):
     f = h5py.File(src_path, "r")
     destination_file = temp_file_generator()

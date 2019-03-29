@@ -519,23 +519,25 @@ def _create_dataset_with_a_file():
 
     return dataset
 
-def test_get_folder_containing_virtual_dataset(session: SessionBase):
+def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
     dataset1 = _create_dataset_with_a_file()
     data_file_1 = "{}.1/datafile".format(dataset1.permaname)
     folder = models_controller.add_folder("folder", models_controller.Folder.FolderType.folder, "folder desc")
+    folder_id = folder.id
 
+    vdatafile_name = "alias"
     virtualDatasetInfo = {
         "datasetName": "virtual",
         "newDescription": "desc",
         "currentFolderId": folder.id,
         "files": [
             {
-                "name": "alias",
+                "name": vdatafile_name,
                 "data_file_id": data_file_1
             }
         ]
     }
-    virtual_dataset_id = get_data_from_flask_jsonify(endpoint.create_virtual_dataset(virtualDatasetInfo))
+    vdataset_id = get_data_from_flask_jsonify(endpoint.create_virtual_dataset(virtualDatasetInfo))
 
     folder_contents = get_data_from_flask_jsonify(endpoint.get_folder(folder.id))
 
@@ -543,15 +545,44 @@ def test_get_folder_containing_virtual_dataset(session: SessionBase):
     assert folder_contents["entries"][0]['type'] == 'virtual_dataset'
 
     # verify that get_dataset accomodates virtual_dataset_ids the same as real datasets
-    dataset = get_data_from_flask_jsonify(endpoint.get_dataset(virtual_dataset_id))
+    dataset = get_data_from_flask_jsonify(endpoint.get_dataset(vdataset_id))
     assert dataset['name'] == 'virtual'
     assert len(dataset['versions']) == 1
 
-    virtual_dataset_version_id = dataset['versions'][0]['id']
+    vdataset_permaname = dataset['permanames'][0]
+    vdataset_version_id = dataset['versions'][0]['id']
 
-    # verify that get_dataset_version also works with virtual_dataset_ids
-    dataset_version = get_data_from_flask_jsonify(endpoint.get_dataset_version_from_dataset(virtual_dataset_id, virtual_dataset_version_id))
+    # run through all the dataset endpoints and just make sure we don't get any exceptions
+    get_data_from_flask_jsonify(endpoint.get_dataset_last(vdataset_id))
+    get_data_from_flask_jsonify(endpoint.update_dataset_name(vdataset_id, {"name":"new name"}))
+    get_data_from_flask_jsonify(endpoint.update_dataset_description(vdataset_id, {"description":"new description"}))
+    dataset_version = get_data_from_flask_jsonify(endpoint.get_dataset_version(vdataset_version_id))
     assert len(dataset_version['datafiles']) == 1
+    datafile = dataset_version['datafiles'][0]
+    assert datafile['name'] == vdatafile_name
+    assert datafile['underlying_file_id'] == data_file_1
+
+    # skipping get_dataset_versions because I don't know what uses it
+    # endpoint.get_dataset_versions()
+    get_data_from_flask_jsonify(endpoint.get_dataset_version_from_dataset(vdataset_id, vdataset_version_id))
+    get_data_from_flask_jsonify(endpoint.update_dataset_version_description(vdataset_version_id, {"description":"new description"}))
+    get_data_from_flask_jsonify(endpoint.deprecate_dataset_version(vdataset_version_id, {"deprecationReason": "reason"}))
+    get_data_from_flask_jsonify(endpoint.de_deprecate_dataset_version(vdataset_version_id))
+    get_data_from_flask_jsonify(endpoint.delete_dataset_version(vdataset_version_id))
+    get_data_from_flask_jsonify(endpoint.de_delete_dataset_version(vdataset_version_id))
+
+    version = 1
+    format = "raw"
+    get_data_from_flask_jsonify(endpoint.get_datafile(format, dataset_version_id=vdataset_version_id, datafile_name=vdatafile_name))
+    get_data_from_flask_jsonify(endpoint.get_datafile(format, dataset_permaname=vdataset_permaname, version=version, datafile_name=vdatafile_name))
+    get_data_from_flask_jsonify(endpoint.get_datafile_short_summary(dataset_permaname=vdataset_permaname, version=version, datafile_name=vdatafile_name))
+    get_data_from_flask_jsonify(endpoint.search_within_folder(folder_id, "description"))
+
+    folder2 = models_controller.add_folder("folder2", models_controller.Folder.FolderType.folder, "folder desc")
+    get_data_from_flask_jsonify(endpoint.move_to_folder(dict(entryIds=[vdataset_id], currentFolderId=folder_id, targetFolderId=folder2.id)))
+
+    # TODO: Do we need to cover these? Currently not working but I don't know what these are actually used for
+    # get_data_from_flask_jsonify(endpoint.create_or_update_dataset_access_log(vdataset_id))
 
 def test_create_virtual_dataset_endpoint(session: SessionBase):
     dataset1 = _create_dataset_with_a_file()
@@ -613,3 +644,9 @@ def test_create_virtual_dataset_endpoint(session: SessionBase):
 
 # <editor-fold desc="User">
 # </editor-fold>
+
+def test_setup_1(session: SessionBase):
+    print("1")
+
+def test_setup_2(session: SessionBase):
+    print("2")

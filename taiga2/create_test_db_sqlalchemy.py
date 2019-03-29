@@ -24,6 +24,13 @@ log = logging.getLogger(__name__)
 # TODO: Should use the settings.cfg for the bucket name
 bucket_name = "broadtaiga2prototype"
 
+def get_latest_version_datafiles_from_dataset(dataset_id):
+    dataset = models_controller.get_dataset(dataset_id)
+
+    latest_dataset_version = dataset.dataset_versions[-1]
+
+    return latest_dataset_version.datafiles
+
 
 def drop_and_create_db():
     models_controller.db.drop_all()
@@ -79,7 +86,7 @@ def drop_and_create_db():
                                                       dataset_description="No description",
                                                       current_folder_id=folderB.id)
 
-    data_datafiles = models_controller.get_latest_version_datafiles_from_dataset(data.id)
+    data_datafiles = get_latest_version_datafiles_from_dataset(data.id)
 
     temp_data_datafiles = copy.copy(data_datafiles)
 

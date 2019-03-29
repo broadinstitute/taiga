@@ -46,7 +46,6 @@ def get_dataset(datasetId):
 
     # Get the rights of the user over the folder
     right = models_controller.get_rights(dataset.id)
-
     dataset_schema = schemas.DatasetSchema()
     print("The right is: {}".format(right))
     dataset_schema.context['entry_user_right'] = right
@@ -173,18 +172,18 @@ def get_dataset_last(dataset_id):
 def update_dataset_name(datasetId, NameUpdate):
     updated_dataset = models_controller.update_dataset_name(datasetId, NameUpdate["name"])
 
-    return flask.jsonify({updated_dataset.id})
+    return flask.jsonify(updated_dataset.id)
 
 
 def update_dataset_description(datasetId, DescriptionUpdate):
     updated_dataset = models_controller.update_dataset_description(datasetId, DescriptionUpdate["description"])
 
-    return flask.jsonify({updated_dataset.id})
+    return flask.jsonify(updated_dataset.id)
 
 
 def create_or_update_dataset_access_log(datasetId):
     access_log = models_controller.add_or_update_dataset_access_log(datasetId)
-    return flask.jsonify({access_log.id})
+    return flask.jsonify(access_log.id)
 
 
 def get_datasets_access_logs():
@@ -336,7 +335,7 @@ def delete_dataset_version(datasetVersionId):
 def de_delete_dataset_version(datasetVersionId):
     new_state = models_controller.deprecate_dataset_version_from_delete_state(dataset_version_id=datasetVersionId)
 
-    return flask.jsonify
+    return flask.jsonify({})
 
 
 def create_upload_session_file(S3UploadedFileMetadata, sid):

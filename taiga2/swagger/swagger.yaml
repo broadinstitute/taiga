@@ -477,6 +477,9 @@ paths:
                       type: string
                     description:
                       type: string
+                    underlying_file_id:
+                      description: "if this is a virtual dataset, this is the reference to the underlying file, and name is just an alias to that"
+                      type: string
                     content_summary:
                       description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
                       type: string
@@ -1376,6 +1379,9 @@ definitions:
             - allowed_conversion_type
             - short_summary
           properties:
+            underlying_file_id:
+              description: "if this is a virtual dataset, this is the reference to the underlying file, and name is just an alias to that"
+              type: string
             id:
               type: string
             name:

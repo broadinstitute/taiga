@@ -238,6 +238,9 @@ class DataFile(db.Model):
         UniqueConstraint("dataset_version_id", "name"),
     )
 
+    @property
+    def underlying_file_id(self):
+        return None
 
 def get_allowed_conversion_type(datafile_type):
     if datafile_type == DataFile.DataFileType.HDF5:
@@ -317,6 +320,11 @@ class VirtualDataset(Entry):
         'polymorphic_identity': "VirtualDataset"
     }
 
+    @property
+    def dataset_versions(self):
+        return self.virtual_dataset_versions
+
+
 class VirtualDatasetVersion(Entry):
     __tablename__ = 'virtual_dataset_versions'
 
@@ -334,6 +342,12 @@ class VirtualDatasetVersion(Entry):
     # Filled out by the server
     version = db.Column(db.Integer)
 
+    # State of the version
+    state = db.Column(db.Enum(DatasetVersion.DatasetVersionState), default=DatasetVersion.DatasetVersionState.approved)
+
+    # Reason for the state of the version. Should be empty if approved
+    reason_state = db.Column(db.Text)
+
     __table_args__ = (
         UniqueConstraint("virtual_dataset_id", "version"),
     )
@@ -342,6 +356,17 @@ class VirtualDatasetVersion(Entry):
         'polymorphic_identity': "VirtualDatasetVersion"
     }
 
+    @property
+    def dataset(self):
+        return self.virtual_dataset
+
+    @property
+    def dataset_id(self):
+        return self.virtual_dataset_id
+
+    @property
+    def datafiles(self):
+        return self.virtual_dataset_entries
 
 class VirtualDatasetEntry(db.Model):
     __tablename__ = 'virtual_dataset_entries'
@@ -357,17 +382,45 @@ class VirtualDatasetEntry(db.Model):
                                       backref=db.backref(__tablename__))
 
     data_file_id = db.Column(GUID, db.ForeignKey("datafiles.id"), nullable=False)
-
+    data_file = db.relationship("DataFile",
+                                foreign_keys=[data_file_id])
 
     __table_args__ = (
         UniqueConstraint("virtual_dataset_version_id", "name"),
     )
 
+    @property
+    def type(self):
+        return self.data_file.type
 
-#   keeping the above a one sided relationship
-#    data_file = db.relationship("DataFile",
-#                                      foreign_keys=[data_file_id], backref=db.backref(__tablename__))
+    @property
+    def s3_bucket(self):
+        return self.data_file.s3_bucket
 
+    @property
+    def s3_key(self):
+        return self.data_file.s3_key
+
+    @property
+    def dataset_version_id(self):
+        return self.virtual_dataset_version_id
+
+    @property
+    def dataset_version(self):
+        return self.virtual_dataset_version
+
+    @property
+    def short_summary(self):
+        return self.data_file.short_summary
+
+    @property
+    def long_summary(self):
+        return self.data_file.long_summary
+
+    @property
+    def underlying_file_id(self):
+        dataset_version = self.data_file.dataset_version
+        return "{}.{}/{}".format(dataset_version.dataset.permaname, dataset_version.version, self.data_file.name)
 
 #########
 

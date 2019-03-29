@@ -52,7 +52,7 @@ def gct_to_hdf5(progress, src_gct_file, dst_hdf5_file, rows_per_block=None,
         # assert line == "#1.2"
 
         # Wrapping the tcsv file into TextIOWrapper to avoid disabling .tell() function on the file
-        textIO_gct = io.TextIOWrapper(io.BufferedReader(gct))
+        textIO_gct = io.TextIOWrapper(io.BufferedReader(gct))  # type: ignore
 
         r = csv.reader(textIO_gct, csv.excel_tab)
 
@@ -126,7 +126,7 @@ def tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, dialect, rows_per_block=
         tcsv.seek(0)
 
         # Wrapping the tcsv file into TextIOWrapper to avoid disabling .tell() function on the file
-        textIO_tcsv = io.TextIOWrapper(io.BufferedReader(tcsv))
+        textIO_tcsv = io.TextIOWrapper(io.BufferedReader(tcsv)) # type: ignore
 
         row_count, col_count, sha256 = _get_csv_dims(progress, src_csv_file, dialect, encoding)
 

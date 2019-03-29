@@ -300,9 +300,9 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
 
 
 def get_dataset(dataset_id, one_or_none=False) -> Dataset:
-    q = db.session.query(Dataset) \
-        .filter(Dataset.id == dataset_id)
-    return _fetch_respecting_one_or_none(q, one_or_none)
+    q = db.session.query(Entry) \
+        .filter(Entry.id == dataset_id)
+    return _fetch_respecting_one_or_none(q, one_or_none, expect=[VirtualDataset, Dataset])
 
 
 def get_datasets(array_dataset_ids):
@@ -722,25 +722,34 @@ def create_new_dataset_version_from_session(session_id,
     return new_dataset_version
 
 
-def _fetch_respecting_one_or_none(q, one_or_none):
+def _fetch_respecting_one_or_none(q, one_or_none, expect=None):
     """If one_or_none is set, asks the query q to return none if NoResultFound, else raise the error"""
     if one_or_none:
-        return q.one_or_none()
+        obj = q.one_or_none()
+        if obj is None:
+            return None
     else:
-        return q.one()
+        obj = q.one()
+
+    if expect is not None:
+        for expected_class in expect:
+            if isinstance(obj, expected_class):
+                return obj
+        print("Expected {} (type={}) to be one of {}".format(obj, type(obj), expect))
+        # simulate the behavior of asking for the wrong type, would report no such record
+        if one_or_none:
+            return None
+        else:
+            raise NoResultFound()
+    else:
+        return obj
 
 
 def get_dataset_version(dataset_version_id, one_or_none=False) -> DatasetVersion:
     q = db.session.query(Entry) \
         .filter(Entry.id == dataset_version_id)
 
-    result = _fetch_respecting_one_or_none(q, one_or_none)
-
-    if result is None:
-        return None
-
-    assert isinstance(result, VirtualDatasetVersion, DatasetVersion)
-    return result
+    return _fetch_respecting_one_or_none(q, one_or_none, expect=[VirtualDatasetVersion, DatasetVersion])
 
 
 def get_dataset_versions(dataset_id):
@@ -765,10 +774,17 @@ def get_dataset_version_provenance(dataset_version_id,
 
 
 def get_latest_dataset_version_by_permaname(permaname):
+    # try first normal datasets and then virtual
     dataset_version = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
         .order_by(DatasetVersion.version.desc()) \
         .first()
+
+    if dataset_version is None:
+        dataset_version = db.session.query(VirtualDatasetVersion) \
+            .filter(VirtualDatasetVersion.virtual_dataset.has(VirtualDataset.permaname == permaname)) \
+            .order_by(VirtualDatasetVersion.version.desc()) \
+            .first()
 
     return dataset_version
 
@@ -777,11 +793,20 @@ def get_dataset_version_by_permaname_and_version(permaname,
                                                  version, one_or_none=False):
     """From the permaname of a dataset, retrieve the specific dataset version"""
     # dataset = get_dataset_from_permaname(permaname)
-    q = db.session.query(DatasetVersion) \
+    obj = db.session.query(DatasetVersion) \
         .filter(DatasetVersion.version == version) \
-        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname))
+        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)).one_or_none()
 
-    return _fetch_respecting_one_or_none(q, one_or_none)
+    if obj is None:
+        obj = db.session.query(VirtualDatasetVersion) \
+            .filter(VirtualDatasetVersion.version == version) \
+            .filter(VirtualDatasetVersion.virtual_dataset.has(VirtualDataset.permaname == permaname)).one_or_none()
+
+    if not one_or_none and obj is None:
+        raise NoResultFound()
+    # assert obj is not None, "Could not find permaname {}, version {}".format(permaname, version)
+
+    return obj
 
 
 def get_dataset_version_by_dataset_id_and_dataset_version_id(dataset_id,
@@ -1051,10 +1076,19 @@ def add_datafile(s3_bucket,
 
 
 def get_datafile_by_version_and_name(dataset_version_id, name, one_or_none=False):
-    q = db.session.query(DataFile).filter(DataFile.name == name) \
-        .filter(DataFile.dataset_version_id == dataset_version_id)
+    obj = db.session.query(DataFile).filter(DataFile.name == name) \
+        .filter(DataFile.dataset_version_id == dataset_version_id).one_or_none()
 
-    return _fetch_respecting_one_or_none(q, one_or_none)
+    if obj is None:
+        alias = db.session.query(VirtualDatasetEntry).filter(VirtualDatasetEntry.name == name) \
+            .filter(VirtualDatasetEntry.virtual_dataset_version_id == dataset_version_id).one_or_none()
+        if alias is not None:
+            obj = db.session.query(DataFile).filter(DataFile.id == alias.data_file_id).one()
+
+    if obj is None and not one_or_none:
+        raise NoResultFound()
+
+    return obj
 
 
 def get_datafile(datafile_id):
@@ -1064,12 +1098,6 @@ def get_datafile(datafile_id):
     return datafile
 
 
-def get_latest_version_datafiles_from_dataset(dataset_id):
-    dataset = get_dataset(dataset_id)
-
-    latest_dataset_version = dataset.dataset_versions[-1]
-
-    return latest_dataset_version.datafiles
 
 
 def add_datafiles_from_session(session_id):

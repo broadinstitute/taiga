@@ -345,7 +345,7 @@ class TableInfo:
 
 
 def read_column_definitions(fd):
-    col_count_buffer = fd.read(4)
+    col_count_buffer = fd.read(4) # type: bytes
     col_count = struct.unpack("I", col_count_buffer)[0]
     columns = []
     for i in range(col_count):
@@ -526,8 +526,9 @@ def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, de
         if output_file is not None:
             output.close()
 
+from typing import Callable
 
-def columnar_to_rds(progress, input_file, temp_file_generator: "() -> str", encoding="iso-8859-1", max_rows=None, max_bytes=50*1024*1024):
+def columnar_to_rds(progress, input_file, temp_file_generator: Callable[[], str], encoding="iso-8859-1", max_rows=None, max_bytes=50*1024*1024):
     # two step conversion: First convert to csvs, then for each use R to load CSV and write Rdata file.  Not clear that we can do better
     # at the moment
     csv_files = convert_tabular_to_multiple_csvs(input_file, temp_file_generator, ",", encoding="utf-8", max_rows=max_rows, max_bytes=max_bytes)

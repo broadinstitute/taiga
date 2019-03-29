@@ -173,7 +173,7 @@ class DataFileSummarySchema(ma.ModelSchema):
 class DataFileSchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'name', 's3_bucket',
-                      's3_key', 'short_summary')
+                      's3_key', 'short_summary', 'underlying_file_id')
 
     type = EnumField(DataFile.DataFileType)
     # Allowed Conversion Type

@@ -35,11 +35,13 @@ def mock_sts():
 
 
 @pytest.fixture(scope='function')
-def app(request, mock_s3, mock_sts):
+def app(request, mock_s3, mock_sts, tmpdir):
+    print("creating app...")
+    db_path = str(tmpdir.join("db.sqlite"))
     """Session-wide test `Flask` application."""
     settings_override = {
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite://',
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///'+db_path,
         'SQLALCHEMY_TRACK_MODIFICATIONS': True,
         'SQLALCHEMY_ECHO': False,
         'BROKER_URL': None,
@@ -80,11 +82,12 @@ def app(request, mock_s3, mock_sts):
 @pytest.fixture(scope='function')
 def db(app, request):
     """Session-wide test database."""
+    print("creating db...")
     _db.create_all()
 
     # Return db and teardown
     yield _db
-    _db.drop_all()
+    #_db.drop_all()
 
 
 # Note: this is pretty much completely useless until _all_ calls to db.commit are removed from model_controller.
@@ -92,22 +95,25 @@ def db(app, request):
 def session(db, request):
     """Creates a new database session for a test."""
     print("Begin session")
-    connection = db.engine.connect()
-    transaction = connection.begin()
-
-    options = dict(bind=connection, binds={})
-    _session = db.create_scoped_session(options=options)
-    db.session = _session
-    print(db.session)
-
-    # We call before_request
     flask.current_app.preprocess_request()
+    yield db.session
 
-    # Return db and teardown
-    yield _session
-    _session.remove()
-    transaction.rollback()
-    connection.close()
+    # connection = db.engine.connect()
+    # transaction = connection.begin()
+    #
+    # options = dict(bind=connection, binds={})
+    # _session = db.create_scoped_session(options=options)
+    # db.session = _session
+    # print(db.session)
+    #
+    # # We call before_request
+    # flask.current_app.preprocess_request()
+    #
+    # # Return db and teardown
+    # yield _session
+    # _session.remove()
+    # transaction.rollback()
+    # connection.close()
 
 
 @pytest.fixture(scope="function")
