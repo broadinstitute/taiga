@@ -53,3 +53,4 @@ taiga2/tests/test_files/large_numerical_matrix.csv
 taiga2/tests/test_files/large_table.csv
 taiga2/db.sqlite3
 pytype_output
+prod_settings.cfg
