@@ -184,8 +184,18 @@ manage the migrations:
 
 Example (but use accordingly to the state of you database, see [Alembic](http://alembic.zzzcomputing.com/en/latest/)):
 
-- `taiga2/manage.py -c settings.cfg db migrate`
-- `taiga2/manage.py -c settings.cfg db upgrade`
+(Note, this requires that you put the config for the production database at
+../prod_settings.cfg so that it can find the current schema to compare
+against.)
+
+- `cd taiga2`
+- `./manage.py -c ../prod_settings.cfg db migrate -m 'migration-msg'`
+
+Review the resulting generated migration. I've found I've had to re-order
+tables to ensure fk references are created successfully. After that's all
+done, you can apply the migration by running:
+
+- `./manage.py -c ../prod_settings.cfg db upgrade`
 
 ## Undeletion
 
