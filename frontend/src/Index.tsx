@@ -17,6 +17,7 @@ import {relativePath} from "./utilities/route";
 import {isNullOrUndefined} from "util";
 import {Provenance} from "./components/Provenance";
 import {FormControl, Overlay, Popover, Tooltip, OverlayTrigger} from "react-bootstrap";
+import {SHA} from "./version"
 
 interface AppProps {
     route?: any;
@@ -189,7 +190,7 @@ class App extends React.Component<AppProps, AppState> {
                     <div className="login-box pull-right bottom-page-text">
                         <a href="https://github.com/broadinstitute/taiga"
                            target="_blank"
-                           className="headerTitle headerTitleMinor">Rev 2.8.0</a>
+                           className="headerTitle headerTitleMinor">SHA {SHA}</a>
                     </div>
                 </footer>
             </div>
