@@ -554,8 +554,20 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         });
                     }
 
+                    let linkToUnderlying = null;
+                    if (df.underlying_file_id) {
+                        let m = df.underlying_file_id.match(/([^.]+)\.([^/]+)\/.+/);
+
+                        let permaname = m[1];
+                        let version = m[2];
+
+                        linkToUnderlying = <div> (<Link to={relativePath("dataset/" + permaname+"/"+version)}>
+                            {df.underlying_file_id}
+                        </Link>)</div>
+                    }
+
                     return <tr key={index}>
-                        <td>{df.name}</td>
+                        <td>{df.name}{linkToUnderlying}</td>
                         <td>{df.short_summary}</td>
                         <td>
                             {conversionTypesOutput}

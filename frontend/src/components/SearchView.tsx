@@ -149,6 +149,8 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
         }
         else if (row.type === Models.FolderEntriesTypeEnum.Dataset) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-inbox"/>;
+        } else if (row.type === Models.FolderEntriesTypeEnum.VirtualDataset) {
+            glyphicon = <Glyphicon glyph="glyphicon glyphicon-flash"/>
         }
         else if (row.type === Models.FolderEntriesTypeEnum.DatasetVersion) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-file"/>;

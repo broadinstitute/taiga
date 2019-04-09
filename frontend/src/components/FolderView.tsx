@@ -343,6 +343,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
         else if (row.type === Folder.FolderEntriesTypeEnum.DatasetVersion) {
             glyphicon = <Glyphicon glyph="glyphicon glyphicon-file"/>
+        } else if (row.type === Folder.FolderEntriesTypeEnum.VirtualDataset) {
+            glyphicon = <Glyphicon glyph="glyphicon glyphicon-flash"/>
         } else {
             console.log("unknown type:", row.type)
         }

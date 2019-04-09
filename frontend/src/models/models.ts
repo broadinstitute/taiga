@@ -137,6 +137,7 @@ export interface DatasetAndDatasetVersion {
 export interface DatasetVersionDatafiles {
     id: string;
     name: string;
+    underlying_file_id: string;
     url: string;
     type: DataFileType;
     allowed_conversion_type: Array<string>;
