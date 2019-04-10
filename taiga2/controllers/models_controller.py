@@ -310,11 +310,17 @@ def get_datasets(array_dataset_ids):
 
 
 def get_dataset_from_permaname(dataset_permaname, one_or_none=False):
-    q = db.session.query(Dataset) \
-        .filter(Dataset.permaname == dataset_permaname)
+    dataset = db.session.query(Dataset) \
+        .filter(Dataset.permaname == dataset_permaname).one_or_none()
 
-    return _fetch_respecting_one_or_none(q, one_or_none)
+    if dataset is None:
+        dataset = db.session.query(VirtualDataset) \
+            .filter(VirtualDataset.permaname == dataset_permaname).one_or_none()
 
+    if not one_or_none and dataset is None:
+        raise NoResultFound()
+
+    return dataset
 
 def get_first_dataset_version(dataset_id):
     dataset_version_first = db.session.query(DatasetVersion) \

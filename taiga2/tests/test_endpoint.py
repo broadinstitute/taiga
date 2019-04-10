@@ -552,6 +552,11 @@ def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
     vdataset_permaname = dataset['permanames'][0]
     vdataset_version_id = dataset['versions'][0]['id']
 
+    # make sure we can get it by permaname too
+    dataset = get_data_from_flask_jsonify(endpoint.get_dataset(vdataset_permaname))
+    assert dataset['name'] == 'virtual'
+    assert len(dataset['versions']) == 1
+
     # run through all the dataset endpoints and just make sure we don't get any exceptions
     get_data_from_flask_jsonify(endpoint.get_dataset_last(vdataset_id))
     get_data_from_flask_jsonify(endpoint.update_dataset_name(vdataset_id, {"name":"new name"}))
