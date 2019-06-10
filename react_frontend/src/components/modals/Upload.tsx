@@ -1,20 +1,20 @@
 import * as React from "react";
-import {Link} from 'react-router';
+import { Link } from 'react-router';
 import * as Modal from "react-modal";
 
 import * as AWS from "aws-sdk";
 import * as Dropzone from "react-dropzone";
 import * as filesize from "filesize";
 
-import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit} from "react-bootstrap-table";
-import {Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row, Glyphicon, HelpBlock} from 'react-bootstrap';
+import { BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit } from "react-bootstrap-table";
+import { Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row, Glyphicon, HelpBlock } from 'react-bootstrap';
 
-import {DialogProps, DialogState} from "../Dialogs";
+import { DialogProps, DialogState } from "../Dialogs";
 
-import {TypeEditorBootstrapTable} from "./TypeEditorBootstrapTable";
+import { TypeEditorBootstrapTable } from "./TypeEditorBootstrapTable";
 
-import {getInitialFileTypeFromMimeType} from "../../utilities/formats";
-import {relativePath} from "../../utilities/route";
+import { getInitialFileTypeFromMimeType } from "../../utilities/formats";
+import { relativePath } from "../../utilities/route";
 
 import {
     S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,
@@ -22,8 +22,8 @@ import {
     dropExtension
 } from "../../models/models";
 
-import {TaigaApi} from "../../models/api";
-import {isNullOrUndefined} from "util";
+import { TaigaApi } from "../../models/api";
+import { isNullOrUndefined } from "util";
 import update = require("immutability-helper");
 
 
@@ -75,7 +75,7 @@ const modalStyles: any = {
 };
 
 const dropZoneStyle: any = {
-    height: '75px',
+    height: '150px',
     borderWidth: '2px',
     borderColor: 'rgb(102, 102, 102)',
     borderStyle: 'dashed',
@@ -170,11 +170,11 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             // If the name is not in the list, we can return it
             // If it is not, we will store it in another list and notify the user later on
             let dropped_extension_file_name = dropExtension(file.name);
-           if (selected_previous_files_names.indexOf(dropped_extension_file_name) > -1) {
-               colliding_accepted_file.push(file);
-           } else {
-               return file;
-           }
+            if (selected_previous_files_names.indexOf(dropped_extension_file_name) > -1) {
+                colliding_accepted_file.push(file);
+            } else {
+                return file;
+            }
         });
         // TODO: Also check, after selecting previous that it does not collide with a filesStatus object
 
@@ -195,7 +195,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         });
 
         let colliding_file_names_pretty_print = colliding_accepted_file.map((file) => {
-           return "- " + file.name;
+            return "- " + file.name;
         });
         let colliding_length = colliding_accepted_file.length;
         if (colliding_length === 1) {
@@ -408,11 +408,11 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     // Form dataset
     handleFormNameChange(event: any) {
-        this.setState({nameValue: event.target.value});
+        this.setState({ nameValue: event.target.value });
     }
 
     handleFormDescriptionChange(event: any) {
-        this.setState({descriptionValue: event.target.value});
+        this.setState({ descriptionValue: event.target.value });
     }
 
     // Bootstrap Table functions
@@ -429,24 +429,24 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
     fileNameFormatter(cell: any, row: any) {
         return (
-            <span title={ cell }>{ cell }</span>
+            <span title={cell}>{cell}</span>
         )
     }
 
     progressFormatter(cell: any, row: any) {
         return (
-            <span>{ cell }%</span>
+            <span>{cell}%</span>
         );
     }
 
     conversionProgressFormatter(cell: any, row: any) {
         return (
-            <span title={ cell }>{ cell }</span>
+            <span title={cell}>{cell}</span>
         )
     }
 
     sizeFormatter(cell: any, row: any) {
-        let cellFileSize = filesize(cell, {base: 10});
+        let cellFileSize = filesize(cell, { base: 10 });
         return (
             <span>{cellFileSize}</span>
         )
@@ -501,12 +501,12 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         let newPreviousVersionFilesIdsSelected = null;
         if (isSelected) {
             newPreviousVersionFilesIdsSelected = update(previousVersionFilesIdsSelected,
-                {$push: [clickedId]});
+                { $push: [clickedId] });
         }
         else {
             let idIndex = previousVersionFilesIdsSelected.indexOf(clickedId);
             newPreviousVersionFilesIdsSelected = update(previousVersionFilesIdsSelected,
-                {$splice: [[idIndex, 1]]});
+                { $splice: [[idIndex, 1]] });
         }
         this.setState({
             previousVersionFilesIdsSelected: newPreviousVersionFilesIdsSelected
@@ -524,13 +524,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             let already_added_files: Array<FileUploadStatus> = [];
             rows.forEach((row) => {
                 // Using the spread operator to pass all the elements found in filesStatus that match the selected one
-                 already_added_files.push(...this.state.filesStatus.filter((fileStatus) => {
+                already_added_files.push(...this.state.filesStatus.filter((fileStatus) => {
                     return fileStatus.fileName === row["name"];
-                 }));
+                }));
             });
             if (already_added_files.length > 0) {
                 alert("The following file or files also exist in the new files list:\n\n" +
-                    already_added_files.map((fileStatus) => {return "- " + fileStatus.fileName}).join("\n") +
+                    already_added_files.map((fileStatus) => { return "- " + fileStatus.fileName }).join("\n") +
                     "\n\nPlease delete the files if you want a previous version instead.");
                 return false;
             }
@@ -539,7 +539,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             rows.forEach((row) => {
                 clickedId = row['id'];
                 newPreviousVersionFilesIdsSelected = update(newPreviousVersionFilesIdsSelected,
-                    {$push: [clickedId]});
+                    { $push: [clickedId] });
             });
         }
         else {
@@ -548,7 +548,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                 clickedId = row['id'];
                 idIndex = previousVersionFilesIdsSelected.indexOf(clickedId);
                 newPreviousVersionFilesIdsSelected = update(newPreviousVersionFilesIdsSelected,
-                    {$splice: [[idIndex, 1]]});
+                    { $splice: [[idIndex, 1]] });
             });
         }
         this.setState({
@@ -569,7 +569,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
     }
 
     expandComponent(row) {
-        return (<p>Hi: { row.conversionProgress }</p>);
+        return (<p>Hi: {row.conversionProgress}</p>);
     }
 
     requestClose() {
@@ -599,7 +599,7 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         const fileTypeWidth = '170';
 
         const createTypeEditor = (onUpdate: any, props: any) => (
-            <TypeEditorBootstrapTable onUpdate={ onUpdate } {...props}/>);
+            <TypeEditorBootstrapTable onUpdate={onUpdate} {...props} />);
 
         // FormControl
         // InputName => If populated with readOnlyName, we render a disabled FormControl.
@@ -608,16 +608,16 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         if (this.props.readOnlyName) {
             inputName = (
                 <FormControl value={this.props.readOnlyName}
-                             type="text"
-                             disabled={true}/>
+                    type="text"
+                    disabled={true} />
             );
         }
         else {
             inputName = (
                 <FormControl value={this.state.nameValue}
-                             onChange={(evt) => {this.handleFormNameChange(evt)}}
-                             type="text"
-                             placeholder="Dataset name"/>
+                    onChange={(evt) => { this.handleFormNameChange(evt) }}
+                    type="text"
+                    placeholder="Dataset name" />
             );
         }
 
@@ -626,17 +626,17 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         let inputDescription = null;
         if (this.props.readOnlyDescription) {
             inputDescription = (
-                <FormControl value={ this.props.readOnlyDescription }
-                             componentClass="textarea"
-                             disabled={true}/>
+                <FormControl value={this.props.readOnlyDescription}
+                    componentClass="textarea"
+                    disabled={true} />
             )
         }
         else {
             inputDescription = (
                 <FormControl value={this.state.descriptionValue}
-                             onChange={(evt) => {this.handleFormDescriptionChange(evt)}}
-                             componentClass="textarea"
-                             placeholder="Dataset description"/>
+                    onChange={(evt) => { this.handleFormDescriptionChange(evt) }}
+                    componentClass="textarea"
+                    placeholder="Dataset description" />
             )
         }
 
@@ -645,10 +645,10 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         if (!isNullOrUndefined(this.state.newDatasetVersion)) {
             newDatasetLink = (
                 <Link className="btn btn-success"
-                      role="submit"
-                      to={relativePath(
-                      "dataset/"+this.state.newDatasetVersion.dataset_id+"/"+this.state.newDatasetVersion.id
-                      )}>
+                    role="submit"
+                    to={relativePath(
+                        "dataset/" + this.state.newDatasetVersion.dataset_id + "/" + this.state.newDatasetVersion.id
+                    )}>
                     See my new Dataset
                 </Link>
             );
@@ -656,13 +656,13 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
 
         let uploadButton = (
             <button type="submit" className="btn btn-primary" disabled={this.state.disableUpload}
-                    onClick={(e) => {
-                        e.preventDefault();
-                        this.requestUpload().then(() => {
-                        }).catch((err:any) => {
-                            console.log("Error received: "+err);
-                        });
-                    }}>
+                onClick={(e) => {
+                    e.preventDefault();
+                    this.requestUpload().then(() => {
+                    }).catch((err: any) => {
+                        console.log("Error received: " + err);
+                    });
+                }}>
                 Upload all
             </button>
         );
@@ -672,43 +672,43 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         let uploadedFiles = (
             <div>
                 <BootstrapTable data={filesStatus}
-                                deleteRow={ true }
-                                selectRow={ selectRowProp }
-                                options={ options }
-                                cellEdit={ cellEditProp }
-                                expandableRow={ (row) => this.isExpandableRow(row) }
-                                expandComponent={ (row) => this.expandComponent(row) }>
+                    deleteRow={true}
+                    selectRow={selectRowProp}
+                    options={options}
+                    cellEdit={cellEditProp}
+                    expandableRow={(row) => this.isExpandableRow(row)}
+                    expandComponent={(row) => this.expandComponent(row)}>
                     <TableHeaderColumn isKey
-                                       dataField='fileName'
-                                       width="150"
-                                       dataFormat={ this.fileNameFormatter }>
+                        dataField='fileName'
+                        width="150"
+                        dataFormat={this.fileNameFormatter}>
                         Name
                     </TableHeaderColumn>
                     <TableHeaderColumn dataField='fileType'
-                                       width={fileTypeWidth}
-                                       dataFormat={ this.typeFormatter }
-                                       customEditor={ { getElement: createTypeEditor }}
-                                       editColumnClassName='upload_type_edition'>
-                        <Glyphicon glyph="pencil"/> Type (click to edit)
+                        width={fileTypeWidth}
+                        dataFormat={this.typeFormatter}
+                        customEditor={{ getElement: createTypeEditor }}
+                        editColumnClassName='upload_type_edition'>
+                        <Glyphicon glyph="pencil" /> Type (click to edit)
                     </TableHeaderColumn>
                     <TableHeaderColumn dataField='fileSize'
-                                       width="150"
-                                       editable={ false }
-                                       dataFormat={ this.sizeFormatter }>Size</TableHeaderColumn>
+                        width="150"
+                        editable={false}
+                        dataFormat={this.sizeFormatter}>Size</TableHeaderColumn>
                     <TableHeaderColumn dataField='progress'
-                                       width="100"
-                                       editable={ false }
-                                       dataFormat={ this.progressFormatter }
-                                       columnClassName={
-                                           (fieldValue: any, row: any, rowIdx: any, colIds: any) =>
-                                           this.columnClassProgressFormat(fieldValue, row, rowIdx, colIds) }>Progress</TableHeaderColumn>
+                        width="100"
+                        editable={false}
+                        dataFormat={this.progressFormatter}
+                        columnClassName={
+                            (fieldValue: any, row: any, rowIdx: any, colIds: any) =>
+                                this.columnClassProgressFormat(fieldValue, row, rowIdx, colIds)}>Progress</TableHeaderColumn>
                     <TableHeaderColumn dataField='conversionProgress'
-                                       width="300"
-                                       editable={ false }
-                                       dataFormat={ this.conversionProgressFormatter }
-                                       columnClassName={
-                                           (fieldValue: any, row: any, rowIdx: any, colIds: any) =>
-                                           this.columnClassProgressUploadFormat(fieldValue, row, rowIdx, colIds) }>Conversion Progress</TableHeaderColumn>
+                        width="300"
+                        editable={false}
+                        dataFormat={this.conversionProgressFormatter}
+                        columnClassName={
+                            (fieldValue: any, row: any, rowIdx: any, colIds: any) =>
+                                this.columnClassProgressUploadFormat(fieldValue, row, rowIdx, colIds)}>Conversion Progress</TableHeaderColumn>
                 </BootstrapTable>
             </div>
         );
@@ -726,8 +726,8 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
         if (this.props.previousVersionFiles) {
             previousFiles = (
                 <div style={rowUploadFiles}>
-                    <h3>Select the files you want from the version { this.props.previousVersionName }</h3>
-                    <BootstrapTable data={ this.props.previousVersionFiles } selectRow={ selectRowPreviousProp }>
+                    <h3>Select the files you want from the version {this.props.previousVersionName}</h3>
+                    <BootstrapTable data={this.props.previousVersionFiles} selectRow={selectRowPreviousProp}>
                         <TableHeaderColumn isKey dataField='id' hidden>Id</TableHeaderColumn>
                         <TableHeaderColumn dataField='name'>Name</TableHeaderColumn>
                         <TableHeaderColumn dataField='type'>Type</TableHeaderColumn>
@@ -744,43 +744,51 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
             contentLabel="Upload">
             <div className="modal-content">
                 <div className="modal-header">
-                    <h2 ref="subtitle">{ this.props.title }</h2>
+                    <h2 ref="subtitle">{this.props.title}</h2>
                     <p>A dataset can contain one or multiple files.</p>
                     <p>Drag and drop your files below. Hit Upload when you have all your files.</p>
                 </div>
                 <Form horizontal>
                     <div className="modal-body">
-                        <div className="dataset-metadata">
-                            <FormGroup controlId="formName" validationState={this.state.validationState}>
-                                <Col componentClass={ ControlLabel } sm={2}>
-                                    Dataset name
-                                </Col>
-                                <Col sm={10}>
-                                    { inputName }
-                                </Col>
-                                <Col sm={10} smOffset={2}>
-                                    { this.state.help && <HelpBlock>{this.state.help}</HelpBlock> }
-                                </Col>
-                            </FormGroup>
-                            <FormGroup controlId="formDescription">
-                                <Col componentClass={ControlLabel} sm={2}>
-                                    Dataset description
-                                </Col>
-                                <Col sm={10}>
-                                    { inputDescription }
-                                </Col>
-                            </FormGroup>
+                        <div className="content">
+                            <div className="row">
+                                <div className="col-md-8">
+                                    <div className="dataset-metadata">
+                                        <FormGroup controlId="formName" validationState={this.state.validationState}>
+                                            <Col componentClass={ControlLabel} sm={2}>
+                                                Dataset name
+                                            </Col>
+                                            <Col sm={10}>
+                                                {inputName}
+                                            </Col>
+                                            <Col sm={10} smOffset={2}>
+                                                {this.state.help && <HelpBlock>{this.state.help}</HelpBlock>}
+                                            </Col>
+                                        </FormGroup>
+                                        <FormGroup controlId="formDescription">
+                                            <Col componentClass={ControlLabel} sm={2}>
+                                                Dataset description
+                                            </Col>
+                                            <Col sm={10}>
+                                                {inputDescription}
+                                            </Col>
+                                        </FormGroup>
+                                    </div>
 
+                                </div>
+                                <div className="col-md-4" >
+                                    <Dropzone style={dropZoneStyle} onDrop={(acceptedFiles: any, rejectedFiles: any) =>
+                                        this.onDrop(acceptedFiles, rejectedFiles)}
+                                    >
+                                        <div>Try dropping some files here, or click to select files to upload.</div>
+                                    </Dropzone>
+                                </div>
+                            </div>
                         </div>
-                        <Dropzone style={dropZoneStyle} onDrop={(acceptedFiles: any, rejectedFiles: any) =>
-                            this.onDrop(acceptedFiles, rejectedFiles)}
-                        >
-                            <div>Try dropping some files here, or click to select files to upload.</div>
-                        </Dropzone>
                         <div style={rowUploadFiles}>
                             {uploadedFiles}
                         </div>
-                        { previousFiles }
+                        {previousFiles}
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-default" onClick={(e) => {
@@ -788,9 +796,9 @@ export class UploadDataset extends React.Component<DropzoneProps, DropzoneState>
                         }}>
                             Close
                         </button>
-                        { !this.state.newDatasetVersion && uploadButton }
+                        {!this.state.newDatasetVersion && uploadButton}
 
-                        { this.state.newDatasetVersion && newDatasetLink }
+                        {this.state.newDatasetVersion && newDatasetLink}
                     </div>
                 </Form>
             </div>
