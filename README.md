@@ -162,6 +162,13 @@ Starting the project is not yet straightforward, but will be in the near future:
         `http://localhost:8080/taiga/`
 
 
+## adding user to admin group
+
+```
+INSERT INTO group_user_association (group_id, user_id) select 1, id FROM users WHERE name =
+'pmontgom';
+```
+
 ## Running the tests
 
 Install rhdf5 R library => http://bioconductor.org/packages/release/bioc/html/rhdf5.html
@@ -223,3 +230,4 @@ We use Git for versioning! If you don't know how to use it, we strongly recommen
 
 - Cancer Data Science
 - Broad Institute
+
