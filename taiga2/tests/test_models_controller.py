@@ -10,7 +10,7 @@ import taiga2.controllers.models_controller as mc
 from taiga2.controllers.models_controller import DataFileAlias
 
 from taiga2.models import db
-from taiga2.models import User, Folder, Dataset, DatasetVersion, Group
+from taiga2.models import User, Folder, Dataset, DatasetVersion, Group, S3DataFile
 from taiga2.models import generate_permaname
 from taiga2.models import DataFile
 from taiga2.models import EntryRightsEnum
@@ -333,7 +333,7 @@ def test_add_dataset_version(session: SessionBase):
     _new_datafile = mc.add_datafile(name="Datafile for test_add_dataset_version",
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=mc.generate_convert_key(),
-                                    type=mc.DataFile.DataFileType.Raw,
+                                    type=mc.S3DataFile.DataFileFormat.Raw,
                                     short_summary='short',
                                     long_summary='long')
 
@@ -442,7 +442,7 @@ def new_datafile():
     _new_datafile = mc.add_datafile(name=new_datafile_name,
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=mc.generate_convert_key(),
-                                    type=DataFile.DataFileType.Raw,
+                                    type=S3DataFile.DataFileFormat.Raw,
                                     short_summary="short",
                                     long_summary="long")
 
@@ -655,7 +655,7 @@ def test_create_virtual_dataset(session: SessionBase):
     _new_datafile = mc.add_datafile(name="underlying-datafile",
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=mc.generate_convert_key(),
-                                    type=mc.DataFile.DataFileType.Raw,
+                                    type=mc.S3DataFile.DataFileFormat.Raw,
                                     short_summary='short',
                                     long_summary='long')
 
@@ -663,26 +663,28 @@ def test_create_virtual_dataset(session: SessionBase):
                                   description="",
                                   datafiles_ids=[_new_datafile.id])
 
-    virtual_dataset = mc.create_virtual_dataset(name="virtual-dataset",
-                           description="desc",
-                           data_file_aliases=[DataFileAlias("alias", _new_datafile.id)])
+    virtual_datafile = mc.add_virtual_datafile(name="alias", datafile_id = _new_datafile.id)
+
+    virtual_dataset = mc.add_dataset(name="virtual-dataset",
+                                  description="desc",
+                                  datafiles_ids=[virtual_datafile.id])
 
     # make sure the subsequent queries can find new objects
     session.flush()
 
     assert virtual_dataset.id is not None
 
-    v = mc.get_virtual_dataset(virtual_dataset.id)
+    v = mc.get_dataset(virtual_dataset.id)
     assert v.name == "virtual-dataset"
 
-    assert len(v.virtual_dataset_versions) == 1
+    assert len(v.dataset_versions) == 1
 
-    version = v.virtual_dataset_versions[0]
-    assert len(version.virtual_dataset_entries)
+    version = v.dataset_versions[0]
+    assert len(version.datafiles)
 
-    entry = version.virtual_dataset_entries[0]
+    entry = version.datafiles[0]
     assert entry.name == "alias"
-    assert entry.data_file_id == _new_datafile.id
+    assert entry.underlying_data_file_id == _new_datafile.id
 
 # </editor-fold
 

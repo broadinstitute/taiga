@@ -8,7 +8,7 @@ import werkzeug.exceptions
 import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
 
-from taiga2.models import generate_permaname, DataFile, Dataset, DatasetVersion
+from taiga2.models import generate_permaname, S3DataFile, Dataset, DatasetVersion
 from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
 
@@ -32,20 +32,23 @@ def new_upload_session():
 @pytest.fixture
 def new_upload_session_file(session: SessionBase, new_upload_session):
     bucket = 'test_bucket'
-    filetype = 'Raw'
+    format = 'Raw'
     file_key = 'filekey'
     file_name = file_key
 
-    S3UploadedFileMetadata = {
-        'bucket': bucket,
-        'filetype': filetype,
-        'key': file_key,
-        'filename': file_name
+    uploadMetadata = {
+        'filename': file_name,
+        'filetype': 's3',
+        's3Upload': {
+            'bucket': bucket,
+            'format': format,
+            'key': file_key
+         }
     }
 
     sid = new_upload_session.id
 
-    endpoint.create_upload_session_file(S3UploadedFileMetadata=S3UploadedFileMetadata,
+    endpoint.create_upload_session_file(uploadMetadata=uploadMetadata,
                                         sid=sid)
     _new_upload_session_files = models_controller.get_upload_session_files_from_session(sid)
     return _new_upload_session_files[0]
@@ -59,7 +62,7 @@ def new_datafile():
     _new_datafile = models_controller.add_datafile(name=new_datafile_name,
                                                    s3_bucket="broadtaiga2prototype",
                                                    s3_key=models_controller.generate_convert_key(),
-                                                   type=DataFile.DataFileType.Raw,
+                                                   type=S3DataFile.DataFileFormat.Raw,
                                                    short_summary="short",
                                                    long_summary="long")
 
@@ -509,7 +512,7 @@ def _create_dataset_with_a_file():
     _new_datafile = models_controller.add_datafile(name="datafile",
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=models_controller.generate_convert_key(),
-                                    type=models_controller.DataFile.DataFileType.Raw,
+                                    type=models_controller.S3DataFile.DataFileFormat.Raw,
                                     short_summary='short',
                                     long_summary='long')
 
@@ -589,7 +592,25 @@ def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
     # TODO: Do we need to cover these? Currently not working but I don't know what these are actually used for
     # get_data_from_flask_jsonify(endpoint.create_or_update_dataset_access_log(vdataset_id))
 
+def create_session_with_virtual(new_name, old_name) :
+    uploadSessionFile = {
+        'filename': new_name,
+        'filetype': 'virtual',
+        'existingTaigaID': old_name
+        }
+
+    sid = new_upload_session.id
+
+    endpoint.create_upload_session_file(uploadSessionFile=uploadSessionFile,
+                                        sid=sid)
+    _new_upload_session_files = models_controller.get_upload_session_files_from_session(sid)
+    return _new_upload_session_files[0]
+
+
 def test_create_virtual_dataset_endpoint(session: SessionBase):
+
+
+
     dataset1 = _create_dataset_with_a_file()
     dataset2 = _create_dataset_with_a_file()
 

@@ -5,6 +5,8 @@ import time
 import urllib
 import re
 
+from .endpoint_validation import validate
+
 from sqlalchemy.orm.exc import NoResultFound
 
 # TODO: Change the app containing db to api_app => current_app
@@ -337,27 +339,31 @@ def de_delete_dataset_version(datasetVersionId):
 
     return flask.jsonify({})
 
+@validate
+def create_upload_session_file(uploadMetadata, sid):
+    if uploadMetadata['filetype'] == "s3":
+        S3UploadedFileMetadata = uploadMetadata['s3Upload']
+        s3_bucket = S3UploadedFileMetadata['bucket']
 
-def create_upload_session_file(S3UploadedFileMetadata, sid):
-    s3_bucket = S3UploadedFileMetadata['bucket']
+        initial_file_type = S3UploadedFileMetadata['format']
+        initial_s3_key = S3UploadedFileMetadata['key']
+        filename = uploadMetadata['filename']
 
-    initial_file_type = S3UploadedFileMetadata['filetype']
-    initial_s3_key = S3UploadedFileMetadata['key']
-    filename = S3UploadedFileMetadata['filename']
+        # Register this new file to the UploadSession received
+        upload_session_file = models_controller.add_upload_session_file(session_id=sid,
+                                                                        filename=filename,
+                                                                        initial_file_type=initial_file_type,
+                                                                        initial_s3_key=initial_s3_key,
+                                                                        s3_bucket=s3_bucket)
 
-    # Register this new file to the UploadSession received
-    upload_session_file = models_controller.add_upload_session_file(session_id=sid,
-                                                                    filename=filename,
-                                                                    initial_file_type=initial_file_type,
-                                                                    initial_s3_key=initial_s3_key,
-                                                                    s3_bucket=s3_bucket)
+        # Launch a Celery process to convert and get back to populate the db + send finish to client
+        from taiga2.tasks import background_process_new_upload_session_file
+        task = background_process_new_upload_session_file.delay(upload_session_file.id, initial_s3_key, initial_file_type,
+                                                                s3_bucket, upload_session_file.converted_s3_key)
 
-    # Launch a Celery process to convert and get back to populate the db + send finish to client
-    from taiga2.tasks import background_process_new_upload_session_file
-    task = background_process_new_upload_session_file.delay(upload_session_file.id, initial_s3_key, initial_file_type,
-                                                            s3_bucket, upload_session_file.converted_s3_key)
-
-    return flask.jsonify(task.id)
+        return flask.jsonify(task.id)
+    else:
+        raise Exception("unknown filetype "+uploadMetadata['filetype'])
 
 
 def create_new_upload_session():
@@ -393,34 +399,6 @@ def _parse_data_file_aliases(files):
         result.append(DataFileAlias(name=file['name'], data_file_id=data_file_id))
     return result
 
-def create_virtual_dataset(virtualDatasetInfo):
-    dataset_name = virtualDatasetInfo['name']
-    new_description = virtualDatasetInfo['description']
-    current_folder_id = virtualDatasetInfo['folderId']
-    files = virtualDatasetInfo['files']
-
-    data_file_aliases = _parse_data_file_aliases(files)
-
-    virtual_dataset = models_controller.create_virtual_dataset(name=dataset_name,
-                                             description=new_description,
-                                             data_file_aliases=data_file_aliases,
-                                            folder_id= current_folder_id
-                                            )
-
-    return flask.jsonify(virtual_dataset.id)
-
-def create_virtual_dataset_version(dataset_id, virtualDatasetInfo):
-    new_description = virtualDatasetInfo.get('description', None)
-    files = virtualDatasetInfo['files']
-
-    data_file_aliases = _parse_data_file_aliases(files)
-
-    virtual_dataset_version = models_controller.add_virtual_dataset_version(virtual_dataset_id=dataset_id,
-                                             new_description=new_description,
-                                             data_file_aliases=data_file_aliases
-                                            )
-
-    return flask.jsonify(virtual_dataset_version.id)
 
 def create_dataset(sessionDatasetInfo):
     session_id = sessionDatasetInfo['sessionId']
@@ -457,13 +435,13 @@ def task_status(taskStatusId):
 
 
 def _no_transform_needed(requested_format, datafile_type):
-    if requested_format == conversion.RAW_FORMAT and datafile_type == DataFile.DataFileType.Raw:
+    if requested_format == conversion.RAW_FORMAT and datafile_type == S3DataFile.DataFileFormat.Raw:
         return True
 
-    if requested_format == conversion.HDF5_FORMAT and datafile_type == DataFile.DataFileType.HDF5:
+    if requested_format == conversion.HDF5_FORMAT and datafile_type == S3DataFile.DataFileFormat.HDF5:
         return True
 
-    if requested_format == conversion.COLUMNAR_FORMAT and datafile_type == DataFile.DataFileType.Columnar:
+    if requested_format == conversion.COLUMNAR_FORMAT and datafile_type == S3DataFile.DataFileFormat.Columnar:
         return True
 
     return False

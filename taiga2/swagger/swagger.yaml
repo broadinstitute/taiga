@@ -268,92 +268,6 @@ paths:
               sid:
                 type: string
 
-  /virtual:
-    post:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: create_virtual_dataset
-      description: Create a virtual dataset in which files are aliases to other files within Taiga
-      consumes:
-        - application/json
-      parameters:
-        - in: body
-          name: virtualDatasetInfo
-          required: true
-          schema:
-            type: object
-            required:
-              - name
-              - description
-              - folderId
-              - files
-            properties:
-              name:
-                type: string
-              description:
-                type: string
-              folderId:
-                type: string
-              files:
-                type: array
-                items:
-                  type: object
-                  required:
-                    - name
-                    - datafile
-                  properties:
-                    name:
-                      type: string
-                    datafile:
-                      type: string
-      responses:
-        200:
-          description: The info about the newly created dataset
-          schema:
-            title: DatasetId
-            type: string
-
-  /virtual/{dataset_id}:
-    post:
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: create_virtual_dataset_version
-      description: Create a new version on an existing virtual dataset
-      consumes:
-        - application/json
-      parameters:
-        - name: dataset_id
-          in: path
-          type: string
-          description: Dataset ID
-          required: true
-        - in: body
-          name: virtualDatasetInfo
-          required: true
-          schema:
-            type: object
-            required:
-              - files
-            properties:
-              description:
-                type: string
-              files:
-                type: array
-                items:
-                  type: object
-                  required:
-                    - name
-                    - datafile
-                  properties:
-                    name:
-                      type: string
-                    datafile:
-                      type: string
-      responses:
-        200:
-          description: The info about the newly created dataset version
-          schema:
-            title: DatasetId
-            type: string
-
   /dataset:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -757,7 +671,6 @@ paths:
               - sessionId
               - datasetId
               - newDescription
-              - datafileIds
             properties:
               sessionId:
                 type: string
@@ -765,11 +678,6 @@ paths:
                 type: string
               newDescription:
                 type: string
-              datafileIds:
-                type: array
-                items:
-                  title: entryId
-                  type: string
       responses:
         200:
           description: The info about the newly created dataset version
@@ -907,10 +815,10 @@ paths:
           description: The Upload Session id
           required: true
         - in: body
-          name: S3UploadedFileMetadata
+          name: uploadMetadata
           required: true
           schema:
-            "$ref": "#/definitions/S3UploadedFileMetadata"
+            "$ref": "#/definitions/UploadSessionFile"
       responses:
         200:
           description: Received data, they are correct and conversion currently doing
@@ -1636,29 +1544,36 @@ definitions:
       - deleted    # Underlying data has been deleted
       - approved
 
+  UploadSessionFile:
+    type: object
+    required:
+      - filetype
+      - filename
+    properties:
+      filename:
+        type: string
+      filetype:
+        type: string
+      existingTaigaID:
+        type: string
+      s3Upload:
+        "$ref": "#/definitions/S3UploadedFileMetadata"
+    
+
   # Match the S3 Data object returned by ManagedUpload
   # https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3/ManagedUpload.html#constructor-property
   S3UploadedFileMetadata:
     type: object
     required:
-      - location
-      - eTag
       - bucket
       - key
-      - filename
-      - filetype
+      - format
     properties:
-      location:
-        type: string
-      eTag:
+      format:
         type: string
       bucket:
         type: string
       key:
-        type: string
-      filename:
-        type: string
-      filetype:
         type: string
 
   SearchResult:

@@ -3,7 +3,7 @@ from marshmallow import post_dump
 from marshmallow_enum import EnumField
 from marshmallow_oneofschema import OneOfSchema
 
-from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile, get_allowed_conversion_type,VirtualDataset
+from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile, S3DataFile, get_allowed_conversion_type
 from taiga2.models import ProvenanceEdge, ProvenanceNode, ProvenanceGraph
 from taiga2.models import Group, EntryRightsEnum
 
@@ -64,8 +64,6 @@ class EntrySchema(ma.ModelSchema):
     def get_lowercase_type(self, obj):
         if isinstance(obj, Folder):
             return "folder"
-        elif isinstance(obj, VirtualDataset):
-            return "virtual_dataset"
         elif isinstance(obj, Dataset):
             return "dataset"
         elif isinstance(obj, DatasetVersion):
@@ -167,7 +165,7 @@ class DataFileSummarySchema(ma.ModelSchema):
         additional = ('name', 'type', 'short_summary')
 
     # TODO: Manage the other fields in the model/db too
-    type = EnumField(DataFile.DataFileType)
+    type = EnumField(S3DataFile.DataFileFormat)
 
 
 class DataFileSchema(ma.ModelSchema):
@@ -175,9 +173,10 @@ class DataFileSchema(ma.ModelSchema):
         additional = ('id', 'name', 's3_bucket',
                       's3_key', 'short_summary', 'underlying_file_id')
 
-    type = EnumField(DataFile.DataFileType)
+    format = EnumField(S3DataFile.DataFileFormat)
+
     # Allowed Conversion Type
-    allowed_conversion_type = fields.fields.Function(lambda obj: get_allowed_conversion_type(obj.type),
+    allowed_conversion_type = fields.fields.Function(lambda obj: get_allowed_conversion_type(obj.format),
                                                      dump_to="allowed_conversion_type")
     # description = fields.fields.Function(lambda obj: 'TODO')
     # content_summary = fields.fields.Function(lambda obj: 'TODO')

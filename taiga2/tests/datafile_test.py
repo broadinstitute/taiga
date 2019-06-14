@@ -34,7 +34,7 @@ def create_matrix_dataset_version(tmpdir, mock_s3):
     df = mc.add_datafile(name="dfname",
                          s3_bucket='bucket',
                          s3_key='key',
-                         type=models.DataFile.DataFileType.HDF5,
+                         type=models.S3DataFile.DataFileFormat.HDF5,
                          short_summary="short",
                          long_summary="long")
 
@@ -60,7 +60,7 @@ def create_table_dataset_version(tmpdir, mock_s3):
     df = mc.add_datafile(name="dfname",
                          s3_bucket='bucket',
                          s3_key='key',
-                         type=models.DataFile.DataFileType.Columnar,
+                         type=models.S3DataFile.DataFileFormat.Columnar,
                          short_summary="short",
                          long_summary="long")
 
@@ -98,7 +98,7 @@ def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, 
         resulting_urls = None
         while time.time() < start + MAX_TIME:
             r = c.get("/datafile?dataset_version_id=" + dataset_version_id + "&name=dfname&format=" + out_format)
-            assert r.status_code == 200
+            assert r.status_code == 200, r.data.decode("utf8")
             response = json.loads(r.data.decode("utf8"))
 
             for prop in ['dataset_id', 'dataset_version_id', 'datafile_name', 'status']:
@@ -126,7 +126,7 @@ def create_simple_dataset():
     df = mc.add_datafile(name="df",
                          s3_bucket="bucket",
                          s3_key="converted/key",
-                         type=models.DataFile.DataFileType.Raw,
+                         type=models.S3DataFile.DataFileFormat.Raw,
                          short_summary="short",
                          long_summary="long")
 

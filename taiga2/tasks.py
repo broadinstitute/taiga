@@ -51,7 +51,7 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
         progress.progress("Received {}".format(initial_s3_key))
 
         # Create a new converted object to upload
-        progress.progress("Uploading the {} to S3".format(DataFile.DataFileType(file_type)))
+        progress.progress("Uploading the {} to S3".format(S3DataFile.DataFileFormat(file_type)))
 
         # We copy the file to 'convert/'
         copy_source = {
@@ -134,8 +134,8 @@ def taskstatus(task_id):
 def get_converter(src_format, dst_format):
     from taiga2.models import DataFile
 
-    is_hdf5 = (src_format == str(DataFile.DataFileType.HDF5))
-    is_columnar = str(DataFile.DataFileType.Columnar)
+    is_hdf5 = (src_format == str(S3DataFile.DataFileFormat.HDF5))
+    is_columnar = str(S3DataFile.DataFileFormat.Columnar)
 
     if is_hdf5:
         if dst_format == conversion.CSV_FORMAT:
