@@ -499,7 +499,7 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
                 is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
 
         if is_new:
-            t = start_conversion_task.delay(datafile.s3_bucket, datafile.s3_key, str(datafile.type), format, entry.id)
+            t = start_conversion_task.delay(datafile.s3_bucket, datafile.s3_key, str(datafile.format), format, entry.id)
             models_controller.update_conversion_cache_entry_with_task_id(entry.id, t.id)
 
         urls = models_controller.get_signed_urls_from_cache_entry(entry.urls_as_json, dl_filename)

@@ -11,7 +11,7 @@ from taiga2.conv.util import Progress
 from taiga2.conv.util import make_temp_file_generator
 from taiga2.controllers import models_controller
 from taiga2.conv.imp import ImportResult
-
+from taiga2.models import S3DataFile
 
 celery = Celery("taiga2")
 log = logging.getLogger()
@@ -193,5 +193,6 @@ def start_conversion_task(self, bucket, key, src_format, dst_format, cache_entry
         return _start_conversion_task(self, Progress(self), bucket, key, src_format, dst_format, cache_entry_id)
     except:
         models_controller.mark_conversion_cache_entry_as_failed(cache_entry_id)
+        log.exception("Error running conversion on %s/%s src_format=%s dst_format=%s cache_entry_id=%s", bucket, key, src_format, dst_format, cache_entry_id)
         raise
 
