@@ -364,19 +364,7 @@ paths:
               versions:
                 type: array
                 items:
-                  title: DatasetVersionSummary
-                  type: object
-                  required:
-                    - name
-                    - id
-                    - status
-                  properties:
-                    name:
-                      type: string
-                    id:
-                      type: string
-                    status:
-                      "$ref": "#/definitions/StatusEnum"
+                  "$ref": "#/definitions/DatasetVersion"
               acl:
                 "$ref": "#/definitions/Acl"
 
@@ -1284,6 +1272,7 @@ paths:
           description: No dataset version id exists for this entry
 
 
+
 definitions:
   Dataset:
     type: object
@@ -1313,13 +1302,13 @@ definitions:
           required:
             - name
             - id
-            - status
+            - state
           properties:
             name:
               type: string
             id:
               type: string
-            status:
+            state:
               "$ref": "#/definitions/StatusEnum"
       folders:
         type: array
@@ -1366,21 +1355,17 @@ definitions:
           required:
             - id
             - name
-            - url
-            - mime_type
             - allowed_conversion_type
             - short_summary
           properties:
             underlying_file_id:
               description: "if this is a virtual dataset, this is the reference to the underlying file, and name is just an alias to that"
-              type: string
+              type: 
+                - string
+                - "null"
             id:
               type: string
             name:
-              type: string
-            url:
-              type: string
-            mime_type:
               type: string
             allowed_conversion_type:
               type: array

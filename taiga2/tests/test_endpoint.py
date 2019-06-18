@@ -142,10 +142,10 @@ def new_dataset_in_new_folder_in_home(session: SessionBase,
 
 
 def add_version(dataset, new_upload_session_file) -> DatasetVersion:
-    """
+    """ 
 
     :param dataset:
-    :param new_upload_session_file:
+    :param new_upload_session_file: 
     :return: DatasetVersion
     """
     new_description = "My new description!"

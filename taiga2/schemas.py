@@ -40,9 +40,10 @@ class DatasetSummarySchema(ma.ModelSchema):
 
 
 class DatasetVersionSummarySchema(ma.ModelSchema):
-    # TODO: Add status later
     class Meta:
-        fields = ('id', 'name')
+        additional = ('id', 'name')
+
+    state = EnumField(DatasetVersion.DatasetVersionState)
 
 
 class EntrySummarySchema(ma.ModelSchema):
@@ -132,6 +133,15 @@ class ProvenanceNodeSchema(ma.ModelSchema):
 
     graph = ma.Nested(ProvenanceGraphSchema)
 
+class DatasetVersionLightSchema(ma.ModelSchema):
+    class Meta:
+        additional = ('id', 'name', 'dataset_id',
+                      'creation_date', 'creator',
+                      'description', 'version', 'reason_state')
+
+    creator = ma.Nested(UserNamedIdSchema)
+    state = EnumField(DatasetVersion.DatasetVersionState)
+
 
 class DatasetSchema(ma.ModelSchema):
     class Meta:
@@ -176,11 +186,15 @@ class DataFileSchema(ma.ModelSchema):
     format = EnumField(S3DataFile.DataFileFormat)
 
     # Allowed Conversion Type
-    allowed_conversion_type = fields.fields.Function(lambda obj: get_allowed_conversion_type(obj.format),
-                                                     dump_to="allowed_conversion_type")
-    # description = fields.fields.Function(lambda obj: 'TODO')
-    # content_summary = fields.fields.Function(lambda obj: 'TODO')
+    allowed_conversion_type = fields.fields.Method('_get_allowed_conversion_type')
     provenance_nodes = ma.Nested(ProvenanceNodeSchema(), many=True)
+
+    def _get_allowed_conversion_type(self, data_file: DataFile):
+        if isinstance(data_file, S3DataFile):
+            return get_allowed_conversion_type(data_file.format)
+        else:
+            return get_allowed_conversion_type(data_file.underlying_data_file.format)
+
 
 
 class DatasetVersionSchema(ma.ModelSchema):
@@ -188,7 +202,7 @@ class DatasetVersionSchema(ma.ModelSchema):
         # WARNING: long_summary is pretty heavy. Don't include it here, but create your own schema
         additional = ('id', 'name', 'dataset_id',
                       'creation_date', 'creator', 'datafiles',
-                      'description', 'parents', 'reason_state')
+                      'description', 'parents')
 
     creator = ma.Nested(UserNamedIdSchema)
     datafiles = ma.Nested(DataFileSchema, many=True)
@@ -201,6 +215,7 @@ class DatasetVersionSchema(ma.ModelSchema):
     can_edit = fields.fields.Method('check_edition')
     can_view = fields.fields.Method('check_view')
     version = fields.fields.Method('version_as_str')
+    reason_state = fields.fields.Method("reason_state_str")
 
     def check_edition(self, dataset_version):
         """Check with the context if we can edit"""
@@ -214,17 +229,12 @@ class DatasetVersionSchema(ma.ModelSchema):
     def version_as_str(self, dataset_version):
         return str(dataset_version.version)
 
-class DatasetVersionLightSchema(ma.ModelSchema):
-    class Meta:
-        additional = ('id', 'name', 'dataset_id',
-                      'creation_date', 'creator',
-                      'description', 'version', 'reason_state')
-
-    creator = ma.Nested(UserNamedIdSchema)
-    # datafiles = ma.Nested(DataFileSummarySchema, many=True)
-    # TODO: Consolidate the term between folders and parents
-    # parents = ma.Nested(FolderNamedIdSchema, dump_to='folders', many=True)
-    state = EnumField(DatasetVersion.DatasetVersionState)
+    def reason_state_str(self, dataset_version):
+        reason_state = dataset_version.reason_state
+        if reason_state is None:
+            return ""
+        else:
+            return reason_state
 
 
 class DatasetFullSchema(ma.ModelSchema):

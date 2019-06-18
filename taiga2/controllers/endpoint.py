@@ -255,10 +255,8 @@ def get_dataset_versions(datasetVersionIdsDict):
     return flask.jsonify(json_data_dataset_versions)
 
 
-#@validate
+@validate
 def get_dataset_version_from_dataset(datasetId, datasetVersionId):
-    dataset_version_schema = schemas.DatasetVersionSchema()
-    dataset_schema = schemas.DatasetSchema()
 
     dataset_version = models_controller \
         .get_dataset_version_by_dataset_id_and_dataset_version_id(datasetId,
@@ -288,9 +286,11 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
     dataset.parents = filter_allowed_parents(dataset.parents)
 
+    dataset_version_schema = schemas.DatasetVersionSchema()
     dataset_version_schema.context['entry_user_right'] = dataset_version_right
     json_dv_data = dataset_version_schema.dump(dataset_version).data
 
+    dataset_schema = schemas.DatasetSchema()
     dataset_schema.context['entry_user_right'] = dataset_right
     json_dataset_data = dataset_schema.dump(dataset).data
 

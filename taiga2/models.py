@@ -281,11 +281,11 @@ class VirtualDataFile(DataFile):
 
     @property
     def short_summary(self):
-        return None
+        return self.underlying_data_file.short_summary
 
     @property
     def long_summary(self):
-        return None
+        return self.underlying_data_file.long_summary
 
 
 def get_allowed_conversion_type(datafile_type):
