@@ -1,19 +1,20 @@
 import * as React from "react";
+import * as PropTypes from "prop-types";
 
 // import cytoscape from 'cytoscape';
 let cytoscape = require('cytoscape');
 let dagre = require('dagre');
 
-import {Button, Col, Glyphicon, Grid, Row, OverlayTrigger, Tooltip, Well} from 'react-bootstrap';
-import {InputGroup, InputGroupButton, FormGroup, FormControl} from 'react-bootstrap';
+import { Button, Col, Glyphicon, Grid, Row, OverlayTrigger, Tooltip, Well } from 'react-bootstrap';
+import { InputGroup, InputGroupButton, FormGroup, FormControl } from 'react-bootstrap';
 
 import ClipboardButton from '../utilities/r-clipboard';
-import {LeftNav, MenuItem} from "./LeftNav";
+import { LeftNav, MenuItem } from "./LeftNav";
 
-import {relativePath} from "../utilities/route";
+import { relativePath } from "../utilities/route";
 
-import {TaigaApi} from "../models/api"
-import {User, ProvenanceGraph, ProvenanceGraphFull} from "../models/models";
+import { TaigaApi } from "../models/api"
+import { User, ProvenanceGraph, ProvenanceGraphFull } from "../models/models";
 
 
 export interface ProvenanceProps {
@@ -36,8 +37,8 @@ let currentUser: string = null;
 
 export class Provenance extends React.Component<ProvenanceProps, ProvenanceState> {
     static contextTypes = {
-        tapi: React.PropTypes.object,
-        currentUser: React.PropTypes.string
+        tapi: PropTypes.object,
+        currentUser: PropTypes.string
     };
 
     componentDidMount() {
@@ -76,7 +77,7 @@ export class Provenance extends React.Component<ProvenanceProps, ProvenanceState
 
 
     draw_cytoscape(graph: ProvenanceGraphFull) {
-        let elements = [];
+        let elements: any = [];
         let possibleRoots: Map<string, boolean> = new Map();
         // debugger;
         graph.provenance_nodes.forEach((node) => {
@@ -103,7 +104,7 @@ export class Provenance extends React.Component<ProvenanceProps, ProvenanceState
             });
         });
 
-        let rootNodeIds = [];
+        let rootNodeIds: Array<string> = [];
 
         possibleRoots.forEach((isRoot: boolean, node_id: string) => {
             if (isRoot) {
@@ -191,7 +192,7 @@ export class Provenance extends React.Component<ProvenanceProps, ProvenanceState
     render() {
         let navItems: MenuItem[] = [];
         return <div>
-            <LeftNav items={navItems}/>
+            <LeftNav items={navItems} />
             <div id="main-content">
                 <div style={cyStyle} id="cy"></div>
             </div>

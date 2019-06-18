@@ -1,12 +1,14 @@
 import * as React from "react";
 import { Form, FormControl, Col, ControlLabel, FormGroup, Grid, Row, Glyphicon, HelpBlock } from 'react-bootstrap';
 import * as Dropzone from "react-dropzone";
+import * as Modal from "react-modal";
 
 import update from "immutability-helper";
-import { UploadTable, UploadFile, UploadController } from "./UploadTable";
+import { UploadTable, UploadFile, UploadController, UploadFileType } from "./UploadTable";
 
 interface UploadFormProps {
-
+    help?: string
+    initialFiles: Array<UploadFile>;
 }
 
 interface UploadFormState {
@@ -44,6 +46,78 @@ const dropZoneStyle: any = {
     borderRadius: '5px'
 };
 
+import { DialogProps, DialogState } from "../Dialogs";
+import {
+    S3Credentials, FileUploadStatus, TaskStatus, InitialFileType,
+    S3UploadedFileMetadata, S3UploadedData, DatasetVersion, DatasetVersionDatafiles,
+    dropExtension
+} from "../../models/models";
+
+interface UploadDialogProps extends DialogProps {
+    onFileUploadedAndConverted?: any;
+
+    title: string;
+    readOnlyName?: string;
+    readOnlyDescription?: string;
+
+    // Determines what is done when opening the modal/componentWillReceiveProps
+    onOpen?: Function;
+    // Parent gives the previous version files. If it exists, we display another Table
+    previousVersionFiles?: Array<DatasetVersionDatafiles>;
+    // Parent can give the previous version name. Need it if pass previousVersionFiles
+    // TODO: Only pass the previousVersion, so we can take the previous DataFiles from it too
+    previousVersionName?: string;
+    datasetPermaname?: string;
+    previousVersionNumber?: string;
+
+    // If we want to change the description, we can use this to pass the previous description
+    // It can't be compatible with readOnlyDescription
+    previousDescription?: string;
+
+    validationState?: string;
+    help?: string;
+}
+
+// TODO: Duplication of modalStyles in Dialogs.tsx => Find a way to fix this
+const modalStyles: any = {
+    content: {
+        background: null,
+        border: null
+    }
+};
+
+// name: string; // the name of the datafile record in once dataset has been created
+// size: string; // desciption of size
+
+// fileType: UploadFileType;
+
+// gcsPath?: string; // If the path to a GCS object
+
+// exitingTaigaId?: string; // the ID of an existing taiga data file.
+
+// uploadFile?: File;
+// uploadFormat?: string;
+// progress?: number; // between 0 and 1
+// progressMessage?: string;
+
+
+export class UploadDialog extends React.Component<UploadDialogProps, null> {
+    render() {
+        let files = this.props.previousVersionFiles.map(file => {
+            let taigaId = this.props.datasetPermaname + "." + this.props.previousVersionNumber + "/" + file.name;
+            return { name: file.name, size: file.short_summary, fileType: UploadFileType.TaigaPath, existingTaigaId: taigaId }
+        });
+
+        return (<Modal
+            style={modalStyles}
+            closeTimeoutMS={150}
+            isOpen={this.props.isVisible}
+            contentLabel="Upload">
+            <UploadForm help={this.props.help} initialFiles={files} />
+        </Modal>)
+    }
+}
+
 export class UploadForm extends React.Component<UploadFormProps, UploadFormState> {
     controller: UploadController
 
@@ -72,9 +146,8 @@ export class UploadForm extends React.Component<UploadFormProps, UploadFormState
         acceptedFiles.forEach((file) => this.controller.addUpload(file))
     }
 
-
     render() {
-        let help = "help";
+        let help = this.props.help;
 
         let inputName = <FormControl value={this.state.name}
             onChange={(evt) => { this.onNameChange((evt.target as any).value) }}

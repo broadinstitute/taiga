@@ -47,9 +47,9 @@ interface UploadTableState {
 
 export class UploadController {
     files: Readonly<Array<UploadFile>>;
-    listener: (any) => void;
+    listener: (x: any) => void;
 
-    constructor(listener: (any) => void) {
+    constructor(listener: (x: any) => void) {
         this.files = []
         this.listener = listener;
         console.log("constructed");

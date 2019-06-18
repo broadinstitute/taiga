@@ -592,6 +592,10 @@ def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
     vdataset_permaname = dataset['permanames'][0]
     vdataset_version_id = dataset['versions'][0]['id']
 
+    # verify get_datasets is also sane
+    datasets = get_data_from_flask_jsonify(endpoint.get_datasets(dict(datasetIds=[vdataset_id])))
+    assert len(datasets) == 1
+
     # make sure we can get it by permaname too
     dataset = get_data_from_flask_jsonify(endpoint.get_dataset(vdataset_permaname))
     assert dataset['name'] == 'virtual'

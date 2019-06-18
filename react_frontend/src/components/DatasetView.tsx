@@ -1,24 +1,25 @@
 import * as React from "react";
-import {Link} from "react-router";
-import {OverlayTrigger, Tooltip} from "react-bootstrap";
+import * as PropTypes from 'prop-types';
+import { Link } from "react-router";
+import { OverlayTrigger, Tooltip } from "react-bootstrap";
 
-import {LeftNav} from "./LeftNav";
-import {EntryUsersPermissions} from "./modals/EntryUsersPermissions";
+import { LeftNav } from "./LeftNav";
+import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";
 
 import * as Models from "../models/models";
-import {TaigaApi} from "../models/api";
+import { TaigaApi } from "../models/api";
 
 import * as Dialogs from "./Dialogs";
-import * as Upload from "./modals/Upload";
+import { UploadForm } from "./modals/UploadForm";
 
-import {toLocalDateString} from "../utilities/formats";
-import {LoadingOverlay} from "../utilities/loading";
-import {relativePath} from "../utilities/route";
-import {DatafileUrl, ConversionStatusEnum, StatusEnum, Entry} from "../models/models";
-import {DatasetVersion} from "../models/models";
-import {NotFound} from "./NotFound";
-import {NamedId} from "../models/models";
-import {FolderEntries} from "../models/models";
+import { toLocalDateString } from "../utilities/formats";
+import { LoadingOverlay } from "../utilities/loading";
+import { relativePath } from "../utilities/route";
+import { DatafileUrl, ConversionStatusEnum, StatusEnum, Entry } from "../models/models";
+import { DatasetVersion } from "../models/models";
+import { NotFound } from "./NotFound";
+import { NamedId } from "../models/models";
+import { FolderEntries } from "../models/models";
 import ClipboardButton from "../utilities/r-clipboard";
 
 export interface DatasetViewProps {
@@ -78,8 +79,8 @@ let currentUser: string = null;
 
 export class DatasetView extends React.Component<DatasetViewProps, DatasetViewState> {
     static contextTypes = {
-        tapi: React.PropTypes.object,
-        currentUser: React.PropTypes.string
+        tapi: PropTypes.object,
+        currentUser: PropTypes.string
     };
 
     componentDidUpdate(prevProps: DatasetViewProps) {
@@ -245,7 +246,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     getOrLaunchConversion(datasetPermaname: string, version: string, datasetVersionId: string,
-                          datafileName: string, format: string, force: string) {
+        datafileName: string, format: string, force: string): Promise<any> {
         // Ask for conversion, if ok download. Else convert process and loading for user
         // Loading
         this.setLoading(true);
@@ -322,7 +323,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         // TODO: Change the string telling the action to an enum, like in the backend
         this.setState({
             initInputFolderId: alreadyFilledFolderId,
-            callbackIntoFolderAction: (folderId) => {
+            callbackIntoFolderAction: (folderId: string) => {
                 tapi.copy_to_folder([this.state.dataset.id], folderId).then(() => this.afterAction());
             },
             showInputFolderId: true,
@@ -418,7 +419,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         }
     }
 
-    getCopyButton(datafile) {
+    getCopyButton(datafile: Models.DatasetVersionDatafiles) {
         if (this.state.datasetVersion.state !== StatusEnum.Deleted) {
             let dataset = this.state.dataset;
             let datasetVersion = this.state.datasetVersion;
@@ -437,7 +438,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         }
     }
 
-    getConversionTypesOutput(datafile) {
+    getConversionTypesOutput(datafile: Models.DatasetVersionDatafiles) {
         if (this.state.datasetVersion.state !== StatusEnum.Deleted) {
             return datafile.allowed_conversion_type.map((conversionType, index) => {
                 let dataset = this.state.dataset;
@@ -451,16 +452,16 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             datasetVersion.id, datafile.name, conversionType, "N");
                     }}>
                         {conversionType}
-                        </a>
+                    </a>
                     {datafile.allowed_conversion_type.length !== index + 1 &&
-                    <span>, </span>
+                        <span>, </span>
                     }
                 </span>;
             });
         }
     }
 
-    hasRaw(df) {
+    hasRaw(df: Models.DatasetVersionDatafiles) {
         let has_raw = df.allowed_conversion_type.some((conversion_type) => {
             return conversion_type === "raw";
         });
@@ -470,7 +471,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     render() {
         if (!this.state) {
             return <div>
-                <LeftNav items={[]}/>
+                <LeftNav items={[]} />
                 <div id="main-content">
                     Loading...
                 </div>
@@ -480,9 +481,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             let message = "Dataset version " + this.props.params.datasetVersionId + " does not exist. Please check this id "
                 + "is correct. We are also available via the feedback button.";
             return <div>
-                <LeftNav items={[]}/>
+                <LeftNav items={[]} />
                 <div id="main-content">
-                    <NotFound message={message}/>
+                    <NotFound message={message} />
                 </div>
             </div>;
         }
@@ -498,23 +499,23 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 });
                 versions = dataset.versions.map((dataset_version: NamedId, index: any) => {
                     return <span key={dataset_version.id}>
-                    {this.getLinkOrNot(dataset_version)}
+                        {this.getLinkOrNot(dataset_version)}
                         {dataset.versions.length !== index + 1 &&
-                        <span>, </span>
+                            <span>, </span>
                         }
-                </span>;
+                    </span>;
                 });
 
                 folders = dataset.folders.map((f, index) => {
                     return (
                         <span key={index}>
-                        <Link to={relativePath("folder/" + f.id)}>
-                            {f.name}
-                        </Link>
+                            <Link to={relativePath("folder/" + f.id)}>
+                                {f.name}
+                            </Link>
                             {dataset.folders.length !== index + 1 &&
-                            <span>, </span>
+                                <span>, </span>
                             }
-                    </span>
+                        </span>
                     );
                 });
             }
@@ -544,13 +545,13 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
                         provenanceGraphs = df.provenance_nodes.map((provenance_node, index) => {
                             return <span key={provenance_node.graph.graph_id}>
-                        <Link to={relativePath("provenance/" + provenance_node.graph.graph_id)}>
-                            {provenance_node.graph.name}
-                            {df.provenance_nodes.length != index + 1 &&
-                            <span>, </span>
-                            }
-                        </Link>
-               </span>
+                                <Link to={relativePath("provenance/" + provenance_node.graph.graph_id)}>
+                                    {provenance_node.graph.name}
+                                    {df.provenance_nodes.length != index + 1 &&
+                                        <span>, </span>
+                                    }
+                                </Link>
+                            </span>
                         });
                     }
 
@@ -561,7 +562,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         let permaname = m[1];
                         let version = m[2];
 
-                        linkToUnderlying = <div> (<Link to={relativePath("dataset/" + permaname+"/"+version)}>
+                        linkToUnderlying = <div> (<Link to={relativePath("dataset/" + permaname + "/" + version)}>
                             {df.underlying_file_id}
                         </Link>)</div>
                     }
@@ -577,9 +578,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         </td>
 
                         {df.provenance_nodes && df.provenance_nodes.length > 0 &&
-                        <td>
-                            {provenanceGraphs}
-                        </td>
+                            <td>
+                                {provenanceGraphs}
+                            </td>
                         }
                     </tr>;
                 });
@@ -594,25 +595,25 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
             navItems.push({
                 label: "Share dataset", action: () => {
-                    this.setState({showShareDatasetVersion: true});
+                    this.setState({ showShareDatasetVersion: true });
                 }
             });
 
             // TODO: Look into why we are here despite the fact dataset is undefined
             if (dataset && dataset.can_edit) {
                 navItems.push({
-                        label: "Edit name", action: () => {
-                            this.setState({showEditName: true})
-                        }
-                    },
+                    label: "Edit name", action: () => {
+                        this.setState({ showEditName: true })
+                    }
+                },
                     {
                         label: "Edit description", action: () => {
-                            this.setState({showEditDescription: true})
+                            this.setState({ showEditDescription: true })
                         }
                     },
                     {
                         label: "Edit permissions", action: () => {
-                            this.setState({showEditPermissions: true})
+                            this.setState({ showEditPermissions: true })
                         }
                     });
             }
@@ -672,7 +673,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 // }
             );
 
-            let permaname = null;
+            let permaname: string = null;
             let r_block = null;
             let python_block = null;
             let leftNavsDialogs = null;
@@ -709,159 +710,160 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
                 leftNavsDialogs = (
                     <span>
-                    <Dialogs.EditName isVisible={this.state.showEditName}
-                                      initialValue={this.state.dataset.name}
-                                      cancel={() => {
-                                          this.setState({showEditName: false})
-                                      }}
-                                      save={(name: string) => {
-                                          this.setState({showEditName: false});
-                                          this.updateName(name)
-                                      }}/>
-                    <Dialogs.EditDescription isVisible={this.state.showEditDescription}
-                                             cancel={() => {
-                                                 this.setState({showEditDescription: false})
-                                             }}
-                                             initialValue={this.state.datasetVersion.description}
-                                             save={(description: string) => {
-                                                 this.setState({showEditDescription: false});
-                                                 console.log("Save description: " + description);
-                                                 this.updateDescription(description);
-                                             }}/>
+                        <Dialogs.EditName isVisible={this.state.showEditName}
+                            initialValue={this.state.dataset.name}
+                            cancel={() => {
+                                this.setState({ showEditName: false })
+                            }}
+                            save={(name: string) => {
+                                this.setState({ showEditName: false });
+                                this.updateName(name)
+                            }} />
+                        <Dialogs.EditDescription isVisible={this.state.showEditDescription}
+                            cancel={() => {
+                                this.setState({ showEditDescription: false })
+                            }}
+                            initialValue={this.state.datasetVersion.description}
+                            save={(description: string) => {
+                                this.setState({ showEditDescription: false });
+                                console.log("Save description: " + description);
+                                this.updateDescription(description);
+                            }} />
 
-                    <Upload.UploadDataset
-                        isVisible={this.state.showUploadDataset}
-                        cancel={() => {
-                            this.setState({showUploadDataset: false})
-                        }}
-                        onFileUploadedAndConverted={(sid: string, name: string, description: string, previousDatafileIds: Array<string>) =>
-                            this.filesUploadedAndConverted(sid, name, description, previousDatafileIds)
-                        }
-                        title="New Dataset Version"
-                        readOnlyName={this.state.dataset.name}
-                        previousDescription={this.state.datasetVersion.description}
-                        previousVersionName={this.state.datasetVersion.name}
-                        previousVersionFiles={this.state.datasetVersion.datafiles}
-                    />
+                        {this.state.showUploadDataset && <div>Upload dialog goes here</div>}
+                        {/* <UploadDialog
+                            isVisible={this.state.showUploadDataset}
+                            cancel={() => {
+                                this.setState({ showUploadDataset: false })
+                            }}
+                            onFileUploadedAndConverted={(sid: string, name: string, description: string, previousDatafileIds: Array<string>) =>
+                                this.filesUploadedAndConverted(sid, name, description, previousDatafileIds)
+                            }
+                            title="New Dataset Version"
+                            readOnlyName={this.state.dataset.name}
+                            previousDescription={this.state.datasetVersion.description}
+                            previousVersionName={this.state.datasetVersion.name}
+                            previousVersionFiles={this.state.datasetVersion.datafiles}
+                        /> */}
 
-                    <Dialogs.InputFolderId
-                        actionDescription="Link this dataset into the chosen folder"
-                        isVisible={this.state.showInputFolderId}
-                        cancel={() => {
-                            this.setState({showInputFolderId: false})
-                        }}
-                        save={(folderId) => {
-                            this.state.callbackIntoFolderAction(folderId)
-                        }}
-                        initFolderId={this.state.initInputFolderId}
-                    />
+                        <Dialogs.InputFolderId
+                            actionDescription="Link this dataset into the chosen folder"
+                            isVisible={this.state.showInputFolderId}
+                            cancel={() => {
+                                this.setState({ showInputFolderId: false })
+                            }}
+                            save={(folderId) => {
+                                this.state.callbackIntoFolderAction(folderId)
+                            }}
+                            initFolderId={this.state.initInputFolderId}
+                        />
 
-                    <EntryUsersPermissions
-                        isVisible={this.state.showEditPermissions}
-                        cancel={() => {
-                            this.setState({showEditPermissions: false})
-                        }}
-                        entry_id={this.state.dataset.id}
-                        handleDeletedRow={(arrayAccessLogs) => {
-                            return this.removeAccessLogs(arrayAccessLogs)
-                        }}
-                    />
-                    <Dialogs.ShareEntries isVisible={this.state.showShareDatasetVersion}
-                                          cancel={() => {
-                                              this.setState({showShareDatasetVersion: false});
-                                          }}
-                                          entries={[this.state.datasetVersion]}
-                    />
-                </span>
+                        <EntryUsersPermissions
+                            isVisible={this.state.showEditPermissions}
+                            cancel={() => {
+                                this.setState({ showEditPermissions: false })
+                            }}
+                            entry_id={this.state.dataset.id}
+                            handleDeletedRow={(arrayAccessLogs) => {
+                                return this.removeAccessLogs(arrayAccessLogs)
+                            }}
+                        />
+                        <Dialogs.ShareEntries isVisible={this.state.showShareDatasetVersion}
+                            cancel={() => {
+                                this.setState({ showShareDatasetVersion: false });
+                            }}
+                            entries={[this.state.datasetVersion]}
+                        />
+                    </span>
                 );
             }
 
             return <div>
-                <LeftNav items={navItems}/>
+                <LeftNav items={navItems} />
                 <div id="main-content">
                     {dataset && datasetVersion &&
-                    <span>
-                    {leftNavsDialogs}
+                        <span>
+                            {leftNavsDialogs}
 
-                        <h1>
-                            {dataset.name}
-                            &nbsp;
+                            <h1>
+                                {dataset.name}
+                                &nbsp;
                             <small>{permaname}</small>
-                            {this.state.datasetVersion.state === StatusEnum.Deprecated &&
-                            <span>&nbsp;
+                                {this.state.datasetVersion.state === StatusEnum.Deprecated &&
+                                    <span>&nbsp;
                                 <small className="glyphicon glyphicon-warning-sign"
-                                       style={deprecationTitle}>Deprecated</small>
-                            </span>
-                            }
-                            {this.state.datasetVersion.state === StatusEnum.Deleted &&
-                            <span>&nbsp;
+                                            style={deprecationTitle}>Deprecated</small>
+                                    </span>
+                                }
+                                {this.state.datasetVersion.state === StatusEnum.Deleted &&
+                                    <span>&nbsp;
                                 <small className="glyphicon glyphicon-exclamation-sign"
-                                       style={deletionTitle}>Deleted</small>
-                            </span>
+                                            style={deletionTitle}>Deleted</small>
+                                    </span>
+                                }
+                            </h1>
+                            <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
+                                &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
+                            <p>Versions: {versions} </p>
+
+                            {folders.length > 0 &&
+                                <p>Contained within {folders}</p>
                             }
-                        </h1>
-                    <p>Version {datasetVersion.version} created by {datasetVersion.creator.name}
-                        &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}</p>
-                    <p>Versions: {versions} </p>
 
-                        {folders.length > 0 &&
-                        <p>Contained within {folders}</p>
-                        }
-
-                        {this.state.datasetVersion.state === StatusEnum.Deprecated &&
-                        <div className="well well-sm" style={deprecationStyle}>
-                            <i>Deprecation reason:</i>
-                            <br/>
-                            <span>&emsp;{this.state.datasetVersion.reason_state}</span>
-                        </div>
-                        }
-
-                        {this.state.datasetVersion.description &&
-                        Dialogs.renderDescription(this.state.datasetVersion.description)
-                        }
-
-
-                        <h2>Contents</h2>
-                    <table className="table">
-                        <thead>
-                        <tr>
-                            <th>Name</th>
-                            {/*<th>Description</th>*/}
-                            <th>Summary</th>
-                            <th>Download</th>
-                            <th>Datafile Id</th>
-
-                            {weHaveProvenanceGraphs &&
-                            <th>Provenance Graph</th>
+                            {this.state.datasetVersion.state === StatusEnum.Deprecated &&
+                                <div className="well well-sm" style={deprecationStyle}>
+                                    <i>Deprecation reason:</i>
+                                    <br />
+                                    <span>&emsp;{this.state.datasetVersion.reason_state}</span>
+                                </div>
                             }
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {entries}
-                        </tbody>
-                    </table>
-                        <h2>Direct access from R (<a
-                            href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse"
-                            target="_blank">TaigR Documentation</a>)</h2>
-                    <pre>{r_block}</pre>
-                        <h2>
-                            Direct access from Python (<a
-                            href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse"
-                            target="_blank">Taigapy Documentation</a>)
+
+                            {this.state.datasetVersion.description &&
+                                Dialogs.renderDescription(this.state.datasetVersion.description)
+                            }
+
+
+                            <h2>Contents</h2>
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        {/*<th>Description</th>*/}
+                                        <th>Summary</th>
+                                        <th>Download</th>
+                                        <th>Datafile Id</th>
+
+                                        {weHaveProvenanceGraphs &&
+                                            <th>Provenance Graph</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {entries}
+                                </tbody>
+                            </table>
+                            <h2>Direct access from R (<a
+                                href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse"
+                                target="_blank">TaigR Documentation</a>)</h2>
+                            <pre>{r_block}</pre>
+                            <h2>
+                                Direct access from Python (<a
+                                    href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse"
+                                    target="_blank">Taigapy Documentation</a>)
                         </h2>
-                    <pre>{python_block}</pre>
-                </span>
+                            <pre>{python_block}</pre>
+                        </span>
                     }
                 </div>
                 {this.state.loading && <LoadingOverlay message={this.state.loadingMessage}></LoadingOverlay>}
                 <Dialogs.ExportError isVisible={this.state.exportError}
-                                     cancel={() => this.setState({exportError: false})}
-                                     retry={() => this.forceExport()}
-                                     message={this.state.loadingMessage}/>
+                    cancel={() => this.setState({ exportError: false })}
+                    retry={() => this.forceExport()}
+                    message={this.state.loadingMessage} />
 
                 <Dialogs.DeprecationReason isVisible={this.state.showDeprecationReason}
-                                           cancel={() => this.cancelDeprecation()}
-                                           save={(reason) => this.deprecateDatasetVersion(reason)}
+                    cancel={() => this.cancelDeprecation()}
+                    save={(reason) => this.deprecateDatasetVersion(reason)}
                 />
             </div>;
         }

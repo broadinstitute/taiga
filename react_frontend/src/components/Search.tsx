@@ -1,10 +1,10 @@
 import * as React from "react";
 
-import {Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button} from "react-bootstrap";
+import { Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button } from "react-bootstrap";
 
 interface SearchInputProps {
-    onKeyPress: (event, searchQuery) => void;
-    onClick: (searchQuery) => void;
+    onKeyPress: (event: any, searchQuery: any) => void;
+    onClick: (searchQuery: any) => void;
 }
 
 interface SearchInputState {
@@ -13,24 +13,24 @@ interface SearchInputState {
 
 export class SearchInput extends React.Component<SearchInputProps, SearchInputState> {
     state = {
-       searchQuery: ""
+        searchQuery: ""
     };
 
-    handleChangeSearchQuery(e) {
+    handleChangeSearchQuery(e : any) {
         this.setState({
-           searchQuery: e.target.value
+            searchQuery: e.target.value
         });
     }
 
     render() {
         return <Form inline onSubmit={e => {
-                e.preventDefault();
-            }}>
+            e.preventDefault();
+        }}>
             <FormGroup controlId="formInlineSearch">
                 <FormControl type="text" placeholder="Search by name"
-                             value={this.state.searchQuery}
-                             onChange={(event) => this.handleChangeSearchQuery(event)}
-                             onKeyPress={(event) => this.props.onKeyPress(event, this.state.searchQuery)}
+                    value={this.state.searchQuery}
+                    onChange={(event) => this.handleChangeSearchQuery(event)}
+                    onKeyPress={(event) => this.props.onKeyPress(event, this.state.searchQuery)}
                 />
             </FormGroup>{" "}
             <Button type="button" onClick={() => this.props.onClick(this.state.searchQuery)}>

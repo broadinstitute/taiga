@@ -2,11 +2,11 @@ import * as React from "react";
 import * as Modal from "react-modal";
 import * as Showdown from "showdown";
 
-import {ControlLabel, FormControl, FormGroup, HelpBlock} from "react-bootstrap";
-import {isUndefined} from "util";
-import {isNullOrUndefined} from "util";
-import {relativePath} from "../utilities/route";
-import {Dataset, Entry, Folder, FolderEntries} from "../models/models";
+import { ControlLabel, FormControl, FormGroup, HelpBlock } from "react-bootstrap";
+import { isUndefined } from "util";
+import { isNullOrUndefined } from "util";
+import { relativePath } from "../utilities/route";
+import { Dataset, Entry, Folder, FolderEntries } from "../models/models";
 
 interface InputFolderIdProps extends DialogProps {
     cancel: () => void;
@@ -65,7 +65,7 @@ export class EditName extends React.Component<EditStringProps, any> {
 
     render() {
         return <Modal
-            style={ modalStyles }
+            style={modalStyles}
             closeTimeoutMS={150}
             isOpen={this.props.isVisible}
             onRequestClose={this.props.cancel}
@@ -76,15 +76,15 @@ export class EditName extends React.Component<EditStringProps, any> {
                         <div className="form-group">
                             <label htmlFor="nameInput">Name</label>
                             <input type="text" defaultValue={this.props.initialValue} className="form-control"
-                                   id="nameInput" ref={ (c) => {this.textInput = c}  }/>
+                                id="nameInput" ref={(c) => { this.textInput = c }} />
                         </div>
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
                         <button type="submit" className="btn btn-primary"
-                                onClick={ (e) => {
-                                    formSubmitSave(this, e, this.textInput.value, null);
-                                }}>
+                            onClick={(e) => {
+                                formSubmitSave(this, e, this.textInput.value, null);
+                            }}>
                             Save changes
                         </button>
                     </div>
@@ -100,7 +100,7 @@ export class EditDescription extends React.Component<EditStringProps, any> {
     render() {
         //className="Modal__Bootstrap modal-dialog"
         return <Modal
-            style={ modalStyles }
+            style={modalStyles}
             closeTimeoutMS={150}
             isOpen={this.props.isVisible}
             onRequestClose={this.props.cancel}
@@ -116,15 +116,15 @@ export class EditDescription extends React.Component<EditStringProps, any> {
                                     if you want to have more information about it</em>
                             </p>
                             <textarea rows={15} defaultValue={this.props.initialValue} className="form-control"
-                                      id="descriptionInput" ref={ (c) => {this.textArea = c}  }></textarea>
+                                id="descriptionInput" ref={(c) => { this.textArea = c }}></textarea>
                         </div>
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
                         <button type="submit" className="btn btn-primary"
-                                onClick={(e) => {
-                                    formSubmitSave(this, e, this.textArea.value, null);
-                                }}>
+                            onClick={(e) => {
+                                formSubmitSave(this, e, this.textArea.value, null);
+                            }}>
                             Save changes
                         </button>
                     </div>
@@ -140,7 +140,7 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
 
     render() {
         return <Modal
-            style={ modalStyles }
+            style={modalStyles}
             closeTimeoutMS={150}
             isOpen={this.props.isVisible}
             onRequestClose={this.props.cancel}
@@ -151,15 +151,15 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
                         <div className="form-group">
                             <label htmlFor="nameInput">Name</label>
                             <input type="text" placeholder="A name is required"
-                                   className="form-control"
-                                   id="nameInput"
-                                   ref={ (c) => {this.textInput = c}  }/>
+                                className="form-control"
+                                id="nameInput"
+                                ref={(c) => { this.textInput = c }} />
 
                             <label htmlFor="descriptionInput">Description</label>
                             <textarea rows={15}
-                                      placeholder="No description given"
-                                      className="form-control" id="descriptionInput"
-                                      ref={ (c) => {this.textArea = c}  }
+                                placeholder="No description given"
+                                className="form-control" id="descriptionInput"
+                                ref={(c) => { this.textArea = c }}
                             />
                         </div>
                     </div>
@@ -184,15 +184,15 @@ export function renderDescription(description: string) {
     let description_section: any = null;
 
     if (description) {
-        let desc_as_html = {__html: converter.makeHtml(description)};
-        description_section = <div className="well well-sm" dangerouslySetInnerHTML={desc_as_html}/>
+        let desc_as_html = { __html: converter.makeHtml(description) };
+        description_section = <div className="well well-sm" dangerouslySetInnerHTML={desc_as_html} />
     }
 
     return description_section;
 }
 
 export class InputFolderId extends React.Component<InputFolderIdProps, InputFolderIdState> {
-    constructor(props) {
+    constructor(props: InputFolderIdProps) {
         super(props);
     }
 
@@ -205,17 +205,17 @@ export class InputFolderId extends React.Component<InputFolderIdProps, InputFold
     componentWillReceiveProps(nextProps: any) {
         // When we open the component, we reset it
         this.setState({
-                folderId: nextProps.initFolderId
+            folderId: nextProps.initFolderId
         });
         // if (nextProps.isVisible && this.props.isVisible != nextProps.isVisible) {
         //
         // }
     }
 
-    handleChange(e) {
+    handleChange(e: any) {
         this.setState({
-                folderId: e.target.value
-            }
+            folderId: e.target.value
+        }
         );
     }
 
@@ -224,14 +224,14 @@ export class InputFolderId extends React.Component<InputFolderIdProps, InputFold
 
         return (
             <Modal
-                style={ modalStyles }
+                style={modalStyles}
                 closeTimeoutMS={150}
                 isOpen={this.props.isVisible}
                 onRequestClose={this.props.cancel}
                 contentLabel="InputFolderId">
                 <div className="modal-content">
                     <div className="modal-header">
-                        <h2>{ this.props.actionDescription }</h2>
+                        <h2>{this.props.actionDescription}</h2>
                         <p>Pleaser enter below the id of the folder. It can be found by going into the folder page, and
                         getting the string after '/folder/'. E.G.: `cds.team/taiga/folder/<i>hash_id</i>`
                         </p>
@@ -243,20 +243,20 @@ export class InputFolderId extends React.Component<InputFolderIdProps, InputFold
                                 <FormControl
                                     type="text"
                                     value={this.state.folderId}
-                                    placeholder={ textPlaceHolder }
+                                    placeholder={textPlaceHolder}
                                     onChange={(e) => this.handleChange(e)}
                                 />
-                                { this.props.help && <HelpBlock>{this.props.help}</HelpBlock> }
+                                {this.props.help && <HelpBlock>{this.props.help}</HelpBlock>}
                             </FormGroup>
                         </div>
 
                         <div className="modal-footer">
-                            <button type="button" className="btn btn-default" onClick={ () => this.props.cancel() }>
+                            <button type="button" className="btn btn-default" onClick={() => this.props.cancel()}>
                                 Close
                             </button>
-                            <button type="button" className="btn btn-primary" onClick={ (e) => {
-                                                                                                   formSubmitSave(this, e, this.state.folderId, null);
-                                                                                                   }}>
+                            <button type="button" className="btn btn-primary" onClick={(e) => {
+                                formSubmitSave(this, e, this.state.folderId, null);
+                            }}>
                                 Save changes
                             </button>
                         </div>
@@ -308,7 +308,7 @@ export class ExportError extends React.Component<ExportErrorProps, ExportErrorSt
     render() {
         return (
             <Modal
-                style={ modalStyles }
+                style={modalStyles}
                 closeTimeoutMS={150}
                 isOpen={this.props.isVisible}
                 onRequestClose={this.props.cancel}
@@ -339,7 +339,7 @@ export class ExportError extends React.Component<ExportErrorProps, ExportErrorSt
 export interface DeprecationReasonProps extends DialogProps {
     isVisible: boolean;
     cancel: () => void;
-    save: (reason) => void;
+    save: (reason: string) => void;
 }
 
 export interface DeprecationReasonState extends DialogState {
@@ -347,14 +347,14 @@ export interface DeprecationReasonState extends DialogState {
 }
 
 export class DeprecationReason extends React.Component<DeprecationReasonProps, DeprecationReasonState> {
-    constructor(props){
+    constructor(props: DeprecationReasonProps) {
         super(props);
-        this.state = {reason: ""};
+        this.state = { reason: "" };
     }
 
-    componentDidUpdate(prevProps) {
-        if (this.props.isVisible !== prevProps.isVisible){
-            this.setState({reason: ""});
+    componentDidUpdate(prevProps: DeprecationReasonProps) {
+        if (this.props.isVisible !== prevProps.isVisible) {
+            this.setState({ reason: "" });
         }
     }
 
@@ -362,14 +362,14 @@ export class DeprecationReason extends React.Component<DeprecationReasonProps, D
         this.props.save(this.state.reason);
     }
 
-    handleChange(e) {
-        this.setState({reason: e.target.value});
+    handleChange(e : any) {
+        this.setState({ reason: e.target.value });
     }
 
     render() {
         return (
             <Modal
-                style={ modalStyles }
+                style={modalStyles}
                 closeTimeoutMS={150}
                 isOpen={this.props.isVisible}
                 onRequestClose={this.props.cancel}
@@ -381,10 +381,10 @@ export class DeprecationReason extends React.Component<DeprecationReasonProps, D
                     <form>
                         <div className="modal-body">
                             <input type="text" placeholder="Reason for deprecation"
-                                   className="form-control"
-                                   value={this.state.reason}
-                                   onChange={(e) => this.handleChange(e)}
-                                    />
+                                className="form-control"
+                                value={this.state.reason}
+                                onChange={(e) => this.handleChange(e)}
+                            />
                         </div>
                         <div className="modal-footer">
                             <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
@@ -410,7 +410,7 @@ export class ShareEntries extends React.Component<ShareEntriesProps, ShareEntrie
     render() {
         return (
             <Modal
-                style={ modalStyles }
+                style={modalStyles}
                 closeTimeoutMS={150}
                 isOpen={this.props.isVisible}
                 onRequestClose={this.props.cancel}
@@ -421,11 +421,11 @@ export class ShareEntries extends React.Component<ShareEntriesProps, ShareEntrie
                         <p>Share easily these urls with your collaborators</p>
                     </div>
                     <div className="modal-body">
-                        { this.props.entries.map((entry: Entry) => {
+                        {this.props.entries.map((entry: Entry) => {
                             // TODO: Could add the relativePath as a function of an entry in models.ts
                             let entryUrl = entry.getFullUrl();
 
-                            return <p key={ entry.id }>{ entry.getName() }: <a href={ entryUrl } target="_blank">{ entryUrl }</a></p>;
+                            return <p key={entry.id}>{entry.getName()}: <a href={entryUrl} target="_blank">{entryUrl}</a></p>;
                         })}
                     </div>
                     <div className="modal-footer">

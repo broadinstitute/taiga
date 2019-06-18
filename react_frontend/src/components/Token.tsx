@@ -1,13 +1,14 @@
 import * as React from "react";
+import * as PropTypes from "prop-types";
 
-import {Button, Col, Glyphicon, Grid, Row, OverlayTrigger, Tooltip, Well} from "react-bootstrap";
-import {InputGroup, InputGroupButton, FormGroup, FormControl} from "react-bootstrap";
+import { Button, Col, Glyphicon, Grid, Row, OverlayTrigger, Tooltip, Well } from "react-bootstrap";
+import { InputGroup, InputGroupButton, FormGroup, FormControl } from "react-bootstrap";
 
 import ClipboardButton from "../utilities/r-clipboard";
-import {LeftNav} from "./LeftNav";
+import { LeftNav } from "./LeftNav";
 
-import {TaigaApi} from "../models/api";
-import {User} from "../models/models";
+import { TaigaApi } from "../models/api";
+import { User } from "../models/models";
 
 export interface TokenProps {
 
@@ -31,7 +32,7 @@ let tapi: TaigaApi = null;
 
 export class Token extends React.Component<TokenProps, TokenState> {
     static contextTypes = {
-        tapi: React.PropTypes.object
+        tapi: PropTypes.object
     };
 
     constructor(props: any) {
@@ -66,7 +67,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
         );
 
         return <div>
-            <LeftNav items={navItems}/>
+            <LeftNav items={navItems} />
 
             <div id="main-content">
                 <Grid>
@@ -89,13 +90,13 @@ export class Token extends React.Component<TokenProps, TokenState> {
                                         <FormControl
                                             type="text"
                                             disabled={true}
-                                            placeholder={this.state.token}/>
+                                            placeholder={this.state.token} />
                                         <InputGroup.Button>
                                             <OverlayTrigger trigger="click" placement="right" overlay={tooltipToken}
-                                                            rootClose={true}>
+                                                rootClose={true}>
                                                 <ClipboardButton className="btn btn-default"
-                                                                 style={clipboardButtonStyle}
-                                                                 data-clipboard-text={this.state.token}>
+                                                    style={clipboardButtonStyle}
+                                                    data-clipboard-text={this.state.token}>
                                                     {/*TODO: Clipboard Button breaks Glyphicon by not adding ::before...find a way to counter this*/}
                                                     <span>Copy</span>
                                                 </ClipboardButton>

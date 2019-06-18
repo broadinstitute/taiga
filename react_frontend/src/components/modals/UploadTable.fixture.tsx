@@ -1,7 +1,8 @@
 import { UploadTable, UploadFileType, UploadController } from "./UploadTable"
-import { UploadForm } from "./UploadForm"
+import { UploadForm, UploadDialog } from "./UploadForm"
 import * as React from "react";
 import * as Dropzone from "react-dropzone";
+import { DataFileType } from "../../models/models";
 
 let files = [
     { name: "taigafile", fileType: UploadFileType.TaigaPath, size: "100", existingTaigaId: "original-123183.2/sample" }
@@ -47,6 +48,40 @@ export class UploadTableWrapper extends React.Component<any, any> {
     }
 }
 
+// onFileUploadedAndConverted?: any;
+
+// title: string;
+// readOnlyName?: string;
+// readOnlyDescription?: string;
+
+// // Determines what is done when opening the modal/componentWillReceiveProps
+// onOpen?: Function;
+// // Parent gives the previous version files. If it exists, we display another Table
+// previousVersionFiles?: Array<DatasetVersionDatafiles>;
+// // Parent can give the previous version name. Need it if pass previousVersionFiles
+// // TODO: Only pass the previousVersion, so we can take the previous DataFiles from it too
+// previousVersionName?: string;
+// datasetPermaname?: string;
+// previousVersionNumber?: string;
+
+// // If we want to change the description, we can use this to pass the previous description
+// // It can't be compatible with readOnlyDescription
+// previousDescription?: string;
+
+// validationState?: string;
+// help?: string;
+
+// id: string;
+// name: string;
+// underlying_file_id: string;
+// url: string;
+// type: DataFileType;
+// allowed_conversion_type: Array<string>;
+// short_summary: string;
+// provenance_nodes?: Array<ProvenanceNode>; // Array of urls to provenance graph
+
+
+
 export default [
     {
         component: UploadTableWrapper,
@@ -56,8 +91,27 @@ export default [
         },
     },
     {
+        component: UploadDialog,
+        name: "dialog",
+        props: {
+            title: "Test upload new version",
+            previousVersionFiles: [
+                {
+                    id: "id",
+                    name: "samplename",
+                    allowed_conversion_type: ["raw"],
+                    short_summary: "200x20",
+                    type: DataFileType.Raw
+                }
+            ],
+            help: "help text",
+            datasetPermaname: "dataset",
+            previousVersionNumber: "2"
+        },
+    },
+    {
         component: UploadForm,
-        name: "stuff",
+        name: "form",
         props: {
 
         }

@@ -1,6 +1,5 @@
-import {getInitialFileTypeFromMimeType, toLocalDateString} from "../utilities/formats";
-import {relativePath} from "../utilities/route";
-import {process} from "ts-jest/dist/preprocessor";
+import { getInitialFileTypeFromMimeType, toLocalDateString } from "../utilities/formats";
+import { relativePath } from "../utilities/route";
 
 export abstract class Entry {
     type: FolderEntriesTypeEnum;
@@ -9,13 +8,14 @@ export abstract class Entry {
     creation_date: string;
     creator: NamedId;
 
-    constructor(data) {
-       for (let key in data) {
-        this[key] = data[key];
+    constructor(data: any) {
+        let t: any = this;
+        for (let key in data) {
+            t[key] = data[key];
         }
     }
 
-    abstract getRelativeLink();
+    abstract getRelativeLink(): string;
 
     getFullUrl() {
         return window.location.origin + this.getRelativeLink();
@@ -35,11 +35,11 @@ export class Folder extends Entry {
     can_view: boolean;
     can_edit: boolean;
 
-    constructor(data) {
+    constructor(data: any) {
         super(data);
 
         this.entries.forEach((entry, index) => {
-           this.entries[index] = new FolderEntries(entry);
+            this.entries[index] = new FolderEntries(entry);
         });
     }
 
@@ -49,14 +49,14 @@ export class Folder extends Entry {
 }
 
 export enum TypeFolderEnum {
-    Folder = <any> "folder",
-    Trash = <any> "trash",
-    Home = <any> "home"
+    Folder = <any>"folder",
+    Trash = <any>"trash",
+    Home = <any>"home"
 }
 
 // TODO: Remove to instead use Entry and DatasetVersion/Dataset(/Folder) extending Entry
 export class FolderEntries extends Entry {
-    constructor(data) {
+    constructor(data: any) {
         super(data);
     }
 
@@ -74,11 +74,11 @@ export class FolderEntries extends Entry {
 }
 
 export enum FolderEntriesTypeEnum {
-    Folder = <any> "folder",
-    Dataset = <any> "dataset",
-    DatasetVersion = <any> "dataset_version",
-    VirtualDataset = <any> "virtual_dataset",
-    VirtualDatasetVersion = <any> "virtual_dataset_version"
+    Folder = <any>"folder",
+    Dataset = <any>"dataset",
+    DatasetVersion = <any>"dataset_version",
+    VirtualDataset = <any>"virtual_dataset",
+    VirtualDatasetVersion = <any>"virtual_dataset_version"
 }
 
 export class NamedId {
@@ -95,9 +95,9 @@ export interface User {
 }
 
 export enum StatusEnum {
-  Deleted = "deleted",
-  Approved = "approved",
-  Deprecated = "deprecated"
+    Deleted = "deleted",
+    Approved = "approved",
+    Deprecated = "deprecated"
 }
 
 
@@ -114,7 +114,7 @@ export class DatasetVersion extends Entry {
     can_edit: boolean;
     can_view: boolean;
 
-    constructor(data, dataset) {
+    constructor(data: any, dataset: Dataset) {
         super(data);
         this.dataset = dataset;
     }
@@ -222,9 +222,9 @@ export interface ProvenanceEdgeFull {
 }
 
 export enum ProvenanceNodeType {
-    Dataset = <any> 'Dataset',
-    Process = <any> 'Process',
-    External = <any> 'External'
+    Dataset = <any>'Dataset',
+    Process = <any>'Process',
+    External = <any>'External'
 }
 
 export interface ProvenanceGraph {
@@ -349,7 +349,7 @@ export class BootstrapTableFolderEntry {
     type: FolderEntriesTypeEnum;
 
     processFolderEntryUrl(entry: FolderEntries, latestDatasetVersion?: DatasetVersion,
-                          full_datasetVersion?: DatasetVersion) {
+        full_datasetVersion?: DatasetVersion) {
         let processedUrl = null;
         if (entry.type === FolderEntriesTypeEnum.Folder) {
             processedUrl = relativePath("folder/" + entry.id);
@@ -470,18 +470,18 @@ export class BootstrapTableSearchEntry {
 
 // IMPORTANT: Need to sync with backend for each changes
 export enum InitialFileType {
-    NumericMatrixCSV = <any> "NumericMatrixCSV",
-    NumericMatrixTSV = <any> "NumericMatrixTSV",
-    TableCSV = <any> "TableCSV",
-    TableTSV = <any> "TableTSV",
-    GCT = <any> "GCT",
-    Raw = <any> "Raw"
+    NumericMatrixCSV = <any>"NumericMatrixCSV",
+    NumericMatrixTSV = <any>"NumericMatrixTSV",
+    TableCSV = <any>"TableCSV",
+    TableTSV = <any>"TableTSV",
+    GCT = <any>"GCT",
+    Raw = <any>"Raw"
 }
 
 export enum DataFileType {
-    Raw = <any> "Raw",
-    HDF5 = <any> "HDF5",
-    Columnar = <any> "Columnar"
+    Raw = <any>"Raw",
+    HDF5 = <any>"HDF5",
+    Columnar = <any>"Columnar"
 }
 
 export interface DatafileUrl {
@@ -495,11 +495,11 @@ export interface DatafileUrl {
 }
 
 export enum ConversionStatusEnum {
-    Pending = <any> "Conversion pending",
-    Downloading = <any> "Downloading from S3",
-    Running = <any> "Running conversion",
-    Uploading = <any> "Uploading converted file to S3",
-    Completed = <any> "Completed successfully"
+    Pending = <any>"Conversion pending",
+    Downloading = <any>"Downloading from S3",
+    Running = <any>"Running conversion",
+    Uploading = <any>"Uploading converted file to S3",
+    Completed = <any>"Completed successfully"
 }
 
 export class AccessLog {

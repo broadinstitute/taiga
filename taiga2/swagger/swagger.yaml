@@ -236,7 +236,7 @@ paths:
               accessKeyId:
                 type: string
               expiration:
-                type: number
+                type: string
               secretAccessKey:
                 type: string
               sessionToken:
@@ -337,31 +337,7 @@ paths:
         200:
           description: The data specific to a specific dataset
           schema:
-            title: Dataset
-            type: object
-            required:
-              - id
-              - name
-              - description
-              - permanames
-              - versions
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              permanames:
-                type: array
-                items:
-                  type: string
-              description:
-                type: string
-              versions:
-                type: array
-                items:
-                  "$ref": "#/definitions/DatasetVersionSummary"
-              acl:
-                "$ref": "#/definitions/Acl"
+            "$ref": "#/definitions/Dataset"
 
   /dataset/{datasetId}/{datasetVersionId}:
     get:
@@ -1233,6 +1209,7 @@ definitions:
         "$ref": "#/definitions/StatusEnum"
     
   Dataset:
+    title: Dataset
     type: object
     required:
       - id
@@ -1240,7 +1217,6 @@ definitions:
       - description
       - permanames
       - versions
-      - folders
     properties:
       id:
         type: string
@@ -1256,10 +1232,6 @@ definitions:
         type: array
         items:
           "$ref": "#/definitions/DatasetVersionSummary"
-      folders:
-        type: array
-        items:
-          "$ref": "#/definitions/NamedId"
       acl:
         "$ref": "#/definitions/Acl"
 
@@ -1319,7 +1291,9 @@ definitions:
                 type: string
             short_summary:
               description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
-              type: string
+              type: 
+                - string
+                - "null"
       provenance:
         "$ref": "#/definitions/Provenance"
       state:

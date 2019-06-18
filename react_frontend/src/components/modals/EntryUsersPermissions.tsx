@@ -1,13 +1,14 @@
 import * as React from "react";
+import * as PropTypes from "prop-types";
 import * as Modal from "react-modal";
-import {BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit} from "react-bootstrap-table";
+import { BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit } from "react-bootstrap-table";
 
-import {modalStyles} from "../Dialogs";
+import { modalStyles } from "../Dialogs";
 
-import {TaigaApi} from "../../models/api"
+import { TaigaApi } from "../../models/api"
 
-import {AccessLog} from "../../models/models";
-import {lastAccessFormatter} from "../../utilities/formats";
+import { AccessLog } from "../../models/models";
+import { lastAccessFormatter } from "../../utilities/formats";
 
 interface EntryUsersPermissionsProps {
     isVisible: boolean;
@@ -26,7 +27,7 @@ let tapi: TaigaApi = null;
 
 export class EntryUsersPermissions extends React.Component<EntryUsersPermissionsProps, EntryUsersPermissionsState> {
     static contextTypes = {
-        tapi: React.PropTypes.object
+        tapi: PropTypes.object
     };
 
     componentWillMount() {
@@ -41,7 +42,7 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
     }
 
     componentWillReceiveProps(nextProps: any, nextState: any) {
-        if(nextProps.entry_id != this.props.entry_id) {
+        if (nextProps.entry_id != this.props.entry_id) {
             this.doFetch();
         }
     }
@@ -60,7 +61,7 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
         })
     }
 
-    handleDeletedRow(rowKeys) {
+    handleDeletedRow(rowKeys: any) {
         let state_accessLogs = this.state.accessLogs;
         let accessLogsToRemove = state_accessLogs.filter((accessLog) => {
             // TODO: Optimize this to not loop through the accessLogs array for each item
@@ -78,17 +79,17 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
     }
 
     render() {
-        const check_mode: SelectRowMode = 'checkbox';
+        const check_mode: any = 'checkbox';
         const selectRowProp = {
             mode: check_mode
         };
 
         const options = {
-            afterDeleteRow: (rowKeys) => { this.handleDeletedRow(rowKeys) }
+            afterDeleteRow: (rowKeys : any) => { this.handleDeletedRow(rowKeys) }
         };
 
         return <Modal
-            style={ modalStyles }
+            style={modalStyles}
             closeTimeoutMS={150}
             isOpen={this.props.isVisible}
             onRequestClose={this.props.cancel}
@@ -99,22 +100,22 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
                 </div>
                 <div className="modal-body">
                     <BootstrapTable
-                        data={ this.state.accessLogs }
+                        data={this.state.accessLogs}
                         search
-                        selectRow={ selectRowProp }
+                        selectRow={selectRowProp}
                         deleteRow
-                        options={ options }>
+                        options={options}>
                         <TableHeaderColumn dataField='user_id' isKey hidden>User Id</TableHeaderColumn>
                         <TableHeaderColumn dataField='user_name'>User Name</TableHeaderColumn>
                         <TableHeaderColumn
                             dataField="last_access"
-                            dataFormat={ lastAccessFormatter }>
-                                Last Access
+                            dataFormat={lastAccessFormatter}>
+                            Last Access
                         </TableHeaderColumn>
                     </BootstrapTable>
                 </div>
                 <div className="modal-footer">
-                    <button type="button" className="btn btn-default" onClick={ this.props.cancel }>Close</button>
+                    <button type="button" className="btn btn-default" onClick={this.props.cancel}>Close</button>
                 </div>
             </div>
         </Modal>

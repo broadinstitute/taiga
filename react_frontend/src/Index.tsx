@@ -1,23 +1,24 @@
 import * as React from "react";
+import * as PropTypes from "prop-types";
 import * as ReactDOM from "react-dom";
 
 import { RouteProps, Router, Route, Link, IndexRoute, browserHistory } from "react-router";
 
-import {FolderView} from "./components/FolderView";
-import {DatasetView} from "./components/DatasetView";
-import {SearchView} from "./components/SearchView";
+import { FolderView } from "./components/FolderView";
+import { DatasetView } from "./components/DatasetView";
+import { SearchView } from "./components/SearchView";
 
-import {TaigaApi} from "./models/api";
-import {User} from "./models/models";
+import { TaigaApi } from "./models/api";
+import { User } from "./models/models";
 
-import {Token} from "./components/Token";
-import {RecentlyViewed} from "./components/RecentlyViewed";
+import { Token } from "./components/Token";
+import { RecentlyViewed } from "./components/RecentlyViewed";
 
-import {relativePath} from "./utilities/route";
-import {isNullOrUndefined} from "util";
-import {Provenance} from "./components/Provenance";
-import {FormControl, Overlay, Popover, Tooltip, OverlayTrigger} from "react-bootstrap";
-import {SHA} from "./version"
+import { relativePath } from "./utilities/route";
+import { isNullOrUndefined } from "util";
+import { Provenance } from "./components/Provenance";
+import { FormControl, Overlay, Popover, Tooltip, OverlayTrigger } from "react-bootstrap";
+import { SHA } from "./version"
 
 interface AppProps {
     route?: any;
@@ -34,8 +35,8 @@ const tapi = new TaigaApi(relativePath("api"));
 
 class App extends React.Component<AppProps, AppState> {
     static childContextTypes = {
-        tapi: React.PropTypes.object,
-        currentUser: React.PropTypes.string
+        tapi: PropTypes.object,
+        currentUser: PropTypes.string
     };
 
     constructor(props: any) {
@@ -64,14 +65,14 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     // TODO: Create a component for jumpTo instead
-    jumpToHandleChange(e) {
+    jumpToHandleChange(e: any) {
         // if e is enter, then fetch result and change page
         this.setState({
             jumpToValue: e.target.value
         });
     }
 
-    jumpToKeyPress(e) {
+    jumpToKeyPress(e: any) {
         if (e.nativeEvent.key === "Enter") {
             let escaped_entry = e.target.value.replace(/\//g, "%2F");
             tapi.get_dataset_version_id(escaped_entry).then((dataset_version_id) => {
@@ -90,15 +91,15 @@ class App extends React.Component<AppProps, AppState> {
 
                 // Indication of how to use it
                 error_message.push(<p>Usage:
-                    <br/>   - dataset_permaname
-                    <br/>   - dataset_permaname.version
-                    <br/>   - dataset_permaname/version
-                    <br/>
-                    <br/>   - dataset_id
-                    <br/>   - dataset_id.version
-                    <br/>   - dataset_id/version
-                    <br/>
-                    <br/>   - dataset_version_id
+                    <br />   - dataset_permaname
+                    <br />   - dataset_permaname.version
+                    <br />   - dataset_permaname/version
+                    <br />
+                    <br />   - dataset_id
+                    <br />   - dataset_id.version
+                    <br />   - dataset_id/version
+                    <br />
+                    <br />   - dataset_version_id
                 </p>);
                 // error_message += "</br>  - {dataset_id}.{version}";
 
@@ -106,7 +107,7 @@ class App extends React.Component<AppProps, AppState> {
                 this.setState({
                     show: true,
                     message: error_message
-                });
+                } as any);
             });
         }
     }
@@ -118,7 +119,7 @@ class App extends React.Component<AppProps, AppState> {
                 className="headerTitle">Trash</Link>
         );
 
-        const tooltip =(
+        const tooltip = (
             <Tooltip placement="right" className="in">
                 Hi
             </Tooltip>
@@ -128,7 +129,7 @@ class App extends React.Component<AppProps, AppState> {
             <div id="main_react">
                 <div id="header">
                     <div className="top-page-menu">
-                        <img id="taiga_logo"/>
+                        <img id="taiga_logo" />
                         {/*TODO: Change the way we manage spaces*/}
                         <span className="headerSpan softwareAppName">Taiga</span>
                         <Link to={relativePath("")} className="headerTitle">Home</Link>
@@ -141,7 +142,8 @@ class App extends React.Component<AppProps, AppState> {
 
                         <FormControl
                             ref={(button) => {
-                                this.state.target = button;
+                                // FIXME: This is very wrong. State should never be updated like this
+                                (this.state as any).target = button;
                             }}
                             type="text"
                             value={this.state.jumpToValue}
@@ -152,12 +154,12 @@ class App extends React.Component<AppProps, AppState> {
                         />
 
                         <Overlay
-                          show={this.state.show}
-                          rootClose={true}
-                          onHide={() => this.setState({ show: false })}
-                          placement="bottom"
-                          container={this}
-                          target={() => ReactDOM.findDOMNode(this.state.target)}
+                            show={this.state.show}
+                            rootClose={true}
+                            onHide={() => this.setState({ show: false })}
+                            placement="bottom"
+                            container={this}
+                            target={() => ReactDOM.findDOMNode(this.state.target)}
                         >
                             <Popover>
                                 {this.state.message}
@@ -189,8 +191,8 @@ class App extends React.Component<AppProps, AppState> {
                     </div>
                     <div className="login-box pull-right bottom-page-text">
                         <a href="https://github.com/broadinstitute/taiga"
-                           target="_blank"
-                           className="headerTitle headerTitleMinor">SHA {SHA}</a>
+                            target="_blank"
+                            className="headerTitle headerTitleMinor">SHA {SHA}</a>
                     </div>
                 </footer>
             </div>
@@ -198,23 +200,26 @@ class App extends React.Component<AppProps, AppState> {
     }
 }
 
-const Home = React.createClass({
-    getInitialState() {
-        return {
-            user: null
-        };
-    },
+export class Home extends React.Component<any, any> {
+    static contextTypes = {
+        tapi: PropTypes.object
+    }
+
+    constructor(props: any) {
+        super(props);
+        this.state = { user: null };
+    }
 
     componentDidMount() {
         let tapi: TaigaApi = this.context.tapi;
 
         tapi.get_user().then(user => {
-                this.setState({user: user}, () => {
-                    browserHistory.push(relativePath("folder/" + this.state.user.home_folder_id));
-                });
-            }
+            this.setState({ user: user }, () => {
+                browserHistory.push(relativePath("folder/" + this.state.user.home_folder_id));
+            });
+        }
         );
-    },
+    }
 
     render() {
         if (isNullOrUndefined(this.state.user)) {
@@ -229,34 +234,32 @@ const Home = React.createClass({
             );
         }
     }
-});
+}
 
-Home.contextTypes = {
-    tapi: React.PropTypes.object
-};
 
-const ActivityView = React.createClass({
-    render() {
-        let rows: any = [];
-        return (
-            <table>
-                <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Who</th>
-                    <th>Change</th>
-                    <th>Comments</th>
-                </tr>
-                </thead>
-                <tbody>
-                {rows}
-                </tbody>
-            </table>
-        );
-    }
-});
 
-const ProvenanceView = React.createClass({
+// const ActivityView = React.createClass({
+//     render() {
+//         let rows: any = [];
+//         return (
+//             <table>
+//                 <thead>
+//                     <tr>
+//                         <th>Date</th>
+//                         <th>Who</th>
+//                         <th>Change</th>
+//                         <th>Comments</th>
+//                     </tr>
+//                 </thead>
+//                 <tbody>
+//                     {rows}
+//                 </tbody>
+//             </table>
+//         );
+//     }
+// });
+
+export class ProvenanceView extends React.Component<any, any> {
     render() {
         let rows: any = [];
         return (
@@ -265,39 +268,39 @@ const ProvenanceView = React.createClass({
                 <p>Method: ...</p>
                 <table>
                     <thead>
-                    <tr>
-                        <th>Label</th>
-                        <th>Dataset</th>
-                        <th>Version</th>
-                        <th>Filename</th>
-                    </tr>
+                        <tr>
+                            <th>Label</th>
+                            <th>Dataset</th>
+                            <th>Version</th>
+                            <th>Filename</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    {rows}
+                        {rows}
                     </tbody>
                 </table>
 
                 <h2>Derived from this</h2>
                 <table>
                     <thead>
-                    <tr>
-                        <th>Filenames</th>
-                        <th>Dataset</th>
-                        <th>Version</th>
-                    </tr>
+                        <tr>
+                            <th>Filenames</th>
+                            <th>Dataset</th>
+                            <th>Version</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    {rows}
+                        {rows}
                     </tbody>
                 </table>
 
             </div>
         );
     }
-});
+}
 
 
-const NoMatch = React.createClass({
+export class NoMatch extends React.Component<any, any> {
     render() {
         return (
             <div>
@@ -305,7 +308,7 @@ const NoMatch = React.createClass({
             </div>
         );
     }
-});
+}
 
 // TODO: let UserRoute: Component<UserRouteProps, ComponentState> = Route as any
 
@@ -314,17 +317,17 @@ tapi.get_user().then((user: User) => {
     ReactDOM.render((
         <Router history={browserHistory}>
             <Route path={relativePath("")} component={App} user={user}>
-                <IndexRoute component={Home}/>
-                <Route path="dataset/:datasetId" component={DatasetView as any}/>
-                <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any}/>
-                <Route path="dataset_version/:datasetVersionId" component={DatasetView as any}/>
-                <Route path="folder/:folderId" component={FolderView as any}/>
-                <Route path="search/:currentFolderId/:searchQuery" component={SearchView as any}/>
-                <Route path="token/" component={ Token as any }/>
-                <Route path="recentlyViewed/" component={ RecentlyViewed as any }/>
-                <Route path="provenance/:graphId" component={Provenance as any}/>
+                <IndexRoute component={Home} />
+                <Route path="dataset/:datasetId" component={DatasetView as any} />
+                <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any} />
+                <Route path="dataset_version/:datasetVersionId" component={DatasetView as any} />
+                <Route path="folder/:folderId" component={FolderView as any} />
+                <Route path="search/:currentFolderId/:searchQuery" component={SearchView as any} />
+                <Route path="token/" component={Token as any} />
+                <Route path="recentlyViewed/" component={RecentlyViewed as any} />
+                <Route path="provenance/:graphId" component={Provenance as any} />
             </Route>
-            <Route path="*" component={NoMatch}/>
+            <Route path="*" component={NoMatch} />
         </Router>
     ), document.getElementById("root"));
 });

@@ -1,33 +1,33 @@
 import * as React from "react";
-import {Link} from 'react-router';
+import * as PropTypes from "prop-types";
+import { Link } from 'react-router';
 import * as update from 'immutability-helper';
 
-import {LeftNav, MenuItem} from "./LeftNav";
+import { LeftNav, MenuItem } from "./LeftNav";
 import * as Folder from "../models/models";
-import {TaigaApi} from "../models/api";
+import { TaigaApi } from "../models/api";
 
 import * as Dialogs from "./Dialogs";
-import * as Upload from "./modals/Upload";
-import {EntryUsersPermissions} from "./modals/EntryUsersPermissions";
-import {NotFound} from "./NotFound";
-import {SearchInput} from "./Search";
+import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";
+import { NotFound } from "./NotFound";
+import { SearchInput } from "./Search";
 
-import {toLocalDateString} from "../utilities/formats";
-import {relativePath} from "../utilities/route";
-import {LoadingOverlay} from "../utilities/loading";
+import { toLocalDateString } from "../utilities/formats";
+import { relativePath } from "../utilities/route";
+import { LoadingOverlay } from "../utilities/loading";
 
-import {Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button} from "react-bootstrap";
-import {Grid, Row, Col} from "react-bootstrap";
-import {BootstrapTable, TableHeaderColumn, SelectRow, SelectRowMode, Options, SortOrder, CellEditClickMode, CellEdit} from "react-bootstrap-table";
-import {Dataset, Entry, FolderEntries, NamedId} from "../models/models";
-import {DatasetVersion} from "../models/models";
-import {isUndefined} from "util";
-import {DatasetFullDatasetVersions, BootstrapTableFolderEntry} from "../models/models";
+import { Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button } from "react-bootstrap";
+import { Grid, Row, Col } from "react-bootstrap";
+import { BootstrapTable, TableHeaderColumn, SelectRow, SelectRowMode, Options, SortOrder, CellEditClickMode, CellEdit } from "react-bootstrap-table";
+import { Dataset, Entry, FolderEntries, NamedId } from "../models/models";
+import { DatasetVersion } from "../models/models";
+import { isUndefined } from "util";
+import { DatasetFullDatasetVersions, BootstrapTableFolderEntry } from "../models/models";
 // import int = DataPipeline.int;
-import {debug} from "util";
-import {User} from "../models/models";
-import {AccessLog} from "../models/models";
-import {ShareEntries} from "./Dialogs";
+import { debug } from "util";
+import { User } from "../models/models";
+import { AccessLog } from "../models/models";
+import { ShareEntries } from "./Dialogs";
 
 export interface FolderViewProps {
     params: any;
@@ -37,10 +37,13 @@ const tableEntriesStyle: any = {
     margin: "initial"
 };
 
+let _update: any = update;
+
+
 export interface FolderViewState {
     folder?: Folder.Folder;
-    datasetLastDatasetVersion?: {[dataset_id: string]: Folder.DatasetVersion}
-    datasetsVersion?: {[datasetVersion_id: string]: Folder.DatasetVersion}
+    datasetLastDatasetVersion?: { [dataset_id: string]: Folder.DatasetVersion }
+    datasetsVersion?: { [datasetVersion_id: string]: Folder.DatasetVersion }
 
     showEditName?: boolean;
     showEditDescription?: boolean;
@@ -86,8 +89,8 @@ let currentUser: string = null;
 
 export class FolderView extends React.Component<FolderViewProps, FolderViewState> {
     static contextTypes = {
-        tapi: React.PropTypes.object,
-        currentUser: React.PropTypes.string,
+        tapi: PropTypes.object,
+        currentUser: PropTypes.string,
     };
 
     constructor(props: any) {
@@ -114,7 +117,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         tapi = (this.context as any).tapi;
         currentUser = (this.context as any).currentUser;
         this.setState({
-           searchQuery: ""
+            searchQuery: ""
         });
 
         this.doFetch().then(() => {
@@ -122,7 +125,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         });
 
         tapi.get_user().then(user => {
-            this.setState({currentUser: user});
+            this.setState({ currentUser: user });
         });
     }
 
@@ -131,15 +134,15 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             loading: true
         });
         // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
-        let datasetsLatestDv: {[dataset_id: string]: Folder.DatasetVersion} = {};
-        let datasetsVersion: {[datasetVersion_id: string]: Folder.DatasetVersion} = {};
+        let datasetsLatestDv: { [dataset_id: string]: Folder.DatasetVersion } = {};
+        let datasetsVersion: { [datasetVersion_id: string]: Folder.DatasetVersion } = {};
         let _folder: Folder.Folder = null;
 
         return tapi.get_folder(this.props.params.folderId).then(folder => {
-                _folder = new Folder.Folder(folder);
-                this.setState({sharingEntries: [_folder]});
-                return folder.entries;
-            }
+            _folder = new Folder.Folder(folder);
+            this.setState({ sharingEntries: [_folder] });
+            return folder.entries;
+        }
         ).then((entries: Array<Folder.FolderEntries>) => {
             // We want to ask the server a bulk of the datasets and the datasetVersions
             let datasetIds = entries.filter((entry: Folder.FolderEntries) => {
@@ -237,24 +240,24 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             actionDescription = "Move the selected file(s) into the chosen folder";
         }
         else if (actionName === "link") {
-            this.setState({initFolderId: ""});
+            this.setState({ initFolderId: "" });
             actionDescription = "Add the selected file(s) into the chosen folder";
         }
         else if (actionName === "linkToHome") {
-            this.setState({initFolderId: this.state.currentUser.home_folder_id});
+            this.setState({ initFolderId: this.state.currentUser.home_folder_id });
             actionDescription = "Add the selected file(s) into your Home folder";
         }
         else if (actionName === "currentFolderLinkToHome") {
-            this.setState({initFolderId: this.state.currentUser.home_folder_id});
+            this.setState({ initFolderId: this.state.currentUser.home_folder_id });
             actionDescription = "Add the current folder into your Home folder";
         }
         else if (actionName === "currentFolderLink") {
-            this.setState({initFolderId: ""});
+            this.setState({ initFolderId: "" });
             actionDescription = "Add the current folder into another folder";
         }
 
         this.setState({
-            callbackIntoFolderAction: (folderId) => this.actionIntoFolder(folderId),
+            callbackIntoFolderAction: (folderId: string) => this.actionIntoFolder(folderId),
             actionName: actionName,
             inputFolderIdActionDescription: actionDescription,
             showInputFolderId: true,
@@ -332,19 +335,19 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     // BootstrapTable Entries
-    nameUrlFormatter(cell, row: BootstrapTableFolderEntry) {
+    nameUrlFormatter(cell: any, row: BootstrapTableFolderEntry) {
         // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
         let glyphicon = null;
         if (row.type === Folder.FolderEntriesTypeEnum.Folder) {
-            glyphicon = <Glyphicon glyph="glyphicon glyphicon-folder-close"/>
+            glyphicon = <Glyphicon glyph="glyphicon glyphicon-folder-close" />
         }
         else if (row.type === Folder.FolderEntriesTypeEnum.Dataset) {
-            glyphicon = <Glyphicon glyph="glyphicon glyphicon-inbox"/>
+            glyphicon = <Glyphicon glyph="glyphicon glyphicon-inbox" />
         }
         else if (row.type === Folder.FolderEntriesTypeEnum.DatasetVersion) {
-            glyphicon = <Glyphicon glyph="glyphicon glyphicon-file"/>
+            glyphicon = <Glyphicon glyph="glyphicon glyphicon-file" />
         } else if (row.type === Folder.FolderEntriesTypeEnum.VirtualDataset) {
-            glyphicon = <Glyphicon glyph="glyphicon glyphicon-flash"/>
+            glyphicon = <Glyphicon glyph="glyphicon glyphicon-flash" />
         } else {
             console.log("unknown type:", row.type)
         }
@@ -373,21 +376,22 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         return toLocalDateString(cell.toDateString());
     }
 
-    onRowSelect(row: BootstrapTableFolderEntry, isSelected: Boolean, e) {
+    onRowSelect(row: BootstrapTableFolderEntry, isSelected: Boolean, e: any) {
         let select_key = row.id;
         const original_selection: any = this.state.selection;
 
         let updated_selection: Array<string>;
 
+
         let index = original_selection.indexOf(select_key);
         if (index !== -1) {
-            updated_selection = update(original_selection, {$splice: [[index, 1]]});
+            updated_selection = _update(original_selection, { $splice: [[index, 1]] });
         }
         else {
-            updated_selection = update(original_selection, {$push: [select_key]});
+            updated_selection = _update(original_selection, { $push: [select_key] });
         }
 
-        this.setState({selection: updated_selection});
+        this.setState({ selection: updated_selection });
     }
 
     onAllRowsSelect(isSelected: Boolean, rows: Array<BootstrapTableFolderEntry>) {
@@ -401,23 +405,23 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             index = updated_selection.indexOf(select_key);
 
             if (index != -1) {
-                updated_selection = update(updated_selection, {$splice: [[index, 1]]});
+                updated_selection = _update(updated_selection, { $splice: [[index, 1]] });
             }
             else {
-                updated_selection = update(updated_selection, {$push: [select_key]});
+                updated_selection = _update(updated_selection, { $push: [select_key] });
             }
         });
 
-        this.setState({selection: updated_selection});
+        this.setState({ selection: updated_selection });
     }
 
     wrap_parent_link(folder_named_id: NamedId, index: number, total_length: number) {
         return <span key={index}>
-                    <Link to={relativePath("folder/"+folder_named_id.id)}>{folder_named_id.name}</Link>
+            <Link to={relativePath("folder/" + folder_named_id.id)}>{folder_named_id.name}</Link>
             {total_length != index + 1 &&
-            <span>, </span>
+                <span>, </span>
             }
-                </span>
+        </span>
     }
 
     get_parent_links(parents: Array<NamedId>, public_only: Boolean, is_owner: Boolean) {
@@ -435,12 +439,12 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     // Search
-    executeSearch(searchQuery) {
+    executeSearch(searchQuery: any) {
         let url = relativePath("search/" + this.state.folder.id + "/" + searchQuery);
         window.location.href = url;
     }
 
-    searchKeyPress(event, searchQuery) {
+    searchKeyPress(event: any, searchQuery: any) {
         if (event.key === "Enter") {
             this.executeSearch(searchQuery);
         }
@@ -448,7 +452,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     // region Sharing
 
-    loadSelectionAndShare(){
+    loadSelectionAndShare() {
         // Process the selection into Folder | FolderEntries
         if (this.state.selection.length === 0) {
             this.setState({
@@ -456,9 +460,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             });
         }
         else {
-            let selectedEntries = this.state.selection.map((entryID) => {
+            let selectedEntries = this.state.selection.map((entryID: any) => {
                 return this.state.folder.entries.find((folderEntry) => {
-                   return folderEntry.id === entryID;
+                    return folderEntry.id === entryID;
                 });
             });
             this.setState({
@@ -467,7 +471,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
 
         // Show share dialog
-        this.setState({showShareFolder: true});
+        this.setState({ showShareFolder: true });
     }
 
     // endregion
@@ -479,21 +483,21 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         if (!this.state) {
             return <div>
-                <LeftNav items={[]}/>
-                <div id="main-content"/>
+                <LeftNav items={[]} />
+                <div id="main-content" />
             </div>;
         } else if (this.state.error && this.state.error.toUpperCase() === "NOT FOUND".toUpperCase()) {
             let message = "The folder " + this.props.params.folderId + " does not exist. Please check this id " +
                 "is correct. We are also available via the feedback button.";
             return <div>
-                <LeftNav items={[]}/>
+                <LeftNav items={[]} />
                 <div id="main-content">
-                    <NotFound message={message}/>
+                    <NotFound message={message} />
                 </div>
             </div>
         } else if (this.state.error) {
             return <div>
-                <LeftNav items={[]}/>
+                <LeftNav items={[]} />
                 <div id="main-content">
                     An error occurred: {this.state.error}
                 </div>
@@ -522,9 +526,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 let add_folder_items = [];
 
                 navItems.push({
-                        label: "Share folder", action: () => {
-                            this.loadSelectionAndShare();
-                        }
+                    label: "Share folder", action: () => {
+                        this.loadSelectionAndShare();
+                    }
                 });
 
                 // If the user can edit, then it has access to the actions
@@ -532,29 +536,29 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                     add_folder_items.push(
                         {
                             label: "Create a subfolder", action: () => {
-                                this.setState({showCreateFolder: true});
+                                this.setState({ showCreateFolder: true });
                             }
                         },
                         {
                             label: "Upload dataset", action: () => {
-                                this.setState({showUploadDataset: true});
+                                this.setState({ showUploadDataset: true });
                             }
                         }
                     );
                     navItems.push({
                         label: "Edit name", action: () => {
-                            this.setState({showEditName: true})
+                            this.setState({ showEditName: true })
                         }
                     });
                     navItems.push(
                         {
                             label: "Edit description", action: () => {
-                            this.setState({showEditDescription: true})
-                        }
+                                this.setState({ showEditDescription: true })
+                            }
                         });
                     navItems.push({
                         label: "Edit permissions", action: () => {
-                            this.setState({showEditPermissions: true})
+                            this.setState({ showEditPermissions: true })
                         }
                     });
                 }
@@ -605,8 +609,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
 
         // Bootstrap Table configuration
-        const check_mode: SelectRowMode = 'checkbox';
-        const selectRowProp: SelectRow = {
+        const check_mode: any = 'checkbox';
+        const selectRowProp: any = {
             mode: check_mode,
             onSelect: (row: any, isSelected: Boolean, e: any) => {
                 this.onRowSelect(row, isSelected, e);
@@ -618,8 +622,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             }
         };
 
-        const desc_sortOrder: SortOrder = 'desc';
-        const options: Options = {
+        const desc_sortOrder: any = 'desc';
+        const options: any = {
             noDataText: 'Nothing created yet',
             defaultSortName: 'creation_date',  // default sort column name
             defaultSortOrder: desc_sortOrder  // default sort order
@@ -627,111 +631,112 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
         return (
             <div>
-                <LeftNav items={navItems}/>
+                <LeftNav items={navItems} />
                 <div id="main-content">
-                    { folder && <span>
+                    {folder && <span>
                         <Dialogs.EditName isVisible={this.state.showEditName}
-                                          initialValue={ this.state.folder.name }
-                                          cancel={ () => { this.setState({showEditName: false})} }
-                                          save={ (name:string) => {
-                                this.setState({showEditName: false});
+                            initialValue={this.state.folder.name}
+                            cancel={() => { this.setState({ showEditName: false }) }}
+                            save={(name: string) => {
+                                this.setState({ showEditName: false });
                                 this.updateName(name);
-                        } }/>
+                            }} />
 
                         <Dialogs.EditDescription
-                            initialValue={ this.state.folder.description }
+                            initialValue={this.state.folder.description}
                             isVisible={this.state.showEditDescription}
-                            cancel={ () => { this.setState({showEditDescription: false})} }
-                            save={ (description:string) => {
-                                this.setState({showEditDescription: false});
+                            cancel={() => { this.setState({ showEditDescription: false }) }}
+                            save={(description: string) => {
+                                this.setState({ showEditDescription: false });
                                 this.updateDescription(description);
-                            }}/>
+                            }} />
 
-                        <Upload.UploadDataset
+                        {this.state.showUploadDataset && <div>Upload goes here</div>}
+                        {/* <Upload.UploadDataset
                             isVisible={this.state.showUploadDataset}
-                            cancel={ () => { this.setState({showUploadDataset: false}) } }
+                            cancel={() => { this.setState({ showUploadDataset: false }) }}
 
-                            onFileUploadedAndConverted={ (sid: string, name: string , description: string) =>
-                                this.filesUploadedAndConverted(sid, name, description) }
+                            onFileUploadedAndConverted={(sid: string, name: string, description: string) =>
+                                this.filesUploadedAndConverted(sid, name, description)}
                             title="New Dataset"
-                        />
+                        /> */}
 
                         <Dialogs.CreateFolder
                             isVisible={this.state.showCreateFolder}
-                            cancel={ () => { this.setState({showCreateFolder: false}) }}
-                            save={ (name, description) => {
-                                this.setState({showCreateFolder: false});
+                            cancel={() => { this.setState({ showCreateFolder: false }) }}
+                            save={(name, description) => {
+                                this.setState({ showCreateFolder: false });
                                 this.createFolder(name, description);
                             }}
                         />
 
                         <Dialogs.InputFolderId
-                            actionDescription={ this.state.inputFolderIdActionDescription }
-                            isVisible={ this.state.showInputFolderId }
-                            cancel={ () => { this.setState({showInputFolderId: false}) }}
-                            save={ (folderId) => { this.state.callbackIntoFolderAction(folderId) }}
-                            initFolderId={ this.state.initFolderId }
+                            actionDescription={this.state.inputFolderIdActionDescription}
+                            isVisible={this.state.showInputFolderId}
+                            cancel={() => { this.setState({ showInputFolderId: false }) }}
+                            save={(folderId) => { this.state.callbackIntoFolderAction(folderId) }}
+                            initFolderId={this.state.initFolderId}
                         />
 
                         <EntryUsersPermissions
-                            isVisible={ this.state.showEditPermissions }
-                            cancel={ () => { this.setState({showEditPermissions: false})}}
-                            entry_id={ this.state.folder.id }
-                            handleDeletedRow={ (arrayAccessLogs) => {return this.removeAccessLogs(arrayAccessLogs)} }
+                            isVisible={this.state.showEditPermissions}
+                            cancel={() => { this.setState({ showEditPermissions: false }) }}
+                            entry_id={this.state.folder.id}
+                            handleDeletedRow={(arrayAccessLogs) => { return this.removeAccessLogs(arrayAccessLogs) }}
                         />
 
                         <Dialogs.ShareEntries
-                            isVisible={ this.state.showShareFolder }
-                            cancel={ () => {this.setState({showShareFolder: false});}}
-                            entries={ this.state.sharingEntries }
+                            isVisible={this.state.showShareFolder}
+                            cancel={() => { this.setState({ showShareFolder: false }); }}
+                            entries={this.state.sharingEntries}
                         />
 
                         <h1>{folder.name}</h1>
 
-                        <Conditional show={ parent_links.length > 0 }>
+                        <Conditional show={parent_links.length > 0}>
                             <p>Parents: {parent_links}</p>
                         </Conditional>
 
                         <Grid fluid={true} style={{
                             padding: "0px 15px 0px 0px"
                         }}>
-                          <Row className="show-grid">
-                            <Col md={8}>
-                              { Dialogs.renderDescription(this.state.folder.description) }
-                            </Col>
-                            <Col md={4}>
-                                <SearchInput onKeyPress={(event, searchQuery) => this.searchKeyPress(event, searchQuery)}
-                                            onClick={(searchQuery) => this.executeSearch(searchQuery)}/>
-                                <br/>
-                            </Col>
-                          </Row>
+                            <Row className="show-grid">
+                                <Col md={8}>
+                                    {Dialogs.renderDescription(this.state.folder.description)}
+                                </Col>
+                                <Col md={4}>
+                                    <SearchInput onKeyPress={(event, searchQuery) => this.searchKeyPress(event, searchQuery)}
+                                        onClick={(searchQuery) => this.executeSearch(searchQuery)} />
+                                    <br />
+                                </Col>
+                            </Row>
                         </Grid>
 
-                        <BootstrapTable data={ folderEntriesTableFormatted }
-                                        bordered={ false }
-                                        tableStyle={ tableEntriesStyle }
-                                        selectRow={ selectRowProp }
-                                        ref={(ref) => { this.bootstrapTable = ref }}
-                                        options={ options }
-                                        striped hover
+                        <BootstrapTable data={folderEntriesTableFormatted}
+                            bordered={false}
+                            tableStyle={tableEntriesStyle}
+                            selectRow={selectRowProp}
+                            ref={(ref: any) => { this.bootstrapTable = ref }}
+                            options={options}
+                            striped hover
                         >
                             <TableHeaderColumn dataField='id' isKey hidden>ID</TableHeaderColumn>
                             <TableHeaderColumn dataField='name' dataSort
-                                               dataFormat={ this.nameUrlFormatter }>Name</TableHeaderColumn>
+                                dataFormat={this.nameUrlFormatter}>Name</TableHeaderColumn>
                             <TableHeaderColumn dataField='creation_date' dataSort
-                                               dataFormat={ this.dataFormatter }
-                                               width="100">Date</TableHeaderColumn>
+                                dataFormat={this.dataFormatter}
+                                width="100">Date</TableHeaderColumn>
                             <TableHeaderColumn dataField='type'
-                                               dataFormat={ this.typeFormatter }
-                                               dataSort
-                                               width="100">Type</TableHeaderColumn>
+                                dataFormat={this.typeFormatter}
+                                dataSort
+                                width="100">Type</TableHeaderColumn>
                             <TableHeaderColumn dataField='creator_name'
-                                               dataSort
-                                               width="150">Creator</TableHeaderColumn>
+                                dataSort
+                                width="150">Creator</TableHeaderColumn>
                         </BootstrapTable>
 
                         {this.state.loading && <LoadingOverlay></LoadingOverlay>}
-                    </span> }
+                    </span>}
                 </div>
             </div>
         )

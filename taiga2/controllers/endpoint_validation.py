@@ -4,6 +4,9 @@ import jsonpointer
 from functools import wraps
 import os
 import json
+import logging
+
+log = logging.getLogger(__name__)
 
 CACHED_SWAGGER_SPEC = None
 
@@ -77,7 +80,11 @@ def validate(endpoint_func):
         response_schema = get_response_schema(endpoint)
         #assert response_schema is not None, "No response schema for {}".format(endpoint_func.__name__)
         if response_schema is not None:
-            jsonschema.validate(instance=parsed_result, schema=response_schema)
+            try:
+                jsonschema.validate(instance=parsed_result, schema=response_schema)
+            except: 
+                log.error("Got error trying to validate {}".format(endpoint_func.__name__))
+                raise
         
         return result
     return execute_with_validation

@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "outDir": "../taiga2/static/",
+        "sourceMap": true,
+        "noImplicitAny": true,
+        "module": "commonjs",
+        "target": "es6",
+        "lib": [
+            "es6",
+            "es2017",
+            "dom"
+        ],
+        "jsx": "react"
+    },
+    "files": [
+        "./src/index.tsx",
+        "./src/@types/other_modules.d.ts"
+    ]
+}

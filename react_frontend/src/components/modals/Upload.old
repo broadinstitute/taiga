@@ -90,6 +90,12 @@ let tapi: TaigaApi = null;
 
 let credentials: S3Credentials = null;
 
+
+
+export class UploadDialog extends React.Component<any, any> {
+
+}
+
 export class UploadDataset extends React.Component<DropzoneProps, DropzoneState> {
     static contextTypes = {
         tapi: React.PropTypes.object

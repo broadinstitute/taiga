@@ -1,16 +1,17 @@
 import * as React from "react";
-import {Link} from 'react-router';
+import * as PropTypes from "prop-types";
+import { Link } from 'react-router';
 
 import { Grid, Row } from 'react-bootstrap';
 
-import {BootstrapTable, TableHeaderColumn, SortOrder} from "react-bootstrap-table";
+import { BootstrapTable, TableHeaderColumn, SortOrder } from "react-bootstrap-table";
 
-import {LeftNav} from "./LeftNav"
+import { LeftNav } from "./LeftNav"
 
-import {TaigaApi} from "../models/api"
-import {AccessLog} from "../models/models";
+import { TaigaApi } from "../models/api"
+import { AccessLog } from "../models/models";
 
-import {lastAccessFormatter} from "../utilities/formats";
+import { lastAccessFormatter } from "../utilities/formats";
 
 
 interface RecentlyViewedProps {
@@ -25,7 +26,7 @@ let tapi: TaigaApi = null;
 
 export class RecentlyViewed extends React.Component<RecentlyViewedProps, RecentlyViewedState> {
     static contextTypes = {
-        tapi: React.PropTypes.object
+        tapi: PropTypes.object
     };
 
     constructor(props: any) {
@@ -56,7 +57,7 @@ export class RecentlyViewed extends React.Component<RecentlyViewedProps, Recentl
     }
 
     datasetFormatter(cell: any, row: any) {
-        return <Link to={row.url}>{ cell }</Link>
+        return <Link to={row.url}>{cell}</Link>
     }
 
 
@@ -68,7 +69,7 @@ export class RecentlyViewed extends React.Component<RecentlyViewedProps, Recentl
 
         const options = {
             defaultSortName: 'last_access',
-            defaultSortOrder: 'desc' as SortOrder,
+            defaultSortOrder: 'desc' as any,
             sizePerPageList: [
                 25, 30, 50, 100
             ],
@@ -80,20 +81,20 @@ export class RecentlyViewed extends React.Component<RecentlyViewedProps, Recentl
                 <BootstrapTable data={this.state.accessLogs} striped hover options={options} pagination>
                     <TableHeaderColumn isKey dataField='entry_id' hidden>Entry Id</TableHeaderColumn>
                     <TableHeaderColumn dataField='entry_name'
-                                       dataFormat={ this.datasetFormatter }
-                                       headerAlign='center'
-                                       dataSort>Entry</TableHeaderColumn>
+                        dataFormat={this.datasetFormatter}
+                        headerAlign='center'
+                        dataSort>Entry</TableHeaderColumn>
                     <TableHeaderColumn dataField='last_access'
-                                       headerAlign="center"
-                                       dataAlign='center'
-                                       dataFormat={ lastAccessFormatter }
-                                       dataSort>Last access</TableHeaderColumn>
+                        headerAlign="center"
+                        dataAlign='center'
+                        dataFormat={lastAccessFormatter}
+                        dataSort>Last access</TableHeaderColumn>
                 </BootstrapTable>
             );
         }
 
         return <div>
-            <LeftNav items={navItems}/>
+            <LeftNav items={navItems} />
 
             <div id="main-content">
                 <Grid>

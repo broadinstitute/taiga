@@ -90,8 +90,6 @@ def drop_and_create_db():
 
     temp_data_datafiles = copy.copy(data_datafiles)
 
-    models_controller.create_virtual_dataset("virtual", "Desc", [models_controller.DataFileAlias("alias", data_datafiles[0].id)], folder_id=home_folder_admin.id)
-
     # Create A1 Data/A2 Data/A3 Data inside Folder A
     for i in range(1, 4):
         name = "".join(['A', str(i), " DatasetVersion"])
@@ -103,7 +101,7 @@ def drop_and_create_db():
                 loop_datafile = models_controller.add_s3_datafile(name=datafile.name + 'v' + str(i),
                                                                s3_bucket=bucket_name,
                                                                s3_key=models_controller.generate_convert_key(),
-                                                               type=datafile.type,
+                                                               type=datafile.format,
                                                                short_summary="short summary",
                                                                long_summary="long_summary")
                 loop_datafiles.append(loop_datafile)
