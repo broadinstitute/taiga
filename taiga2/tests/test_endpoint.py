@@ -29,12 +29,8 @@ def new_upload_session():
     return models_controller.get_upload_session(new_upload_session_id)
 
 
-@pytest.fixture
-def new_upload_session_file(session: SessionBase, new_upload_session):
-    bucket = 'test_bucket'
-    format = 'Raw'
-    file_key = 'filekey'
-    file_name = file_key
+def _add_s3_file_to_upload_session(sid, bucket='test_bucket', format='Raw', file_name = 'filekey'):
+    key = file_name
 
     uploadMetadata = {
         'filename': file_name,
@@ -42,24 +38,49 @@ def new_upload_session_file(session: SessionBase, new_upload_session):
         's3Upload': {
             'bucket': bucket,
             'format': format,
-            'key': file_key
+            'key': key
          }
     }
 
-    sid = new_upload_session.id
+    endpoint.create_upload_session_file(uploadMetadata=uploadMetadata,
+                                        sid=sid)
+
+    _new_upload_session_files = models_controller.get_upload_session_files_from_session(sid)
+
+    return _new_upload_session_files[0]
+
+def _add_virtual_file_to_upload_session(sid, name="name", taiga_id=None, datafile_id = None):
+    assert taiga_id is not None or datafile_id is not None
+
+    if taiga_id is None:
+        datafile = DataFile.query.get(datafile_id)
+        assert datafile is not None
+        taiga_id = "{}.{}/{}".format(datafile.dataset_version.dataset.permaname, datafile.dataset_version.version, datafile.name)
+
+    uploadMetadata = {
+        'filename': name,
+        'filetype': 'virtual',
+        'existingTaigaId': taiga_id
+    }
 
     endpoint.create_upload_session_file(uploadMetadata=uploadMetadata,
                                         sid=sid)
+
     _new_upload_session_files = models_controller.get_upload_session_files_from_session(sid)
+
     return _new_upload_session_files[0]
 
+
+@pytest.fixture
+def new_upload_session_file(session: SessionBase, new_upload_session):
+    return _add_s3_file_to_upload_session(new_upload_session.id)
 
 @pytest.fixture
 def new_datafile():
     # TODO: These tests should be using the endpoint and not the model
     new_datafile_name = "New Datafile"
 
-    _new_datafile = models_controller.add_datafile(name=new_datafile_name,
+    _new_datafile = models_controller.add_s3_datafile(name=new_datafile_name,
                                                    s3_bucket="broadtaiga2prototype",
                                                    s3_key=models_controller.generate_convert_key(),
                                                    type=S3DataFile.DataFileFormat.Raw,
@@ -135,15 +156,16 @@ def add_version(dataset, new_upload_session_file) -> DatasetVersion:
     latest_dataset_version = dataset.dataset_versions[0]
 
     # We fetch the datafiles from the first dataset_version
-    datafile_ids = [datafile.id
-                    for datafile in latest_dataset_version.datafiles]
+    assert len(latest_dataset_version.datafiles) == 1
+    datafile = latest_dataset_version.datafiles[0]
 
     datasetVersionMetadata = {
         'sessionId': session_id,
         'datasetId': dataset.id,
-        'newDescription': new_description,
-        'datafileIds': datafile_ids
+        'newDescription': new_description
     }
+
+    _add_virtual_file_to_upload_session(session_id, datafile.name, datafile_id=datafile.id)
 
     response_json_create_new_dataset_version_id = endpoint.create_new_dataset_version(datasetVersionMetadata)
     new_dataset_version_id = get_data_from_flask_jsonify(response_json_create_new_dataset_version_id)
@@ -171,21 +193,24 @@ def test_create_new_upload_session(session: SessionBase):
 
 def test_create_upload_session_file(app, session: SessionBase, new_upload_session):
     bucket = 'test_bucket'
-    filetype = 'Raw'
+    format = 'Raw'
     file_key = 'filekey'
     file_name = file_key
 
-    S3UploadedFileMetadata = {
-        'bucket': bucket,
-        'filetype': filetype,
-        'key': file_key,
-        'filename': file_name
+    uploadMetadata = {
+        'filename': file_name,
+        'filetype': 's3',
+        's3Upload': {
+            'bucket': bucket,
+            'format': format,
+            'key': file_key
+        }
     }
 
     sid = new_upload_session.id
 
     response_json_create_upload_session_file = endpoint.create_upload_session_file(
-        S3UploadedFileMetadata=S3UploadedFileMetadata,
+        uploadMetadata=uploadMetadata,
         sid=sid)
     task_id = get_data_from_flask_jsonify(response_json_create_upload_session_file)
 
@@ -237,17 +262,17 @@ def test_create_new_dataset_version(session: SessionBase, new_dataset, new_uploa
     # TODO: Get instead the last datasetVersion
     latest_dataset_version = new_dataset.dataset_versions[0]
 
-    # TODO: Use add_version()
     # We fetch the datafiles from the first dataset_version
-    datafile_ids = [datafile.id
-                    for datafile in latest_dataset_version.datafiles]
+    assert len(latest_dataset_version.datafiles) == 1
+    datafile = latest_dataset_version.datafiles[0]
 
     datasetVersionMetadata = {
         'sessionId': session_id,
         'datasetId': new_dataset.id,
-        'newDescription': new_description,
-        'datafileIds': datafile_ids
+        'newDescription': new_description
     }
+
+    _add_virtual_file_to_upload_session(session_id, datafile.name, datafile_id=datafile.id)
 
     response_json_create_new_dataset_version_id = endpoint.create_new_dataset_version(datasetVersionMetadata)
     new_dataset_version_id = get_data_from_flask_jsonify(response_json_create_new_dataset_version_id)
@@ -255,8 +280,8 @@ def test_create_new_dataset_version(session: SessionBase, new_dataset, new_uploa
     _new_dataset_version = models_controller.get_dataset_version(new_dataset_version_id)
 
     assert _new_dataset_version.version == latest_dataset_version.version + 1
-    # TODO: Test the number of uploaded files in the session + the number of datafile_ids instead
-    assert len(_new_dataset_version.datafiles) == len(datafile_ids) + 1
+    # TODO: Test the number of uploaded files in the session + the 1 existing file
+    assert len(_new_dataset_version.datafiles) == 2
 
     assert _new_dataset_version.description == new_description
     # TODO: Check if the datafiles in the new dataset_version are the same (filename/name) than in the new_upload_session_file + in the previous_dataset_version_datafiles
@@ -508,8 +533,8 @@ def test_remove_entry_permission(new_folder_in_home, new_dataset_in_new_folder_i
 
 # </editor-fold>
 
-def _create_dataset_with_a_file():
-    _new_datafile = models_controller.add_datafile(name="datafile",
+def _create_dataset_with_a_file(name="datafile") -> Dataset:
+    _new_datafile = models_controller.add_s3_datafile(name=name,
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=models_controller.generate_convert_key(),
                                     type=models_controller.S3DataFile.DataFileFormat.Raw,
@@ -522,30 +547,42 @@ def _create_dataset_with_a_file():
 
     return dataset
 
+from taiga2.models import DataFile
+
+def _create_dataset_with_a_virtual_file(files, folder_id, name="virtual", description="description") -> Dataset:
+    datafiles = []
+    for file in files:
+        datafile = DataFile.query.get(file[1])
+        assert datafile is not None
+        datafiles.append( models_controller.add_virtual_datafile(file[0], datafile.id) )
+
+    dataset = models_controller.add_dataset(name=name,
+                                  description=description,
+                                  datafiles_ids=[x.id for x in datafiles])
+
+    models_controller.copy_to_folder([dataset.id], folder_id)
+
+    return dataset
+
+
 def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
     dataset1 = _create_dataset_with_a_file()
-    data_file_1 = "{}.1/datafile".format(dataset1.permaname)
+    data_file_1 = dataset1.dataset_versions[0].datafiles[0]
+    data_file_1_label = "{}.1/datafile".format(dataset1.permaname)
     folder = models_controller.add_folder("folder", models_controller.Folder.FolderType.folder, "folder desc")
     folder_id = folder.id
 
     vdatafile_name = "alias"
-    virtualDatasetInfo = {
-        "name": "virtual",
-        "description": "desc",
-        "folderId": folder.id,
-        "files": [
-            {
-                "name": vdatafile_name,
-                "datafile": data_file_1
-            }
-        ]
-    }
-    vdataset_id = get_data_from_flask_jsonify(endpoint.create_virtual_dataset(virtualDatasetInfo))
+    vdataset = _create_dataset_with_a_virtual_file(folder_id=folder_id,
+                                                   files=[(vdatafile_name, data_file_1.id)])
+    vdataset_id = vdataset.id
+
+
 
     folder_contents = get_data_from_flask_jsonify(endpoint.get_folder(folder.id))
 
     assert len(folder_contents["entries"]) == 1
-    assert folder_contents["entries"][0]['type'] == 'virtual_dataset'
+    assert folder_contents["entries"][0]['type'] == 'dataset'
 
     # verify that get_dataset accomodates virtual_dataset_ids the same as real datasets
     dataset = get_data_from_flask_jsonify(endpoint.get_dataset(vdataset_id))
@@ -568,7 +605,7 @@ def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
     assert len(dataset_version['datafiles']) == 1
     datafile = dataset_version['datafiles'][0]
     assert datafile['name'] == vdatafile_name
-    assert datafile['underlying_file_id'] == data_file_1
+    assert datafile['underlying_file_id'] == data_file_1_label
 
     # skipping get_dataset_versions because I don't know what uses it
     # endpoint.get_dataset_versions()
@@ -608,64 +645,70 @@ def create_session_with_virtual(new_name, old_name) :
 
 
 def test_create_virtual_dataset_endpoint(session: SessionBase):
-
-
-
-    dataset1 = _create_dataset_with_a_file()
-    dataset2 = _create_dataset_with_a_file()
-
-    data_file_1 = "{}.1/datafile".format(dataset1.permaname)
-    data_file_2 = "{}.1/datafile".format(dataset2.permaname)
-
     folder = models_controller.add_folder("folder", models_controller.Folder.FolderType.folder, "folder desc")
+
+    dataset1 = _create_dataset_with_a_file("datafile")
+    data_file_1 = "{}.1/datafile".format(dataset1.permaname)
 
     session.flush()
 
-    virtualDatasetInfo = {
-        "name": "name",
-        "description": "desc",
-        "folderId": folder.id,
-        "files": [
-            {
-                "name": "alias",
-                "datafile": data_file_1
-            }
-        ]
-    }
-    virtual_dataset_id = get_data_from_flask_jsonify(endpoint.create_virtual_dataset(virtualDatasetInfo))
+    upload_session_1 = new_upload_session()
+    _add_virtual_file_to_upload_session(upload_session_1.id, "alias", data_file_1)
 
-    versionInfo = {
-        "description": "updated desc",
-        "files": [
-            {
-                "name": "alias",
-                "datafile": data_file_2
-            }
-        ]
+    sessionDatasetInfo = {
+        'sessionId': upload_session_1.id,
+        'datasetName': 'version-1-name',
+        'datasetDescription': 'version-1-desc',
+        'currentFolderId': folder.id
     }
 
-    endpoint.create_virtual_dataset_version(virtual_dataset_id, versionInfo)
+    response_json_create_dataset = endpoint.create_dataset(sessionDatasetInfo=sessionDatasetInfo)
+    virtual_dataset_id = get_data_from_flask_jsonify(response_json_create_dataset)
 
-    v = models_controller.get_virtual_dataset(virtual_dataset_id)
-    assert v.name == "name"
-    assert v.description == "desc"
+    # versionInfo = {
+    #     "description": "updated desc",
+    #     "files": [
+    #         {
+    #             "name": "alias",
+    #             "datafile": data_file_2
+    #         }
+    #     ]
+    # }
 
-    assert len(v.virtual_dataset_versions) == 2
+    # now update with a new version
+    upload_session_2 = new_upload_session()
+    dataset2 = _create_dataset_with_a_file()
+    data_file_2 = "{}.1/datafile".format(dataset2.permaname)
+    _add_virtual_file_to_upload_session(upload_session_2.id, "alias", data_file_2)
+
+    datasetVersionMetadata = {
+        'sessionId': upload_session_2.id,
+        'datasetId' : virtual_dataset_id,
+        'newDescription': 'version-2-desc'
+    }
+
+    endpoint.create_new_dataset_version(datasetVersionMetadata=datasetVersionMetadata)
+
+    v = models_controller.get_dataset(virtual_dataset_id)
+    assert v.name == "version-1-name"
+    assert v.description == "version-2-desc"
+
+    assert len(v.dataset_versions) == 2
 
     # check each version
-    version = v.virtual_dataset_versions[0]
+    version = v.dataset_versions[0]
     assert version.version == 1
-    assert len(version.virtual_dataset_entries) == 1
-    entry = version.virtual_dataset_entries[0]
+    assert len(version.datafiles) == 1
+    entry = version.datafiles[0]
     assert entry.name == "alias"
-    data_file_id_1 = entry.data_file_id
+    data_file_id_1 = entry.underlying_file_id
 
-    version = v.virtual_dataset_versions[1]
+    version = v.dataset_versions[1]
     assert version.version == 2
-    assert len(version.virtual_dataset_entries) == 1
-    entry = version.virtual_dataset_entries[0]
+    assert len(version.datafiles) == 1
+    entry = version.datafiles[0]
     assert entry.name == "alias"
-    assert entry.data_file_id != data_file_id_1
+    assert entry.underlying_file_id != data_file_id_1
 
 # <editor-fold desc="User">
 # </editor-fold>

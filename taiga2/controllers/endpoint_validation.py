@@ -52,9 +52,16 @@ def get_endpoint_for(operation_id):
         CACHED_SWAGGER_SPEC = load_endpoint_per_operation(filename)
     return CACHED_SWAGGER_SPEC[operation_id]
 
+import inspect
+
 def validate(endpoint_func):
     @wraps(endpoint_func)
-    def execute_with_validation(**kwargs):
+    def execute_with_validation(*args, **kwargs):
+        if len(args) > 0:
+            positional_arg_names = list(inspect.signature(endpoint_func).parameters.keys())
+            for name, arg in zip(positional_arg_names, args):
+                kwargs[name] = arg
+
         endpoint = get_endpoint_for(endpoint_func.__name__)
         p = get_body_parameter(endpoint)
         if p is not None:

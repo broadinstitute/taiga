@@ -55,7 +55,7 @@ def test_upload_session_file(filename, initial_file_type, session: SessionBase, 
     initial_s3_key = s3_raw_uploaded_file.key
 
     session = models_controller.add_new_upload_session()
-    upload_session_file = models_controller.add_upload_session_file(session.id, os.path.basename(filename),
+    upload_session_file = models_controller.add_upload_session_s3_file(session.id, os.path.basename(filename),
                                                                     initial_file_type, initial_s3_key, bucket_name)
 
     background_process_new_upload_session_file.delay(upload_session_file.id, initial_s3_key, initial_file_type,

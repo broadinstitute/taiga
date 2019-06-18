@@ -48,7 +48,7 @@ def drop_and_create_db():
     upload_session_origin = models_controller.add_new_upload_session()
 
     # Create the origin data
-    upload_session_file_origin = models_controller.add_upload_session_file(session_id=upload_session_origin.id,
+    upload_session_file_origin = models_controller.add_upload_session_s3_file(session_id=upload_session_origin.id,
                                                                            filename="origin",
                                                                            s3_bucket=bucket_name,
                                                                            initial_file_type=models.InitialFileType.Raw,
@@ -75,7 +75,7 @@ def drop_and_create_db():
 
     # Create Data inside Folder B
     upload_session_data = models_controller.add_new_upload_session()
-    upload_session_file_data = models_controller.add_upload_session_file(session_id=upload_session_data.id,
+    upload_session_file_data = models_controller.add_upload_session_s3_file(session_id=upload_session_data.id,
                                                                          filename="Data",
                                                                          s3_bucket=bucket_name,
                                                                          initial_file_type=models.InitialFileType.Raw,
@@ -100,7 +100,7 @@ def drop_and_create_db():
         if i >= 1:
             loop_datafiles = []
             for datafile in temp_data_datafiles:
-                loop_datafile = models_controller.add_datafile(name=datafile.name + 'v' + str(i),
+                loop_datafile = models_controller.add_s3_datafile(name=datafile.name + 'v' + str(i),
                                                                s3_bucket=bucket_name,
                                                                s3_key=models_controller.generate_convert_key(),
                                                                type=datafile.type,

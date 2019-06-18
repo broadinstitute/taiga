@@ -172,7 +172,7 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
             flask.g.current_user = current_user
 
             # TODO: We should not create the datafile if it already exists: ie s3_bucket/s3_key exists
-            new_datafile = models_controller.add_datafile(s3_bucket=datafile_s3_bucket,
+            new_datafile = models_controller.add_s3_datafile(s3_bucket=datafile_s3_bucket,
                                                           s3_key=datafile_s3_key,
                                                           name=datafile_name,
                                                           type=datafile_type,

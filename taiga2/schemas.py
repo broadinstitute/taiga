@@ -188,7 +188,7 @@ class DatasetVersionSchema(ma.ModelSchema):
         # WARNING: long_summary is pretty heavy. Don't include it here, but create your own schema
         additional = ('id', 'name', 'dataset_id',
                       'creation_date', 'creator', 'datafiles',
-                      'description', 'version', 'parents', 'reason_state')
+                      'description', 'parents', 'reason_state')
 
     creator = ma.Nested(UserNamedIdSchema)
     datafiles = ma.Nested(DataFileSchema, many=True)
@@ -200,6 +200,7 @@ class DatasetVersionSchema(ma.ModelSchema):
     # `Method` takes a method name (str), Function takes a callable
     can_edit = fields.fields.Method('check_edition')
     can_view = fields.fields.Method('check_view')
+    version = fields.fields.Method('version_as_str')
 
     def check_edition(self, dataset_version):
         """Check with the context if we can edit"""
@@ -210,6 +211,8 @@ class DatasetVersionSchema(ma.ModelSchema):
         entry_user_right = self.context['entry_user_right']
         return entry_user_right == EntryRightsEnum.can_view or entry_user_right == EntryRightsEnum.can_edit
 
+    def version_as_str(self, dataset_version):
+        return str(dataset_version.version)
 
 class DatasetVersionLightSchema(ma.ModelSchema):
     class Meta:

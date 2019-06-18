@@ -31,7 +31,7 @@ def create_matrix_dataset_version(tmpdir, mock_s3):
     mock_s3.Object("bucket", "key").upload_file(tmpdst)
 
     # create datafile
-    df = mc.add_datafile(name="dfname",
+    df = mc.add_s3_datafile(name="dfname",
                          s3_bucket='bucket',
                          s3_key='key',
                          type=models.S3DataFile.DataFileFormat.HDF5,
@@ -57,7 +57,7 @@ def create_table_dataset_version(tmpdir, mock_s3):
     mock_s3.Object("bucket", "key").upload_file(tmpdst)
 
     # create datafile
-    df = mc.add_datafile(name="dfname",
+    df = mc.add_s3_datafile(name="dfname",
                          s3_bucket='bucket',
                          s3_key='key',
                          type=models.S3DataFile.DataFileFormat.Columnar,
@@ -123,7 +123,7 @@ def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, 
 
 def create_simple_dataset():
     # create datafile
-    df = mc.add_datafile(name="df",
+    df = mc.add_s3_datafile(name="df",
                          s3_bucket="bucket",
                          s3_key="converted/key",
                          type=models.S3DataFile.DataFileFormat.Raw,

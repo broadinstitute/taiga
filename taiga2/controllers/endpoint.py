@@ -15,6 +15,7 @@ import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import DataFile, normalize_name, SearchResult
 from taiga2.controllers.models_controller import DataFileAlias
+from taiga2.models import S3DataFile
 
 from taiga2.aws import aws
 from taiga2.aws import create_signed_get_obj
@@ -225,6 +226,7 @@ def create_or_update_entry_access_log(entryId):
     return flask.jsonify({})
 
 
+@validate
 def get_dataset_version(datasetVersion_id):
     dv = models_controller.get_dataset_version(dataset_version_id=datasetVersion_id, one_or_none=True)
     if dv is None:
@@ -253,6 +255,7 @@ def get_dataset_versions(datasetVersionIdsDict):
     return flask.jsonify(json_data_dataset_versions)
 
 
+#@validate
 def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     dataset_version_schema = schemas.DatasetVersionSchema()
     dataset_schema = schemas.DatasetSchema()
@@ -341,16 +344,16 @@ def de_delete_dataset_version(datasetVersionId):
 
 @validate
 def create_upload_session_file(uploadMetadata, sid):
+    filename = uploadMetadata['filename']
     if uploadMetadata['filetype'] == "s3":
         S3UploadedFileMetadata = uploadMetadata['s3Upload']
         s3_bucket = S3UploadedFileMetadata['bucket']
 
         initial_file_type = S3UploadedFileMetadata['format']
         initial_s3_key = S3UploadedFileMetadata['key']
-        filename = uploadMetadata['filename']
 
         # Register this new file to the UploadSession received
-        upload_session_file = models_controller.add_upload_session_file(session_id=sid,
+        upload_session_file = models_controller.add_upload_session_s3_file(session_id=sid,
                                                                         filename=filename,
                                                                         initial_file_type=initial_file_type,
                                                                         initial_s3_key=initial_s3_key,
@@ -362,10 +365,16 @@ def create_upload_session_file(uploadMetadata, sid):
                                                                 s3_bucket, upload_session_file.converted_s3_key)
 
         return flask.jsonify(task.id)
+    elif uploadMetadata['filetype'] == "virtual":
+        existing_taiga_id = uploadMetadata['existingTaigaId']
+        data_file = models_controller.get_datafile_by_taiga_id(existing_taiga_id)
+        models_controller.add_upload_session_virtual_file(session_id=sid, filename=filename, data_file_id=data_file.id)
+        return flask.jsonify("done")
     else:
         raise Exception("unknown filetype "+uploadMetadata['filetype'])
 
 
+@validate
 def create_new_upload_session():
     upload_session = models_controller.add_new_upload_session()
     return flask.jsonify(upload_session.id)
@@ -400,6 +409,7 @@ def _parse_data_file_aliases(files):
     return result
 
 
+@validate
 def create_dataset(sessionDatasetInfo):
     session_id = sessionDatasetInfo['sessionId']
     dataset_name = sessionDatasetInfo['datasetName']
@@ -413,17 +423,16 @@ def create_dataset(sessionDatasetInfo):
 
     return flask.jsonify(added_dataset.id)
 
-
+@validate
 def create_new_dataset_version(datasetVersionMetadata):
+    assert 'datafileIds' not in datasetVersionMetadata
     session_id = datasetVersionMetadata['sessionId']
     dataset_id = datasetVersionMetadata['datasetId']
     new_description = datasetVersionMetadata['newDescription']
-    existing_datafiles_id = datasetVersionMetadata['datafileIds']
 
     new_dataset_version = models_controller.create_new_dataset_version_from_session(session_id,
                                                                                     dataset_id,
-                                                                                    existing_datafiles_id,
-                                                                                    new_description=new_description)
+                                                                                    new_description)
 
     return flask.jsonify(new_dataset_version.id)
 
@@ -476,16 +485,21 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
     dataset_permaname = dataset_version.dataset.permaname
     dl_filename = _make_dl_name(datafile_name, dataset_version_version, dataset_name, format)
 
+    if datafile.type == "virtual":
+        real_datafile = datafile.underlying_data_file
+    else:
+        real_datafile = datafile
+
     if format == "metadata":
         urls = None
         conversion_status = "Completed successfully"
-    elif _no_transform_needed(format, datafile.type):
+    elif _no_transform_needed(format, real_datafile.format):
         # no conversion is necessary
-        urls = [create_signed_get_obj(datafile.s3_bucket, datafile.s3_key, dl_filename)]
+        urls = [create_signed_get_obj(real_datafile.s3_bucket, real_datafile.s3_key, dl_filename)]
         conversion_status = "Completed successfully"
     else:
         force_conversion = force == "Y"
-        is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
+        is_new, entry = models_controller.get_conversion_cache_entry(real_datafile.dataset_version.id, real_datafile.name, format)
 
         from taiga2 import models
         if not is_new:
@@ -496,10 +510,10 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
             elif not entry_is_valid(entry) or force_conversion:
                 log.warning("Cache entry not associated with a running task, deleting to try again")
                 models_controller.delete_conversion_cache_entry(entry.id)
-                is_new, entry = models_controller.get_conversion_cache_entry(dataset_version_id, datafile_name, format)
+                is_new, entry = models_controller.get_conversion_cache_entry(real_datafile.dataset_version.id, real_datafile.name, format)
 
         if is_new:
-            t = start_conversion_task.delay(datafile.s3_bucket, datafile.s3_key, str(datafile.format), format, entry.id)
+            t = start_conversion_task.delay(real_datafile.s3_bucket, real_datafile.s3_key, str(real_datafile.format), format, entry.id)
             models_controller.update_conversion_cache_entry_with_task_id(entry.id, t.id)
 
         urls = models_controller.get_signed_urls_from_cache_entry(entry.urls_as_json, dl_filename)

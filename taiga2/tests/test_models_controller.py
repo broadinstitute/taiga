@@ -330,7 +330,7 @@ def test_add_dataset_version(session: SessionBase):
 
     new_dataset_name = "New Dataset for test_add_dataset_version"
     new_dataset_description = "New description for test_add_dataset_version"
-    _new_datafile = mc.add_datafile(name="Datafile for test_add_dataset_version",
+    _new_datafile = mc.add_s3_datafile(name="Datafile for test_add_dataset_version",
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=mc.generate_convert_key(),
                                     type=mc.S3DataFile.DataFileFormat.Raw,
@@ -439,7 +439,7 @@ def new_datafile():
     new_datafile_name = "New Datafile"
     new_datafile_url = "http://google.com"
 
-    _new_datafile = mc.add_datafile(name=new_datafile_name,
+    _new_datafile = mc.add_s3_datafile(name=new_datafile_name,
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=mc.generate_convert_key(),
                                     type=S3DataFile.DataFileFormat.Raw,
@@ -650,9 +650,9 @@ def test_jumpto_dataset_id_with_separator_version_first(session: SessionBase, ne
 # </editor-fold
 
 # <editor-fold desc="Test Virtual datasets">
-def test_create_virtual_dataset(session: SessionBase):
+def test_basic_create_virtual_dataset(session: SessionBase):
     # create mock data of a single dataset and a virtual dataset which references the files but with a different name
-    _new_datafile = mc.add_datafile(name="underlying-datafile",
+    _new_datafile = mc.add_s3_datafile(name="underlying-datafile",
                                     s3_bucket="broadtaiga2prototype",
                                     s3_key=mc.generate_convert_key(),
                                     type=mc.S3DataFile.DataFileFormat.Raw,
@@ -684,7 +684,7 @@ def test_create_virtual_dataset(session: SessionBase):
 
     entry = version.datafiles[0]
     assert entry.name == "alias"
-    assert entry.underlying_data_file_id == _new_datafile.id
+    assert entry.underlying_data_file.id == _new_datafile.id
 
 # </editor-fold
 

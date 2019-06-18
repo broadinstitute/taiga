@@ -218,6 +218,14 @@ class DataFile(db.Model):
                                       backref=db.backref(__tablename__,
                                                          cascade="all, delete-orphan"))
 
+    # these two columns really belong to VirtualDataFile, but SQLAlchemy seems to have some problems with
+    # self-referencing FKs. Moved here to get it to work, but assume these will be both None unless the type is
+    # VirtualDataFile. Also underlying_data_file_id is always None. Use underlying_data_file.id instead if you want the ID
+    underlying_data_file_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
+    underlying_data_file = db.relationship("DataFile",
+                                           uselist=False,
+                                           foreign_keys="DataFile.underlying_data_file_id")
+
     __table_args__ = (
         UniqueConstraint("dataset_version_id", "name"),
     )
@@ -253,9 +261,6 @@ class S3DataFile(DataFile):
         return None
 
 class VirtualDataFile(DataFile):
-    underlying_data_file_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
-    underlying_data_file = db.relationship("DataFile",
-                                foreign_keys=[underlying_data_file_id])
 
     __mapper_args__ = {
         'polymorphic_identity':'virtual'
@@ -263,8 +268,25 @@ class VirtualDataFile(DataFile):
 
     @property
     def underlying_file_id(self):
-        dataset_version = self.data_file.dataset_version
-        return "{}.{}/{}".format(dataset_version.dataset.permaname, dataset_version.version, self.data_file.name)
+        dataset_version = self.underlying_data_file.dataset_version
+        return "{}.{}/{}".format(dataset_version.dataset.permaname, dataset_version.version, self.underlying_data_file.name)
+
+    @property
+    def s3_key(self):
+        return None
+
+    @property
+    def s3_bucket(self):
+        return None
+
+    @property
+    def short_summary(self):
+        return None
+
+    @property
+    def long_summary(self):
+        return None
+
 
 def get_allowed_conversion_type(datafile_type):
     if datafile_type == S3DataFile.DataFileFormat.HDF5:
@@ -421,6 +443,12 @@ class UploadSessionFile(db.Model):
 
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)
+
+    data_file_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
+    data_file = db.relationship("DataFile",
+                               uselist=False,
+                               foreign_keys="UploadSessionFile.data_file_id")
+
 
 
 # <editor-fold desc="Provenance">
