@@ -46,9 +46,9 @@ paths:
               type:
                 type: string
                 enum:
-                  - folder
-                  - trash
-                  - home
+                  - Folder
+                  - Trash
+                  - Home
               parents:
                 type: array
                 items:
@@ -106,7 +106,6 @@ paths:
             required:
               - name
               - parentId
-              - creatorId
             properties:
               name:
                 type: string
@@ -117,9 +116,6 @@ paths:
               parentId:
                 type: string
                 description: Parent folder ID to initially insert this folder under
-              creatorId:
-                type: string
-                description: User Id who initialized the creation of the folder
       responses:
         200:
           description: The id of the newly created folder
@@ -240,8 +236,7 @@ paths:
               accessKeyId:
                 type: string
               expiration:
-                type: string
-                format: date-time
+                type: number
               secretAccessKey:
                 type: string
               sessionToken:
@@ -364,7 +359,7 @@ paths:
               versions:
                 type: array
                 items:
-                  "$ref": "#/definitions/DatasetVersion"
+                  "$ref": "#/definitions/DatasetVersionSummary"
               acl:
                 "$ref": "#/definitions/Acl"
 
@@ -414,59 +409,7 @@ paths:
         200:
           description: The data specific to a specific dataset version
           schema:
-            title: DatasetVersion
-            type: object
-            required:
-              - id
-              - dataset_id
-              - name
-              - creation_date
-              - creator
-              - datafiles
-              - description
-              - version
-            properties:
-              id:
-                type: string
-              dataset_id:
-                type: string
-              status:
-                "$ref": "#/definitions/StatusEnum"
-              name:
-                type: string
-              version:
-                type: string
-              description:
-                type: string
-              creation_date:
-                type: string
-              creator:
-                "$ref": "#/definitions/NamedId"
-              datafiles:
-                type: array
-                items:
-                  title: DataFile
-                  type: object
-                  required:
-                    - id
-                    - name
-                    - description
-                    - content_summary
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    description:
-                      type: string
-                    underlying_file_id:
-                      description: "if this is a virtual dataset, this is the reference to the underlying file, and name is just an alias to that"
-                      type: string
-                    content_summary:
-                      description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
-                      type: string
-              provenance:
-                "$ref": "#/definitions/Provenance"
+            "$ref": "#/definitions/DatasetVersion"
 
   /dataset/{datasetId}/name:
     post:
@@ -1274,6 +1217,21 @@ paths:
 
 
 definitions:
+  DatasetVersionSummary:
+    title: DatasetVersionSummary
+    type: object
+    required:
+      - name
+      - id
+      - state
+    properties:
+      name:
+        type: string
+      id:
+        type: string
+      state:
+        "$ref": "#/definitions/StatusEnum"
+    
   Dataset:
     type: object
     required:
@@ -1297,19 +1255,7 @@ definitions:
       versions:
         type: array
         items:
-          title: DatasetVersionSummary
-          type: object
-          required:
-            - name
-            - id
-            - state
-          properties:
-            name:
-              type: string
-            id:
-              type: string
-            state:
-              "$ref": "#/definitions/StatusEnum"
+          "$ref": "#/definitions/DatasetVersionSummary"
       folders:
         type: array
         items:
@@ -1561,11 +1507,11 @@ definitions:
   SearchResult:
     type: object
     required:
-      - current_folder_id
+      - current_folder
       - name
       - entries
     properties:
-      current_folder_id:
+      current_folder:
         "$ref": "#/definitions/NamedId"
       name:
         type: string

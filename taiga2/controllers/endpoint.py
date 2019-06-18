@@ -29,7 +29,7 @@ import os, json
 
 ADMIN_USER_ID = "admin"
 
-
+@validate
 def get_dataset(datasetId):
     # TODO: We could receive a datasetId being a permaname. This is not good as our function is not respecting the atomicity. Should handle the usage of a different function if permaname
     # try using ID
@@ -55,7 +55,7 @@ def get_dataset(datasetId):
     json_dataset_data = dataset_schema.dump(allowed_dataset).data
     return flask.jsonify(json_dataset_data)
 
-
+@validate
 def get_datasets(datasetIdsDict):
     array_dataset_ids = datasetIdsDict['datasetIds']
 
@@ -72,7 +72,7 @@ def get_datasets(datasetIdsDict):
 
     return flask.jsonify(json_data_datasets)
 
-
+@validate
 def create_folder(metadata):
     """Create a folder given a metadata dictionary of this form:
     metadata['name'], metadata['description'], metadata['parentId']"""
@@ -91,7 +91,7 @@ def create_folder(metadata):
 
     return flask.jsonify(json_folder_named_id)
 
-
+@validate
 def get_folder(folder_id):
     folder = models_controller.get_folder(folder_id, one_or_none=True)
     if folder is None:
@@ -108,19 +108,19 @@ def get_folder(folder_id):
 
     return flask.jsonify(json_data_folder)
 
-
+@validate
 def update_folder_name(folderId, NameUpdate):
     updated_folder = models_controller.update_folder_name(folderId, NameUpdate["name"])
 
     return flask.jsonify(updated_folder.id)
 
-
+@validate
 def update_folder_description(folderId, DescriptionUpdate):
     updated_folder = models_controller.update_folder_description(folderId, DescriptionUpdate["description"])
 
     return flask.jsonify(updated_folder.id)
 
-
+@validate
 def get_user():
     # We get the first user which should be Admin
     user = models_controller.get_current_session_user()
@@ -129,7 +129,7 @@ def get_user():
 
     return flask.jsonify(json_data_user)
 
-
+@validate
 def get_s3_credentials():
     """
     Create an access token to access S3 using the ~/.aws/credentials information
@@ -160,7 +160,7 @@ def get_s3_credentials():
     # See frontend/models/models.ts for the S3Credentials object and Swagger.yaml
     return flask.jsonify(model_frontend_credentials)
 
-
+@validate
 def get_dataset_last(dataset_id):
     last_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
 
@@ -172,23 +172,27 @@ def get_dataset_last(dataset_id):
     return flask.jsonify(json_data_first_dataset_version)
 
 
+@validate
 def update_dataset_name(datasetId, NameUpdate):
     updated_dataset = models_controller.update_dataset_name(datasetId, NameUpdate["name"])
 
     return flask.jsonify(updated_dataset.id)
 
 
+@validate
 def update_dataset_description(datasetId, DescriptionUpdate):
     updated_dataset = models_controller.update_dataset_description(datasetId, DescriptionUpdate["description"])
 
     return flask.jsonify(updated_dataset.id)
 
 
+@validate
 def create_or_update_dataset_access_log(datasetId):
     access_log = models_controller.add_or_update_dataset_access_log(datasetId)
     return flask.jsonify(access_log.id)
 
 
+@validate
 def get_datasets_access_logs():
     array_access_logs = models_controller.get_datasets_access_logs()
 
@@ -198,6 +202,7 @@ def get_datasets_access_logs():
     return flask.jsonify(json_data_access_logs_current_user_datasets)
 
 
+@validate
 def get_entry_access_logs(entryId):
     array_access_logs = models_controller.get_entry_access_logs(entryId)
 
@@ -207,6 +212,7 @@ def get_entry_access_logs(entryId):
     return flask.jsonify(json_data_access_logs_entry)
 
 
+@validate
 def get_entries_access_logs():
     array_access_logs = models_controller.get_entries_access_logs()
 
@@ -216,11 +222,13 @@ def get_entries_access_logs():
     return flask.jsonify(json_data_access_logs_current_user_entries)
 
 
+# @validate the swagger is wrong
 def accessLogs_remove(accessLogsToRemove):
     models_controller.remove_accessLogs(accessLogsToRemove)
     return flask.jsonify({})
 
 
+@validate
 def create_or_update_entry_access_log(entryId):
     models_controller.add_or_update_entry_access_log(entryId)
     return flask.jsonify({})
@@ -240,7 +248,7 @@ def get_dataset_version(datasetVersion_id):
 
     return flask.jsonify(json_dv_data)
 
-
+@validate
 def get_dataset_versions(datasetVersionIdsDict):
     array_dataset_version_ids = datasetVersionIdsDict['datasetVersionIds']
     dataset_versions = models_controller.get_dataset_versions_bulk(array_dataset_version_ids)
@@ -300,12 +308,14 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     return flask.jsonify(json_dv_and_dataset_data)
 
 
+@validate
 def update_dataset_version_description(datasetVersionId, DescriptionUpdate):
     models_controller.update_dataset_version_description(datasetVersionId,
                                                          DescriptionUpdate["description"])
     return flask.jsonify({})
 
 
+@validate
 def deprecate_dataset_version(datasetVersionId, deprecationReasonObj):
     reason = deprecationReasonObj['deprecationReason']
 
@@ -319,6 +329,7 @@ def deprecate_dataset_version(datasetVersionId, deprecationReasonObj):
     return flask.jsonify({})
 
 
+@validate
 def de_deprecate_dataset_version(datasetVersionId):
     try:
         models_controller.approve_dataset_version(datasetVersionId)
@@ -330,6 +341,7 @@ def de_deprecate_dataset_version(datasetVersionId):
     return flask.jsonify({})
 
 
+@validate
 def delete_dataset_version(datasetVersionId):
     # TODO: Manage errors to let the user know
     new_state = models_controller.delete_dataset_version(dataset_version_id=datasetVersionId)
@@ -437,6 +449,7 @@ def create_new_dataset_version(datasetVersionMetadata):
     return flask.jsonify(new_dataset_version.id)
 
 
+@validate
 def task_status(taskStatusId):
     from taiga2.tasks import taskstatus
     status = taskstatus(taskStatusId)
@@ -467,6 +480,7 @@ def _make_dl_name(datafile_name, dataset_version_version, dataset_name, format):
     return name
 
 
+@validate
 def get_datafile(format, dataset_permaname=None, version=None, dataset_version_id=None, datafile_name=None, force=None):
     from taiga2.tasks import start_conversion_task
 
@@ -522,7 +536,7 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
     # TODO: This should be handled by a Marshmallow schema and not created on the fly
     result = dict(dataset_name=dataset_name,
                   dataset_permaname=dataset_permaname,
-                  dataset_version=dataset_version_version,
+                  dataset_version=str(dataset_version_version),
                   dataset_id=dataset_id,
                   dataset_version_id=dataset_version_id,
                   datafile_name=datafile_name,
@@ -536,6 +550,7 @@ def get_datafile(format, dataset_permaname=None, version=None, dataset_version_i
     return flask.jsonify(result)
 
 
+@validate
 def get_datafile_short_summary(dataset_permaname=None,
                                version=None,
                                dataset_version_id=None,
@@ -566,6 +581,7 @@ def entry_is_valid(entry):
     return task.state == 'PENDING'
 
 
+@validate
 def move_to_trash(entryIds):
     print("Just received the entries to throw into the bin: {}".format(entryIds))
     models_controller.move_to_trash(entryIds)
@@ -573,6 +589,7 @@ def move_to_trash(entryIds):
     return flask.jsonify({})
 
 
+@validate
 def move_to_folder(moveMetadata):
     print("In move_to_folder, received {}".format(moveMetadata))
     entry_ids = moveMetadata["entryIds"]
@@ -594,6 +611,7 @@ def move_to_folder(moveMetadata):
     return flask.jsonify(return_data)
 
 
+@validate
 def copy_to_folder(copyMetadata):
     entry_ids = copyMetadata["entryIds"]
     folder_id = copyMetadata["folderId"]
@@ -689,6 +707,7 @@ def get_dataset_version_id_by_user_entry(entry_submitted_by_user: str):
 
 
 # Search
+@validate
 def search_within_folder(current_folder_id, search_query):
     """Given a folder id and a search query (string), will return all the datasets and folders that are matching the query inside the folder
 

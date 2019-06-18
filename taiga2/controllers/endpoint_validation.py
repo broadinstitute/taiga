@@ -75,7 +75,9 @@ def validate(endpoint_func):
         parsed_result = json.loads(result.data.decode("utf8"))
 
         response_schema = get_response_schema(endpoint)
-        jsonschema.validate(instance=parsed_result, schema=response_schema)
+        #assert response_schema is not None, "No response schema for {}".format(endpoint_func.__name__)
+        if response_schema is not None:
+            jsonschema.validate(instance=parsed_result, schema=response_schema)
         
         return result
     return execute_with_validation
