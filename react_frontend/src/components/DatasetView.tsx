@@ -22,8 +22,12 @@ import { NamedId } from "../models/models";
 import { FolderEntries } from "../models/models";
 import ClipboardButton from "../utilities/r-clipboard";
 
+interface Match {
+    params: any
+}
+
 export interface DatasetViewProps {
-    params: any;
+    match: Match;
 }
 
 export interface DatasetViewState {
@@ -74,19 +78,20 @@ const deletionTitle = {
     color: "red"
 };
 
-let tapi: TaigaApi = null;
-let currentUser: string = null;
-
 export class DatasetView extends React.Component<DatasetViewProps, DatasetViewState> {
     static contextTypes = {
         tapi: PropTypes.object,
         currentUser: PropTypes.string
     };
 
+    getTapi(): TaigaApi {
+        return (this.context as any).tapi as TaigaApi
+    }
+
     componentDidUpdate(prevProps: DatasetViewProps) {
         // respond to parameter change in scenario 3
-        let oldId = prevProps.params.datasetVersionId;
-        let newId = this.props.params.datasetVersionId;
+        let oldId = prevProps.match.params.datasetVersionId;
+        let newId = this.props.match.params.datasetVersionId;
         if (newId !== oldId) {
             this.doFetch();
             // We close the modal
@@ -99,9 +104,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     componentDidMount() {
-        tapi = (this.context as any).tapi;
-        currentUser = (this.context as any).currentUser;
-
         this.setLoading(true);
 
         this.doFetch().then(() => {
@@ -126,15 +128,15 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             // window.location.pathname = relativePath("/dataset/" +
             //     this.state.dataset.permanames[last_index_dataset_permaname] +
             //     "/" + this.state.datasetVersion.version);
-        }).catch((error) => {
+        }).catch((error: any) => {
             console.log("doFetch failed with this error: " + error);
         });
     }
 
     doFetch() {
         // could do fetches in parallel if url encoded both ids
-        return tapi.get_dataset_version_with_dataset(this.props.params.datasetId,
-            this.props.params.datasetVersionId
+        return this.getTapi().get_dataset_version_with_dataset(this.props.match.params.datasetId,
+            this.props.match.params.datasetVersionId
         ).then((datasetAndDatasetVersion: Models.DatasetAndDatasetVersion | Models.Dataset) => {
             let dataset: Models.Dataset;
             let datasetVersion: Models.DatasetVersion;
@@ -153,7 +155,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 // It means we received a Models.Dataset, we need to get the last datasetVersion now
                 // TODO: get_dataset_version_with_dataset should really return a dataset with datasetVersion, and we should not do this extra step
                 dataset = new Models.Dataset(datasetAndDatasetVersion);
-                return tapi.get_dataset_version_last(dataset.id).then((last_datasetVersion) => {
+                return this.getTapi().get_dataset_version_last(dataset.id).then((last_datasetVersion) => {
                     datasetVersion = new DatasetVersion(last_datasetVersion, dataset);
                 }).then(() => {
                     this.setState({
@@ -169,24 +171,24 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 fetchError: error.message
             });
             console.log("Error: " + error.stack);
-            return Promise.reject("Dataset Version " + this.props.params.datasetVersionId + " does not exist");
+            return Promise.reject("Dataset Version " + this.props.match.params.datasetVersionId + " does not exist");
         });
     }
 
     // TODO: Refactor logAccess in an util or in RecentlyViewed class
     logAccess() {
-        return tapi.create_or_update_entry_access_log(this.state.dataset.id).then(() => {
+        return this.getTapi().create_or_update_entry_access_log(this.state.dataset.id).then(() => {
         });
     }
 
     updateName(name: string) {
-        tapi.update_dataset_name(this.state.datasetVersion.dataset_id, name).then(() => {
+        this.getTapi().update_dataset_name(this.state.datasetVersion.dataset_id, name).then(() => {
             return this.doFetch();
         });
     }
 
     updateDescription(description: string) {
-        tapi.update_dataset_version_description(this.state.datasetVersion.id, description).then(() => {
+        this.getTapi().update_dataset_version_description(this.state.datasetVersion.id, description).then(() => {
             return this.doFetch();
         });
     }
@@ -220,13 +222,13 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     filesUploadedAndConverted(sid: string, name: string, description: string, previousDatafileIds: Array<string>) {
         let datafileIds = previousDatafileIds;
         // We ask to create the dataset
-        return tapi.create_new_dataset_version(sid,
+        return this.getTapi().create_new_dataset_version(sid,
             this.state.dataset.id,
             description,
             datafileIds
         ).then((dataset_version_id) => {
             // We fetch the datasetVersion of the newly created dataset and change the state of it
-            return tapi.get_dataset_version(dataset_version_id).then((newDatasetVersion) => {
+            return this.getTapi().get_dataset_version(dataset_version_id).then((newDatasetVersion) => {
                 this.doFetch();
                 return Promise.resolve(newDatasetVersion);
             });
@@ -251,7 +253,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         // Loading
         this.setLoading(true);
 
-        return tapi.get_datafile(datasetPermaname, version, datasetVersionId, datafileName, format, force)
+        return this.getTapi().get_datafile(datasetPermaname, version, datasetVersionId, datafileName, format, force)
             .then((result: DatafileUrl) => {
                 if (!result.urls) {
                     // While we don't receive urls, it means we are still converting/downloading
@@ -324,7 +326,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         this.setState({
             initInputFolderId: alreadyFilledFolderId,
             callbackIntoFolderAction: (folderId: string) => {
-                tapi.copy_to_folder([this.state.dataset.id], folderId).then(() => this.afterAction());
+                this.getTapi().copy_to_folder([this.state.dataset.id], folderId).then(() => this.afterAction());
             },
             showInputFolderId: true,
             actionIntoFolderValidation: null,
@@ -353,7 +355,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     removeAccessLogs(arrayAccessLogs: Array<Models.AccessLog>): Promise<any> {
-        return tapi.remove_entry_access_log(arrayAccessLogs).then(() => {
+        return this.getTapi().remove_entry_access_log(arrayAccessLogs).then(() => {
 
         });
     }
@@ -394,14 +396,14 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     deprecateDatasetVersion(reason: string) {
         // Send the deprecation to the server
-        tapi.deprecate_dataset_version(this.state.datasetVersion.id, reason).then(() => {
+        this.getTapi().deprecate_dataset_version(this.state.datasetVersion.id, reason).then(() => {
             this.doFetch();
             this.closeDeprecationReason();
         });
     }
 
     deDeprecateDatasetVersion() {
-        tapi.de_deprecate_dataset_version(this.state.datasetVersion.id).then(() => {
+        this.getTapi().de_deprecate_dataset_version(this.state.datasetVersion.id).then(() => {
             this.doFetch();
             this.closeDeprecationReason();
         });
@@ -412,7 +414,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         let confirmation_deletion = confirm("You are about to delete permanently this version of the dataset. Are you sure?");
 
         if (confirmation_deletion) {
-            tapi.delete_dataset_version(this.state.datasetVersion.id).then(() => {
+            this.getTapi().delete_dataset_version(this.state.datasetVersion.id).then(() => {
                 // Change the labels on the right. Remove deprecation and remove deletion
                 this.doFetch();
             });
@@ -478,7 +480,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             </div>;
         }
         else if (this.state && this.state.fetchError) {
-            let message = "Dataset version " + this.props.params.datasetVersionId + " does not exist. Please check this id "
+            let message = "Dataset version " + this.props.match.params.datasetVersionId + " does not exist. Please check this id "
                 + "is correct. We are also available via the feedback button.";
             return <div>
                 <LeftNav items={[]} />
@@ -653,7 +655,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 {
                     label: "Add to Home", action: () => {
                         // TODO: Fetch the current user only once, and reuse it as a state OR better, get it as a props from parent
-                        tapi.get_user().then(user => {
+                        this.getTapi().get_user().then(user => {
                             this.copyTo(user.home_folder_id);
                         });
                     }

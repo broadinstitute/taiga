@@ -21,7 +21,7 @@ export default class ClipboardButton extends React.Component<ClipboardButtonProp
         },
     };
 
-    constructor(props: any){
+    constructor(props: any) {
         super(props);
 
         this.clipboard = clipboard;
@@ -92,6 +92,9 @@ export default class ClipboardButton extends React.Component<ClipboardButtonProp
             ...this.propsWith(/^data-/),
             ...this.propsWith(/^button-/, true),
         };
+
+        // not sure when this is getting added, but we get a warning if we try to create the element with this attribute
+        delete (attributes as any).Click;
 
         return React.createElement(
             this.getComponent(),
