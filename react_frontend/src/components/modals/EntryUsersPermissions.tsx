@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as PropTypes from "prop-types";
 import * as Modal from "react-modal";
-import { BootstrapTable, TableHeaderColumn, SelectRowMode, CellEditClickMode, CellEdit } from "react-bootstrap-table";
+import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 
 import { modalStyles } from "../Dialogs";
 
@@ -85,7 +85,7 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
         };
 
         const options = {
-            afterDeleteRow: (rowKeys : any) => { this.handleDeletedRow(rowKeys) }
+            afterDeleteRow: (rowKeys: any) => { this.handleDeletedRow(rowKeys) }
         };
 
         return <Modal

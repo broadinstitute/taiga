@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as PropTypes from "prop-types";
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import * as update from 'immutability-helper';
 
 import { LeftNav, MenuItem } from "./LeftNav";
@@ -30,7 +30,7 @@ import { AccessLog } from "../models/models";
 import { ShareEntries } from "./Dialogs";
 
 export interface FolderViewProps {
-    params: any;
+    match: any
 }
 
 const tableEntriesStyle: any = {
@@ -84,13 +84,11 @@ export class Conditional extends React.Component<any, any> {
     }
 }
 
-let tapi: TaigaApi = null;
-let currentUser: string = null;
-
 export class FolderView extends React.Component<FolderViewProps, FolderViewState> {
     static contextTypes = {
         tapi: PropTypes.object,
         currentUser: PropTypes.string,
+        user: PropTypes.object,
     };
 
     constructor(props: any) {
@@ -101,9 +99,11 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     componentDidUpdate(prevProps: FolderViewProps) {
         // respond to parameter change in scenario 3
-        let oldId = prevProps.params.folderId;
-        let newId = this.props.params.folderId;
+        let oldId = prevProps.match.params.folderId;
+        let newId = this.props.match.params.folderId;
+        console.log("componentDidUpdate")
         if (newId !== oldId) {
+            console.log("doFetch")
             this.doFetch().then(() => {
                 this.logAccess();
             });
@@ -114,36 +114,34 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     componentDidMount() {
-        tapi = (this.context as any).tapi;
-        currentUser = (this.context as any).currentUser;
-        this.setState({
-            searchQuery: ""
-        });
-
         this.doFetch().then(() => {
             this.logAccess();
-        });
-
-        tapi.get_user().then(user => {
-            this.setState({ currentUser: user });
         });
     }
 
     doFetch() {
+        let tapi = (this.context as any).tapi as TaigaApi;
+
         this.setState({
             loading: true
         });
+
         // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
         let datasetsLatestDv: { [dataset_id: string]: Folder.DatasetVersion } = {};
         let datasetsVersion: { [datasetVersion_id: string]: Folder.DatasetVersion } = {};
         let _folder: Folder.Folder = null;
 
-        return tapi.get_folder(this.props.params.folderId).then(folder => {
+        console.log("get_folder fetch", this.props);
+
+        return tapi.get_folder(this.props.match.params.folderId).then(folder => {
+            console.log("get_folder complete", folder)
             _folder = new Folder.Folder(folder);
             this.setState({ sharingEntries: [_folder] });
             return folder.entries;
         }
         ).then((entries: Array<Folder.FolderEntries>) => {
+            console.log("get_folder entries", entries)
+
             // We want to ask the server a bulk of the datasets and the datasetVersions
             let datasetIds = entries.filter((entry: Folder.FolderEntries) => {
                 return (entry.type === Folder.FolderEntriesTypeEnum.Dataset) || (entry.type === Folder.FolderEntriesTypeEnum.VirtualDataset);
@@ -195,33 +193,42 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     // TODO: Refactor logAccess in an util or in RecentlyViewed class
     logAccess() {
+        let tapi = (this.context as any).tapi as TaigaApi;
+
         return tapi.create_or_update_entry_access_log(this.state.folder.id).then(() => {
         });
     }
 
     updateName(name: string) {
+        let tapi = (this.context as any).tapi as TaigaApi;
+
         tapi.update_folder_name(this.state.folder.id, name).then(() => {
             return this.doFetch();
         })
     }
 
     updateDescription(description: string) {
+        let tapi = (this.context as any).tapi as TaigaApi;
+
         tapi.update_folder_description(this.state.folder.id, description).then(() => {
             return this.doFetch();
         })
     }
 
     createFolder(name: string, description: string) {
-        const current_folder_id: string = this.state.folder.id;
-        // TODO: To fetch instead the current user once we have the authentication
-        const current_creator_id: string = currentUser;
+        let tapi = (this.context as any).tapi as TaigaApi;
+        let user = (this.context as any).user as User;
 
-        tapi.create_folder(current_folder_id, current_creator_id, name, description).then(() => {
+        const current_folder_id: string = this.state.folder.id;
+
+        tapi.create_folder(current_folder_id, user.id, name, description).then(() => {
             return this.doFetch();
         });
     }
 
     moveToTrash() {
+        let tapi = (this.context as any).tapi as TaigaApi;
+
         // move_to_folder takes the entryIds, the current folder id and the target folder id as parameters
         // If the target folder is null, the backend will move this symbolic link to the trash
         tapi.move_to_folder(this.state.selection, this.state.folder.id, null).then(() => {
@@ -267,6 +274,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     actionIntoFolder(folderId: string) {
+        let tapi = (this.context as any).tapi as TaigaApi;
+
         // TODO: Call to move the files
 
         // TODO: Find the right way to put the function in a variable but not carry this into tapi
@@ -277,7 +286,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             tapi.copy_to_folder(this.state.selection, folderId).then(() => this.afterAction());
         }
         else if (this.state.actionName === "currentFolderLinkToHome") {
-            tapi.copy_to_folder([this.props.params.folderId], folderId).then(() => this.afterAction());
+            tapi.copy_to_folder([this.props.match.params.folderId], folderId).then(() => this.afterAction());
         }
     }
 
@@ -303,6 +312,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     // Upload
     filesUploadedAndConverted(sid: string, datasetName: string, datasetDescription: string) {
+        let tapi = (this.context as any).tapi as TaigaApi;
+
         // We ask to create the dataset
         return tapi.create_dataset(sid,
             datasetName,
@@ -433,6 +444,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     removeAccessLogs(arrayAccessLogs: Array<AccessLog>): Promise<any> {
+        let tapi = (this.context as any).tapi as TaigaApi;
+
         return tapi.remove_entry_access_log(arrayAccessLogs).then(() => {
 
         });
@@ -477,6 +490,9 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     // endregion
 
     render() {
+        let user = (this.context as any).user as User;
+        console.log("user", user);
+
         let entriesOutput: Array<any> = [];
         let navItems: MenuItem[] = [];
         let folderEntriesTableFormatted: Array<BootstrapTableFolderEntry> = [];
@@ -487,7 +503,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                 <div id="main-content" />
             </div>;
         } else if (this.state.error && this.state.error.toUpperCase() === "NOT FOUND".toUpperCase()) {
-            let message = "The folder " + this.props.params.folderId + " does not exist. Please check this id " +
+            let message = "The folder " + this.props.match.params.folderId + " does not exist. Please check this id " +
                 "is correct. We are also available via the feedback button.";
             return <div>
                 <LeftNav items={[]} />
@@ -511,7 +527,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             let parent_public = folder.parents.some((parent) => {
                 return parent.id == 'public';
             });
-            let is_owner = (folder.creator && folder.creator.id === currentUser);
+            let is_owner = (folder.creator && folder.creator.id === user.id);
             var parent_links = this.get_parent_links(folder.parents, parent_public, is_owner);
 
             folderEntriesTableFormatted = folder.entries.map((entry: Folder.FolderEntries, index: number) => {

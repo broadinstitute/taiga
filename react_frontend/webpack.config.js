@@ -8,8 +8,8 @@ module.exports = {
     entry: "./src/index.tsx",
     output: {
         filename: 'react_frontend.js',
-        path: __dirname + "./../depmap/static/js",
-        library: 'DepMap'
+        path: __dirname + "./../taiga2/static/js",
+        library: 'Taiga'
     },
 
 

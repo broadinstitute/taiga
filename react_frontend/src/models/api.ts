@@ -6,7 +6,7 @@ import {
     AccessLog, DatafileUrl, ProvenanceGraphFull, SearchResult
 } from './models';
 
-import { currentUserToken } from '../utilities/route';
+import { getUserToken } from '../utilities/route';
 import { isUndefined } from "util";
 import { Token } from "../components/Token";
 import { isNullOrUndefined } from "util";
@@ -20,7 +20,7 @@ export class TaigaApi {
         this.baseUrl = baseUrl;
         // TODO: Don't pass the name and email as clear strings. We could use a hash function shared between api_app and ui_app to encode/decode
         this.authHeaders = {
-            "auth": "Bearer " + currentUserToken
+            "auth": "Bearer " + getUserToken()
         };
         this.loading = false;
     }

@@ -94,6 +94,7 @@ export default [
         component: UploadDialog,
         name: "dialog",
         props: {
+            isVisible: true,
             title: "Test upload new version",
             previousVersionFiles: [
                 {

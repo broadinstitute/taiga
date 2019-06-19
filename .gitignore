@@ -54,3 +54,5 @@ taiga2/tests/test_files/large_table.csv
 taiga2/db.sqlite3
 pytype_output
 prod_settings.cfg
+depmap/static/js/react_frontend.js
+depmap/static/js/react_frontend.js.map

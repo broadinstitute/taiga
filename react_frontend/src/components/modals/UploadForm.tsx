@@ -103,10 +103,13 @@ const modalStyles: any = {
 
 export class UploadDialog extends React.Component<UploadDialogProps, null> {
     render() {
-        let files = this.props.previousVersionFiles.map(file => {
-            let taigaId = this.props.datasetPermaname + "." + this.props.previousVersionNumber + "/" + file.name;
-            return { name: file.name, size: file.short_summary, fileType: UploadFileType.TaigaPath, existingTaigaId: taigaId }
-        });
+        let files: Array<UploadFile> = [];
+        if (this.props.previousVersionFiles) {
+            files = this.props.previousVersionFiles.map(file => {
+                let taigaId = this.props.datasetPermaname + "." + this.props.previousVersionNumber + "/" + file.name;
+                return { name: file.name, size: file.short_summary, fileType: UploadFileType.TaigaPath, existingTaigaId: taigaId }
+            });
+        }
 
         return (<Modal
             style={modalStyles}
@@ -126,7 +129,7 @@ export class UploadForm extends React.Component<UploadFormProps, UploadFormState
         this.state = {
             name: "",
             description: "",
-            files: []
+            files: props.initialFiles || []
         }
 
         this.controller = new UploadController((files: any) => this.setState({ files: files }));

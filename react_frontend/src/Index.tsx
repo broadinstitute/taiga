@@ -2,7 +2,9 @@ import * as React from "react";
 import * as PropTypes from "prop-types";
 import * as ReactDOM from "react-dom";
 
-import { RouteProps, Router, Route, Link, IndexRoute, browserHistory } from "react-router";
+import { RouteProps, Router, Route, Redirect } from "react-router";
+import { Link, BrowserRouter } from "react-router-dom";
+import { createBrowserHistory } from 'history';
 
 import { FolderView } from "./components/FolderView";
 import { DatasetView } from "./components/DatasetView";
@@ -14,7 +16,7 @@ import { User } from "./models/models";
 import { Token } from "./components/Token";
 import { RecentlyViewed } from "./components/RecentlyViewed";
 
-import { relativePath } from "./utilities/route";
+import { relativePath, getTaigaPrefix } from "./utilities/route";
 import { isNullOrUndefined } from "util";
 import { Provenance } from "./components/Provenance";
 import { FormControl, Overlay, Popover, Tooltip, OverlayTrigger } from "react-bootstrap";
@@ -22,6 +24,8 @@ import { SHA } from "./version"
 
 interface AppProps {
     route?: any;
+    tapi: object;
+    user: User;
 }
 
 interface AppState {
@@ -33,11 +37,47 @@ interface AppState {
 
 const tapi = new TaigaApi(relativePath("api"));
 
+// interface AppContextProps {
+//     tapi: object;
+//     currentUser: string;
+// }
+
+// class AppContext extends React.Component<AppContextProps, any> {
+//     static childContextTypes = {
+//         tapi: PropTypes.object,
+//         currentUser: PropTypes.string
+//     };
+
+//     constructor(props: any) {
+//         super(props);
+//     }
+
+//     getChildContext() {
+//         return {
+//             tapi: this.props.tapi,
+//             currentUser: this.props.currentUser
+//         };
+//     }
+
+//     render() {
+//         return <div>{this.props.children}</div>
+//     }
+// }
+
 class App extends React.Component<AppProps, AppState> {
     static childContextTypes = {
         tapi: PropTypes.object,
-        currentUser: PropTypes.string
+        currentUser: PropTypes.string,
+        user: PropTypes.object
     };
+
+    getChildContext() {
+        return {
+            tapi: this.props.tapi,
+            currentUser: this.props.user.id,
+            user: this.props.user
+        };
+    }
 
     constructor(props: any) {
         super(props);
@@ -50,12 +90,6 @@ class App extends React.Component<AppProps, AppState> {
         };
     }
 
-    getChildContext() {
-        return {
-            tapi: tapi,
-            currentUser: this.props.route.user.id
-        };
-    }
 
     componentWillMount() {
     }
@@ -114,8 +148,8 @@ class App extends React.Component<AppProps, AppState> {
 
     render() {
         // TODO: Get the revision from package.json?
-        const trash_link: any = (this.props.route.user &&
-            <Link to={relativePath("folder/" + this.props.route.user.trash_folder_id)}
+        const trash_link: any = (this.props.user &&
+            <Link to={relativePath("folder/" + this.props.user.trash_folder_id)}
                 className="headerTitle">Trash</Link>
         );
 
@@ -202,37 +236,18 @@ class App extends React.Component<AppProps, AppState> {
 
 export class Home extends React.Component<any, any> {
     static contextTypes = {
-        tapi: PropTypes.object
+        tapi: PropTypes.object,
+        user: PropTypes.object
     }
 
     constructor(props: any) {
         super(props);
-        this.state = { user: null };
-    }
-
-    componentDidMount() {
-        let tapi: TaigaApi = this.context.tapi;
-
-        tapi.get_user().then(user => {
-            this.setState({ user: user }, () => {
-                browserHistory.push(relativePath("folder/" + this.state.user.home_folder_id));
-            });
-        }
-        );
     }
 
     render() {
-        if (isNullOrUndefined(this.state.user)) {
-            return <div id="main-content">Loading</div>;
-        } else {
-            return (
-                <div id="main-content">
-                    <p>
-                        <Link to={relativePath("folder/" + this.state.user.home_folder_id)}>My Data</Link>
-                    </p>
-                </div>
-            );
-        }
+        return (
+            <Redirect to={relativePath("folder/" + this.context.user.home_folder_id)} />
+        );
     }
 }
 
@@ -312,22 +327,29 @@ export class NoMatch extends React.Component<any, any> {
 
 // TODO: let UserRoute: Component<UserRouteProps, ComponentState> = Route as any
 
-
-tapi.get_user().then((user: User) => {
-    ReactDOM.render((
-        <Router history={browserHistory}>
-            <Route path={relativePath("")} component={App} user={user}>
-                <IndexRoute component={Home} />
-                <Route path="dataset/:datasetId" component={DatasetView as any} />
-                <Route path="dataset/:datasetId/:datasetVersionId" component={DatasetView as any} />
-                <Route path="dataset_version/:datasetVersionId" component={DatasetView as any} />
-                <Route path="folder/:folderId" component={FolderView as any} />
-                <Route path="search/:currentFolderId/:searchQuery" component={SearchView as any} />
-                <Route path="token/" component={Token as any} />
-                <Route path="recentlyViewed/" component={RecentlyViewed as any} />
-                <Route path="provenance/:graphId" component={Provenance as any} />
-            </Route>
-            <Route path="*" component={NoMatch} />
-        </Router>
-    ), document.getElementById("root"));
-});
+export function initPage(element: any) {
+    console.log("initPage", tapi);
+    console.log("initPage2", tapi);
+    tapi.get_user().then((user: User) => {
+        console.log("initPage3");
+        console.log("in initPage user", user);
+        ReactDOM.render((
+            // <AppContext >
+            <BrowserRouter>
+                <App tapi={tapi} user={user}>
+                    <Route path={relativePath("")} exact component={Home} />
+                    <Route path={relativePath("dataset/:datasetId")} component={DatasetView as any} />
+                    <Route path={relativePath("dataset/:datasetId/:datasetVersionId")} component={DatasetView as any} />
+                    <Route path={relativePath("dataset_version/:datasetVersionId")} component={DatasetView as any} />
+                    <Route path={relativePath("folder/:folderId")} component={FolderView as any} />
+                    <Route path={relativePath("search/:currentFolderId/:searchQuery")} component={SearchView as any} />
+                    <Route path={relativePath("token/")} component={Token as any} />
+                    <Route path={relativePath("recentlyViewed/")} component={RecentlyViewed as any} />
+                    <Route path={relativePath("provenance/:graphId")} component={Provenance as any} />
+                    <Route path="*" component={NoMatch} />
+                </App>
+            </BrowserRouter>
+            // </AppContext>
+        ), element);
+    });
+}

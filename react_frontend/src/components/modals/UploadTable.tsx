@@ -1,6 +1,8 @@
 import * as React from "react";
 import update from "immutability-helper";
 import * as filesize from "filesize";
+import { Form } from "react-bootstrap"
+import { InitialFileType } from "../../models/models";
 
 // import { FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
 // import { InitialFileType } from "../../models/models";
@@ -55,9 +57,18 @@ export class UploadController {
         console.log("constructed");
     }
 
-
     getDefaultName(path: string) {
-        return "foo";
+        let lastSlash = path.lastIndexOf("/");
+        if (lastSlash >= 0) {
+            path = path.substring(lastSlash + 1);
+        }
+
+        let lastDot = path.lastIndexOf(".");
+        if (lastDot >= 0) {
+            path = path.substring(0, lastDot);
+        }
+
+        return path;
     }
 
     addGCS(gcsPath: string, size: number) {
@@ -67,8 +78,7 @@ export class UploadController {
 
     addUpload(file: File) {
         let name = this.getDefaultName(file.name)
-        console.log("file", file);
-        this.addFile({ name: name, fileType: UploadFileType.Upload, size: filesize(file.size), uploadFile: file })
+        this.addFile({ name: name, fileType: UploadFileType.Upload, size: filesize(file.size), uploadFile: file, uploadFormat: "" + InitialFileType.Raw })
     }
 
     addTaiga(exitingTaigaId: string, size: string) {
@@ -77,8 +87,12 @@ export class UploadController {
     }
 
     addFile(file: UploadFile) {
-        console.log("files", this.files);
         this.files = update(this.files, { $push: [file] })
+        this.listener(this.files)
+    }
+
+    changeUploadFormat(index: number, format: string) {
+        this.files = update(this.files, { [index]: { uploadFormat: { $set: format } } })
         this.listener(this.files)
     }
 
@@ -102,7 +116,7 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
         let rows = this.props.files.map((file, i) => {
             let name = file.name;
             let source = "";
-            let typeLabel = "";
+            let typeLabel: any = "";
             let progress = "";
 
             if (file.fileType == UploadFileType.GCSPath) {
@@ -112,7 +126,15 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
                 typeLabel = "Taiga file"
                 source = file.exitingTaigaId;
             } else if (file.fileType == UploadFileType.Upload) {
-                typeLabel = "Upload";
+                typeLabel = <select>
+                    <option value={InitialFileType.TableCSV}>{InitialFileType.TableCSV}</option>
+                    <option value={InitialFileType.NumericMatrixCSV}>{InitialFileType.NumericMatrixCSV}</option>
+                    <option value={InitialFileType.TableTSV}>{InitialFileType.TableTSV}</option>
+                    <option value={InitialFileType.NumericMatrixTSV}>{InitialFileType.NumericMatrixTSV}</option>
+                    <option value={InitialFileType.GCT}>{InitialFileType.GCT}</option>
+                    <option value={InitialFileType.Raw}>{InitialFileType.Raw}</option>
+                </select>
+
                 source = file.uploadFile.name;
             } else {
                 throw "unknown filetype";
@@ -135,14 +157,14 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
                     {progress}
                 </td>
                 <td>
-                    <button type="button" className="btn btn-default" aria-label="Left Align" onClick={event => this.props.controller.onDelete(i)}>
+                    <button type="button" className="btn btn-default btn-sm" aria-label="Left Align" onClick={event => this.props.controller.onDelete(i)}>
                         <span className="glyphicon glyphicon-trash" aria-hidden="true"></span>
                     </button>
                 </td>
             </tr>);
         });
 
-        return (<table>
+        return (<table className="table">
             <thead>
                 <tr>
                     <th style={{ width: "100px" }} >

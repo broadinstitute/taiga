@@ -1,9 +1,9 @@
 declare let taigaPrefix: string;
 declare let taigaUserToken: string;
 
-function fetchPrefix(){
+export function getTaigaPrefix() {
     // If taigaPrefix exists in the global scope
-    if(taigaPrefix){
+    if (taigaPrefix) {
         return taigaPrefix;
     }
     else {
@@ -12,8 +12,8 @@ function fetchPrefix(){
 }
 
 
-function fetchUserToken() {
-    if(taigaUserToken) {
+export function getUserToken() {
+    if (taigaUserToken) {
         return taigaUserToken;
     }
     else {
@@ -21,17 +21,13 @@ function fetchUserToken() {
     }
 }
 
-export const taigaRoute:string = fetchPrefix();
-
-export const currentUserToken:string = fetchUserToken();
-
-function pathJoin(parts: Array<string>, sep?: string){
-   var separator = sep || '/';
-   var replace   = new RegExp(separator+'{1,}', 'g');
-   return parts.join(separator).replace(replace, separator);
+function pathJoin(parts: Array<string>, sep?: string) {
+    var separator = sep || '/';
+    var replace = new RegExp(separator + '{1,}', 'g');
+    return parts.join(separator).replace(replace, separator);
 }
 
 // TODO: We could also create a component RelativeLink which could wrap a <Link> Component and manage the relativePath
 export function relativePath(relativePath: string) {
-    return pathJoin([taigaRoute, relativePath]);
+    return pathJoin([getTaigaPrefix(), relativePath]);
 }
