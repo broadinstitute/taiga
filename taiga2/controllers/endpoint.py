@@ -27,7 +27,12 @@ log = logging.getLogger(__name__)
 from flask import render_template, request, redirect, url_for
 import os, json
 
+from connexion.exceptions import ProblemException
+
 ADMIN_USER_ID = "admin"
+
+def api_error(msg):
+    raise ProblemException(detail=msg)
 
 @validate
 def get_dataset(datasetId):
@@ -354,6 +359,8 @@ def de_delete_dataset_version(datasetVersionId):
 
     return flask.jsonify({})
 
+from .models_controller import InvalidTaigaIdFormat
+
 @validate
 def create_upload_session_file(uploadMetadata, sid):
     filename = uploadMetadata['filename']
@@ -379,11 +386,20 @@ def create_upload_session_file(uploadMetadata, sid):
         return flask.jsonify(task.id)
     elif uploadMetadata['filetype'] == "virtual":
         existing_taiga_id = uploadMetadata['existingTaigaId']
-        data_file = models_controller.get_datafile_by_taiga_id(existing_taiga_id)
+
+        try:
+            data_file = models_controller.get_datafile_by_taiga_id(existing_taiga_id, one_or_none=True)
+        except InvalidTaigaIdFormat as ex:
+            api_error("The following was not formatted like a valid taiga ID: {}".format(ex.taiga_id))
+
+        if data_file is None:
+            api_error("Unknown taiga ID: "+existing_taiga_id)
+
         models_controller.add_upload_session_virtual_file(session_id=sid, filename=filename, data_file_id=data_file.id)
+
         return flask.jsonify("done")
     else:
-        raise Exception("unknown filetype "+uploadMetadata['filetype'])
+        api_error("unknown filetype "+uploadMetadata['filetype']+", expected '' or ''")
 
 
 @validate

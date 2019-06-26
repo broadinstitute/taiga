@@ -31,6 +31,21 @@ def get_latest_version_datafiles_from_dataset(dataset_id):
 
     return latest_dataset_version.datafiles
 
+def create_sample_dataset(name="dataset", description="Sample dataset description", filename="data", folder_id="public", forced_permaname=None):
+    upload_session_data = models_controller.add_new_upload_session()
+    upload_session_file_data = models_controller.add_upload_session_s3_file(session_id=upload_session_data.id,
+                                                                         filename=filename,
+                                                                         s3_bucket=bucket_name,
+                                                                         initial_file_type=models.InitialFileType.Raw,
+                                                                         initial_s3_key="y")
+
+    data = models_controller.add_dataset_from_session(session_id=upload_session_data.id,
+                                                      dataset_name=name,
+                                                      dataset_description=description,
+                                                      current_folder_id=folder_id)
+
+    if forced_permaname:
+        models_controller.update_permaname(data.id, forced_permaname)
 
 def drop_and_create_db():
     models_controller.db.drop_all()
@@ -38,7 +53,7 @@ def drop_and_create_db():
     create_db()
 
     # Create the Admin user
-    admin_user = models_controller.add_user(name="admin", email="admin@broadinstitute.org")
+    admin_user = models_controller.add_user(name="admin", email="admin@broadinstitute.org", token="test-token")
     home_folder_admin = admin_user.home_folder
 
     # Setting up the flask user
@@ -110,6 +125,8 @@ def drop_and_create_db():
         dataAX = models_controller.add_dataset_version(dataset_id=origin_dataset.id,
                                                        datafiles_ids=datafiles_id)
 
+    # create a sample dataset in a known location with a known permaname
+    create_sample_dataset(forced_permaname="sample-1", folder_id="public")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

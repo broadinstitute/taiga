@@ -22,6 +22,7 @@
     "aws-sdk": "^2.7.17",
     "bootstrap": "^3.3.7",
     "clipboard": "^1.6.0",
+    "cross-fetch": "^3.0.4",
     "css-loader": "^2.1.0",
     "cytoscape": "^3.7.2",
     "d3-array": "^1.2.1",
@@ -113,7 +114,9 @@
     },
     "testRegex": ".*/__tests__/.*test.*\\.(ts|tsx|js)$",
     "testEnvironment": "node",
-    "setupTestFrameworkScriptFile": "<rootDir>/setup.ts",
+    "setupFilesAfterEnv": [
+      "<rootDir>/setup.ts"
+    ],
     "setupFiles": [
       "jest-localstorage-mock"
     ]

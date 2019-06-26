@@ -277,7 +277,7 @@ export interface UploadedFileMetadata {
     filename: string;
     filetype: string;
     s3Upload?: S3UploadedLocation
-    existingTaigaID?: string
+    existingTaigaId?: string
 }
 
 export function dropExtension(filename: string): string {
@@ -465,18 +465,18 @@ export class BootstrapTableSearchEntry {
 
 // IMPORTANT: Need to sync with backend for each changes
 export enum InitialFileType {
-    NumericMatrixCSV = <any>"NumericMatrixCSV",
-    NumericMatrixTSV = <any>"NumericMatrixTSV",
-    TableCSV = <any>"TableCSV",
-    TableTSV = <any>"TableTSV",
-    GCT = <any>"GCT",
-    Raw = <any>"Raw"
+    NumericMatrixCSV = "NumericMatrixCSV",
+    NumericMatrixTSV = "NumericMatrixTSV",
+    TableCSV = "TableCSV",
+    TableTSV = "TableTSV",
+    GCT = "GCT",
+    Raw = "Raw"
 }
 
 export enum DataFileType {
-    Raw = <any>"Raw",
-    HDF5 = <any>"HDF5",
-    Columnar = <any>"Columnar"
+    Raw = "Raw",
+    HDF5 = "HDF5",
+    Columnar = "Columnar"
 }
 
 export interface DatafileUrl {

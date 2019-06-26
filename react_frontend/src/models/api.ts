@@ -1,4 +1,4 @@
-import 'whatwg-fetch';
+import fetch from 'cross-fetch';
 
 import {
     User, Folder, Dataset, DatasetVersion, S3Credentials,
@@ -15,18 +15,20 @@ export class TaigaApi {
     baseUrl: string;
     authHeaders: any;
     loading: boolean;
+    userToken: string;
 
-    constructor(baseUrl: string) {
+    constructor(baseUrl: string, userToken: string) {
         this.baseUrl = baseUrl;
-        // TODO: Don't pass the name and email as clear strings. We could use a hash function shared between api_app and ui_app to encode/decode
+        this.userToken = userToken;
+
         this.authHeaders = {
-            "auth": "Bearer " + getUserToken()
+            "auth": "Bearer " + this.userToken;
         };
         this.loading = false;
     }
 
     _fetch<T>(url: string): Promise<T> {
-        return window.fetch(this.baseUrl + url, {
+        return fetch(this.baseUrl + url, {
             headers: {
                 "Authorization": this.authHeaders.auth,
             }
@@ -44,7 +46,7 @@ export class TaigaApi {
     }
 
     _post<T>(url: string, args: any): Promise<T> {
-        return window.fetch(this.baseUrl + url, {
+        return fetch(this.baseUrl + url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -161,7 +163,7 @@ export class TaigaApi {
     }
 
     create_datafile(sid: string, S3UploadedFileMetadata: UploadedFileMetadata) {
-        return this._post<string>("/datafile/" + sid, S3UploadedFileMetadata)
+        return this._post<string>("/datafile/" + sid, S3UploadedFileMetadata);
     }
 
     get_datafile(datasetPermaname: string, datasetVersion: string,

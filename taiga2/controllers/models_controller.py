@@ -38,9 +38,9 @@ log = logging.getLogger(__name__)
 #   You need to push the context of you app => app.app_context().push() (for us frontend_app.app_context().push()
 
 # <editor-fold desc="User">
-def add_user(name, email):
+def add_user(name, email, token=None):
     new_user = User(name=name,
-                    email=email)
+                    email=email, token=token)
 
     home_description = """Welcome to Taiga2: a light-weight repository for capturing, versioning and accessing datasets.
 
@@ -297,6 +297,11 @@ def add_dataset_from_session(session_id, dataset_name, dataset_description, curr
     add_folder_entry(current_folder_id, added_dataset.id)
 
     return added_dataset
+
+def update_permaname(dataset_id, permaname):
+    dataset = get_dataset(dataset_id)
+    dataset.permaname = permaname
+    db.session.commit()
 
 
 def get_dataset(dataset_id, one_or_none=False) -> Dataset:
@@ -991,15 +996,19 @@ def get_datafile(datafile_id) -> DataFile:
 
     return datafile
 
-def get_datafile_by_taiga_id(taiga_id) -> DataFile:
+class InvalidTaigaIdFormat(Exception):
+    def __init__(self, taiga_id):
+        self.taiga_id = taiga_id
+
+def get_datafile_by_taiga_id(taiga_id, one_or_none=False) -> DataFile:
     m = re.match("([a-z0-9-]+)\\.(\\d+)/(.*)", taiga_id)
     if m is None:
-        raise Exception("The following was not formatted like a valid taiga ID: {}".format(taiga_id))
+        raise InvalidTaigaIdFormat(taiga_id)
     permaname = m.group(1)
     version = m.group(2)
     filename = m.group(3)
     dataset_version = get_dataset_version_by_permaname_and_version(permaname, version)
-    return get_datafile_by_version_and_name(dataset_version.id, filename)
+    return get_datafile_by_version_and_name(dataset_version.id, filename, one_or_none=one_or_none)
 
 def add_datafiles_from_session(session_id):
     # We retrieve all the upload_session_files related to the UploadSession

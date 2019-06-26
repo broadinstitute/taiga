@@ -13,12 +13,7 @@ export function getTaigaPrefix() {
 
 
 export function getUserToken() {
-    if (taigaUserToken) {
-        return taigaUserToken;
-    }
-    else {
-        return undefined;
-    }
+    return (window as any).taigaUserToken;
 }
 
 function pathJoin(parts: Array<string>, sep?: string) {

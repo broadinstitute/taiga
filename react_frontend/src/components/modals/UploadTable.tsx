@@ -3,6 +3,7 @@ import update from "immutability-helper";
 import * as filesize from "filesize";
 import { Form } from "react-bootstrap"
 import { InitialFileType } from "../../models/models";
+import { UploadFileType } from "../UploadTracker";
 
 // import { FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
 // import { InitialFileType } from "../../models/models";
@@ -17,11 +18,6 @@ import { InitialFileType } from "../../models/models";
 //     type: InitialFileType;
 // }
 
-export enum UploadFileType {
-    Upload,
-    TaigaPath,
-    GCSPath
-}
 
 export interface UploadFile {
     name: string; // the name of the datafile record in once dataset has been created
@@ -36,7 +32,7 @@ export interface UploadFile {
     existingTaigaId?: string; // the ID of an existing taiga data file.
 
     uploadFile?: File;
-    uploadFormat?: string;
+    uploadFormat?: InitialFileType;
     progress?: number; // between 0 and 1
     progressMessage?: string;
 }
