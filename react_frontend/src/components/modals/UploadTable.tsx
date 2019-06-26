@@ -27,11 +27,13 @@ export interface UploadFile {
     name: string; // the name of the datafile record in once dataset has been created
     size: string; // desciption of size
 
+    computeNameFromTaigaId: boolean;
+
     fileType: UploadFileType;
 
     gcsPath?: string; // If the path to a GCS object
 
-    exitingTaigaId?: string; // the ID of an existing taiga data file.
+    existingTaigaId?: string; // the ID of an existing taiga data file.
 
     uploadFile?: File;
     uploadFormat?: string;
@@ -51,8 +53,8 @@ export class UploadController {
     files: Readonly<Array<UploadFile>>;
     listener: (x: any) => void;
 
-    constructor(listener: (x: any) => void) {
-        this.files = []
+    constructor(files: Readonly<Array<UploadFile>>, listener: (x: any) => void) {
+        this.files = files
         this.listener = listener;
         console.log("constructed");
     }
@@ -73,17 +75,17 @@ export class UploadController {
 
     addGCS(gcsPath: string, size: number) {
         let name = this.getDefaultName(gcsPath)
-        this.addFile({ name: name, fileType: UploadFileType.GCSPath, size: "unknown", gcsPath: gcsPath })
+        this.addFile({ name: name, computeNameFromTaigaId: false, fileType: UploadFileType.GCSPath, size: "unknown", gcsPath: gcsPath })
     }
 
     addUpload(file: File) {
         let name = this.getDefaultName(file.name)
-        this.addFile({ name: name, fileType: UploadFileType.Upload, size: filesize(file.size), uploadFile: file, uploadFormat: "" + InitialFileType.Raw })
+        this.addFile({ name: name, computeNameFromTaigaId: false, fileType: UploadFileType.Upload, size: filesize(file.size), uploadFile: file, uploadFormat: "" + InitialFileType.Raw })
     }
 
-    addTaiga(exitingTaigaId: string, size: string) {
-        let name = this.getDefaultName(exitingTaigaId)
-        this.addFile({ name: name, fileType: UploadFileType.TaigaPath, size: size, exitingTaigaId: exitingTaigaId })
+    addTaiga(existingTaigaId: string, size: string) {
+        let name = this.getDefaultName(existingTaigaId)
+        this.addFile({ name: name, computeNameFromTaigaId: true, fileType: UploadFileType.TaigaPath, size: size, existingTaigaId: existingTaigaId })
     }
 
     addFile(file: UploadFile) {
@@ -101,9 +103,26 @@ export class UploadController {
         this.listener(this.files)
     }
 
-    onNameChange(index: number, newName: string) {
-        this.files = update(this.files, { [index]: { name: { $set: newName } } })
+    onTaigaIdChange(index: number, newValue: string) {
+        let changes = { existingTaigaId: { $set: newValue } } as any;
+        if (this.files[index].computeNameFromTaigaId) {
+            changes.name = { "$set": this.getDefaultName(newValue) }
+        }
+        this.files = update(this.files, { [index]: changes })
         this.listener(this.files)
+    }
+
+    onNameChange(index: number, newName: string) {
+        this.files = update(this.files, { [index]: { name: { $set: newName }, computeNameFromTaigaId: { $set: false } } })
+        this.listener(this.files)
+    }
+
+    onDatasetNameChange(name: string) {
+
+    }
+
+    onDescriptionChange(name: string) {
+
     }
 }
 
@@ -115,7 +134,7 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
     render() {
         let rows = this.props.files.map((file, i) => {
             let name = file.name;
-            let source = "";
+            let source: any = "";
             let typeLabel: any = "";
             let progress = "";
 
@@ -124,7 +143,7 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
                 source = file.gcsPath;
             } else if (file.fileType == UploadFileType.TaigaPath) {
                 typeLabel = "Taiga file"
-                source = file.exitingTaigaId;
+                source = <input type="text" value={file.existingTaigaId} onChange={event => this.props.controller.onTaigaIdChange(i, event.target.value)} />
             } else if (file.fileType == UploadFileType.Upload) {
                 typeLabel = <select>
                     <option value={InitialFileType.TableCSV}>{InitialFileType.TableCSV}</option>
@@ -140,7 +159,9 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
                 throw "unknown filetype";
             }
 
-            return (<tr>
+            console.log("source2", source)
+
+            return (<tr key={"r" + i}>
                 <td>
                     <input type="text" value={name} onChange={event => this.props.controller.onNameChange(i, event.target.value)} />
                 </td>

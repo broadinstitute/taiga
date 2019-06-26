@@ -1,5 +1,5 @@
 import { UploadTable, UploadFileType, UploadController } from "./UploadTable"
-import { UploadForm, UploadDialog } from "./UploadForm"
+import { CreateVersionDialog } from "./UploadForm"
 import * as React from "react";
 import * as Dropzone from "react-dropzone";
 import { DataFileType } from "../../models/models";
@@ -26,7 +26,7 @@ export class UploadTableWrapper extends React.Component<any, any> {
         super(props);
         this.state = { files: props.initialFiles }
 
-        this.controller = new UploadController((files: any) => this.setState({ files: files }));
+        this.controller = new UploadController(props.intialFiles, (files: any) => this.setState({ files: files }));
         this.controller.files = props.initialFiles;
     }
 
@@ -84,18 +84,15 @@ export class UploadTableWrapper extends React.Component<any, any> {
 
 export default [
     {
-        component: UploadTableWrapper,
-        name: "simple",
-        props: {
-            initialFiles: files
-        },
-    },
-    {
-        component: UploadDialog,
+        component: CreateVersionDialog,
         name: "dialog",
         props: {
             isVisible: true,
-            title: "Test upload new version",
+            onFileUploadedAndConverted: (sid: string, name: string, description: string, previousDatafileIds: Array<string>) => {
+                console.log("onFileUploadedAndConverted")
+            },
+            previousDescription: "prev Description",
+            previousVersionNumber: "100",
             previousVersionFiles: [
                 {
                     id: "id",
@@ -105,16 +102,7 @@ export default [
                     type: DataFileType.Raw
                 }
             ],
-            help: "help text",
-            datasetPermaname: "dataset",
-            previousVersionNumber: "2"
+            datasetPermaname: "permaname-1000"
         },
-    },
-    {
-        component: UploadForm,
-        name: "form",
-        props: {
-
-        }
     }
 ]

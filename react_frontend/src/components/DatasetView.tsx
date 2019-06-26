@@ -10,7 +10,7 @@ import * as Models from "../models/models";
 import { TaigaApi } from "../models/api";
 
 import * as Dialogs from "./Dialogs";
-import { UploadForm } from "./modals/UploadForm";
+import { CreateDatasetDialog, CreateVersionDialog } from "./modals/UploadForm";
 
 import { toLocalDateString } from "../utilities/formats";
 import { LoadingOverlay } from "../utilities/loading";
@@ -732,8 +732,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                 this.updateDescription(description);
                             }} />
 
-                        {this.state.showUploadDataset && <div>Upload dialog goes here</div>}
-                        {/* <UploadDialog
+                        <CreateVersionDialog
                             isVisible={this.state.showUploadDataset}
                             cancel={() => {
                                 this.setState({ showUploadDataset: false })
@@ -741,12 +740,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             onFileUploadedAndConverted={(sid: string, name: string, description: string, previousDatafileIds: Array<string>) =>
                                 this.filesUploadedAndConverted(sid, name, description, previousDatafileIds)
                             }
-                            title="New Dataset Version"
-                            readOnlyName={this.state.dataset.name}
                             previousDescription={this.state.datasetVersion.description}
-                            previousVersionName={this.state.datasetVersion.name}
+                            previousVersionNumber={this.state.datasetVersion.name}
                             previousVersionFiles={this.state.datasetVersion.datafiles}
-                        /> */}
+                            datasetPermaname={this.state.dataset.permanames[0]}
+                        />
 
                         <Dialogs.InputFolderId
                             actionDescription="Link this dataset into the chosen folder"

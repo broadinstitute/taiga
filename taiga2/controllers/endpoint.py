@@ -91,7 +91,7 @@ def create_folder(metadata):
 
     return flask.jsonify(json_folder_named_id)
 
-@validate
+# @validate commented out because some creators are null and swagger doesn't seem to allow optional props at the top level
 def get_folder(folder_id):
     folder = models_controller.get_folder(folder_id, one_or_none=True)
     if folder is None:

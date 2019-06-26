@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -12,10 +13,10 @@
     <!-- Optional theme -->
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
     <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap-table/2.11.2/react-bootstrap-table-all.min.css">
+        href="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap-table/2.11.2/react-bootstrap-table-all.min.css">
 
     <link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.1/bootstrap3-editable/css/bootstrap-editable.css"
-          rel="stylesheet"/>
+        rel="stylesheet" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
@@ -145,7 +146,7 @@
             color: #fff;
         }
 
-        .headerJumpTo{
+        .headerJumpTo {
             width: 29%;
             display: inline;
             height: 19px;
@@ -253,6 +254,7 @@
                 -o-transform: rotate(0deg);
                 transform: rotate(0deg);
             }
+
             100% {
                 -webkit-transform: rotate(360deg);
                 -moz-transform: rotate(360deg);
@@ -270,6 +272,7 @@
                 -o-transform: rotate(0deg);
                 transform: rotate(0deg);
             }
+
             100% {
                 -webkit-transform: rotate(360deg);
                 -moz-transform: rotate(360deg);
@@ -287,6 +290,7 @@
                 -o-transform: rotate(0deg);
                 transform: rotate(0deg);
             }
+
             100% {
                 -webkit-transform: rotate(360deg);
                 -moz-transform: rotate(360deg);
@@ -304,6 +308,7 @@
                 -o-transform: rotate(0deg);
                 transform: rotate(0deg);
             }
+
             100% {
                 -webkit-transform: rotate(360deg);
                 -moz-transform: rotate(360deg);
@@ -314,48 +319,55 @@
         }
 
         /*-- End of Loading Overlay styling --*/
-
-
     </style>
 </head>
 
 <body>
-<div id="root"></div>
+    <div id="root"></div>
 
-<!-- TODO: Unfortunately, async attribute is giving an error on loading page. Chunking per page would be the best way to go -->
-<!-- TODO: In production, use the minified libraries -->
-<script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-with-addons.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-dom.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/react-router/2.7.0/ReactRouter.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.7.17/aws-sdk.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/react-bootstrap/0.30.7/react-bootstrap.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/react-bootstrap-table/2.7.1/react-bootstrap-table.min.js"></script>
-<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/cytoscape/3.0.0/cytoscape.min.js"></script>
-<script src="https://cdn.rawgit.com/cpettitt/dagre/v0.7.4/dist/dagre.min.js"></script>
-<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-dagre/1.5.0/cytoscape-dagre.js"></script>
+    <!-- TODO: Unfortunately, async attribute is giving an error on loading page. Chunking per page would be the best way to go -->
+    <!-- TODO: In production, use the minified libraries -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-with-addons.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-dom.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react-router/2.7.0/ReactRouter.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.7.17/aws-sdk.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react-bootstrap/0.30.7/react-bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react-bootstrap-table/2.7.1/react-bootstrap-table.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/cytoscape/3.0.0/cytoscape.min.js"></script>
+    <script src="https://cdn.rawgit.com/cpettitt/dagre/v0.7.4/dist/dagre.min.js"></script>
+    <script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-dagre/1.5.0/cytoscape-dagre.js"></script>
 
-<!-- Main -->
-<script>
-    // Fetch the variables of the environment
-    var taigaPrefix = '{{ prefix }}';
-    var taigaUserToken = '{{ user_token }}';
-</script>
-<script src="{{ pseudostatic_url('frontend.js') }}"></script>
+    <!-- Main -->
+    <script>
+        // Fetch the variables of the environment
+        var taigaPrefix = '{{ prefix }}';
+        var taigaUserToken = '{{ user_token }}';
+    </script>
+    <script src="{{ pseudostatic_url('js/react_frontend.js') }}"></script>
+    <script>
+        Taiga.initPage(document.getElementById("root"))
+    </script>
 
-<!-- Analytics -->
-<script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+    <!-- Analytics -->
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r;
+            i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date();
+            a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+            a.async = 1;
+            a.src = g;
+            m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
 
-  ga('create', 'UA-52456999-6', 'auto');
-  ga('send', 'pageview');
-
-</script>
+        ga('create', 'UA-52456999-6', 'auto');
+        ga('send', 'pageview');
+    </script>
 
 </body>
-</html>
 
+</html>

@@ -266,23 +266,18 @@ export interface S3UploadedData {
     Key: string;
 }
 
-export class S3UploadedFileMetadata {
-    location: string;
-    eTag: string;
+
+export interface S3UploadedLocation {
+    format: string;
     bucket: string;
     key: string;
+}
+
+export interface UploadedFileMetadata {
     filename: string;
     filetype: string;
-
-    constructor(uploadS3Data: S3UploadedData, filename: string, filetype: InitialFileType) {
-        this.location = uploadS3Data.Location;
-        this.eTag = uploadS3Data.ETag;
-        this.bucket = uploadS3Data.Bucket;
-        this.key = uploadS3Data.Key;
-
-        this.filename = filename;
-        this.filetype = filetype.toString();
-    }
+    s3Upload?: S3UploadedLocation
+    existingTaigaID?: string
 }
 
 export function dropExtension(filename: string): string {

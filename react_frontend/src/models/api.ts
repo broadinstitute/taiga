@@ -2,7 +2,7 @@ import 'whatwg-fetch';
 
 import {
     User, Folder, Dataset, DatasetVersion, S3Credentials,
-    TaskStatus, DatasetAndDatasetVersion, S3UploadedFileMetadata, NamedId, DatasetFullDatasetVersions,
+    TaskStatus, DatasetAndDatasetVersion, UploadedFileMetadata, NamedId, DatasetFullDatasetVersions,
     AccessLog, DatafileUrl, ProvenanceGraphFull, SearchResult
 } from './models';
 
@@ -160,7 +160,7 @@ export class TaigaApi {
         return this._post<void>("/folder/" + folder_id + "/description", { description: description })
     }
 
-    create_datafile(sid: string, S3UploadedFileMetadata: S3UploadedFileMetadata) {
+    create_datafile(sid: string, S3UploadedFileMetadata: UploadedFileMetadata) {
         return this._post<string>("/datafile/" + sid, S3UploadedFileMetadata)
     }
 
