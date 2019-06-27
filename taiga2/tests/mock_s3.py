@@ -111,7 +111,7 @@ class MockSTS:
         dict_credentials = {
             'Credentials': {
                 'AccessKeyId': 'AccessKeyId',
-                'Expiration': datetime_expiration.timestamp(),
+                'Expiration': datetime_expiration.isoformat(),
                 'SecretAccessKey': 'SecretAccessKey',
                 'SessionToken': 'SessionToken'
             }
