@@ -6,7 +6,7 @@ import datetime
 from flask_migrate import Migrate
 
 from sqlalchemy import MetaData
-from sqlalchemy import event, UniqueConstraint
+from sqlalchemy import event, UniqueConstraint,CheckConstraint
 
 from flask_sqlalchemy import SQLAlchemy
 from typing import List
@@ -205,6 +205,15 @@ class InitialFileType(enum.Enum):
     GCT = "GCT"
     Raw = "Raw"
 
+def resolve_virtual_datafile(datafile):
+    attempt_count = 0
+    while datafile.type == 'virtual':
+        attempt_count += 1
+        if attempt_count > 100:
+            raise Exception("Too many virtual references to traverse")
+        datafile = datafile.underlying_data_file
+    return datafile
+
 class DataFile(db.Model):
     __tablename__ = 'datafiles'
 
@@ -222,12 +231,11 @@ class DataFile(db.Model):
     # self-referencing FKs. Moved here to get it to work, but assume these will be both None unless the type is
     # VirtualDataFile. Also underlying_data_file_id is always None. Use underlying_data_file.id instead if you want the ID
     underlying_data_file_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
-    underlying_data_file = db.relationship("DataFile",
-                                           uselist=False,
-                                           foreign_keys="DataFile.underlying_data_file_id")
+    underlying_data_file = db.relationship("DataFile", remote_side=[id])
 
     __table_args__ = (
         UniqueConstraint("dataset_version_id", "name"),
+        CheckConstraint("(type = 'virtual' and underlying_data_file_id is not null) or (type = 's3')", name='typedcheck')
     )
 
     __mapper_args__ = {

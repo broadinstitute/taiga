@@ -18,7 +18,7 @@ from taiga2.models import User, Folder, Dataset, DataFile, S3DataFile, DatasetVe
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
 from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
-from taiga2.models import Group, EntryRightsEnum
+from taiga2.models import Group, EntryRightsEnum, resolve_virtual_datafile
 from taiga2.models import SearchResult, SearchEntry, Breadcrumb
 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
@@ -566,6 +566,8 @@ def add_dataset_version(dataset_id,
     datafiles = db.session.query(DataFile) \
         .filter(DataFile.id.in_(datafiles_ids)).all()
 
+    assert len(datafiles) == len(datafiles_ids)
+
     latest_dataset_version = get_latest_dataset_version(dataset_id)
     if latest_dataset_version:
         version = latest_dataset_version.version + 1
@@ -963,19 +965,56 @@ def add_s3_datafile(s3_bucket,
 
 def add_virtual_datafile(name, datafile_id):
     assert isinstance(datafile_id, str)
+
     datafile = DataFile.query.get(datafile_id)
     assert datafile is not None
+
     new_datafile = VirtualDataFile(name=name,
                                    underlying_data_file=datafile)
 
     db.session.add(new_datafile)
     db.session.commit()
-    assert new_datafile.id is not None
 
+    # some sanity checks to make sure persistence worked as expected
+    _id = new_datafile.id
+    db.session.expunge(new_datafile)
+    new_datafile_2 = VirtualDataFile.query.get(_id)
+    assert id(new_datafile) != id(new_datafile_2)
+    new_datafile = new_datafile_2
+    assert new_datafile.id is not None
     assert new_datafile.underlying_data_file.id is not None
+    assert new_datafile.underlying_data_file_id is not None
 
     return new_datafile
 
+# def add_virtual_datafile(name, datafile_id):
+#     assert isinstance(datafile_id, str)
+#
+#     datafile = DataFile.query.get(datafile_id)
+#     assert datafile is not None
+#
+#     # new_datafile = VirtualDataFile(name=name,
+#     #                                underlying_data_file=datafile)
+#     #
+#     # db.session.add(new_datafile)
+#     from taiga2.models import generate_uuid
+#
+#     id = generate_uuid()
+#     db.session.execute(VirtualDataFile.__table__.insert(), dict(type='virtual', id=id, underlying_data_file_id=datafile_id, name=name))
+#     print("****")
+#     db.session.commit()
+#
+#     # _id = new_datafile.id
+#     # db.session.expunge(new_datafile)
+#     new_datafile = VirtualDataFile.query.get(id)
+#     # assert id(new_datafile) != id(new_datafile_2)
+#
+#     # new_datafile = new_datafile_2
+#     assert new_datafile.id is not None
+#
+#     assert new_datafile.underlying_data_file.id is not None
+#
+#     return new_datafile
 
 
 
@@ -1000,6 +1039,7 @@ class InvalidTaigaIdFormat(Exception):
     def __init__(self, taiga_id):
         self.taiga_id = taiga_id
 
+
 def get_datafile_by_taiga_id(taiga_id, one_or_none=False) -> DataFile:
     m = re.match("([a-z0-9-]+)\\.(\\d+)/(.*)", taiga_id)
     if m is None:
@@ -1008,7 +1048,8 @@ def get_datafile_by_taiga_id(taiga_id, one_or_none=False) -> DataFile:
     version = m.group(2)
     filename = m.group(3)
     dataset_version = get_dataset_version_by_permaname_and_version(permaname, version)
-    return get_datafile_by_version_and_name(dataset_version.id, filename, one_or_none=one_or_none)
+    datafile = get_datafile_by_version_and_name(dataset_version.id, filename, one_or_none=one_or_none)
+    return resolve_virtual_datafile(datafile)
 
 def add_datafiles_from_session(session_id):
     # We retrieve all the upload_session_files related to the UploadSession

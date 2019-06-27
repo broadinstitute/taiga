@@ -1238,6 +1238,7 @@ definitions:
   DatasetVersion:
     type: object
     required:
+      - description
       - id
       - dataset_id
       - name

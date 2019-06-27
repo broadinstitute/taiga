@@ -3,7 +3,7 @@ from marshmallow import post_dump
 from marshmallow_enum import EnumField
 from marshmallow_oneofschema import OneOfSchema
 
-from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile, S3DataFile, get_allowed_conversion_type
+from taiga2.models import User, Folder, Entry, Dataset, DatasetVersion, DataFile, S3DataFile, get_allowed_conversion_type, resolve_virtual_datafile
 from taiga2.models import ProvenanceEdge, ProvenanceNode, ProvenanceGraph
 from taiga2.models import Group, EntryRightsEnum
 
@@ -190,10 +190,7 @@ class DataFileSchema(ma.ModelSchema):
     provenance_nodes = ma.Nested(ProvenanceNodeSchema(), many=True)
 
     def _get_allowed_conversion_type(self, data_file: DataFile):
-        if isinstance(data_file, S3DataFile):
-            return get_allowed_conversion_type(data_file.format)
-        else:
-            return get_allowed_conversion_type(data_file.underlying_data_file.format)
+        return get_allowed_conversion_type(resolve_virtual_datafile(data_file).format)
 
 
 
@@ -218,7 +215,7 @@ class DatasetVersionSchema(ma.ModelSchema):
     reason_state = fields.fields.Method("reason_state_str")
     description = fields.fields.Method('description_str')
 
-    def description(self, dataset_version):
+    def description_str(self, dataset_version):
         if dataset_version.description is None:
             return ""
         else:
