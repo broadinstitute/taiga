@@ -21,6 +21,7 @@ import { NotFound } from "./NotFound";
 import { NamedId } from "../models/models";
 import { FolderEntries } from "../models/models";
 import ClipboardButton from "../utilities/r-clipboard";
+import { UploadTracker } from "./UploadTracker";
 
 interface Match {
     params: any
@@ -84,6 +85,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         currentUser: PropTypes.string
     };
 
+    uploadTracker: UploadTracker;
+
+    constructor(props: DatasetViewProps) {
+        super(props);
+    }
+
     getTapi(): TaigaApi {
         return (this.context as any).tapi as TaigaApi
     }
@@ -101,6 +108,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 exportError: false
             });
         }
+    }
+
+    componentWillMount() {
+        this.uploadTracker = new UploadTracker(this.getTapi());
     }
 
     componentDidMount() {
@@ -219,24 +230,23 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         });
     }
 
-    filesUploadedAndConverted(sid: string, name: string, description: string, previousDatafileIds: Array<string>) {
-        let datafileIds = previousDatafileIds;
-        // We ask to create the dataset
-        return this.getTapi().create_new_dataset_version(sid,
-            this.state.dataset.id,
-            description,
-            datafileIds
-        ).then((dataset_version_id) => {
-            // We fetch the datasetVersion of the newly created dataset and change the state of it
-            return this.getTapi().get_dataset_version(dataset_version_id).then((newDatasetVersion) => {
-                this.doFetch();
-                return Promise.resolve(newDatasetVersion);
-            });
-        }).catch((err: any) => {
-            console.log(err);
-            return Promise.reject(err);
-        });
-    }
+    // filesUploadedAndConverted(sid: string, name: string, description: string, previousDatafileIds: Array<string>) {
+    //     let datafileIds = previousDatafileIds;
+    //     // We ask to create the dataset
+    //     return this.getTapi().create_new_dataset_version(sid,
+    //         this.state.dataset.id,
+    //         description
+    //     ).then((dataset_version_id) => {
+    //         // We fetch the datasetVersion of the newly created dataset and change the state of it
+    //         return this.getTapi().get_dataset_version(dataset_version_id).then((newDatasetVersion) => {
+    //             this.doFetch();
+    //             return Promise.resolve(newDatasetVersion);
+    //         });
+    //     }).catch((err: any) => {
+    //         console.log(err);
+    //         return Promise.reject(err);
+    //     });
+    // }
 
     // Download
 
@@ -731,20 +741,20 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                 console.log("Save description: " + description);
                                 this.updateDescription(description);
                             }} />
-
-                        <CreateVersionDialog
-                            isVisible={this.state.showUploadDataset}
-                            cancel={() => {
-                                this.setState({ showUploadDataset: false })
-                            }}
-                            onFileUploadedAndConverted={(sid: string, name: string, description: string, previousDatafileIds: Array<string>) =>
-                                this.filesUploadedAndConverted(sid, name, description, previousDatafileIds)
-                            }
-                            previousDescription={this.state.datasetVersion.description}
-                            previousVersionNumber={this.state.datasetVersion.name}
-                            previousVersionFiles={this.state.datasetVersion.datafiles}
-                            datasetPermaname={this.state.dataset.permanames[0]}
-                        />
+                        {this.state.showUploadDataset &&
+                            <CreateVersionDialog
+                                datasetId={this.state.dataset.id}
+                                isVisible={this.state.showUploadDataset}
+                                cancel={() => {
+                                    this.setState({ showUploadDataset: false })
+                                }}
+                                upload={this.uploadTracker.upload.bind(this.uploadTracker)}
+                                datasetName={this.state.dataset.name}
+                                previousDescription={this.state.datasetVersion.description}
+                                previousVersionNumber={this.state.datasetVersion.name}
+                                previousVersionFiles={this.state.datasetVersion.datafiles}
+                                datasetPermaname={this.state.dataset.permanames[0]}
+                            />}
 
                         <Dialogs.InputFolderId
                             actionDescription="Link this dataset into the chosen folder"

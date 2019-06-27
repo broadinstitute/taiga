@@ -22,7 +22,7 @@ export class TaigaApi {
         this.userToken = userToken;
 
         this.authHeaders = {
-            "auth": "Bearer " + this.userToken;
+            "auth": "Bearer " + this.userToken
         };
         this.loading = false;
     }
@@ -218,12 +218,11 @@ export class TaigaApi {
         })
     }
 
-    create_new_dataset_version(sid: string, dataset_id: string, new_description: string, datafile_ids: Array<string>) {
+    create_new_dataset_version(sid: string, dataset_id: string, new_description: string) {
         return this._post<string>("/datasetVersion", {
             sessionId: sid,
             datasetId: dataset_id,
-            newDescription: new_description,
-            datafileIds: datafile_ids
+            newDescription: new_description
         })
     }
 

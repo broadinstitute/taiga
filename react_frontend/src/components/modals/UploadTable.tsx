@@ -33,11 +33,13 @@ export interface UploadFile {
 
     uploadFile?: File;
     uploadFormat?: InitialFileType;
-    progress?: number; // between 0 and 1
+
+    progress?: number; // between 0 and 100
     progressMessage?: string;
 }
 
 interface UploadTableProps {
+    isProcessing: boolean;
     files: Array<UploadFile>;
     controller: UploadController;
 }
@@ -76,7 +78,7 @@ export class UploadController {
 
     addUpload(file: File) {
         let name = this.getDefaultName(file.name)
-        this.addFile({ name: name, computeNameFromTaigaId: false, fileType: UploadFileType.Upload, size: filesize(file.size), uploadFile: file, uploadFormat: "" + InitialFileType.Raw })
+        this.addFile({ name: name, computeNameFromTaigaId: false, fileType: UploadFileType.Upload, size: filesize(file.size), uploadFile: file, uploadFormat: InitialFileType.Raw })
     }
 
     addTaiga(existingTaigaId: string, size: string) {
@@ -113,13 +115,6 @@ export class UploadController {
         this.listener(this.files)
     }
 
-    onDatasetNameChange(name: string) {
-
-    }
-
-    onDescriptionChange(name: string) {
-
-    }
 }
 
 export class UploadTable extends React.Component<UploadTableProps, UploadTableState> {
@@ -127,21 +122,67 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
         super(props);
     }
 
+    renderProcessingTable() {
+        let rows = this.props.files.map((file, i) => {
+            let name = file.name;
+            let progressBar = file.progressMessage as any;
+
+            if (file.progress) {
+                progressBar = (<div className="progress">
+                    <div className="progress-bar" style={{ width: file.progress + "%" }}>{file.progressMessage}</div>
+                </div>)
+            }
+
+            return (<tr key={"r" + i}>
+                <td>
+                    {name}
+                </td>
+                <td>
+                    {progressBar}
+                </td>
+            </tr>);
+        });
+
+        return (<table className="table">
+            <thead>
+                <tr>
+                    <th style={{ width: "150px" }} >
+                        Name
+                    </th>
+                    <th>
+                        Progress
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows}
+            </tbody>
+        </table>);
+
+    }
+
     render() {
+        if (this.props.isProcessing) {
+            return this.renderProcessingTable();
+        } else {
+            return this.renderInputForm();
+        }
+    }
+
+    renderInputForm() {
         let rows = this.props.files.map((file, i) => {
             let name = file.name;
             let source: any = "";
             let typeLabel: any = "";
-            let progress = "";
 
             if (file.fileType == UploadFileType.GCSPath) {
-                typeLabel = "GCS Object"
+                typeLabel = "GCS Object";
                 source = file.gcsPath;
             } else if (file.fileType == UploadFileType.TaigaPath) {
-                typeLabel = "Taiga file"
-                source = <input type="text" value={file.existingTaigaId} onChange={event => this.props.controller.onTaigaIdChange(i, event.target.value)} />
+                typeLabel = "Taiga file";
+                source = <input className="form-control" placeholder="Taiga ID" type="text" value={file.existingTaigaId} onChange={event => this.props.controller.onTaigaIdChange(i, event.target.value)} />
             } else if (file.fileType == UploadFileType.Upload) {
-                typeLabel = <select>
+                source = <select className="form-control">
                     <option value={InitialFileType.TableCSV}>{InitialFileType.TableCSV}</option>
                     <option value={InitialFileType.NumericMatrixCSV}>{InitialFileType.NumericMatrixCSV}</option>
                     <option value={InitialFileType.TableTSV}>{InitialFileType.TableTSV}</option>
@@ -150,31 +191,20 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
                     <option value={InitialFileType.Raw}>{InitialFileType.Raw}</option>
                 </select>
 
-                source = file.uploadFile.name;
+                // source = file.uploadFile.name;
             } else {
                 throw "unknown filetype";
             }
 
-            console.log("source2", source)
-
             return (<tr key={"r" + i}>
                 <td>
-                    <input type="text" value={name} onChange={event => this.props.controller.onNameChange(i, event.target.value)} />
+                    <input type="text" value={name} onChange={event => this.props.controller.onNameChange(i, event.target.value)} className="form-control" placeholder="Name" />
                 </td>
                 <td>
                     {source}
                 </td>
                 <td>
-                    {typeLabel}
-                </td>
-                <td>
-                    {file.size}
-                </td>
-                <td>
-                    {progress}
-                </td>
-                <td>
-                    <button type="button" className="btn btn-default btn-sm" aria-label="Left Align" onClick={event => this.props.controller.onDelete(i)}>
+                    <button type="button" className="btn btn-default" aria-label="Left Align" onClick={event => this.props.controller.onDelete(i)}>
                         <span className="glyphicon glyphicon-trash" aria-hidden="true"></span>
                     </button>
                 </td>
@@ -184,20 +214,11 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
         return (<table className="table">
             <thead>
                 <tr>
-                    <th style={{ width: "100px" }} >
+                    <th style={{ width: "150px" }} >
                         Name
                     </th>
                     <th>
                         Source
-                    </th>
-                    <th>
-                        Type
-                    </th>
-                    <th>
-                        Size
-                    </th>
-                    <th>
-                        Progress
                     </th>
                     <th>
                         Delete

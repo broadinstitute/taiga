@@ -9,13 +9,13 @@ import { TaigaApi } from "../models/api";
 import * as AWS from "aws-sdk";
 import { randomLogNormal } from "d3";
 
-interface CreateDatasetParams {
+export interface CreateDatasetParams {
     name: string;
     description: string;
     folderId: string;
 }
 
-interface CreateVersionParams {
+export interface CreateVersionParams {
     datasetId: string;
     description: string;
 }
@@ -32,7 +32,7 @@ export enum UploadFileType {
     GCSPath
 }
 
-interface UploadFile {
+export interface UploadFile {
     name: string; // the name of the datafile record in once dataset has been created
     fileType: UploadFileType;
     gcsPath?: string; // If the path to a GCS object
@@ -71,7 +71,9 @@ export class UploadTracker {
         return this.tapi;
     }
 
-    upload(uploadFiles: Array<UploadFile>, params: (CreateVersionParams | CreateDatasetParams), uploadProgressCallback: (status: Array<UploadStatus>) => void): Promise<any> {
+    upload(uploadFiles: Array<UploadFile>, params: (CreateVersionParams | CreateDatasetParams), uploadProgressCallback: (status: Array<UploadStatus>) => void): Promise<string> {
+        console.log("uploading, params:", params);
+
         this.uploadProgressCallback = uploadProgressCallback;
 
         return Promise.all([
@@ -81,6 +83,9 @@ export class UploadTracker {
             let credentials = values[0] as S3Credentials;
             let sid = values[1] as string;
             return this.submitCreateDataset(credentials, uploadFiles, sid, params);
+        }).then((datasetId) => {
+            console.log("Created new dataset", datasetId);
+            return datasetId;
         });
     }
 
@@ -190,7 +195,7 @@ export class UploadTracker {
         return Promise.all(uploadPromises).then((datafile_ids: string[]) => {
             if ((params as any).datasetId) {
                 let p = params as CreateVersionParams;
-                return this.getTapi().create_new_dataset_version(sid, p.datasetId, p.description, datafile_ids);
+                return this.getTapi().create_new_dataset_version(sid, p.datasetId, p.description);
             } else {
                 let p = params as CreateDatasetParams;
                 return this.getTapi().create_dataset(sid, p.name, p.description, p.folderId);

@@ -35,7 +35,8 @@ interface AppState {
     message?: string;
 }
 
-const tapi = new TaigaApi(relativePath("api"));
+
+const tapi = new TaigaApi(relativePath("api"), (window as any).taigaUserToken); // FIXME
 
 // interface AppContextProps {
 //     tapi: object;

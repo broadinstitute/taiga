@@ -11,10 +11,11 @@ import * as Dialogs from "./Dialogs";
 import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";
 import { NotFound } from "./NotFound";
 import { SearchInput } from "./Search";
-
+import { CreateDatasetDialog } from "./modals/UploadForm";
 import { toLocalDateString } from "../utilities/formats";
 import { relativePath } from "../utilities/route";
 import { LoadingOverlay } from "../utilities/loading";
+import { UploadTracker } from "./UploadTracker";
 
 import { Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button } from "react-bootstrap";
 import { Grid, Row, Col } from "react-bootstrap";
@@ -96,6 +97,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     private bootstrapTable: any;
+    uploadTracker: UploadTracker;
 
     componentDidUpdate(prevProps: FolderViewProps) {
         // respond to parameter change in scenario 3
@@ -113,6 +115,14 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
         }
     }
 
+    getTapi() {
+        return (this.context as any).tapi as TaigaApi;
+    }
+
+    componentWillMount() {
+        this.uploadTracker = new UploadTracker(this.getTapi());
+    }
+
     componentDidMount() {
         this.doFetch().then(() => {
             this.logAccess();
@@ -120,7 +130,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     doFetch() {
-        let tapi = (this.context as any).tapi as TaigaApi;
+        let tapi = this.getTapi();
 
         this.setState({
             loading: true
@@ -667,7 +677,15 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                                 this.updateDescription(description);
                             }} />
 
-                        {this.state.showUploadDataset && <div>Upload goes here</div>}
+                        {this.state.showUploadDataset &&
+                            <CreateDatasetDialog
+                                isVisible={this.state.showUploadDataset}
+                                cancel={() => {
+                                    this.setState({ showUploadDataset: false })
+                                }}
+                                folderId={this.state.folder.id}
+                                upload={this.uploadTracker.upload.bind(this.uploadTracker)}
+                            />}
                         {/* <Upload.UploadDataset
                             isVisible={this.state.showUploadDataset}
                             cancel={() => { this.setState({ showUploadDataset: false }) }}

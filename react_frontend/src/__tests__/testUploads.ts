@@ -6,7 +6,7 @@ import {
 
 import { TaigaApi } from "../models/api";
 import { file } from "@babel/types";
-import { UploadTracker, UploadFileType, UploadStatus, pollFunction } from "../components/UploadTracker";
+import { UploadTracker, UploadFileType, UploadStatus, pollFunction, UploadFile } from "../components/UploadTracker";
 
 let tapi = new TaigaApi("http://localhost:8080/taiga/api", "test-token");
 

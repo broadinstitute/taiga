@@ -1,5 +1,7 @@
-import { UploadTable, UploadFileType, UploadController } from "./UploadTable"
-import { CreateVersionDialog } from "./UploadForm"
+import { UploadTable, UploadFile, UploadController } from "./UploadTable";
+import { CreateVersionDialog } from "./UploadForm";
+import { UploadFileType, UploadStatus } from "../UploadTracker";
+
 import * as React from "react";
 import * as Dropzone from "react-dropzone";
 import { DataFileType } from "../../models/models";
@@ -11,42 +13,42 @@ let files = [
 //let w = window as any;
 //w.update_hack = update;
 
-const dropZoneStyle: any = {
-    height: '150px',
-    borderWidth: '2px',
-    borderColor: 'rgb(102, 102, 102)',
-    borderStyle: 'dashed',
-    borderRadius: '5px'
-};
+// const dropZoneStyle: any = {
+//     height: '150px',
+//     borderWidth: '2px',
+//     borderColor: 'rgb(102, 102, 102)',
+//     borderStyle: 'dashed',
+//     borderRadius: '5px'
+// };
 
-export class UploadTableWrapper extends React.Component<any, any> {
-    controller: UploadController
+// export class UploadTableWrapper extends React.Component<any, any> {
+//     controller: UploadController
 
-    constructor(props: any) {
-        super(props);
-        this.state = { files: props.initialFiles }
+//     constructor(props: any) {
+//         super(props);
+//         this.state = { files: props.initialFiles }
 
-        this.controller = new UploadController(props.intialFiles, (files: any) => this.setState({ files: files }));
-        this.controller.files = props.initialFiles;
-    }
+//         this.controller = new UploadController(props.intialFiles, (files: any) => this.setState({ files: files }));
+//         this.controller.files = props.initialFiles;
+//     }
 
-    onDrop(acceptedFiles: Array<File>, rejectedFiles: Array<File>) {
-        console.log(acceptedFiles)
-        acceptedFiles.forEach((file) => this.controller.addUpload(file))
-    }
+//     onDrop(acceptedFiles: Array<File>, rejectedFiles: Array<File>) {
+//         console.log(acceptedFiles)
+//         acceptedFiles.forEach((file) => this.controller.addUpload(file))
+//     }
 
-    render() {
-        return (<div>
-            <button onClick={(event) => this.controller.addGCS("gs://bucket/key/c.txt", 100000)}>Add GCS object</button>
-            <button onClick={(event) => this.controller.addTaiga("something-taiga-1231cae.2/filename", "200x30")}>Add Taiga</button>
-            <Dropzone style={dropZoneStyle} onDrop={(acceptedFiles: any, rejectedFiles: any) =>
-                this.onDrop(acceptedFiles, rejectedFiles)}
-            />
+//     render() {
+//         return (<div>
+//             <button onClick={(event) => this.controller.addGCS("gs://bucket/key/c.txt", 100000)}>Add GCS object</button>
+//             <button onClick={(event) => this.controller.addTaiga("something-taiga-1231cae.2/filename", "200x30")}>Add Taiga</button>
+//             <Dropzone style={dropZoneStyle} onDrop={(acceptedFiles: any, rejectedFiles: any) =>
+//                 this.onDrop(acceptedFiles, rejectedFiles)}
+//             />
 
-            <UploadTable controller={this.controller} files={this.state.files} />
-        </div>)
-    }
-}
+//             <UploadTable controller={this.controller} files={this.state.files} />
+//         </div>)
+//     }
+// }
 
 // onFileUploadedAndConverted?: any;
 
@@ -80,7 +82,29 @@ export class UploadTableWrapper extends React.Component<any, any> {
 // short_summary: string;
 // provenance_nodes?: Array<ProvenanceNode>; // Array of urls to provenance graph
 
+function mockUpload(files: any, params: any, uploadProgressCallback: (status: Array<UploadStatus>) => void) {
+    console.log("MockUploadStart");
+    return new Promise((resolve) => {
+        let fileCount = files.length;
+        let counter = 0;
 
+        let nextCall = function () {
+            counter += 5;
+            console.log("counter=", counter);
+            uploadProgressCallback([{ progress: counter, progressMessage: "Completed " + counter + "%" }]);
+
+            if (counter >= 100) {
+                resolve();
+            } else {
+                setTimeout(nextCall, 1000);
+            }
+        };
+
+        nextCall();
+    }).then(() => {
+        console.log("MockUploadComplete");
+    });
+}
 
 export default [
     {
@@ -88,9 +112,8 @@ export default [
         name: "dialog",
         props: {
             isVisible: true,
-            onFileUploadedAndConverted: (sid: string, name: string, description: string, previousDatafileIds: Array<string>) => {
-                console.log("onFileUploadedAndConverted")
-            },
+            isProcessing: true,
+            upload: mockUpload,
             previousDescription: "prev Description",
             previousVersionNumber: "100",
             previousVersionFiles: [
