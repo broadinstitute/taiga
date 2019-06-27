@@ -327,8 +327,8 @@ export class TaskStatus {
     id: string;
     state: string;
     message: string;
-    current: string;
-    total: string;
+    current: number;
+    total: number;
     s3Key: string;
 }
 

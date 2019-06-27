@@ -863,9 +863,9 @@ paths:
               message:
                 type: string
               current:
-                type: string
+                type: number
               total:
-                type: string
+                type: number
               s3Key:
                 type: string
 

@@ -108,14 +108,26 @@ def taskstatus(task_id):
             's3Key': 'TODO'
         }
     elif task.state != 'FAILURE':
+        if task.info:
+            message = task.info.get('message', 'No message')
+            current = int(task.info.get('current', 0))
+            total = int(task.info.get('total', 1))
+            s3key = task.info.get('s3Key', 'TODO')
+        else:
+            message = 'Failure :/'
+            current = 0
+            total = 1
+            s3key = 'TODO'
+
         response = {
             'id': task.id,
             'state': task.state,
-            'message': 'Failure :/' if not task.info else task.info.get('message', 'No message'),
-            'current': 0 if not task.info else task.info.get('current', 0),
-            'total': -1 if not task.info else task.info.get('total', -1),
-            's3Key': 'TODO' if not task.info else task.info.get('s3Key', 'TODO')
+            'message': message,
+            'current': current,
+            'total': total,
+            's3Key': s3key
         }
+
         if 'result' in task.info:
             response['result'] = task.info['result']
     else:
@@ -127,6 +139,8 @@ def taskstatus(task_id):
             'total': -1,
             's3Key': 'TODO' if task.info else task.info.get('s3Key', 'TODO')
         }
+
+    print("response", repr(response))
 
     return response
 

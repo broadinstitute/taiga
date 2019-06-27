@@ -3,10 +3,11 @@ import {
     S3UploadedData,
     InitialFileType
 } from "../models/models";
+import update from "immutability-helper";
 
 import { TaigaApi } from "../models/api";
 import * as AWS from "aws-sdk";
-import { file } from "@babel/types";
+import { randomLogNormal } from "d3";
 
 interface CreateDatasetParams {
     name: string;
@@ -40,10 +41,35 @@ interface UploadFile {
     uploadFormat?: InitialFileType;
 }
 
+// Async function to wait
+function delay(milliseconds: number) {
+    let p = new Promise<void>((resolve, reject) => {
+        console.log("delay started")
+        setTimeout(resolve, milliseconds);
+    }).then(() => {
+        console.log("delay completed")
+    });
+    console.log("delay promise created", p);
+    return p;
+}
+
+export function pollFunction(milliseconds: number, fn: () => Promise<boolean>): Promise<void> {
+    console.log("in pollFunc");
+    return fn().then((continueFlag: boolean) => {
+        console.log("in pollFunc, got continueFlag=", continueFlag);
+
+        if (continueFlag) {
+            return delay(milliseconds).then(() => pollFunction(milliseconds, fn));
+        } else {
+            return Promise.resolve();
+        }
+    });
+}
+
 export class UploadTracker {
     tapi: TaigaApi;
-    uploadStatus: Array<UploadStatus>;
-    uploadProgressCallback: (status: Array<UploadStatus>) => void;
+    uploadStatus: Readonly<Array<UploadStatus>>;
+    uploadProgressCallback: (status: Readonly<Array<UploadStatus>>) => void;
 
     constructor(tapi: TaigaApi) {
         this.tapi = tapi;
@@ -64,6 +90,8 @@ export class UploadTracker {
             let credentials = values[0] as S3Credentials;
             let sid = values[1] as string;
             return this.submitCreateDataset(credentials, uploadFiles, sid, params);
+        }).then(() => {
+            console.log("upload complete");
         });
     }
 
@@ -100,6 +128,7 @@ export class UploadTracker {
 
         // After the upload completes, run the conversion
         return upload.promise().then((s3uploadData: S3UploadedData) => {
+            console.log("Upload.promise completed");
             // TODO: Send the signal the upload is done on the AWS side, so you can begin the conversion on the backend
             // POST
             // We need to retrieve the filetype and the filename to send it to the api too
@@ -115,10 +144,13 @@ export class UploadTracker {
             };
 
             return this.getTapi().create_datafile(sid, s3FileMetadata).then((taskStatusId) => {
-                return this.initRecurringCheckStatus(uploadIndex, taskStatusId);
+                return this.waitForConversion(uploadIndex, taskStatusId).then(() => {
+                    console.log("waitForConversion completed");
+                });
             }).then(() => {
+                console.log("Conversion DDDDD")
                 // Get the file who received this progress notification
-                this.updateFileStatus(uploadIndex, "conversionProgress", "Done");
+                this.updateFileStatus(uploadIndex, "progressMessage", "Conversion done");
 
                 return Promise.resolve<string>(sid);
             });
@@ -147,25 +179,32 @@ export class UploadTracker {
             let status: UploadStatus;
             if (file.fileType === UploadFileType.Upload) {
                 status = { progress: 0, progressMessage: "Upload starting" }
-                uploadPromises.push(this.uploadAndConvert(s3, s3_credentials, file, sid, i))
+                let p = this.uploadAndConvert(s3, s3_credentials, file, sid, i);
+                p.then(() => {
+                    console.log("single uploadAndConvert completed");
+                })
+                uploadPromises.push(p);
             } else {
                 // initial status
                 status = { progress: 0, progressMessage: "Attempting to add existing file" }
 
                 // perform the attach
-                let p = this.associateExistingFile(file.name, file.existingTaigaId, sid);
-                p.then(() => {
-                    // update the status after successful adding to upload session
+                let p = this.associateExistingFile(file.name, file.existingTaigaId, sid).then(datafileId => {
                     this.displayStatusUpdate("Added existing file", 100, i);
+                    // update the status after successful adding to upload session
+                    return datafileId;
                 });
                 uploadPromises.push(p);
             }
             uploadStatus.push(status)
         });
 
+        this.uploadStatus = uploadStatus;
+
         console.log("kicking off upload of " + uploadPromises.length + " files");
 
         return Promise.all(uploadPromises).then((datafile_ids: string[]) => {
+            console.log("all uploadAndConverts completed");
             if ((params as any).datasetId) {
                 let p = params as CreateVersionParams;
                 return this.getTapi().create_new_dataset_version(sid, p.datasetId, p.description, datafile_ids);
@@ -177,51 +216,61 @@ export class UploadTracker {
     }
 
     updateFileStatus(index: number, property: string, value: any) {
-        console.log("unimplemented");
+        console.log("updateFileStatus", index, property, value);
+
+        let change = {} as any;
+        change[property] = { $set: value };
+
+        this.uploadStatus = update(this.uploadStatus, { [index]: change });
         this.uploadProgressCallback(this.uploadStatus);
     }
 
-    initRecurringCheckStatus(fileIndex: number, taskId: string) {
-        return this.getTapi().get_task_status(taskId).then((new_status: TaskStatus) => {
-            return this.checkOrContinue(new_status, fileIndex);
-        })
+    waitForConversion(fileIndex: number, taskId: string) {
+        return pollFunction(1000, () => {
+            return this.getTapi().get_task_status(taskId).then((new_status: TaskStatus) => {
+                let p = this.checkOrContinue(new_status, fileIndex);
+                console.log("waitForConversion checkOrContinue returned", p);
+                return p;
+            })
+        });
+
     }
 
-    checkOrContinue(status: TaskStatus, fileIndex: number): Promise<string> {
+    checkOrContinue(status: TaskStatus, fileIndex: number): Promise<boolean> {
         // If status == SUCCESS, return the last check
         // If status != SUCCESS, wait 1 sec and check again
         // TODO: Make an enum from the task state
+        console.log("checkOrContinue started", status);
 
         if (status.state == 'SUCCESS') {
-            this.displayStatusUpdate(status, fileIndex);
-            return Promise.resolve(status.id)
+            this.displayStatusUpdate(status.message, 100, fileIndex);
+
+            console.log("checkOrContinue success returning false");
+            return Promise.resolve(false);
         }
         else if (status.state == 'FAILURE') {
             // TODO: Make an exception class to manage properly the message
             status.message = "FAILURE: " + status.message;
-            this.displayStatusUpdate(status, fileIndex);
-            return Promise.reject<string>(status.message);
+            this.displayStatusUpdate(status.message, 0, fileIndex);
+
+            console.log("checkOrContinue failure returning false");
+            return Promise.resolve(false);
         }
         else {
-            this.displayStatusUpdate(status, fileIndex);
-            return this.getTapi().get_task_status(status.id).then((new_status: TaskStatus) => {
-                // Wait one sec Async then check again
-                // setTimeout(() => {return this.checkOrContinue(status)}, 1000);
-                return this.delay(1000).then(() => {
-                    return this.checkOrContinue(new_status, fileIndex)
-                });
-            });
+            let progress = 100 * status.current / status.total;
+            if (status.total === 0) {
+                progress = 0;
+            }
+
+            this.displayStatusUpdate(status.message, progress, fileIndex);
+            console.log("checkOrContinue not done returning true");
+            return Promise.resolve(true);
         }
     }
 
-    // Async function to wait
-    delay(milliseconds: number) {
-        return new Promise<void>(resolve => {
-            setTimeout(resolve, milliseconds);
-        });
-    }
 
     displayStatusUpdate(message: string, progress: number, fileIndex: number) {
-        this.updateFileStatus(fileIndex, "conversionProgress", message);
+        this.updateFileStatus(fileIndex, "progressMessage", message);
+        this.updateFileStatus(fileIndex, "progress", progress);
     }
 }
