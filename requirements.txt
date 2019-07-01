@@ -29,6 +29,7 @@ h5py==2.6.0
 numpy==1.11.3
 psycopg2==2.7.7
 factory_boy==2.9.2
+jsonpointer==2.0
 
 google-cloud==0.31.0
 google-api-python-client==1.6.4
