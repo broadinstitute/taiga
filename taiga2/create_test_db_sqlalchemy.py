@@ -1,7 +1,6 @@
 import copy
 import logging
-import readline
-import sys
+from flask import current_app
 
 from taiga2.api_app import create_app, create_db
 import taiga2.controllers.models_controller as models_controller
@@ -127,7 +126,6 @@ def create_db_and_populate():
     # create a sample dataset in a known location with a known permaname
     create_sample_dataset(forced_permaname="sample-1", folder_id="public")
 
-from flask import current_app
 
 def recreate_dev_db():
     database_uri = current_app.config['SQLALCHEMY_DATABASE_URI']
