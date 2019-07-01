@@ -8,6 +8,7 @@ import taiga2.controllers.models_controller as models_controller
 import taiga2.models as models
 
 import flask
+import os
 
 log = logging.getLogger(__name__)
 
@@ -47,9 +48,7 @@ def create_sample_dataset(name="dataset", description="Sample dataset descriptio
     if forced_permaname:
         models_controller.update_permaname(data.id, forced_permaname)
 
-def drop_and_create_db():
-    models_controller.db.drop_all()
-    print("Recreating it")
+def create_db_and_populate():
     create_db()
 
     # Create the Admin user
@@ -128,29 +127,14 @@ def drop_and_create_db():
     # create a sample dataset in a known location with a known permaname
     create_sample_dataset(forced_permaname="sample-1", folder_id="public")
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        log.error("Needs config file")
-        sys.exit(-1)
+from flask import current_app
 
-    settings_file = sys.argv[1]
-
-    api_app, backend_app = create_app(settings_file=settings_file)
-
-    with backend_app.app_context():
-        print("Dropping existing DB")
-        drop_and_create_db()
-        # sure = input("WAIT! Dropping DB...are you sure? ")
-        # if sure == 'y':
-        #     sure_sure = input("Really sure?? ")
-        #     if sure_sure != 'yes':
-        #         if sure_sure.lower() == 'y' or sure_sure.lower() == 'yes':
-        #             print('Nice try but...nope!')
-        #         else:
-        #             print("Pfiou...almost a catastrophic event :)")
-        #     else:
-        #         drop_and_create_db()
-        # else:
-        #     if sure.lower() == 'yes':
-        #         print('Nice try but...nope!')
-        #     print("Better this way...bye!")
+def recreate_dev_db():
+    database_uri = current_app.config['SQLALCHEMY_DATABASE_URI']
+    assert database_uri.startswith("sqlite:///")
+    database_path = database_uri[len("sqlite:///"):]
+    database_path = os.path.join("taiga2", database_path)
+    if os.path.exists(database_path):
+        print("deleting existing DB before recreating it: {}".format(database_path))
+        os.unlink(database_path)
+    create_db_and_populate()

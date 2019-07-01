@@ -1,10 +1,5 @@
 from taiga2.api_app import create_app
-from taiga2.ui import create_app as ui_create_app
-from werkzeug.wsgi import pop_path_info, peek_path_info, DispatcherMiddleware, SharedDataMiddleware
-from werkzeug.serving import run_simple
-import configparser
 import logging
-import os
 import sys
 from taiga2.celery_init import configure_celery, celery
 

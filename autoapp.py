@@ -2,18 +2,15 @@
 """Create an application instance."""
 import os
 
-from flask.helpers import get_debug_flag
-
 from taiga2.api_app import create_app
 from taiga2.ui import create_app as ui_create_app
 from taiga2.celery_init import configure_celery, celery
 
-from werkzeug.wsgi import pop_path_info, peek_path_info, DispatcherMiddleware, SharedDataMiddleware
+from werkzeug.wsgi import DispatcherMiddleware
 
 settings_file = os.getenv("TAIGASETTINGSFILE", "settings.cfg")
 
 print("Using settings from: {}".format(settings_file))
-
 
 # Init Api/Backend app
 api_app, flask_api_app = create_app(settings_file=settings_file)

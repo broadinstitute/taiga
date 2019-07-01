@@ -5,19 +5,30 @@ from flask import Flask, render_template, send_from_directory, url_for, request,
 import os
 from taiga2.conf import load_config
 from taiga2.auth import init_front_auth
+from taiga2 import commands
+from .extensions import db as ext_db
+from taiga2 import models
 
 log = logging.getLogger(__name__)
 
+def register_extensions(app):
+    # Init the database with the app
+    ext_db.init_app(app)
+
+def register_commands(app):
+    app.cli.add_command(commands.recreate_dev_db)
+    app.cli.add_command(commands.run_worker)
+    app.cli.add_command(commands.webpack)
 
 def create_app(settings_override=None, settings_file=None):
-    from taiga2.models import db
 
     app = Flask(__name__)
 
     load_config(app, settings_file=settings_file, settings_override=settings_override)
 
-    # Init the database with the app
-    db.init_app(app)
+
+    register_extensions(app)
+    register_commands(app)
 
     # Add hooks for managing the authentication before each request
     init_front_auth(app)

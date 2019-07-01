@@ -15,7 +15,6 @@ Taiga 2 is built on the following stack:
 - PostGre (to store the app information)
 - Psycopg2
 - SQLAlchemy
-
 - Amazon S3 (to store the files)
 
 ### Backend/API
@@ -29,7 +28,6 @@ Taiga 2 is built on the following stack:
 - TypeScript
 - Webpack
 - Yarn
-- Node/NPM
 
 ### Configuring AWS users
 
@@ -107,55 +105,39 @@ For our case, it is pretty simple:
   
 ***Warning: Be careful to not override your existing configuration!***
 
-Then create the folder `upload` and the folder `convert`.
-
 #### Configure Taiga to use your Bucket
 
-***Coming soon***
-
-And now please ensure you have installed these tools before proceeding to the next chapter.
+1. Copy `settings.cfg.sample` to `settings.cfg`
+2. edit `settings.cfg` and set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+3. also set S3_BUCKET to the bucket created above
 
 ## Installing
 
-Starting the project is not yet straightforward, but will be in the near future:
- 
-1. Clone this repository to your machine:
- 
-        `git clone https://github.com/broadinstitute/taiga.git`
+1. Install all the dependencies:
 
-2. Checkout the Taiga 2 branch:
+        `sh install_prereqs.sh`
 
-        `git checkout master`
+2. Create a test database to have some data to work with:
 
-3. Install all the dependencies:
-
-        `python setup.py develop`
-        `yarn install`
-        `cd frontend/ && yarn install && cd ..`
-
-4. Configure the application as you need (AWS credentials, hostname/port and so on), in settings.cfg:
-
-        `cp settings.cfg.sample settings.cfg && vim settings.cfg`
-
-5. Create the database to have some data to work with:
-
-        `python taiga2/create_test_db_sqlalchemy.py settings.cfg`
+        `./flask recreate-dev-dev`
 
 6. Open 4 terminal windows to launch Webpack, Taiga 2, Celery and Redis processes: 
 
-    a. In the root folder:
+    a. In terminal 1:
 
-        `./node_modules/.bin/webpack --progress --colors --watch`
+        `./flask webpack`
 
-    b. In your redis folder, with your redis configuration file redis.conf:
+    b. In terminal 2:
 
-        `redis-server <redis.conf>`
+        `redis-server`
 
-    c. In the root folder:
+    c. In terminal 3:
 
-        `taiga2 settings.cfg`
+        `./flask run`
 
-        `export TAIGA2_SETTINGS=settings.cfg ; celery -A taiga2 worker -l INFO -E -n worker1@%h --max-memory-per-child 200000`
+    c. In terminal 4:
+
+        `./flask run-worker`
         
 7. Congratulations! You can now access to Taiga 2 through your browser at:
 
