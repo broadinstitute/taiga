@@ -1,1 +1,1 @@
-echo 'export const SHA = "'"$TRAVIS_COMMIT"'"' > frontend/src/version.ts
+echo 'export const SHA = "'"$TRAVIS_COMMIT"'"' > react_frontend/src/version.ts
