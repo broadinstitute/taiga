@@ -3,7 +3,7 @@ import { Form, FormControl, Col, ControlLabel, FormGroup, Label, Grid, Row, Glyp
 import * as Dropzone from "react-dropzone";
 import * as Modal from "react-modal";
 import * as PropTypes from "prop-types";
-import { UploadStatus, UploadFileType, CreateVersionParams, CreateDatasetParams } from "../UploadTracker";
+import { UploadStatus, UploadFileType, CreateVersionParams, CreateDatasetParams, DatasetIdAndVersionId } from "../UploadTracker";
 import update from "immutability-helper";
 import { UploadTable, UploadFile, UploadController } from "./UploadTable";
 
@@ -75,7 +75,7 @@ interface UploadDialogState {
     formDisabled: boolean;
     datasetName: string;
     datasetDescription: string;
-    newDatasetVersionId?: string;
+    newDatasetVersion?: DatasetIdAndVersionId;
     isProcessing: boolean;
 }
 
@@ -173,12 +173,12 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
 
         console.log("state.isProcessing is", this.state.isProcessing);
         // If we have a new datasetVersion in the state, we can show the link button
-        if (this.state.newDatasetVersionId) {
+        if (this.state.newDatasetVersion) {
             submitButton = (
                 <Link className="btn btn-success"
                     role="submit"
                     to={relativePath(
-                        "dataset/x/" + this.state.newDatasetVersionId
+                        "dataset/" + this.state.newDatasetVersion.dataset_id + "/" + this.state.newDatasetVersion.version_id
                     )}>
                     See my new Dataset
                 </Link>
@@ -209,9 +209,9 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
 
                         this.props.upload(this.state.uploadFiles,
                             params,
-                            (status) => this.uploadProgressCallback(status)).then((datasetVersionId) => {
+                            (status) => this.uploadProgressCallback(status)).then((newDatasetVersion) => {
                                 // after a successful upload, set the newDatasetVersion which will give us a link to see it.
-                                this.setState({ newDatasetVersionId: datasetVersionId });
+                                this.setState({ newDatasetVersion: newDatasetVersion });
                             });
 
                         this.setState({

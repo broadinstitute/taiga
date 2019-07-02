@@ -1,13 +1,15 @@
 import {
     S3Credentials, TaskStatus,
     S3UploadedData,
-    InitialFileType
+    InitialFileType,
+    DatasetVersion
 } from "../models/models";
 import update from "immutability-helper";
 
 import { TaigaApi } from "../models/api";
 import * as AWS from "aws-sdk";
 import { randomLogNormal } from "d3";
+import { version } from "punycode";
 
 export interface CreateDatasetParams {
     name: string;
@@ -58,6 +60,11 @@ export function pollFunction(milliseconds: number, fn: () => Promise<boolean>): 
     });
 }
 
+export interface DatasetIdAndVersionId {
+    dataset_id: string;
+    version_id: string;
+}
+
 export class UploadTracker {
     tapi: TaigaApi;
     uploadStatus: Readonly<Array<UploadStatus>>;
@@ -71,7 +78,7 @@ export class UploadTracker {
         return this.tapi;
     }
 
-    upload(uploadFiles: Array<UploadFile>, params: (CreateVersionParams | CreateDatasetParams), uploadProgressCallback: (status: Array<UploadStatus>) => void): Promise<string> {
+    upload(uploadFiles: Array<UploadFile>, params: (CreateVersionParams | CreateDatasetParams), uploadProgressCallback: (status: Array<UploadStatus>) => void): Promise<DatasetIdAndVersionId> {
         console.log("uploading, params:", params);
 
         this.uploadProgressCallback = uploadProgressCallback;
@@ -146,8 +153,8 @@ export class UploadTracker {
         });
     }
 
-    // Use the credentials received to upload the files dropped in the module
-    submitCreateDataset(s3_credentials: S3Credentials, datafiles: Array<UploadFile>, sid: string, params: (CreateVersionParams | CreateDatasetParams)) {
+    // returns a promise yielding the dataset_id of the newly constructed dataset
+    submitCreateDataset(s3_credentials: S3Credentials, datafiles: Array<UploadFile>, sid: string, params: (CreateVersionParams | CreateDatasetParams)): Promise<DatasetIdAndVersionId> {
         // TODO: If we change the page, we lose the download
         // Configure the AWS S3 object with the received credentials
         let s3 = new AWS.S3({
@@ -192,13 +199,21 @@ export class UploadTracker {
 
         // console.log("kicking off upload of " + uploadPromises.length + " files");
 
-        return Promise.all(uploadPromises).then((datafile_ids: string[]) => {
+        return Promise.all(uploadPromises).then((datafile_ids: string[]): Promise<DatasetIdAndVersionId> => {
             if ((params as any).datasetId) {
                 let p = params as CreateVersionParams;
-                return this.getTapi().create_new_dataset_version(sid, p.datasetId, p.description);
+                return this.getTapi().create_new_dataset_version(sid, p.datasetId, p.description).then((dataset_version_id: string) => {
+                    return this.getTapi().get_dataset_version(dataset_version_id).then((version: DatasetVersion) => {
+                        return { dataset_id: version.dataset_id, version_id: dataset_version_id };
+                    });
+                });
             } else {
                 let p = params as CreateDatasetParams;
-                return this.getTapi().create_dataset(sid, p.name, p.description, p.folderId);
+                return this.getTapi().create_dataset(sid, p.name, p.description, p.folderId).then((dataset_id: string): Promise<DatasetIdAndVersionId> => {
+                    return this.getTapi().get_dataset_version_last(dataset_id).then((version: DatasetVersion) => {
+                        return { dataset_id: version.dataset_id, version_id: version.id };
+                    });
+                });
             }
         });
     }

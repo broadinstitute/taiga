@@ -243,11 +243,9 @@ class S3DataFile(DataFile):
     s3_bucket = db.Column(db.Text)
     s3_key = db.Column(db.Text)
 
-    # original_sha256 = db.Column(db.String(300))
-    # processed_sha256 = db.Column(db.String(300))
-
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)
+    original_file_sha256 = db.Column(db.Text)
 
     __mapper_args__ = {
         'polymorphic_identity':'s3'
@@ -283,6 +281,10 @@ class VirtualDataFile(DataFile):
     @property
     def long_summary(self):
         return self.underlying_data_file.long_summary
+
+    @property
+    def original_file_sha256(self):
+        return self.underlying_data_file.original_file_sha256
 
 
 def get_allowed_conversion_type(datafile_type):
@@ -440,6 +442,7 @@ class UploadSessionFile(db.Model):
 
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)
+    original_file_sha256 = db.Column(db.Text)
 
     data_file_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
     data_file = db.relationship("DataFile",

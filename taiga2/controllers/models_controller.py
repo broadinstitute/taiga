@@ -934,6 +934,7 @@ def add_s3_datafile(s3_bucket,
                  type,
                  short_summary,
                  long_summary,
+                 original_file_sha256=None,
                  forced_id=None):
     assert type is not None
     received_type = type
@@ -956,7 +957,8 @@ def add_s3_datafile(s3_bucket,
                             format=received_type,
                             short_summary=short_summary,
                             long_summary=long_summary,
-                            id=forced_id)
+                            id=forced_id,
+                              original_file_sha256=original_file_sha256)
 
     db.session.add(new_datafile)
     db.session.commit()
@@ -1067,7 +1069,8 @@ def add_datafiles_from_session(session_id):
                                         s3_key=file.converted_s3_key,
                                         type=file.converted_filetype,
                                         short_summary=file.short_summary,
-                                        long_summary=file.long_summary)
+                                        long_summary=file.long_summary,
+                                           original_file_sha256=file.original_file_sha256)
         added_datafiles.append(new_datafile)
 
     return added_datafiles
@@ -1175,9 +1178,9 @@ def get_upload_session_file(upload_session_file_id):
     return upload_session_file
 
 
-def update_upload_session_file_summaries(file_id, short_summary, long_summary):
+def update_upload_session_file_summaries(file_id, short_summary, long_summary, sha256):
     db.session.query(UploadSessionFile).filter(UploadSessionFile.id == file_id).update(
-        dict(short_summary=short_summary, long_summary=long_summary))
+        dict(short_summary=short_summary, long_summary=long_summary, original_file_sha256=sha256))
     db.session.commit()
 
 

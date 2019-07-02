@@ -181,7 +181,9 @@ class DataFileSummarySchema(ma.ModelSchema):
 class DataFileSchema(ma.ModelSchema):
     class Meta:
         additional = ('id', 'name', 's3_bucket',
-                      's3_key', 'short_summary', 'underlying_file_id')
+                      's3_key', 'short_summary',
+                      'underlying_file_id',
+                      'original_file_sha256')
 
     format = EnumField(S3DataFile.DataFileFormat)
 
@@ -252,6 +254,15 @@ class DatasetFullSchema(ma.ModelSchema):
     dataset_versions = ma.Nested(DatasetVersionLightSchema(),
                                  many=True,
                                  dump_to='versions')
+
+    description = fields.fields.Method('description_str')
+
+    def description_str(self, dataset_version):
+        if dataset_version.description is None:
+            return ""
+        else:
+            return dataset_version.description
+
     # parents = ma.Nested(FolderNamedIdSchema(), dump_to='folders', many=True)
 
 

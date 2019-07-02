@@ -29,16 +29,23 @@ def _from_s3_convert_to_s3(progress, upload_session_file_id, s3_object, download
 
     import_result = converter(progress, download_dest.name, converted_dest.name)
     assert isinstance(import_result, ImportResult)
-    models_controller.update_upload_session_file_summaries(upload_session_file_id, import_result.short_summary, import_result.long_summary)
 
     # Create a new converted object to upload
     progress.progress("Uploading to S3")
     converted_dest.seek(0)
     converted_s3_object.upload_fileobj(converted_dest)
 
+    return import_result
+
+import humanize
+
 
 @celery.task(bind=True)
 def background_process_new_upload_session_file(self, upload_session_file_id, initial_s3_key, file_type, bucket_name, converted_s3_key):
+    print("background_process_new_upload_session_file, upload_session_file_id={} file_type={} bucket_name={} initial_s3_key={} converted_s3_key={}".format(upload_session_file_id, file_type,
+                                                                                                                                                           bucket_name, initial_s3_key, converted_s3_key))
+    log.error("err -- background_process_new_upload_session_file, upload_session_file_id={} file_type={} bucket_name={} initial_s3_key={} converted_s3_key={}".format(upload_session_file_id, file_type,
+                                                                                                                                                           bucket_name, initial_s3_key, converted_s3_key))
     s3 = aws.s3
     progress = Progress(self)
 
@@ -58,7 +65,11 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
             'Bucket': bucket_name,
             'Key': initial_s3_key
         }
-        s3.Bucket(bucket_name).copy(copy_source, converted_s3_key)
+        b = s3.Bucket(bucket_name)
+        existing_obj = b.Object(initial_s3_key)
+        b.copy(copy_source, converted_s3_key)
+
+        import_result = ImportResult(sha256=None, long_summary=None, short_summary=humanize.naturalsize(existing_obj.content_length))
     else:
         if file_type == models.InitialFileType.NumericMatrixCSV.value:
             converter = conversion.csv_to_hdf5
@@ -78,7 +89,9 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
 
         with tempfile.NamedTemporaryFile("w+b") as download_dest:
             with tempfile.NamedTemporaryFile("w+b") as converted_dest:
-                _from_s3_convert_to_s3(progress, upload_session_file_id, s3_object, download_dest, converted_dest, converted_s3_object, converter)
+                import_result = _from_s3_convert_to_s3(progress, upload_session_file_id, s3_object, download_dest, converted_dest, converted_s3_object, converter)
+
+    models_controller.update_upload_session_file_summaries(upload_session_file_id, import_result.short_summary, import_result.long_summary, import_result.sha256)
 
 
 # TODO: This is only for background_process_new_upload_session_file, how to get it generic for any Celery tasks?

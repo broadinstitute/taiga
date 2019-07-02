@@ -92,13 +92,14 @@ export class UploadController {
     }
 
     changeUploadFormat(index: number, format: string) {
-        this.files = update(this.files, { [index]: { uploadFormat: { $set: format } } })
-        this.listener(this.files)
+        console.log("changeUploadFormat", index, format);
+        this.files = update(this.files, { [index]: { uploadFormat: { $set: format } } });
+        this.listener(this.files);
     }
 
     onDelete(index: number) {
         this.files = update(this.files, { $splice: [[index, 1]] });
-        this.listener(this.files)
+        this.listener(this.files);
     }
 
     onTaigaIdChange(index: number, newValue: string) {
@@ -182,7 +183,7 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
                 typeLabel = "Taiga file";
                 source = <input className="form-control" placeholder="Taiga ID" type="text" value={file.existingTaigaId} onChange={event => this.props.controller.onTaigaIdChange(i, event.target.value)} />
             } else if (file.fileType == UploadFileType.Upload) {
-                source = <select className="form-control">
+                source = <select className="form-control" value={file.uploadFormat} onChange={event => this.props.controller.changeUploadFormat(i, event.target.value)}>
                     <option value={InitialFileType.TableCSV}>{InitialFileType.TableCSV}</option>
                     <option value={InitialFileType.NumericMatrixCSV}>{InitialFileType.NumericMatrixCSV}</option>
                     <option value={InitialFileType.TableTSV}>{InitialFileType.TableTSV}</option>

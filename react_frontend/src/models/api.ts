@@ -6,9 +6,9 @@ import {
     AccessLog, DatafileUrl, ProvenanceGraphFull, SearchResult
 } from './models';
 
-import { getUserToken } from '../utilities/route';
+// import { getUserToken } from '../utilities/route';
 import { isUndefined } from "util";
-import { Token } from "../components/Token";
+// import { Token } from "../components/Token";
 import { isNullOrUndefined } from "util";
 
 export class TaigaApi {

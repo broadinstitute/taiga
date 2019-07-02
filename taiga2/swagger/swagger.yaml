@@ -1295,6 +1295,11 @@ definitions:
               type: 
                 - string
                 - "null"
+            original_file_sha256:
+              description: the sha256 of the uploaded file
+              type: 
+                - string
+                - "null"
       provenance:
         "$ref": "#/definitions/Provenance"
       state:
