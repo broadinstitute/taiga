@@ -71,7 +71,6 @@ jmespath==0.9.4
 jsonpointer==2.0
 jsonschema==3.0.1
 kombu==4.2.1
-lazy-object-proxy==0.0.0
 Mako==1.0.13
 MarkupSafe==1.0
 marshmallow==2.15.1
