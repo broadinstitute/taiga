@@ -1,4 +1,5 @@
 set -ex
+pip install -r requirements.txt
 python setup.py develop
 yarn install
-cd frontend/ && yarn install && cd ..
+cd react_frontend/ && yarn install && cd ..
