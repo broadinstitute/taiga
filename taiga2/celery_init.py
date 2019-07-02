@@ -18,7 +18,7 @@ def configure_celery(app):
                 print(app.config)
                 return TaskBase.__call__(self, *args, **kwargs)
 
-    if not app.config.get('CELERY_ALWAYS_EAGER', False):
+    if not app.config.get("CELERY_ALWAYS_EAGER", False):
         celery.Task = ContextTask
 
     return celery

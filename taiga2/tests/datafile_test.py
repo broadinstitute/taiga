@@ -31,14 +31,18 @@ def create_matrix_dataset_version(tmpdir, mock_s3):
     mock_s3.Object("bucket", "key").upload_file(tmpdst)
 
     # create datafile
-    df = mc.add_s3_datafile(name="dfname",
-                         s3_bucket='bucket',
-                         s3_key='key',
-                         type=models.S3DataFile.DataFileFormat.HDF5,
-                         short_summary="short",
-                         long_summary="long")
+    df = mc.add_s3_datafile(
+        name="dfname",
+        s3_bucket="bucket",
+        s3_key="key",
+        type=models.S3DataFile.DataFileFormat.HDF5,
+        short_summary="short",
+        long_summary="long",
+    )
 
-    ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
+    ds = mc.add_dataset(
+        name="dataset name", description="dataset description", datafiles_ids=[df.id]
+    )
     return str(ds.dataset_versions[0].id)
 
 
@@ -57,14 +61,18 @@ def create_table_dataset_version(tmpdir, mock_s3):
     mock_s3.Object("bucket", "key").upload_file(tmpdst)
 
     # create datafile
-    df = mc.add_s3_datafile(name="dfname",
-                         s3_bucket='bucket',
-                         s3_key='key',
-                         type=models.S3DataFile.DataFileFormat.Columnar,
-                         short_summary="short",
-                         long_summary="long")
+    df = mc.add_s3_datafile(
+        name="dfname",
+        s3_bucket="bucket",
+        s3_key="key",
+        type=models.S3DataFile.DataFileFormat.Columnar,
+        short_summary="short",
+        long_summary="long",
+    )
 
-    ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
+    ds = mc.add_dataset(
+        name="dataset name", description="dataset description", datafiles_ids=[df.id]
+    )
     return str(ds.dataset_versions[0].id)
 
 
@@ -73,19 +81,33 @@ def _as_tsv(rows):
     return content.encode("utf8")
 
 
-@pytest.mark.parametrize("src_format, out_format, is_expected", [
-    ("table", "csv", lambda x: x == b"a,b\r\n1,2\r\n"),
-    ("table", "tsv", lambda x: x == b"a\tb\r\n1\t2\r\n"),
-    ("table", "rds", lambda x: len(x) > 0),
-    ("matrix", "csv", lambda x: x == b",a,b\r\nc,1.0,2.0\r\n"),
-    ("matrix", "tsv", lambda x: x == b"\ta\tb\r\nc\t1.0\t2.0\r\n"),
-    ("matrix", "gct", lambda x: x == _as_tsv([["#1.2"],
-                                              ["1", "2"],
-                                              ["Name", "Description", "a", "b"],
-                                              ["c", "c", "1.0", "2.0"]])),
-    ("matrix", "rds", lambda x: len(x) > 0)
-])
-def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, out_format, is_expected):
+@pytest.mark.parametrize(
+    "src_format, out_format, is_expected",
+    [
+        ("table", "csv", lambda x: x == b"a,b\r\n1,2\r\n"),
+        ("table", "tsv", lambda x: x == b"a\tb\r\n1\t2\r\n"),
+        ("table", "rds", lambda x: len(x) > 0),
+        ("matrix", "csv", lambda x: x == b",a,b\r\nc,1.0,2.0\r\n"),
+        ("matrix", "tsv", lambda x: x == b"\ta\tb\r\nc\t1.0\t2.0\r\n"),
+        (
+            "matrix",
+            "gct",
+            lambda x: x
+            == _as_tsv(
+                [
+                    ["#1.2"],
+                    ["1", "2"],
+                    ["Name", "Description", "a", "b"],
+                    ["c", "c", "1.0", "2.0"],
+                ]
+            ),
+        ),
+        ("matrix", "rds", lambda x: len(x) > 0),
+    ],
+)
+def test_dataset_export(
+    app, session, db, mock_s3, user_id, tmpdir, src_format, out_format, is_expected
+):
     assert user_id is not None
 
     with app.test_client() as c:
@@ -97,17 +119,22 @@ def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, 
         start = time.time()
         resulting_urls = None
         while time.time() < start + MAX_TIME:
-            r = c.get("/datafile?dataset_version_id=" + dataset_version_id + "&name=dfname&format=" + out_format)
+            r = c.get(
+                "/datafile?dataset_version_id="
+                + dataset_version_id
+                + "&name=dfname&format="
+                + out_format
+            )
             assert r.status_code == 200, r.data.decode("utf8")
             response = json.loads(r.data.decode("utf8"))
 
-            for prop in ['dataset_id', 'dataset_version_id', 'datafile_name', 'status']:
+            for prop in ["dataset_id", "dataset_version_id", "datafile_name", "status"]:
                 assert response[prop] is not None
 
             print("status:", response)
 
-            if 'urls' in response:
-                resulting_urls = response['urls']
+            if "urls" in response:
+                resulting_urls = response["urls"]
                 print("resulting_urls", repr(resulting_urls))
                 break
 
@@ -123,14 +150,18 @@ def test_dataset_export(app, session, db, mock_s3, user_id, tmpdir, src_format, 
 
 def create_simple_dataset():
     # create datafile
-    df = mc.add_s3_datafile(name="df",
-                         s3_bucket="bucket",
-                         s3_key="converted/key",
-                         type=models.S3DataFile.DataFileFormat.Raw,
-                         short_summary="short",
-                         long_summary="long")
+    df = mc.add_s3_datafile(
+        name="df",
+        s3_bucket="bucket",
+        s3_key="converted/key",
+        type=models.S3DataFile.DataFileFormat.Raw,
+        short_summary="short",
+        long_summary="long",
+    )
 
-    ds = mc.add_dataset(name="dataset name", description="dataset description", datafiles_ids=[df.id])
+    ds = mc.add_dataset(
+        name="dataset name", description="dataset description", datafiles_ids=[df.id]
+    )
     return ds.permaname, ds.dataset_versions[0].id, "df"
 
 

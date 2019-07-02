@@ -17,23 +17,27 @@ class AWSClients:
         """
         config = flask.current_app.config
         if not hasattr(g, "_s3_resource"):
-            aws_access_key_id = config['AWS_ACCESS_KEY_ID']
+            aws_access_key_id = config["AWS_ACCESS_KEY_ID"]
             log.info("Getting S3 resource with access key %s", aws_access_key_id)
-            g._s3_resource = boto3.resource('s3',
-                                            aws_access_key_id=aws_access_key_id,
-                                            aws_secret_access_key=config['AWS_SECRET_ACCESS_KEY'])
+            g._s3_resource = boto3.resource(
+                "s3",
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=config["AWS_SECRET_ACCESS_KEY"],
+            )
         return g._s3_resource
 
     @property
     def s3_client(self):
         config = flask.current_app.config
         if not hasattr(g, "_s3_client"):
-            aws_access_key_id = config['AWS_ACCESS_KEY_ID']
+            aws_access_key_id = config["AWS_ACCESS_KEY_ID"]
             log.info("Getting S3 client with access key %s", aws_access_key_id)
-            g._s3_client = boto3.client('s3',
-                                        #   config=Config(signature_version='s3v4'),
-                                        aws_access_key_id=aws_access_key_id,
-                                        aws_secret_access_key=config['AWS_SECRET_ACCESS_KEY'])
+            g._s3_client = boto3.client(
+                "s3",
+                #   config=Config(signature_version='s3v4'),
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=config["AWS_SECRET_ACCESS_KEY"],
+            )
         return g._s3_client
 
     @property
@@ -46,11 +50,13 @@ class AWSClients:
         """
         config = flask.current_app.config
         if not hasattr(g, "_sts_client"):
-            aws_access_key_id = config['CLIENT_UPLOAD_AWS_ACCESS_KEY_ID']
+            aws_access_key_id = config["CLIENT_UPLOAD_AWS_ACCESS_KEY_ID"]
             log.warn("Getting STS client with access key %s", aws_access_key_id)
-            g._sts_client = boto3.client('sts',
-                                         aws_access_key_id=aws_access_key_id,
-                                         aws_secret_access_key=config['CLIENT_UPLOAD_AWS_SECRET_ACCESS_KEY'])
+            g._sts_client = boto3.client(
+                "sts",
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=config["CLIENT_UPLOAD_AWS_SECRET_ACCESS_KEY"],
+            )
         return g._sts_client
 
 
@@ -77,11 +83,11 @@ def create_signed_get_obj(bucket, key, filename):
     content_disposition = "attachment; filename={};".format(filename)
     # TODO: Set expiry on signing url
     signed_url = aws.s3_client.generate_presigned_url(
-        ClientMethod='get_object',
+        ClientMethod="get_object",
         Params={
-            'Bucket': bucket,
-            'Key': key,
-            'ResponseContentDisposition': content_disposition
-        }
+            "Bucket": bucket,
+            "Key": key,
+            "ResponseContentDisposition": content_disposition,
+        },
     )
     return signed_url

@@ -16,12 +16,23 @@ from taiga2.models import S3DataFile
 celery = Celery("taiga2")
 log = logging.getLogger()
 
+
 @celery.task
 def print_config():
     import flask
+
     print(flask.current_app.config)
 
-def _from_s3_convert_to_s3(progress, upload_session_file_id, s3_object, download_dest, converted_dest, converted_s3_object, converter):
+
+def _from_s3_convert_to_s3(
+    progress,
+    upload_session_file_id,
+    s3_object,
+    download_dest,
+    converted_dest,
+    converted_s3_object,
+    converter,
+):
     progress.progress("Downloading the file from S3")
 
     s3_object.download_fileobj(download_dest)
@@ -37,15 +48,37 @@ def _from_s3_convert_to_s3(progress, upload_session_file_id, s3_object, download
 
     return import_result
 
+
 import humanize
 
 
 @celery.task(bind=True)
-def background_process_new_upload_session_file(self, upload_session_file_id, initial_s3_key, file_type, bucket_name, converted_s3_key):
-    print("background_process_new_upload_session_file, upload_session_file_id={} file_type={} bucket_name={} initial_s3_key={} converted_s3_key={}".format(upload_session_file_id, file_type,
-                                                                                                                                                           bucket_name, initial_s3_key, converted_s3_key))
-    log.error("err -- background_process_new_upload_session_file, upload_session_file_id={} file_type={} bucket_name={} initial_s3_key={} converted_s3_key={}".format(upload_session_file_id, file_type,
-                                                                                                                                                           bucket_name, initial_s3_key, converted_s3_key))
+def background_process_new_upload_session_file(
+    self,
+    upload_session_file_id,
+    initial_s3_key,
+    file_type,
+    bucket_name,
+    converted_s3_key,
+):
+    print(
+        "background_process_new_upload_session_file, upload_session_file_id={} file_type={} bucket_name={} initial_s3_key={} converted_s3_key={}".format(
+            upload_session_file_id,
+            file_type,
+            bucket_name,
+            initial_s3_key,
+            converted_s3_key,
+        )
+    )
+    log.error(
+        "err -- background_process_new_upload_session_file, upload_session_file_id={} file_type={} bucket_name={} initial_s3_key={} converted_s3_key={}".format(
+            upload_session_file_id,
+            file_type,
+            bucket_name,
+            initial_s3_key,
+            converted_s3_key,
+        )
+    )
     s3 = aws.s3
     progress = Progress(self)
 
@@ -58,18 +91,21 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
         progress.progress("Received {}".format(initial_s3_key))
 
         # Create a new converted object to upload
-        progress.progress("Uploading the {} to S3".format(S3DataFile.DataFileFormat(file_type)))
+        progress.progress(
+            "Uploading the {} to S3".format(S3DataFile.DataFileFormat(file_type))
+        )
 
         # We copy the file to 'convert/'
-        copy_source = {
-            'Bucket': bucket_name,
-            'Key': initial_s3_key
-        }
+        copy_source = {"Bucket": bucket_name, "Key": initial_s3_key}
         b = s3.Bucket(bucket_name)
         existing_obj = b.Object(initial_s3_key)
         b.copy(copy_source, converted_s3_key)
 
-        import_result = ImportResult(sha256=None, long_summary=None, short_summary=humanize.naturalsize(existing_obj.content_length))
+        import_result = ImportResult(
+            sha256=None,
+            long_summary=None,
+            short_summary=humanize.naturalsize(existing_obj.content_length),
+        )
     else:
         if file_type == models.InitialFileType.NumericMatrixCSV.value:
             converter = conversion.csv_to_hdf5
@@ -89,9 +125,22 @@ def background_process_new_upload_session_file(self, upload_session_file_id, ini
 
         with tempfile.NamedTemporaryFile("w+b") as download_dest:
             with tempfile.NamedTemporaryFile("w+b") as converted_dest:
-                import_result = _from_s3_convert_to_s3(progress, upload_session_file_id, s3_object, download_dest, converted_dest, converted_s3_object, converter)
+                import_result = _from_s3_convert_to_s3(
+                    progress,
+                    upload_session_file_id,
+                    s3_object,
+                    download_dest,
+                    converted_dest,
+                    converted_s3_object,
+                    converter,
+                )
 
-    models_controller.update_upload_session_file_summaries(upload_session_file_id, import_result.short_summary, import_result.long_summary, import_result.sha256)
+    models_controller.update_upload_session_file_summaries(
+        upload_session_file_id,
+        import_result.short_summary,
+        import_result.long_summary,
+        import_result.sha256,
+    )
 
 
 # TODO: This is only for background_process_new_upload_session_file, how to get it generic for any Celery tasks?
@@ -101,56 +150,56 @@ def taskstatus(task_id):
     print("Task {}".format(task))
     print("The task is in state: {}".format(task.state))
     print("Task info is {}".format(task.info))
-    if task.state == 'PENDING':
+    if task.state == "PENDING":
         # job did not start yet
         response = {
-            'id': task.id,
-            'state': task.state,
-            'message': 'Waiting in the task queue',
-            'current': 0,
-            'total': 1,
-            's3Key': 'TODO'
+            "id": task.id,
+            "state": task.state,
+            "message": "Waiting in the task queue",
+            "current": 0,
+            "total": 1,
+            "s3Key": "TODO",
         }
-    elif task.state == 'SUCCESS':
+    elif task.state == "SUCCESS":
         response = {
-            'id': task.id,
-            'state': task.state,
-            'message': 'Task has successfully terminated',
-            'current': 1,
-            'total': 1,
-            's3Key': 'TODO'
+            "id": task.id,
+            "state": task.state,
+            "message": "Task has successfully terminated",
+            "current": 1,
+            "total": 1,
+            "s3Key": "TODO",
         }
-    elif task.state != 'FAILURE':
+    elif task.state != "FAILURE":
         if task.info:
-            message = task.info.get('message', 'No message')
-            current = int(task.info.get('current', 0))
-            total = int(task.info.get('total', 1))
-            s3key = task.info.get('s3Key', 'TODO')
+            message = task.info.get("message", "No message")
+            current = int(task.info.get("current", 0))
+            total = int(task.info.get("total", 1))
+            s3key = task.info.get("s3Key", "TODO")
         else:
-            message = 'Failure :/'
+            message = "Failure :/"
             current = 0
             total = 1
-            s3key = 'TODO'
+            s3key = "TODO"
 
         response = {
-            'id': task.id,
-            'state': task.state,
-            'message': message,
-            'current': current,
-            'total': total,
-            's3Key': s3key
+            "id": task.id,
+            "state": task.state,
+            "message": message,
+            "current": current,
+            "total": total,
+            "s3Key": s3key,
         }
 
-        if 'result' in task.info:
-            response['result'] = task.info['result']
+        if "result" in task.info:
+            response["result"] = task.info["result"]
     else:
         response = {
-            'id': task.id,
-            'state': task.state,
-            'message': str(task.info),
-            'current': 1,
-            'total': -1,
-            's3Key': 'TODO' if task.info else task.info.get('s3Key', 'TODO')
+            "id": task.id,
+            "state": task.state,
+            "message": str(task.info),
+            "current": 1,
+            "total": -1,
+            "s3Key": "TODO" if task.info else task.info.get("s3Key", "TODO"),
         }
 
     print("response", repr(response))
@@ -161,7 +210,7 @@ def taskstatus(task_id):
 def get_converter(src_format, dst_format):
     from taiga2.models import DataFile
 
-    is_hdf5 = (src_format == str(S3DataFile.DataFileFormat.HDF5))
+    is_hdf5 = src_format == str(S3DataFile.DataFileFormat.HDF5)
     is_columnar = str(S3DataFile.DataFileFormat.Columnar)
 
     if is_hdf5:
@@ -183,19 +232,26 @@ def get_converter(src_format, dst_format):
 
     raise Exception("No conversion for {} to {}".format(src_format, dst_format))
 
-def _start_conversion_task(self, progress, bucket, key, src_format, dst_format, cache_entry_id):
+
+def _start_conversion_task(
+    self, progress, bucket, key, src_format, dst_format, cache_entry_id
+):
     from taiga2.controllers import models_controller
 
-    dest_bucket = flask.current_app.config['S3_BUCKET']
+    dest_bucket = flask.current_app.config["S3_BUCKET"]
 
     s3 = aws.s3
     with tempfile.NamedTemporaryFile() as raw_t:
         with make_temp_file_generator() as temp_file_generator:
-            models_controller.update_conversion_cache_entry(cache_entry_id, "Downloading from S3")
+            models_controller.update_conversion_cache_entry(
+                cache_entry_id, "Downloading from S3"
+            )
             s3.Object(bucket, key).download_fileobj(raw_t)
             raw_t.flush()
 
-            models_controller.update_conversion_cache_entry(cache_entry_id, "Running conversion")
+            models_controller.update_conversion_cache_entry(
+                cache_entry_id, "Running conversion"
+            )
 
             converter = get_converter(src_format, dst_format)
             converted_files = converter(progress, raw_t.name, temp_file_generator)
@@ -203,23 +259,37 @@ def _start_conversion_task(self, progress, bucket, key, src_format, dst_format, 
 
             urls = []
             for converted_file in converted_files:
-                dest_key = models_controller.EnumS3FolderPath.Export.value + str(uuid.uuid4().hex)
+                dest_key = models_controller.EnumS3FolderPath.Export.value + str(
+                    uuid.uuid4().hex
+                )
                 urls.append("s3://{}/{}".format(dest_bucket, dest_key))
 
-                models_controller.update_conversion_cache_entry(cache_entry_id, "Uploading converted file to S3")
+                models_controller.update_conversion_cache_entry(
+                    cache_entry_id, "Uploading converted file to S3"
+                )
                 with open(converted_file, "rb") as converted_file_fd:
                     s3.Object(dest_bucket, dest_key).upload_fileobj(converted_file_fd)
 
-        models_controller.update_conversion_cache_entry(cache_entry_id, "Completed successfully", urls=urls)
+        models_controller.update_conversion_cache_entry(
+            cache_entry_id, "Completed successfully", urls=urls
+        )
 
 
 @celery.task(bind=True)
 def start_conversion_task(self, bucket, key, src_format, dst_format, cache_entry_id):
     log.info("Starting a Conversion task")
     try:
-        return _start_conversion_task(self, Progress(self), bucket, key, src_format, dst_format, cache_entry_id)
+        return _start_conversion_task(
+            self, Progress(self), bucket, key, src_format, dst_format, cache_entry_id
+        )
     except:
         models_controller.mark_conversion_cache_entry_as_failed(cache_entry_id)
-        log.exception("Error running conversion on %s/%s src_format=%s dst_format=%s cache_entry_id=%s", bucket, key, src_format, dst_format, cache_entry_id)
+        log.exception(
+            "Error running conversion on %s/%s src_format=%s dst_format=%s cache_entry_id=%s",
+            bucket,
+            key,
+            src_format,
+            dst_format,
+            cache_entry_id,
+        )
         raise
-

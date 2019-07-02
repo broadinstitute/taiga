@@ -3,6 +3,7 @@ from collections import namedtuple
 
 Column = namedtuple("Column", ["name", "type"])
 
+
 class TypeAggregator:
     def __init__(self):
         self.couldBeFloat = True
@@ -32,7 +33,7 @@ class TypeAggregator:
 
 
 def sniff(filename, encoding, rows_to_check=None, delimiter="\t"):
-    with open(filename, 'rU', encoding=encoding) as fd:
+    with open(filename, "rU", encoding=encoding) as fd:
         r = csv.reader(fd, delimiter=delimiter)
         col_header = next(r)
         row = next(r)
@@ -58,8 +59,9 @@ def sniff(filename, encoding, rows_to_check=None, delimiter="\t"):
     if hasRowNames:
         del columnTypes[0]
 
-    columns = [Column(col_header[i], columnTypes[i].get_type()) for i in range(len(columnTypes))]
+    columns = [
+        Column(col_header[i], columnTypes[i].get_type())
+        for i in range(len(columnTypes))
+    ]
 
     return hasRowNames, columns
-
-

@@ -14,7 +14,17 @@ from sqlalchemy import and_, update
 import taiga2.models as models
 from taiga2.models import db
 from taiga2 import aws
-from taiga2.models import User, Folder, Dataset, DataFile, S3DataFile, DatasetVersion, Entry, Group, VirtualDataFile
+from taiga2.models import (
+    User,
+    Folder,
+    Dataset,
+    DataFile,
+    S3DataFile,
+    DatasetVersion,
+    Entry,
+    Group,
+    VirtualDataFile,
+)
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
 from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
@@ -25,6 +35,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
 from sqlalchemy.sql.expression import func
 from collections import namedtuple
+
 DataFileAlias = namedtuple("DataFileAlias", "name data_file_id")
 
 import logging
@@ -39,21 +50,22 @@ log = logging.getLogger(__name__)
 
 # <editor-fold desc="User">
 def add_user(name, email, token=None):
-    new_user = User(name=name,
-                    email=email, token=token)
+    new_user = User(name=name, email=email, token=token)
 
     home_description = """Welcome to Taiga2: a light-weight repository for capturing, versioning and accessing datasets.
 
 Make yourself comfortable, you're at Home."""
 
-    home_folder = Folder(name="Home",
-                         description=home_description,
-                         folder_type=models.Folder.FolderType.home,
-                         creator=new_user)
+    home_folder = Folder(
+        name="Home",
+        description=home_description,
+        folder_type=models.Folder.FolderType.home,
+        creator=new_user,
+    )
 
-    trash_folder = Folder(name="Trash",
-                          folder_type=Folder.FolderType.trash,
-                          creator=new_user)
+    trash_folder = Folder(
+        name="Trash", folder_type=Folder.FolderType.trash, creator=new_user
+    )
 
     db.session.add(home_folder)
     db.session.add(trash_folder)
@@ -113,15 +125,12 @@ def _change_connected_user(new_user):
 # </editor-fold>
 
 # <editor-fold desc="Folder">
-def add_folder(name,
-               folder_type,
-               description):
+def add_folder(name, folder_type, description):
     creator = get_current_session_user()
 
-    new_folder = Folder(name=name,
-                        folder_type=folder_type,
-                        description=description,
-                        creator=creator)
+    new_folder = Folder(
+        name=name, folder_type=folder_type, description=description, creator=creator
+    )
     db.session.add(new_folder)
     db.session.commit()
 
@@ -141,7 +150,7 @@ def get_rights(entry_id) -> EntryRightsEnum:
     # We check the rights of this user over this folder
     current_user = get_current_session_user()
 
-    admin_group = db.session.query(Group).filter(Group.name == 'Admin').one()
+    admin_group = db.session.query(Group).filter(Group.name == "Admin").one()
     # If the user is the owner or it is in the group of admins, allowed to edit
     if entry.creator_id == current_user.id or current_user in admin_group.users:
         return EntryRightsEnum.can_edit
@@ -153,9 +162,12 @@ def get_folder_by_name(folder_name):
     """Get the folder by name of the current_user in the session. If multiple folders with the same name exist,
     returns the first one"""
     current_user = get_current_session_user()
-    folder = db.session.query(Folder).filter(Folder.creator_id == current_user.id) \
-        .filter(Folder.name == folder_name) \
+    folder = (
+        db.session.query(Folder)
+        .filter(Folder.creator_id == current_user.id)
+        .filter(Folder.name == folder_name)
         .first()
+    )
 
     if folder is None:
         raise NoResultFound
@@ -164,7 +176,7 @@ def get_folder_by_name(folder_name):
 
 
 def get_public_folder():
-    public_folder = db.session.query(Folder).filter(Folder.id == 'public').first()
+    public_folder = db.session.query(Folder).filter(Folder.id == "public").first()
     return public_folder
 
 
@@ -228,8 +240,7 @@ def get_folders_containing():
 
 
 def get_parent_folders(entry_id):
-    entry = db.session.query(Entry) \
-        .filter(Entry.id == entry_id).one()
+    entry = db.session.query(Entry).filter(Entry.id == entry_id).one()
     parent_folders = entry.parents
 
     return parent_folders
@@ -238,11 +249,9 @@ def get_parent_folders(entry_id):
 # </editor-fold>
 
 # <editor-fold desc="Dataset">
-def add_dataset(name,
-                description,
-                datafiles_ids=None,
-                permaname=None,
-                anterior_creation_date=None):
+def add_dataset(
+    name, description, datafiles_ids=None, permaname=None, anterior_creation_date=None
+):
     # assert len(datafiles_ids) > 0
 
     if not permaname:
@@ -254,11 +263,13 @@ def add_dataset(name,
     if anterior_creation_date:
         creation_date = anterior_creation_date
 
-    new_dataset = Dataset(name=name,
-                          permaname=permaname,
-                          description=description,
-                          creator=creator,
-                          creation_date=creation_date)
+    new_dataset = Dataset(
+        name=name,
+        permaname=permaname,
+        description=description,
+        creator=creator,
+        creation_date=creation_date,
+    )
 
     db.session.add(new_dataset)
 
@@ -268,10 +279,12 @@ def add_dataset(name,
     # TODO: Think about a meaningful name
     if datafiles_ids is not None:
         db.session.flush()
-        new_dataset_version = add_dataset_version(dataset_id=new_dataset.id,
-                                                  datafiles_ids=datafiles_ids,
-                                                  new_description=description,
-                                                  anterior_creation_date=creation_date)
+        new_dataset_version = add_dataset_version(
+            dataset_id=new_dataset.id,
+            datafiles_ids=datafiles_ids,
+            new_description=description,
+            anterior_creation_date=creation_date,
+        )
 
         db.session.add(new_dataset_version)
 
@@ -283,20 +296,24 @@ def add_dataset(name,
     return new_dataset
 
 
-def add_dataset_from_session(session_id, dataset_name, dataset_description, current_folder_id):
+def add_dataset_from_session(
+    session_id, dataset_name, dataset_description, current_folder_id
+):
     added_datafiles = add_datafiles_from_session(session_id)
 
     # TODO: Get the user from the session
     user = get_user_from_upload_session(session_id)
     dataset_permaname = models.generate_permaname(dataset_name)
-    added_dataset = add_dataset(name=dataset_name,
-                                permaname=dataset_permaname,
-                                description=dataset_description,
-                                datafiles_ids=[datafile.id
-                                               for datafile in added_datafiles])
+    added_dataset = add_dataset(
+        name=dataset_name,
+        permaname=dataset_permaname,
+        description=dataset_description,
+        datafiles_ids=[datafile.id for datafile in added_datafiles],
+    )
     add_folder_entry(current_folder_id, added_dataset.id)
 
     return added_dataset
+
 
 def update_permaname(dataset_id, permaname):
     dataset = get_dataset(dataset_id)
@@ -305,26 +322,33 @@ def update_permaname(dataset_id, permaname):
 
 
 def get_dataset(dataset_id, one_or_none=False) -> Dataset:
-    q = db.session.query(Entry) \
-        .filter(Entry.id == dataset_id)
+    q = db.session.query(Entry).filter(Entry.id == dataset_id)
     return _fetch_respecting_one_or_none(q, one_or_none, expect=[Dataset])
 
 
 def get_datasets(array_dataset_ids):
     return [get_dataset(id) for id in array_dataset_ids]
 
+
 def get_dataset_from_permaname(dataset_permaname, one_or_none=False):
-    dataset = db.session.query(Dataset) \
-        .filter(Dataset.permaname == dataset_permaname).one_or_none()
+    dataset = (
+        db.session.query(Dataset)
+        .filter(Dataset.permaname == dataset_permaname)
+        .one_or_none()
+    )
 
     if not one_or_none and dataset is None:
         raise NoResultFound()
 
     return dataset
 
+
 def get_first_dataset_version(dataset_id):
-    dataset_version_first = db.session.query(DatasetVersion) \
-        .filter(DatasetVersion.dataset_id == dataset_id, DatasetVersion.version == 1).one()
+    dataset_version_first = (
+        db.session.query(DatasetVersion)
+        .filter(DatasetVersion.dataset_id == dataset_id, DatasetVersion.version == 1)
+        .one()
+    )
 
     return dataset_version_first
 
@@ -380,11 +404,13 @@ def update_dataset_creation_date(dataset_id, new_date):
 # def update_datafile_summaries
 
 
-def update_dataset_contents(dataset_id,
-                            datafiles_id_to_remove=None,
-                            datafiles_id_to_add=None,
-                            new_description=None,
-                            comments="No comments"):
+def update_dataset_contents(
+    dataset_id,
+    datafiles_id_to_remove=None,
+    datafiles_id_to_add=None,
+    new_description=None,
+    comments="No comments",
+):
     # TODO: Does it make sense to have a "add datafiles?". Each datafile belongs to a dataset_version
     if not datafiles_id_to_remove:
         datafiles_id_to_remove = []
@@ -392,12 +418,15 @@ def update_dataset_contents(dataset_id,
         datafiles_id_to_add = []
 
     # Fetch the entries to remove
-    datafiles_to_remove = [get_datafile(datafile_id_to_remove)
-                           for datafile_id_to_remove in datafiles_id_to_remove]
+    datafiles_to_remove = [
+        get_datafile(datafile_id_to_remove)
+        for datafile_id_to_remove in datafiles_id_to_remove
+    ]
 
     # Fetch the entries to add
-    datafiles_to_add = [get_datafile(datafile_id_to_add)
-                        for datafile_id_to_add in datafiles_id_to_add]
+    datafiles_to_add = [
+        get_datafile(datafile_id_to_add) for datafile_id_to_add in datafiles_id_to_add
+    ]
 
     dataset = get_dataset(dataset_id)
 
@@ -419,11 +448,13 @@ def update_dataset_contents(dataset_id,
 
     # Create the new dataset_version from the latest and update its version
     # TODO: Remove the increment of the version since it should be handled by add_dataset_version directly
-    new_updated_dataset_version = add_dataset_version(dataset_id=dataset_version_latest_version.dataset.id,
-                                                      datafiles_ids=[datafile.id
-                                                                     for datafile in
-                                                                     dataset_version_latest_version.datafiles],
-                                                      new_description=_description)
+    new_updated_dataset_version = add_dataset_version(
+        dataset_id=dataset_version_latest_version.dataset.id,
+        datafiles_ids=[
+            datafile.id for datafile in dataset_version_latest_version.datafiles
+        ],
+        new_description=_description,
+    )
 
     new_updated_version_datafiles = new_updated_dataset_version.datafiles
 
@@ -467,20 +498,23 @@ def add_or_update_dataset_access_log(dataset_id) -> UserLog:
     current_user = flask.g.current_user
 
     try:
-        access_log = db.session.query(UserLog) \
-            .filter(UserLog.dataset_id == dataset_id) \
-            .filter(UserLog.user_id == current_user.id) \
+        access_log = (
+            db.session.query(UserLog)
+            .filter(UserLog.dataset_id == dataset_id)
+            .filter(UserLog.user_id == current_user.id)
             .one_or_none()
+        )
     except MultipleResultsFound:
-        log.error("When logging access to dataset (id {}) for user {}, we had multiple results instead of only one" \
-                  .format(dataset_id, current_user.email)
-                  )
+        log.error(
+            "When logging access to dataset (id {}) for user {}, we had multiple results instead of only one".format(
+                dataset_id, current_user.email
+            )
+        )
 
     if access_log:
         access_log.last_access = datetime.utcnow()
     else:
-        access_log = UserLog(user_id=current_user.id,
-                             dataset_id=dataset_id)
+        access_log = UserLog(user_id=current_user.id, dataset_id=dataset_id)
 
     db.session.add(access_log)
     db.session.commit()
@@ -491,8 +525,9 @@ def add_or_update_dataset_access_log(dataset_id) -> UserLog:
 def get_datasets_access_logs():
     current_user = flask.g.current_user
 
-    array_access_logs = db.session.query(UserLog) \
-        .filter(UserLog.user_id == current_user.id).all()
+    array_access_logs = (
+        db.session.query(UserLog).filter(UserLog.user_id == current_user.id).all()
+    )
 
     return array_access_logs
 
@@ -514,9 +549,9 @@ def get_dataset_version_id_from_any(submitted_by_user__data: str):
     # TODO: Do a function to extract this pattern . and /
     version = None
     if "." in submitted_by_user__data:
-        dataset_id, version = submitted_by_user__data.split('.')
+        dataset_id, version = submitted_by_user__data.split(".")
     elif "/" in submitted_by_user__data:
-        dataset_id, version = submitted_by_user__data.split('/')
+        dataset_id, version = submitted_by_user__data.split("/")
     else:
         # TODO: implement dataset_id or dataset_version_id
         dataset_id = submitted_by_user__data
@@ -531,13 +566,17 @@ def get_dataset_version_id_from_any(submitted_by_user__data: str):
         if not dataset:
             # TODO: It seems weird, but user could enter the dataset version id in the jump box. We have to confirm it is the right id
             dataset_version_id = dataset_id
-            dataset_version = get_dataset_version(dataset_version_id=dataset_version_id, one_or_none=True)
+            dataset_version = get_dataset_version(
+                dataset_version_id=dataset_version_id, one_or_none=True
+            )
 
     if dataset:
         if not version:
             dataset_version = get_latest_dataset_version(dataset.id)
         else:
-            dataset_version = get_dataset_version_by_permaname_and_version(dataset.permaname, version, one_or_none=True)
+            dataset_version = get_dataset_version_by_permaname_and_version(
+                dataset.permaname, version, one_or_none=True
+            )
 
     # We did not find anything matching
     if not dataset_version:
@@ -549,12 +588,14 @@ def get_dataset_version_id_from_any(submitted_by_user__data: str):
 # </editor-fold>
 
 # <editor-fold desc="DatasetVersion">
-def add_dataset_version(dataset_id,
-                        datafiles_ids=None,
-                        new_description=None,
-                        permaname=None,
-                        anterior_creation_date=None,
-                        forced_id=None):
+def add_dataset_version(
+    dataset_id,
+    datafiles_ids=None,
+    new_description=None,
+    permaname=None,
+    anterior_creation_date=None,
+    forced_id=None,
+):
     assert len(datafiles_ids) > 0
     assert isinstance(datafiles_ids, list)
 
@@ -563,8 +604,7 @@ def add_dataset_version(dataset_id,
 
     dataset = get_entry(dataset_id)
 
-    datafiles = db.session.query(DataFile) \
-        .filter(DataFile.id.in_(datafiles_ids)).all()
+    datafiles = db.session.query(DataFile).filter(DataFile.id.in_(datafiles_ids)).all()
 
     assert len(datafiles) == len(datafiles_ids)
 
@@ -587,14 +627,16 @@ def add_dataset_version(dataset_id,
         _description = dataset.description
 
     # Create the DatasetVersion object
-    new_dataset_version = DatasetVersion(name=name,
-                                         creator=creator,
-                                         dataset=dataset,
-                                         datafiles=datafiles,
-                                         description=new_description,
-                                         version=version,
-                                         creation_date=creation_date,
-                                         id=forced_id)
+    new_dataset_version = DatasetVersion(
+        name=name,
+        creator=creator,
+        dataset=dataset,
+        datafiles=datafiles,
+        description=new_description,
+        version=version,
+        creation_date=creation_date,
+        id=forced_id,
+    )
 
     # We now update the dataset description with the latest datasetVersion description
     # TODO: We should probably remove the description of a dataset, to use only the DatasetVersion one
@@ -608,16 +650,16 @@ def add_dataset_version(dataset_id,
     return new_dataset_version
 
 
-def create_new_dataset_version_from_session(session_id,
-                                            dataset_id,
-                                            new_description):
+def create_new_dataset_version_from_session(session_id, dataset_id, new_description):
 
     added_datafiles = add_datafiles_from_session(session_id)
     all_datafile_ids = [datafile.id for datafile in added_datafiles]
 
-    new_dataset_version = add_dataset_version(dataset_id=dataset_id,
-                                              datafiles_ids=all_datafile_ids,
-                                              new_description=new_description)
+    new_dataset_version = add_dataset_version(
+        dataset_id=dataset_id,
+        datafiles_ids=all_datafile_ids,
+        new_description=new_description,
+    )
 
     return new_dataset_version
 
@@ -646,49 +688,56 @@ def _fetch_respecting_one_or_none(q, one_or_none, expect=None):
 
 
 def get_dataset_version(dataset_version_id, one_or_none=False) -> DatasetVersion:
-    q = db.session.query(Entry) \
-        .filter(Entry.id == dataset_version_id)
+    q = db.session.query(Entry).filter(Entry.id == dataset_version_id)
 
     return _fetch_respecting_one_or_none(q, one_or_none, expect=[DatasetVersion])
 
 
 def get_dataset_versions(dataset_id):
-    dataset_versions = db.session.query(DatasetVersion) \
-        .filter(DatasetVersion.dataset_id == dataset_id) \
+    dataset_versions = (
+        db.session.query(DatasetVersion)
+        .filter(DatasetVersion.dataset_id == dataset_id)
         .all()
+    )
 
     return dataset_versions
 
 
 def get_dataset_versions_bulk(array_dataset_version_ids):
-    dataset_versions = db.session.query(DatasetVersion) \
-        .filter(DatasetVersion.id.in_(array_dataset_version_ids)).all()
+    dataset_versions = (
+        db.session.query(DatasetVersion)
+        .filter(DatasetVersion.id.in_(array_dataset_version_ids))
+        .all()
+    )
 
     return dataset_versions
 
 
-def get_dataset_version_provenance(dataset_version_id,
-                                   provenance):
+def get_dataset_version_provenance(dataset_version_id, provenance):
     # TODO: See how to manage the provenance
     raise NotImplementedError
 
 
 def get_latest_dataset_version_by_permaname(permaname):
-    dataset_version = db.session.query(DatasetVersion) \
-        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)) \
-        .order_by(DatasetVersion.version.desc()) \
+    dataset_version = (
+        db.session.query(DatasetVersion)
+        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname))
+        .order_by(DatasetVersion.version.desc())
         .first()
+    )
 
     return dataset_version
 
 
-def get_dataset_version_by_permaname_and_version(permaname,
-                                                 version, one_or_none=False):
+def get_dataset_version_by_permaname_and_version(permaname, version, one_or_none=False):
     """From the permaname of a dataset, retrieve the specific dataset version"""
     # dataset = get_dataset_from_permaname(permaname)
-    obj = db.session.query(DatasetVersion) \
-        .filter(DatasetVersion.version == version) \
-        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname)).one_or_none()
+    obj = (
+        db.session.query(DatasetVersion)
+        .filter(DatasetVersion.version == version)
+        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname))
+        .one_or_none()
+    )
 
     if not one_or_none and obj is None:
         raise NoResultFound()
@@ -697,15 +746,15 @@ def get_dataset_version_by_permaname_and_version(permaname,
     return obj
 
 
-def get_dataset_version_by_dataset_id_and_dataset_version_id(dataset_id,
-                                                             dataset_version_id, one_or_none=False):
+def get_dataset_version_by_dataset_id_and_dataset_version_id(
+    dataset_id, dataset_version_id, one_or_none=False
+):
     dataset_version = get_dataset_version(dataset_version_id, one_or_none=one_or_none)
 
     return dataset_version
 
 
-def update_dataset_version_description(dataset_version_id,
-                                       new_description):
+def update_dataset_version_description(dataset_version_id, new_description):
     dataset_version = get_dataset_version(dataset_version_id)
 
     dataset_version.description = new_description
@@ -716,8 +765,11 @@ def update_dataset_version_description(dataset_version_id,
     return dataset_version
 
 
-def change_dataset_version_state(dataset_version_id: str, datasetVersionState: DatasetVersion.DatasetVersionState,
-                                 reason: str=None) -> DatasetVersion:
+def change_dataset_version_state(
+    dataset_version_id: str,
+    datasetVersionState: DatasetVersion.DatasetVersionState,
+    reason: str = None,
+) -> DatasetVersion:
     """Function to change the state of a DatasetVersion
     :param dataset_version_id:
     :param datasetVersionState:
@@ -739,7 +791,9 @@ def change_dataset_version_state(dataset_version_id: str, datasetVersionState: D
     return dataset_version
 
 
-def deprecate_dataset_version(dataset_version_id: str, reason: str) -> DatasetVersion.DatasetVersionState:
+def deprecate_dataset_version(
+    dataset_version_id: str, reason: str
+) -> DatasetVersion.DatasetVersionState:
     """Change the current state of a DatasetVersion to deprecate (see DatasetVersionState)
     :param dataset_version_id: ID of the dataset version to deprecate
     :param reason: Reason for deprecating a dataset
@@ -754,13 +808,17 @@ def deprecate_dataset_version(dataset_version_id: str, reason: str) -> DatasetVe
         # Check reason is not empty
         assert reason, "Reason can't be empty when deprecating a dataset version"
 
-        dataset_version = change_dataset_version_state(dataset_version_id=dataset_version_id,
-                                                       datasetVersionState=DatasetVersion.DatasetVersionState.deprecated,
-                                                       reason=reason)
+        dataset_version = change_dataset_version_state(
+            dataset_version_id=dataset_version_id,
+            datasetVersionState=DatasetVersion.DatasetVersionState.deprecated,
+            reason=reason,
+        )
     return dataset_version.state
 
 
-def deprecate_dataset_version_from_delete_state(dataset_version_id: str) -> DatasetVersion.DatasetVersionState:
+def deprecate_dataset_version_from_delete_state(
+    dataset_version_id: str
+) -> DatasetVersion.DatasetVersionState:
     """
     This function is mainly here to retrieve the reason message of deprecation (so if deletion was a mistake,
     we have nothing specific to do
@@ -769,32 +827,42 @@ def deprecate_dataset_version_from_delete_state(dataset_version_id: str) -> Data
     """
     dataset_version = get_dataset_version(dataset_version_id=dataset_version_id)
 
-    dataset_version = change_dataset_version_state(dataset_version_id=dataset_version_id,
-                                                   datasetVersionState=DatasetVersion.DatasetVersionState.deprecated,
-                                                   reason=dataset_version.reason_state)
+    dataset_version = change_dataset_version_state(
+        dataset_version_id=dataset_version_id,
+        datasetVersionState=DatasetVersion.DatasetVersionState.deprecated,
+        reason=dataset_version.reason_state,
+    )
 
     return dataset_version.state
 
 
-def approve_dataset_version(dataset_version_id: str) -> DatasetVersion.DatasetVersionState:
+def approve_dataset_version(
+    dataset_version_id: str
+) -> DatasetVersion.DatasetVersionState:
     """Change the current state of a DatasetVersion to approve (see DatasetVersionState).
     It should be the state by default
     :param dataset_version_id: ID of the dataset version to approve
     :return The new DatasetVersionState (should be approved)
     """
-    dataset_version = change_dataset_version_state(dataset_version_id=dataset_version_id,
-                                                   datasetVersionState=DatasetVersion.DatasetVersionState.approved)
+    dataset_version = change_dataset_version_state(
+        dataset_version_id=dataset_version_id,
+        datasetVersionState=DatasetVersion.DatasetVersionState.approved,
+    )
 
     return dataset_version.state
 
 
-def delete_dataset_version(dataset_version_id: str) -> DatasetVersion.DatasetVersionState:
+def delete_dataset_version(
+    dataset_version_id: str
+) -> DatasetVersion.DatasetVersionState:
     """Change the current state of a DatasetVersion to deleted (see DatasetVersionState).
     :param dataset_version_id: ID of the dataset version to delete
     :return The new DatasetVersionState (should be deleted)
     """
-    dataset_version = change_dataset_version_state(dataset_version_id=dataset_version_id,
-                                                   datasetVersionState=DatasetVersion.DatasetVersionState.deleted)
+    dataset_version = change_dataset_version_state(
+        dataset_version_id=dataset_version_id,
+        datasetVersionState=DatasetVersion.DatasetVersionState.deleted,
+    )
 
     return dataset_version.state
 
@@ -803,9 +871,7 @@ def delete_dataset_version(dataset_version_id: str) -> DatasetVersion.DatasetVer
 
 # <editor-fold desc="Entry">
 def get_entry(entry_id):
-    entry = db.session.query(Entry) \
-        .filter(Entry.id == entry_id) \
-        .one()
+    entry = db.session.query(Entry).filter(Entry.id == entry_id).one()
 
     return entry
 
@@ -815,7 +881,9 @@ class EntryAction(enum.Enum):
     copy = 2
 
 
-def _action_to_folder(entry_ids, target_folder_id, entry_action, current_folder_id=None):
+def _action_to_folder(
+    entry_ids, target_folder_id, entry_action, current_folder_id=None
+):
     if current_folder_id:
         folder_from_action = get_entry(current_folder_id)
     folder_to_action = get_entry(target_folder_id)
@@ -861,7 +929,9 @@ def move_to_trash(entry_ids):
     current_user = get_current_session_user()
     trash_folder = current_user.trash_folder
 
-    _action_to_folder(entry_ids=entry_ids, folder_id=trash_folder.id, entry_action=EntryAction.move)
+    _action_to_folder(
+        entry_ids=entry_ids, folder_id=trash_folder.id, entry_action=EntryAction.move
+    )
 
 
 def move_to_folder(entry_ids, current_folder_id, target_folder_id):
@@ -874,16 +944,20 @@ def move_to_folder(entry_ids, current_folder_id, target_folder_id):
         target_folder_id = trash_folder.id
 
     # TODO: Check if the user is allowed to do this?
-    _action_to_folder(entry_ids=entry_ids,
-                      current_folder_id=current_folder_id,
-                      target_folder_id=target_folder_id,
-                      entry_action=EntryAction.move)
+    _action_to_folder(
+        entry_ids=entry_ids,
+        current_folder_id=current_folder_id,
+        target_folder_id=target_folder_id,
+        entry_action=EntryAction.move,
+    )
 
 
 def copy_to_folder(entry_ids, target_folder_id):
-    _action_to_folder(entry_ids=entry_ids,
-                      target_folder_id=target_folder_id,
-                      entry_action=EntryAction.copy)
+    _action_to_folder(
+        entry_ids=entry_ids,
+        target_folder_id=target_folder_id,
+        entry_action=EntryAction.copy,
+    )
 
 
 def changer_owner(entry_id, new_creator_id):
@@ -896,10 +970,12 @@ def changer_owner(entry_id, new_creator_id):
 
 def already_seen(entry_id):
     """Return True if the current user has already seen the entry"""
-    visited_list = db.session.query(UserLog) \
-        .filter(UserLog.entry_id == entry_id) \
-        .filter(UserLog.user == get_current_session_user()) \
+    visited_list = (
+        db.session.query(UserLog)
+        .filter(UserLog.entry_id == entry_id)
+        .filter(UserLog.user == get_current_session_user())
         .all()
+    )
 
     if visited_list:
         return True
@@ -913,7 +989,7 @@ def can_view(entry_id):
 
     current_user = get_current_session_user()
 
-    public_folder = get_entry('public')
+    public_folder = get_entry("public")
 
     # If we are the owner of the entry, we can view it
     if entry.creator == current_user:
@@ -928,14 +1004,16 @@ def can_view(entry_id):
 # </editor-fold>
 
 # <editor-fold desc="DataFile">
-def add_s3_datafile(s3_bucket,
-                 s3_key,
-                 name,
-                 type,
-                 short_summary,
-                 long_summary,
-                 original_file_sha256=None,
-                 forced_id=None):
+def add_s3_datafile(
+    s3_bucket,
+    s3_key,
+    name,
+    type,
+    short_summary,
+    long_summary,
+    original_file_sha256=None,
+    forced_id=None,
+):
     assert type is not None
     received_type = type
     # TODO: See register_datafile_id
@@ -951,19 +1029,22 @@ def add_s3_datafile(s3_bucket,
         log.error(message)
         raise Exception(message)
 
-    new_datafile = S3DataFile(name=new_datafile_name,
-                            s3_bucket=s3_bucket,
-                            s3_key=s3_key,
-                            format=received_type,
-                            short_summary=short_summary,
-                            long_summary=long_summary,
-                            id=forced_id,
-                              original_file_sha256=original_file_sha256)
+    new_datafile = S3DataFile(
+        name=new_datafile_name,
+        s3_bucket=s3_bucket,
+        s3_key=s3_key,
+        format=received_type,
+        short_summary=short_summary,
+        long_summary=long_summary,
+        id=forced_id,
+        original_file_sha256=original_file_sha256,
+    )
 
     db.session.add(new_datafile)
     db.session.commit()
 
     return new_datafile
+
 
 def add_virtual_datafile(name, datafile_id):
     assert isinstance(datafile_id, str)
@@ -971,8 +1052,7 @@ def add_virtual_datafile(name, datafile_id):
     datafile = DataFile.query.get(datafile_id)
     assert datafile is not None
 
-    new_datafile = VirtualDataFile(name=name,
-                                   underlying_data_file=datafile)
+    new_datafile = VirtualDataFile(name=name, underlying_data_file=datafile)
 
     db.session.add(new_datafile)
     db.session.commit()
@@ -988,6 +1068,7 @@ def add_virtual_datafile(name, datafile_id):
     assert new_datafile.underlying_data_file_id is not None
 
     return new_datafile
+
 
 # def add_virtual_datafile(name, datafile_id):
 #     assert isinstance(datafile_id, str)
@@ -1019,11 +1100,13 @@ def add_virtual_datafile(name, datafile_id):
 #     return new_datafile
 
 
-
 def get_datafile_by_version_and_name(dataset_version_id, name, one_or_none=False):
-    obj = db.session.query(DataFile).filter(DataFile.name == name) \
-        .filter(DataFile.dataset_version_id == dataset_version_id).one_or_none()
-
+    obj = (
+        db.session.query(DataFile)
+        .filter(DataFile.name == name)
+        .filter(DataFile.dataset_version_id == dataset_version_id)
+        .one_or_none()
+    )
 
     if obj is None and not one_or_none:
         raise NoResultFound()
@@ -1032,10 +1115,10 @@ def get_datafile_by_version_and_name(dataset_version_id, name, one_or_none=False
 
 
 def get_datafile(datafile_id) -> DataFile:
-    datafile = db.session.query(DataFile) \
-        .filter(DataFile.id == datafile_id).one()
+    datafile = db.session.query(DataFile).filter(DataFile.id == datafile_id).one()
 
     return datafile
+
 
 class InvalidTaigaIdFormat(Exception):
     def __init__(self, taiga_id):
@@ -1050,8 +1133,11 @@ def get_datafile_by_taiga_id(taiga_id, one_or_none=False) -> DataFile:
     version = m.group(2)
     filename = m.group(3)
     dataset_version = get_dataset_version_by_permaname_and_version(permaname, version)
-    datafile = get_datafile_by_version_and_name(dataset_version.id, filename, one_or_none=one_or_none)
+    datafile = get_datafile_by_version_and_name(
+        dataset_version.id, filename, one_or_none=one_or_none
+    )
     return resolve_virtual_datafile(datafile)
+
 
 def add_datafiles_from_session(session_id):
     # We retrieve all the upload_session_files related to the UploadSession
@@ -1061,16 +1147,19 @@ def add_datafiles_from_session(session_id):
     added_datafiles = []
     for file in added_files:
         if file.data_file is not None:
-            new_datafile = add_virtual_datafile(name=file.filename, 
-                                        datafile_id=file.data_file.id)
+            new_datafile = add_virtual_datafile(
+                name=file.filename, datafile_id=file.data_file.id
+            )
         else:
-            new_datafile = add_s3_datafile(name=file.filename,
-                                        s3_bucket=file.s3_bucket,
-                                        s3_key=file.converted_s3_key,
-                                        type=file.converted_filetype,
-                                        short_summary=file.short_summary,
-                                        long_summary=file.long_summary,
-                                           original_file_sha256=file.original_file_sha256)
+            new_datafile = add_s3_datafile(
+                name=file.filename,
+                s3_bucket=file.s3_bucket,
+                s3_key=file.converted_s3_key,
+                type=file.converted_filetype,
+                short_summary=file.short_summary,
+                long_summary=file.long_summary,
+                original_file_sha256=file.original_file_sha256,
+            )
         added_datafiles.append(new_datafile)
 
     return added_datafiles
@@ -1106,19 +1195,24 @@ def add_new_upload_session():
 
 
 def get_upload_session(session_id):
-    upload_session = db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
+    upload_session = (
+        db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
+    )
     return upload_session
 
 
 def get_user_from_upload_session(session_id):
-    session = db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
+    session = (
+        db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
+    )
     return session.user
 
 
 def get_upload_session_files_from_session(session_id):
     # TODO: We could also fetch the datafiles with only one query
-    upload_session = db.session.query(UploadSession) \
-        .filter(UploadSession.id == session_id).one()
+    upload_session = (
+        db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
+    )
 
     upload_session_files = upload_session.upload_session_files
 
@@ -1131,9 +1225,16 @@ def get_upload_session_files_from_session(session_id):
 # <editor-fold desc="Upload Session File">
 class EnumS3FolderPath(enum.Enum):
     """Enum which could be useful to have a central way of manipulating the s3 prefixes"""
-    Upload = 'upload/'  # key prefix which all new uploads are put under.  These are transient until conversion completes
-    Convert = 'convert/'  # key prefix used for data converted to canonical form.  These are the authorative source.
-    Export = 'export/'  # key prefix used for results converted for export.  These are transient because they can be re-generated.
+
+    Upload = (
+        "upload/"
+    )  # key prefix which all new uploads are put under.  These are transient until conversion completes
+    Convert = (
+        "convert/"
+    )  # key prefix used for data converted to canonical form.  These are the authorative source.
+    Export = (
+        "export/"
+    )  # key prefix used for results converted for export.  These are transient because they can be re-generated.
 
 
 def generate_convert_key():
@@ -1141,46 +1242,58 @@ def generate_convert_key():
     return os.path.join(enumed_convert_path + str(uuid.uuid4()))
 
 
-def add_upload_session_s3_file(session_id, filename, initial_file_type, initial_s3_key, s3_bucket):
+def add_upload_session_s3_file(
+    session_id, filename, initial_file_type, initial_s3_key, s3_bucket
+):
     initial_file_type = models.InitialFileType(initial_file_type)
 
     converted_s3_key = generate_convert_key()
-    converted_filetype = models.find_converted_type_by_initial_type(
-                                                initial_file_type)
+    converted_filetype = models.find_converted_type_by_initial_type(initial_file_type)
     assert converted_filetype is not None
 
-    upload_session_file = UploadSessionFile(session_id=session_id,
-                                            filename=filename,
-                                            initial_filetype=initial_file_type,
-                                            initial_s3_key=initial_s3_key,
-                                            s3_bucket=s3_bucket,
-                                            converted_s3_key=converted_s3_key,
-                                            converted_filetype=converted_filetype)
+    upload_session_file = UploadSessionFile(
+        session_id=session_id,
+        filename=filename,
+        initial_filetype=initial_file_type,
+        initial_s3_key=initial_s3_key,
+        s3_bucket=s3_bucket,
+        converted_s3_key=converted_s3_key,
+        converted_filetype=converted_filetype,
+    )
     db.session.add(upload_session_file)
     db.session.commit()
     return upload_session_file
+
 
 def add_upload_session_virtual_file(session_id, filename, data_file_id):
     data_file = DataFile.query.get(data_file_id)
     assert data_file is not None
 
-    upload_session_file = UploadSessionFile(session_id=session_id,
-                                            filename=filename,
-                                            data_file=data_file)
+    upload_session_file = UploadSessionFile(
+        session_id=session_id, filename=filename, data_file=data_file
+    )
     db.session.add(upload_session_file)
     db.session.commit()
     return upload_session_file
 
 
 def get_upload_session_file(upload_session_file_id):
-    upload_session_file = db.session.query(UploadSessionFile) \
-        .filter(UploadSessionFile.id == upload_session_file_id).one()
+    upload_session_file = (
+        db.session.query(UploadSessionFile)
+        .filter(UploadSessionFile.id == upload_session_file_id)
+        .one()
+    )
     return upload_session_file
 
 
 def update_upload_session_file_summaries(file_id, short_summary, long_summary, sha256):
     db.session.query(UploadSessionFile).filter(UploadSessionFile.id == file_id).update(
-        dict(short_summary=short_summary, long_summary=long_summary, original_file_sha256=sha256))
+        dict(
+            short_summary=short_summary,
+            long_summary=long_summary,
+            original_file_sha256=sha256,
+        )
+    )
     db.session.commit()
 
 
@@ -1190,9 +1303,17 @@ def update_upload_session_file_summaries(file_id, short_summary, long_summary, s
 
 
 def _find_cache_entry(dataset_version_id, format, datafile_name):
-    entry = db.session.query(ConversionCache).filter(and_(ConversionCache.dataset_version_id == dataset_version_id,
-                                                          ConversionCache.format == format,
-                                                          ConversionCache.datafile_name == datafile_name)).first()
+    entry = (
+        db.session.query(ConversionCache)
+        .filter(
+            and_(
+                ConversionCache.dataset_version_id == dataset_version_id,
+                ConversionCache.format == format,
+                ConversionCache.datafile_name == datafile_name,
+            )
+        )
+        .first()
+    )
     return entry
 
 
@@ -1203,8 +1324,14 @@ def _add_dl_name(url, dl_name):
     params = parse_qsl(p.query)
     params.append(("response-content-disposition", "attachment; filename=" + dl_name))
 
-    new_p = ParseResult(scheme=p.scheme, netloc=p.netloc, path=p.path,
-                        params=p.params, query=urlencode(params), fragment=p.fragment)
+    new_p = ParseResult(
+        scheme=p.scheme,
+        netloc=p.netloc,
+        path=p.path,
+        params=p.params,
+        query=urlencode(params),
+        fragment=p.fragment,
+    )
 
     return new_p.geturl()
 
@@ -1226,7 +1353,10 @@ def get_signed_urls_from_cache_entry(paths_as_json, dl_filename):
 
         return aws.create_signed_get_obj(s3_bucket, s3_key, dl_filename)
 
-    signed_urls = [make_signed_url(url, dl_filename) for dl_filename, url in zip(dl_filenames, urls)]
+    signed_urls = [
+        make_signed_url(url, dl_filename)
+        for dl_filename, url in zip(dl_filenames, urls)
+    ]
     return signed_urls
 
 
@@ -1239,11 +1369,13 @@ def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
 
         # Create a new cache entry
         status = "Conversion pending"
-        entry = ConversionCache(dataset_version_id=dataset_version_id,
-                                datafile_name=datafile_name,
-                                format=format,
-                                status=status,
-                                state=models.ConversionEntryState.running)
+        entry = ConversionCache(
+            dataset_version_id=dataset_version_id,
+            datafile_name=datafile_name,
+            format=format,
+            status=status,
+            state=models.ConversionEntryState.running,
+        )
         db.session.add(entry)
         db.session.commit()
 
@@ -1252,7 +1384,11 @@ def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
 
 
 def update_conversion_cache_entry(entry_id, status, urls=None):
-    entry = db.session.query(ConversionCache).filter(and_(ConversionCache.id == entry_id)).first()
+    entry = (
+        db.session.query(ConversionCache)
+        .filter(and_(ConversionCache.id == entry_id))
+        .first()
+    )
     if urls is not None:
         assert isinstance(urls, list)
         assert len(urls) > 0
@@ -1263,23 +1399,21 @@ def update_conversion_cache_entry(entry_id, status, urls=None):
 
 
 def update_conversion_cache_entry_with_task_id(entry_id, task_id):
-    db.session.query(ConversionCache). \
-        filter(ConversionCache.id == entry_id). \
-        update({"task_id": task_id})
+    db.session.query(ConversionCache).filter(ConversionCache.id == entry_id).update(
+        {"task_id": task_id}
+    )
     db.session.commit()
 
 
 def delete_conversion_cache_entry(entry_id):
-    db.session.query(ConversionCache). \
-        filter(ConversionCache.id == entry_id). \
-        delete()
+    db.session.query(ConversionCache).filter(ConversionCache.id == entry_id).delete()
     db.session.commit()
 
 
 def mark_conversion_cache_entry_as_failed(entry_id):
-    db.session.query(ConversionCache). \
-        filter(ConversionCache.id == entry_id). \
-        update({"state": models.ConversionEntryState.failed})
+    db.session.query(ConversionCache).filter(ConversionCache.id == entry_id).update(
+        {"state": models.ConversionEntryState.failed}
+    )
     db.session.commit()
 
 
@@ -1293,16 +1427,22 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
     Otherwise datafile_name is required. """
     if dataset_permaname is not None:
         if dataset_version_id is not None:
-            raise IllegalArgumentError("Cannot search by both a permaname and a dataset_version_id")
+            raise IllegalArgumentError(
+                "Cannot search by both a permaname and a dataset_version_id"
+            )
 
         if version_number is None:
             try:
-                dataset_version = get_latest_dataset_version_by_permaname(dataset_permaname)
+                dataset_version = get_latest_dataset_version_by_permaname(
+                    dataset_permaname
+                )
             except NoResultFound:
                 return None
         else:
             try:
-                dataset_version = get_dataset_version_by_permaname_and_version(dataset_permaname, version_number)
+                dataset_version = get_dataset_version_by_permaname_and_version(
+                    dataset_permaname, version_number
+                )
             except NoResultFound:
                 return None
 
@@ -1312,9 +1452,13 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
         dataset_version_id = dataset_version.id
     else:
         if dataset_version_id is None:
-            raise IllegalArgumentError("Must have either a permaname or a dataset_version_id")
+            raise IllegalArgumentError(
+                "Must have either a permaname or a dataset_version_id"
+            )
         if version_number is not None:
-            raise IllegalArgumentError("If permaname is not provided, cannot use version number in search")
+            raise IllegalArgumentError(
+                "If permaname is not provided, cannot use version number in search"
+            )
 
         # verify that this is a valid dataset_version_id
         try:
@@ -1326,12 +1470,15 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
         dataset_version = get_dataset_version(dataset_version_id)
         if len(dataset_version.datafiles) > 1:
             raise IllegalArgumentError(
-                "The retrieved dataset version has more than one datafile so the name must be specified")
+                "The retrieved dataset version has more than one datafile so the name must be specified"
+            )
         else:
             datafile = list(dataset_version.datafiles)[0]
     else:
         try:
-            datafile = get_datafile_by_version_and_name(dataset_version_id, datafile_name)
+            datafile = get_datafile_by_version_and_name(
+                dataset_version_id, datafile_name
+            )
         except NoResultFound:
             return None
 
@@ -1341,9 +1488,13 @@ def find_datafile(dataset_permaname, version_number, dataset_version_id, datafil
 # </editor-fold>
 
 # <editor-fold desc="Provenance">
-def add_graph(graph_permaname, graph_name,
-              graph_user_id=None, graph_created_timestamp=None,
-              graph_id=None):
+def add_graph(
+    graph_permaname,
+    graph_name,
+    graph_user_id=None,
+    graph_created_timestamp=None,
+    graph_id=None,
+):
     assert graph_name
 
     if not graph_permaname:
@@ -1352,11 +1503,13 @@ def add_graph(graph_permaname, graph_name,
     # if not graph_user_id:
     #     graph_user_id = get_current_session_user().id
 
-    new_graph = ProvenanceGraph(graph_id=graph_id,
-                                permaname=graph_permaname,
-                                name=graph_name,
-                                created_by_user_id=graph_user_id,
-                                created_timestamp=graph_created_timestamp)
+    new_graph = ProvenanceGraph(
+        graph_id=graph_id,
+        permaname=graph_permaname,
+        name=graph_name,
+        created_by_user_id=graph_user_id,
+        created_timestamp=graph_created_timestamp,
+    )
 
     db.session.add(new_graph)
     db.session.commit()
@@ -1365,24 +1518,26 @@ def add_graph(graph_permaname, graph_name,
 
 
 def get_provenance_graph(graph_permaname):
-    graph = db.session.query(ProvenanceGraph) \
-        .filter(ProvenanceGraph.permaname == graph_permaname) \
+    graph = (
+        db.session.query(ProvenanceGraph)
+        .filter(ProvenanceGraph.permaname == graph_permaname)
         .one_or_none()
+    )
 
     return graph
 
 
 def get_provenance_graph_by_id(graph_id):
-    graph = db.session.query(ProvenanceGraph) \
-        .filter(ProvenanceGraph.graph_id == graph_id) \
+    graph = (
+        db.session.query(ProvenanceGraph)
+        .filter(ProvenanceGraph.graph_id == graph_id)
         .one()
+    )
 
     return graph
 
 
-def add_node(graph_id,
-             label, type,
-             node_id=None, datafile_id=None):
+def add_node(graph_id, label, type, node_id=None, datafile_id=None):
     if node_id and get_provenance_node(node_id):
         log.warning("Node {} already exists. Skipping its creation.".format(node_id))
         return get_provenance_node(node_id)
@@ -1394,11 +1549,13 @@ def add_node(graph_id,
     else:
         datafile = None
 
-    new_node = ProvenanceNode(node_id=node_id,
-                              graph_id=graph_id,
-                              datafile=datafile,
-                              label=label,
-                              type=node_type)
+    new_node = ProvenanceNode(
+        node_id=node_id,
+        graph_id=graph_id,
+        datafile=datafile,
+        label=label,
+        type=node_type,
+    )
 
     db.session.add(new_node)
     db.session.commit()
@@ -1407,23 +1564,23 @@ def add_node(graph_id,
 
 
 def get_provenance_node(node_id):
-    node = db.session.query(ProvenanceNode) \
-        .filter(ProvenanceNode.node_id == node_id) \
+    node = (
+        db.session.query(ProvenanceNode)
+        .filter(ProvenanceNode.node_id == node_id)
         .one_or_none()
+    )
 
     return node
 
 
-def add_edge(from_node_id, to_node_id,
-             edge_id=None, label=None):
+def add_edge(from_node_id, to_node_id, edge_id=None, label=None):
     if edge_id and get_provenance_edge(edge_id):
         log.warning("Edge {} already exists. Skipping its creation.".format(edge_id))
         return get_provenance_edge(edge_id)
 
-    new_edge = ProvenanceEdge(edge_id=edge_id,
-                              from_node_id=from_node_id,
-                              to_node_id=to_node_id,
-                              label=label)
+    new_edge = ProvenanceEdge(
+        edge_id=edge_id, from_node_id=from_node_id, to_node_id=to_node_id, label=label
+    )
     db.session.add(new_edge)
     db.session.commit()
 
@@ -1431,9 +1588,11 @@ def add_edge(from_node_id, to_node_id,
 
 
 def get_provenance_edge(edge_id):
-    edge = db.session.query(ProvenanceEdge) \
-        .filter(ProvenanceEdge.edge_id == edge_id) \
+    edge = (
+        db.session.query(ProvenanceEdge)
+        .filter(ProvenanceEdge.edge_id == edge_id)
         .one_or_none()
+    )
 
     return edge
 
@@ -1462,15 +1621,17 @@ def _get_datetime_from_string(string_datetime):
 def get_entries_access_logs():
     current_user = flask.g.current_user
 
-    array_access_logs = db.session.query(UserLog) \
-        .filter(UserLog.user_id == current_user.id).all()
+    array_access_logs = (
+        db.session.query(UserLog).filter(UserLog.user_id == current_user.id).all()
+    )
 
     return array_access_logs
 
 
 def get_entry_access_logs(entryId):
-    array_access_logs = db.session.query(UserLog) \
-        .filter(UserLog.entry_id == entryId).all()
+    array_access_logs = (
+        db.session.query(UserLog).filter(UserLog.entry_id == entryId).all()
+    )
 
     return array_access_logs
 
@@ -1482,20 +1643,23 @@ def add_or_update_entry_access_log(entry_id):
     current_user = flask.g.current_user
 
     try:
-        access_log = db.session.query(UserLog) \
-            .filter(UserLog.entry_id == entry_id) \
-            .filter(UserLog.user_id == current_user.id) \
+        access_log = (
+            db.session.query(UserLog)
+            .filter(UserLog.entry_id == entry_id)
+            .filter(UserLog.user_id == current_user.id)
             .one_or_none()
+        )
     except MultipleResultsFound:
-        log.error("When logging access to dataset (id {}) for user {}, we had multiple results instead of only one" \
-                  .format(entry_id, current_user.email)
-                  )
+        log.error(
+            "When logging access to dataset (id {}) for user {}, we had multiple results instead of only one".format(
+                entry_id, current_user.email
+            )
+        )
 
     if access_log:
         access_log.last_access = datetime.utcnow()
     else:
-        access_log = UserLog(user_id=current_user.id,
-                             entry_id=entry_id)
+        access_log = UserLog(user_id=current_user.id, entry_id=entry_id)
 
     db.session.add(access_log)
     db.session.commit()
@@ -1506,10 +1670,9 @@ def add_or_update_entry_access_log(entry_id):
 def remove_accessLogs(array_access_log):
     # TODO: Use better way of deleting this
     for access_log in array_access_log:
-        db.session.query(UserLog) \
-            .filter(UserLog.entry_id == access_log['entry_id']) \
-            .filter(UserLog.user_id == access_log['user_id']) \
-            .delete()
+        db.session.query(UserLog).filter(
+            UserLog.entry_id == access_log["entry_id"]
+        ).filter(UserLog.user_id == access_log["user_id"]).delete()
     db.session.commit()
 
 
@@ -1535,12 +1698,12 @@ def get_all_groups() -> List[Group]:
 
 # <editor-fold desc="Misc">
 
+
 def find_matching_name(root_folder, breadcrumbs, search_query) -> List[SearchEntry]:
     matching_entries = []
     # Can't append on a copy()??
     local_breadcrumbs = breadcrumbs.copy()
-    local_breadcrumbs.append(Breadcrumb(order=len(breadcrumbs) + 1,
-                                        folder=root_folder))
+    local_breadcrumbs.append(Breadcrumb(order=len(breadcrumbs) + 1, folder=root_folder))
 
     for entry in root_folder.entries:
         if search_query.lower() in entry.name.lower():
@@ -1550,11 +1713,16 @@ def find_matching_name(root_folder, breadcrumbs, search_query) -> List[SearchEnt
         # If this is a folder, we enter into it and search inside it
         if isinstance(entry, Folder):
             # We need to be mindful about the same folder being in itself => Infinite recursion
-            already_in = any([breadcrumb.folder.id == entry.id for breadcrumb in local_breadcrumbs])
+            already_in = any(
+                [breadcrumb.folder.id == entry.id for breadcrumb in local_breadcrumbs]
+            )
 
             if not already_in:
-                matching_entries.extend(find_matching_name(entry, local_breadcrumbs, search_query))
+                matching_entries.extend(
+                    find_matching_name(entry, local_breadcrumbs, search_query)
+                )
 
     return matching_entries
+
 
 # </editor-fold

@@ -20,6 +20,7 @@ def set_current_user_from_x_forwarded():
     Important: If there is no header name, we load the default user from the configuration. Don't set it in Production.
     """
     import taiga2.controllers.models_controller as mc
+
     request = flask.request
     config = flask.current_app.config
     user = None
@@ -28,33 +29,44 @@ def set_current_user_from_x_forwarded():
     default_user_email = config.get("DEFAULT_USER_EMAIL", None)
 
     # Use for production environment
-    user_name_header_name = request.headers.get('X-Forwarded-User', None)
-    user_email_header_name = request.headers.get('X-Forwarded-Email', None)
+    user_name_header_name = request.headers.get("X-Forwarded-User", None)
+    user_email_header_name = request.headers.get("X-Forwarded-Email", None)
 
     if user_name_header_name is not None or user_email_header_name is not None:
         try:
             user = mc.get_user_by_email(user_email_header_name)
         except NoResultFound:
             # User does not exists so we can create it
-            user = mc.add_user(name=user_name_header_name,
-                               email=user_email_header_name)
-            log.debug("We just created the user {} with email {}".format(user_name_header_name, user_email_header_name))
-            log.debug("Check of the user name ({}) and email ({})".format(user.name, user.email))
+            user = mc.add_user(name=user_name_header_name, email=user_email_header_name)
+            log.debug(
+                "We just created the user {} with email {}".format(
+                    user_name_header_name, user_email_header_name
+                )
+            )
+            log.debug(
+                "Check of the user name ({}) and email ({})".format(
+                    user.name, user.email
+                )
+            )
         user_id = user.id
-        log.debug("Looked up header field user_name %s and user_email %s to find username: %s",
-                  user_name_header_name,
-                  user_email_header_name,
-                  user_id)
+        log.debug(
+            "Looked up header field user_name %s and user_email %s to find username: %s",
+            user_name_header_name,
+            user_email_header_name,
+            user_id,
+        )
 
     if user is None and default_user_email is not None:
-        print("We did not find the user from the headers, loading the default user by its email {}" \
-              .format(default_user_email))
+        print(
+            "We did not find the user from the headers, loading the default user by its email {}".format(
+                default_user_email
+            )
+        )
 
         try:
             user = mc.get_user_by_email(default_user_email)
         except NoResultFound:
-            user = mc.add_user(name=str(uuid.uuid4()),
-                               email=default_user_email)
+            user = mc.add_user(name=str(uuid.uuid4()), email=default_user_email)
 
     flask.g.current_user = user
     return None
@@ -71,6 +83,7 @@ def set_current_user_from_bearer_token():
 
     Important: If no Authorization header is passed, we use the DEFAULT_USER_EMAIL from the configuration settings"""
     import taiga2.controllers.models_controller as mc
+
     request = flask.request
     config = flask.current_app.config
     user = None
@@ -91,13 +104,17 @@ def set_current_user_from_bearer_token():
     else:
         # TODO: Should ask for returning a "Not authenticated" page/response number
         if default_user_email is not None:
-            log.critical("DEFAULT_USER_EMAIL is set in config, using that when accessing API")
+            log.critical(
+                "DEFAULT_USER_EMAIL is set in config, using that when accessing API"
+            )
             try:
                 user = mc.get_user_by_email(default_user_email)
             except NoResultFound:
                 user = mc.add_user(name=str(uuid.uuid4()), email=default_user_email)
         else:
-            log.critical("A request without authentication has been received. Rejecting.")
+            log.critical(
+                "A request without authentication has been received. Rejecting."
+            )
             # raise Exception("No user passed")
             flask.abort(403)
     flask.g.current_user = user
@@ -106,5 +123,6 @@ def set_current_user_from_bearer_token():
 def bearer_token_lookup(token):
     """Ask the controller to return the user given the token"""
     import taiga2.controllers.models_controller as mc
+
     user = mc.get_user_by_token(token)
     return user

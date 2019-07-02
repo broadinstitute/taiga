@@ -23,15 +23,19 @@ app = ui_create_app(settings_file=settings_file)
 
 prefix = flask_api_app.config["PREFIX"]
 assert prefix.startswith("/")
-prefix_with_api = os.path.join(prefix, 'api')
+prefix_with_api = os.path.join(prefix, "api")
+
 
 def _no_content_response(env, resp):
-    resp(b'200 OK', [(b'Content-Type', b'text/plain')])
-    return ["This url has no handler.  Instead, try going to {}".format(prefix).encode("utf8")]
+    resp(b"200 OK", [(b"Content-Type", b"text/plain")])
+    return [
+        "This url has no handler.  Instead, try going to {}".format(prefix).encode(
+            "utf8"
+        )
+    ]
 
-app.wsgi_app = DispatcherMiddleware(_no_content_response, {
-    prefix: app.wsgi_app,
-    prefix_with_api: flask_api_app.wsgi_app
-})
 
-
+app.wsgi_app = DispatcherMiddleware(
+    _no_content_response,
+    {prefix: app.wsgi_app, prefix_with_api: flask_api_app.wsgi_app},
+)

@@ -14,14 +14,14 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     id = factory.LazyFunction(generate_uuid)
 
-    name = factory.Faker('name')
+    name = factory.Faker("name")
 
-    email = factory.Faker('email')
+    email = factory.Faker("email")
     token = factory.LazyFunction(generate_str_uuid)
 
     # TODO: Home folder and Trash folder
-    home_folder = factory.RelatedFactory('taiga2.tests.factories.FolderFactory')
-    trash_folder = factory.RelatedFactory('taiga2.tests.factories.FolderFactory')
+    home_folder = factory.RelatedFactory("taiga2.tests.factories.FolderFactory")
+    trash_folder = factory.RelatedFactory("taiga2.tests.factories.FolderFactory")
 
 
 class GroupFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -38,16 +38,16 @@ class EntryFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = Entry
         sqlalchemy_session = _db.session
-        sqlalchemy_session_persistence = 'flush'
+        sqlalchemy_session_persistence = "flush"
 
     id = factory.LazyFunction(generate_uuid)
-    name = factory.Faker('name')
+    name = factory.Faker("name")
 
     creation_date = factory.LazyFunction(datetime.datetime.utcnow)
 
     creator = factory.SubFactory(UserFactory)
 
-    description = factory.Faker('text')
+    description = factory.Faker("text")
 
 
 class FolderFactory(EntryFactory):
@@ -61,6 +61,3 @@ class FolderFactory(EntryFactory):
 
     # TODO: Might be a problem here as we are giving a unique Entry instead of a list
     entries = factory.List([factory.SubFactory(EntryFactory)])
-
-
-

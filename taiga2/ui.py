@@ -11,21 +11,23 @@ from taiga2 import models
 
 log = logging.getLogger(__name__)
 
+
 def register_extensions(app):
     # Init the database with the app
     ext_db.init_app(app)
+
 
 def register_commands(app):
     app.cli.add_command(commands.recreate_dev_db)
     app.cli.add_command(commands.run_worker)
     app.cli.add_command(commands.webpack)
 
+
 def create_app(settings_override=None, settings_file=None):
 
     app = Flask(__name__)
 
     load_config(app, settings_file=settings_file, settings_override=settings_override)
-
 
     register_extensions(app)
     register_commands(app)
@@ -34,10 +36,10 @@ def create_app(settings_override=None, settings_file=None):
     init_front_auth(app)
 
     # Register the routes
-    app.add_url_rule('/', view_func=index)
-    app.add_url_rule('/pseudostatic/<hash>/<path:filename>', view_func=pseudostatic)
-    app.add_url_rule('/<path:filename>', view_func=sendindex2)
-    app.add_url_rule('/js/<path:filename>', view_func=static_f)
+    app.add_url_rule("/", view_func=index)
+    app.add_url_rule("/pseudostatic/<hash>/<path:filename>", view_func=pseudostatic)
+    app.add_url_rule("/<path:filename>", view_func=sendindex2)
+    app.add_url_rule("/js/<path:filename>", view_func=static_f)
 
     @app.context_processor
     def inject_pseudostatic_url():
@@ -47,6 +49,8 @@ def create_app(settings_override=None, settings_file=None):
 
 
 PSEUDOSTATIC_CACHE = {}
+
+
 def pseudostatic_url(name):
     static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
     abs_filename = os.path.abspath(os.path.join(static_dir, name))
@@ -75,9 +79,9 @@ def render_index_html():
     try:
         user_token = flask.g.current_user.token
 
-        return render_template('index.html',
-                               prefix=url_for('index'),
-                               user_token=user_token)
+        return render_template(
+            "index.html", prefix=url_for("index"), user_token=user_token
+        )
     except AttributeError:
         abort(403)
 

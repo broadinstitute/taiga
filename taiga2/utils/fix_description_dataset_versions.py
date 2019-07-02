@@ -35,22 +35,42 @@ def populate_db(dataset_version_with_datafile_csv_path):
             dataset_version_description = row["description"]
 
             try:
-                dataset = models_controller.get_dataset_from_permaname(dataset_permaname)
+                dataset = models_controller.get_dataset_from_permaname(
+                    dataset_permaname
+                )
             except NoResultFound:
                 print("Dataset {} was not found in db".format(dataset_permaname))
 
             for from_dataset_dataset_versions in dataset.dataset_versions:
                 if dataset_version_id == from_dataset_dataset_versions.id:
-                    if from_dataset_dataset_versions.description != dataset_version_description:
-                        print("Dataset {} => In Db: {}, in csv: '{}'".format(dataset.permaname,
-                                                                             from_dataset_dataset_versions.description,
-                                                                             dataset_version_description))
-                        models_controller.update_dataset_version_description(dataset_version_id=dataset_version_id,
-                                                                             new_description=dataset_version_description)
-                    if int(dataset_version_version) != from_dataset_dataset_versions.version:
-                        print("Dataset version => In Db: {}, in csv: {}".format(from_dataset_dataset_versions.version,
-                                                                                dataset_version_version))
-                        from_dataset_dataset_versions.version = int(dataset_version_version)
+                    if (
+                        from_dataset_dataset_versions.description
+                        != dataset_version_description
+                    ):
+                        print(
+                            "Dataset {} => In Db: {}, in csv: '{}'".format(
+                                dataset.permaname,
+                                from_dataset_dataset_versions.description,
+                                dataset_version_description,
+                            )
+                        )
+                        models_controller.update_dataset_version_description(
+                            dataset_version_id=dataset_version_id,
+                            new_description=dataset_version_description,
+                        )
+                    if (
+                        int(dataset_version_version)
+                        != from_dataset_dataset_versions.version
+                    ):
+                        print(
+                            "Dataset version => In Db: {}, in csv: {}".format(
+                                from_dataset_dataset_versions.version,
+                                dataset_version_version,
+                            )
+                        )
+                        from_dataset_dataset_versions.version = int(
+                            dataset_version_version
+                        )
                         models_controller.db.session.add(from_dataset_dataset_versions)
                         models_controller.db.session.commit()
                         print("\n")
@@ -59,9 +79,18 @@ def populate_db(dataset_version_with_datafile_csv_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-s", "--settings", required=True,
-                        help="Settings used for the creation of the api/backends apps")
-    parser.add_argument("-dv", "--dataset_version", required=True, help="Dataset version with datafile csv file path")
+    parser.add_argument(
+        "-s",
+        "--settings",
+        required=True,
+        help="Settings used for the creation of the api/backends apps",
+    )
+    parser.add_argument(
+        "-dv",
+        "--dataset_version",
+        required=True,
+        help="Dataset version with datafile csv file path",
+    )
 
     args = parser.parse_args()
 

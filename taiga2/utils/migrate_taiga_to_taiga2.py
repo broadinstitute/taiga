@@ -36,7 +36,6 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
     nb_dataset_version_created = 0
     nb_dataset_version_skipped = 0
 
-
     # Dictionary to link find the dataset matching the dataset via the permanames to create the dataset versions
     # Dict<String, Array<int>>
     dict_permaname_datafile_ids = {}
@@ -50,7 +49,11 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
             is_public = False
 
             if not row["permaname"]:
-                print("Warning: We found an empty permaname entry: {}. Skipping it.".format(row))
+                print(
+                    "Warning: We found an empty permaname entry: {}. Skipping it.".format(
+                        row
+                    )
+                )
                 nb_row_dataset_skipped += 1
                 continue
 
@@ -63,11 +66,16 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
 
                 # To get the user from dataset_folder_user, we extract the user from the parenthesis
                 dataset_user_email = dataset_folder_user[
-                                     dataset_folder_user.find("(") + 1:dataset_folder_user.find(")")]
+                    dataset_folder_user.find("(") + 1 : dataset_folder_user.find(")")
+                ]
 
                 # Handle the case where user email is None
                 if dataset_user_email == "None":
-                    print("Warning: We found a row with folder {}. Skipping it.".format(row["folder"]))
+                    print(
+                        "Warning: We found a row with folder {}. Skipping it.".format(
+                            row["folder"]
+                        )
+                    )
                     nb_user_skipped += 1
                     continue
 
@@ -81,21 +89,26 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
 
             # Setting up the user
             try:
-                dataset_current_user = models_controller.get_user_by_email(dataset_user_email)
+                dataset_current_user = models_controller.get_user_by_email(
+                    dataset_user_email
+                )
             except NoResultFound:
                 # User does not exists yet, so we create it
-                dataset_user_name = dataset_user_email[:dataset_user_email.find("@")]
-                dataset_current_user = models_controller.add_user(name=dataset_user_name,
-                                                                  email=dataset_user_email)
+                dataset_user_name = dataset_user_email[: dataset_user_email.find("@")]
+                dataset_current_user = models_controller.add_user(
+                    name=dataset_user_name, email=dataset_user_email
+                )
                 print("User with email: {} created".format(dataset_user_email))
                 nb_user_created += 1
 
             flask.g.current_user = dataset_current_user
 
             # TODO: We should not create the dataset if it already exists
-            new_dataset = models_controller.add_dataset(name=dataset_name,
-                                                        permaname=dataset_permaname,
-                                                        description=dataset_description)
+            new_dataset = models_controller.add_dataset(
+                name=dataset_name,
+                permaname=dataset_permaname,
+                description=dataset_description,
+            )
             try:
                 # TODO: Check it is case insensitive
                 if str.lower(dataset_folder_name) == "home":
@@ -103,21 +116,29 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
                 elif str.lower(dataset_folder_name) == "trash":
                     dataset_folder = dataset_current_user.trash_folder
                 else:
-                    dataset_folder = models_controller.get_folder_by_name(dataset_folder_name)
+                    dataset_folder = models_controller.get_folder_by_name(
+                        dataset_folder_name
+                    )
             except NoResultFound:
                 # If no result, it means we need to create the folder in the user space or in public
-                dataset_folder = models_controller.add_folder(name=dataset_folder_name,
-                                                              folder_type=models_controller.Folder.FolderType.folder,
-                                                              description=None)
+                dataset_folder = models_controller.add_folder(
+                    name=dataset_folder_name,
+                    folder_type=models_controller.Folder.FolderType.folder,
+                    description=None,
+                )
 
                 if is_public:
-                    models_controller.move_to_folder(entry_ids=[dataset_folder.id],
-                                                     current_folder_id=None,
-                                                     target_folder_id=models_controller.get_public_folder().id)
+                    models_controller.move_to_folder(
+                        entry_ids=[dataset_folder.id],
+                        current_folder_id=None,
+                        target_folder_id=models_controller.get_public_folder().id,
+                    )
                 else:
-                    models_controller.move_to_folder(entry_ids=[dataset_folder.id],
-                                                     current_folder_id=None,
-                                                     target_folder_id=dataset_current_user.home_folder_id)
+                    models_controller.move_to_folder(
+                        entry_ids=[dataset_folder.id],
+                        current_folder_id=None,
+                        target_folder_id=dataset_current_user.home_folder_id,
+                    )
 
             # Now we can move the dataset to the folder
             models_controller.move_to_folder([new_dataset.id], None, dataset_folder.id)
@@ -128,7 +149,9 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
             nb_dataset_created += 1
 
     # We then manage the attribution of the dataset_version to the freshly created datasets
-    with open(dataset_version_with_datafile_csv_path) as dataset_version_with_datafile_csv:
+    with open(
+        dataset_version_with_datafile_csv_path
+    ) as dataset_version_with_datafile_csv:
         print("")
         print("Creating the datafiles")
         reader = csv.DictReader(dataset_version_with_datafile_csv)
@@ -161,36 +184,47 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
             try:
                 current_user = models_controller.get_user_by_email(datafile_created_by)
             except NoResultFound:
-                print("Warning: The user email found in 'created_by' column ({}) was not found in the dataset side. "
-                      "Creating one."
-                      .format(datafile_created_by))
-                datafile_created_by_name = datafile_created_by[:datafile_created_by.find("@")]
-                current_user = models_controller.add_user(name=datafile_created_by_name,
-                                                          email=datafile_created_by)
+                print(
+                    "Warning: The user email found in 'created_by' column ({}) was not found in the dataset side. "
+                    "Creating one.".format(datafile_created_by)
+                )
+                datafile_created_by_name = datafile_created_by[
+                    : datafile_created_by.find("@")
+                ]
+                current_user = models_controller.add_user(
+                    name=datafile_created_by_name, email=datafile_created_by
+                )
                 nb_user_created += 1
 
             flask.g.current_user = current_user
 
             # TODO: We should not create the datafile if it already exists: ie s3_bucket/s3_key exists
-            new_datafile = models_controller.add_s3_datafile(s3_bucket=datafile_s3_bucket,
-                                                          s3_key=datafile_s3_key,
-                                                          name=datafile_name,
-                                                          type=datafile_type,
-                                                          short_summary=datafile_short_summary,
-                                                          long_summary=datafile_long_summary)
+            new_datafile = models_controller.add_s3_datafile(
+                s3_bucket=datafile_s3_bucket,
+                s3_key=datafile_s3_key,
+                name=datafile_name,
+                type=datafile_type,
+                short_summary=datafile_short_summary,
+                long_summary=datafile_long_summary,
+            )
 
             # We register the datafile with its permaname dataset to later create the dataset version
             # with all the datafiles
             if dataset_permaname in dict_permaname_datafile_ids:
-                datafile_info = DataFileInfo(id=datafile_id,
-                                             datafile=new_datafile,
-                                             version=datafile_version,
-                                             creation_date=datafile_creation_date,
-                                             owner_email=datafile_created_by)
+                datafile_info = DataFileInfo(
+                    id=datafile_id,
+                    datafile=new_datafile,
+                    version=datafile_version,
+                    creation_date=datafile_creation_date,
+                    owner_email=datafile_created_by,
+                )
                 dict_permaname_datafile_ids[dataset_permaname].append(datafile_info)
             else:
-                print("Warning: We found a dataset ({}) without a matching dataset ({}). Skipping it." \
-                      .format(datafile_id, dataset_permaname))
+                print(
+                    "Warning: We found a dataset ({}) without a matching dataset ({}). Skipping it.".format(
+                        datafile_id, dataset_permaname
+                    )
+                )
                 nb_datafile_skipped += 1
                 continue
 
@@ -204,17 +238,22 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
 
         # Get the creation date from the first dataset_version
         for datafile_info in array_data_file_info:
-            flask.g.current_user = models_controller.get_user_by_email(datafile_info.owner_email)
+            flask.g.current_user = models_controller.get_user_by_email(
+                datafile_info.owner_email
+            )
             # TODO: We should not create the dataset_version if it already exists. ie version already exists for this dataset
-            dataset_version = models_controller.add_dataset_version(dataset_id=dataset.id,
-                                                                    datafiles_ids=[datafile_info.datafile.id],
-                                                                    anterior_creation_date=datafile_info.creation_date,
-                                                                    forced_id=datafile_info.id)
+            dataset_version = models_controller.add_dataset_version(
+                dataset_id=dataset.id,
+                datafiles_ids=[datafile_info.datafile.id],
+                anterior_creation_date=datafile_info.creation_date,
+                forced_id=datafile_info.id,
+            )
 
             # Then we edit the dataset version creation_date to the
             if int(datafile_info.version) == 1:
-                models_controller.update_dataset_creation_date(dataset_id=dataset.id,
-                                                               new_date=datafile_info.creation_date)
+                models_controller.update_dataset_creation_date(
+                    dataset_id=dataset.id, new_date=datafile_info.creation_date
+                )
 
         nb_dataset_version_created += 1
 
@@ -231,16 +270,29 @@ def populate_db(dataset_csv_path, dataset_version_with_datafile_csv_path):
     print("\tDatafiles skipped: {}".format(nb_datafile_skipped))
     print("")
     print("\tDatasetVersions created: {}".format(nb_dataset_version_created))
-    print("\tDatasetVersions skipped and datasets cleaned: {}".format(nb_dataset_version_skipped))
+    print(
+        "\tDatasetVersions skipped and datasets cleaned: {}".format(
+            nb_dataset_version_skipped
+        )
+    )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-s", "--settings", required=True,
-                        help="Settings used for the creation of the api/backends apps")
+    parser.add_argument(
+        "-s",
+        "--settings",
+        required=True,
+        help="Settings used for the creation of the api/backends apps",
+    )
     parser.add_argument("-d", "--dataset", required=True, help="Dataset csv file path")
-    parser.add_argument("-dv", "--dataset_version", required=True, help="Dataset version with datafile csv file path")
+    parser.add_argument(
+        "-dv",
+        "--dataset_version",
+        required=True,
+        help="Dataset version with datafile csv file path",
+    )
 
     args = parser.parse_args()
 

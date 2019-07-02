@@ -27,14 +27,21 @@ class Progress:
         self.celery_instance = celery_instance
 
     def failed(self, message, filename=None):
-        self.celery_instance.update_state(state='FAILURE',
-                                          meta={'current': 0, 'total': '0',
-                                                'message': message, 'fileName': filename})
+        self.celery_instance.update_state(
+            state="FAILURE",
+            meta={"current": 0, "total": "0", "message": message, "fileName": filename},
+        )
 
     def progress(self, message, filename=None, current=0):
-        self.celery_instance.update_state(state='PROGRESS',
-                                          meta={'current': current, 'total': '0',
-                                                'message': message, 'fileName': filename})
+        self.celery_instance.update_state(
+            state="PROGRESS",
+            meta={
+                "current": current,
+                "total": "0",
+                "message": message,
+                "fileName": filename,
+            },
+        )
 
 
 def _to_string_with_nan_mask(x):
@@ -44,7 +51,7 @@ def _to_string_with_nan_mask(x):
         return str(x)
 
 
-r_escape_str = lambda x: '"' + x.replace("\"", "\\\"") + '"'
+r_escape_str = lambda x: '"' + x.replace('"', '\\"') + '"'
 
 
 def shortened_list(l):

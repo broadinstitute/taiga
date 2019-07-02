@@ -19,38 +19,41 @@ log = logging.getLogger(__name__)
 
 TEST_USER_NAME = "username"
 TEST_USER_EMAIL = "username@broadinstitute.org"
-AUTH_HEADERS={'X-Forwarded-User': TEST_USER_NAME, 'X-Forwarded-Email': TEST_USER_EMAIL}
+AUTH_HEADERS = {
+    "X-Forwarded-User": TEST_USER_NAME,
+    "X-Forwarded-Email": TEST_USER_EMAIL,
+}
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def mock_s3(tmpdir):
     s3 = MockS3(str(tmpdir))
     return s3
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def mock_sts():
     sts = MockSTS()
     return sts
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def app(request, mock_s3, mock_sts, tmpdir):
     print("creating app...")
     db_path = str(tmpdir.join("db.sqlite"))
     """Session-wide test `Flask` application."""
     settings_override = {
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///'+db_path,
-        'SQLALCHEMY_TRACK_MODIFICATIONS': True,
-        'SQLALCHEMY_ECHO': False,
-        'BROKER_URL': None,
-        'CELERY_RESULT_BACKEND': None,
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///" + db_path,
+        "SQLALCHEMY_TRACK_MODIFICATIONS": True,
+        "SQLALCHEMY_ECHO": False,
+        "BROKER_URL": None,
+        "CELERY_RESULT_BACKEND": None,
         # TODO: Change this. http://docs.celeryproject.org/en/latest/userguide/testing.html
-        'CELERY_ALWAYS_EAGER': True,
-        'S3_BUCKET': 'Test_Bucket',
-        'ENV': 'Test',
-        'REPORT_EXCEPTIONS': False
+        "CELERY_ALWAYS_EAGER": True,
+        "S3_BUCKET": "Test_Bucket",
+        "ENV": "Test",
+        "REPORT_EXCEPTIONS": False,
     }
     api_app, _app = create_app(settings_override)
 
@@ -79,7 +82,7 @@ def app(request, mock_s3, mock_sts, tmpdir):
     ctx.pop()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def db(app, request):
     """Session-wide test database."""
     print("creating db...")
@@ -87,11 +90,11 @@ def db(app, request):
 
     # Return db and teardown
     yield _db
-    #_db.drop_all()
+    # _db.drop_all()
 
 
 # Note: this is pretty much completely useless until _all_ calls to db.commit are removed from model_controller.
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def session(db, request):
     """Creates a new database session for a test."""
     print("Begin session")
@@ -118,7 +121,5 @@ def session(db, request):
 
 @pytest.fixture(scope="function")
 def user_id(db):
-    u = mc.add_user(TEST_USER_NAME,
-                    TEST_USER_EMAIL)
+    u = mc.add_user(TEST_USER_NAME, TEST_USER_EMAIL)
     return u.id
-

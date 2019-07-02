@@ -19,28 +19,38 @@ def populate_db(edges_file_path, nodes_file_path, graphs_file_path):
         reader = csv.DictReader(graph_file, dialect="excel-tab")
 
         for row in reader:
-            graph_id = row['graph_id']
-            graph_permaname = row['permaname']
-            graph_name = row['name']
-            graph_user_id = row['created_by_user_id']
+            graph_id = row["graph_id"]
+            graph_permaname = row["permaname"]
+            graph_name = row["name"]
+            graph_user_id = row["created_by_user_id"]
 
-            graph_created_timestamp = row['created_timestamp']
+            graph_created_timestamp = row["created_timestamp"]
             if not graph_created_timestamp:
                 graph_created_timestamp = None
 
             if not models_controller.get_provenance_graph(graph_permaname):
-                print("\tAdding graph {} with permaname {}".format(graph_name, graph_permaname))
+                print(
+                    "\tAdding graph {} with permaname {}".format(
+                        graph_name, graph_permaname
+                    )
+                )
 
                 if not graph_user_id:
                     graph_user_id = None
 
-                models_controller.add_graph(graph_id=graph_id,
-                                            graph_permaname=graph_permaname,
-                                            graph_name=graph_name,
-                                            graph_user_id=graph_user_id,
-                                            graph_created_timestamp=graph_created_timestamp)
+                models_controller.add_graph(
+                    graph_id=graph_id,
+                    graph_permaname=graph_permaname,
+                    graph_name=graph_name,
+                    graph_user_id=graph_user_id,
+                    graph_created_timestamp=graph_created_timestamp,
+                )
             else:
-                log.warning("\tThe graph {} already exists in the database".format(graph_permaname))
+                log.warning(
+                    "\tThe graph {} already exists in the database".format(
+                        graph_permaname
+                    )
+                )
 
     # Populate nodes
     print("\n")
@@ -49,36 +59,42 @@ def populate_db(edges_file_path, nodes_file_path, graphs_file_path):
         reader = csv.DictReader(node_file, dialect="excel-tab")
 
         for row in reader:
-            node_id = row['node_id']
-            graph_id = row['graph_id']
-            dataset_version_id = row['dataset_id']
-            label = row['label']
-            type = row['type']
+            node_id = row["node_id"]
+            graph_id = row["graph_id"]
+            dataset_version_id = row["dataset_id"]
+            label = row["label"]
+            type = row["type"]
 
             if not models_controller.get_provenance_node(node_id):
                 print("\tAdding node {}".format(node_id))
                 try:
                     if models_controller.is_dataset_node_type(node_type=type):
                         datafile = models_controller.get_datafile_by_version_and_name(
-                            dataset_version_id=dataset_version_id,
-                            name="data")
+                            dataset_version_id=dataset_version_id, name="data"
+                        )
 
-                        models_controller.add_node(node_id=node_id,
-                                                   graph_id=graph_id,
-                                                   datafile_id=datafile.id,
-                                                   label=label,
-                                                   type=type)
+                        models_controller.add_node(
+                            node_id=node_id,
+                            graph_id=graph_id,
+                            datafile_id=datafile.id,
+                            label=label,
+                            type=type,
+                        )
                     else:
-                        models_controller.add_node(node_id=node_id,
-                                                   graph_id=graph_id,
-                                                   label=label,
-                                                   type=type)
+                        models_controller.add_node(
+                            node_id=node_id, graph_id=graph_id, label=label, type=type
+                        )
                 except NoResultFound:
-                    log.error("\tThe node {} refers to the dataset version id {} which does not exist"
-                              .format(node_id, dataset_version_id))
+                    log.error(
+                        "\tThe node {} refers to the dataset version id {} which does not exist".format(
+                            node_id, dataset_version_id
+                        )
+                    )
 
             else:
-                log.warning("\tThe node {} already exists in the database".format(node_id))
+                log.warning(
+                    "\tThe node {} already exists in the database".format(node_id)
+                )
 
     # Populate edges
     print("\n")
@@ -87,29 +103,40 @@ def populate_db(edges_file_path, nodes_file_path, graphs_file_path):
         reader = csv.DictReader(edge_file, dialect="excel-tab")
 
         for row in reader:
-            edge_id = row['edge_id']
-            from_node_id = row['from_node_id']
-            to_node_id = row['to_node_id']
-            label = row['label']
+            edge_id = row["edge_id"]
+            from_node_id = row["from_node_id"]
+            to_node_id = row["to_node_id"]
+            label = row["label"]
 
             if not models_controller.get_provenance_edge(edge_id):
                 print("\tAdding edge {}".format(edge_id))
                 try:
                     # We check if both nodes exist, otherwise we log the error and don't add the edge
-                    if models_controller.get_provenance_node(from_node_id) and \
-                            models_controller.get_provenance_node(to_node_id):
-                        models_controller.add_edge(edge_id=edge_id,
-                                                   from_node_id=from_node_id,
-                                                   to_node_id=to_node_id,
-                                                   label=label)
+                    if models_controller.get_provenance_node(
+                        from_node_id
+                    ) and models_controller.get_provenance_node(to_node_id):
+                        models_controller.add_edge(
+                            edge_id=edge_id,
+                            from_node_id=from_node_id,
+                            to_node_id=to_node_id,
+                            label=label,
+                        )
                     else:
-                        log.warning("\tThe edge {} refers to the nodes {} and {}. One of them (or both) does not exist"\
-                                    .format(edge_id, from_node_id, to_node_id))
+                        log.warning(
+                            "\tThe edge {} refers to the nodes {} and {}. One of them (or both) does not exist".format(
+                                edge_id, from_node_id, to_node_id
+                            )
+                        )
                 except NoResultFound:
-                    log.error("\tThe edge {} refers to the nodes {} and {}. One of them does not exist"
-                              .format(edge_id, from_node_id, to_node_id))
+                    log.error(
+                        "\tThe edge {} refers to the nodes {} and {}. One of them does not exist".format(
+                            edge_id, from_node_id, to_node_id
+                        )
+                    )
             else:
-                log.warning("\tThe edge {} already exists in the database".format(edge_id))
+                log.warning(
+                    "\tThe edge {} already exists in the database".format(edge_id)
+                )
 
     print("\n")
     print("Provenance migration done!")
@@ -118,17 +145,24 @@ def populate_db(edges_file_path, nodes_file_path, graphs_file_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-s", "--settings", required=True,
-                        help="Settings used for the creation of the api/backends apps")
+    parser.add_argument(
+        "-s",
+        "--settings",
+        required=True,
+        help="Settings used for the creation of the api/backends apps",
+    )
 
-    parser.add_argument("-e", "--edges", required=True,
-                        help="TSV file path of the edges")
+    parser.add_argument(
+        "-e", "--edges", required=True, help="TSV file path of the edges"
+    )
 
-    parser.add_argument("-n", "--nodes", required=True,
-                        help="TSV file path of the nodes")
+    parser.add_argument(
+        "-n", "--nodes", required=True, help="TSV file path of the nodes"
+    )
 
-    parser.add_argument("-g", "--graphs", required=True,
-                        help="TSV file path of the graphs")
+    parser.add_argument(
+        "-g", "--graphs", required=True, help="TSV file path of the graphs"
+    )
 
     args = parser.parse_args()
 
@@ -140,6 +174,8 @@ if __name__ == "__main__":
     api_app, backend_app = create_app(settings_file=settings_file_path)
 
     with backend_app.app_context():
-        populate_db(edges_file_path=edges_file_path,
-                    nodes_file_path=nodes_file_path,
-                    graphs_file_path=graphs_file_path)
+        populate_db(
+            edges_file_path=edges_file_path,
+            nodes_file_path=nodes_file_path,
+            graphs_file_path=graphs_file_path,
+        )

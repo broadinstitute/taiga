@@ -16,6 +16,4 @@ def run_celery_worker():
     api_app, flask_api_app = create_app(settings_file=settings_file)
 
     configure_celery(flask_api_app)
-    celery.worker_main(['', '-B'])
-
-
+    celery.worker_main(["", "-B"])

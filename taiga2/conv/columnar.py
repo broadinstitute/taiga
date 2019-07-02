@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 
 ColumnDef = namedtuple("ColumnDef", ["name", "index", "persister"])
 
+
 class Predicate(object):
     def create_evaluator(self, cursorMap):
         raise Exception("unimp")
@@ -33,7 +34,10 @@ class ComparisonPred(object):
 
     def create_evaluator(self, cursorMap):
         cursor = cursorMap[self.name]
-        assert cursor != None, "No cursor for %s in %s" % (repr(self.name), repr(cursorMap))
+        assert cursor != None, "No cursor for %s in %s" % (
+            repr(self.name),
+            repr(cursorMap),
+        )
         value = self.value
         if self.value_is_set:
             value = set([cursor.col_type(v) for v in value])
@@ -50,15 +54,27 @@ class ComparisonPred(object):
         return [self.name]
 
 
-InPred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value in ref, True)
-NinPred = lambda name, value: ComparisonPred(name, value, lambda value, ref: not (value in ref), True)
+InPred = lambda name, value: ComparisonPred(
+    name, value, lambda value, ref: value in ref, True
+)
+NinPred = lambda name, value: ComparisonPred(
+    name, value, lambda value, ref: not (value in ref), True
+)
 
-GtePred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value >= ref)
+GtePred = lambda name, value: ComparisonPred(
+    name, value, lambda value, ref: value >= ref
+)
 GtPred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value > ref)
 LtPred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value < ref)
-LtePred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value <= ref)
-NePred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value != ref)
-EqPred = lambda name, value: ComparisonPred(name, value, lambda value, ref: value == ref)
+LtePred = lambda name, value: ComparisonPred(
+    name, value, lambda value, ref: value <= ref
+)
+NePred = lambda name, value: ComparisonPred(
+    name, value, lambda value, ref: value != ref
+)
+EqPred = lambda name, value: ComparisonPred(
+    name, value, lambda value, ref: value == ref
+)
 
 
 class AndPred(object):
@@ -112,10 +128,12 @@ def read_int(fd):
         return None
     return struct.unpack("I", buffer)[0]
 
+
 def write_str(output, s):
     bytes = s.encode("utf8")
     write_int(output, len(bytes))
     output.write(bytes)
+
 
 def read_str(fd, max_len=None):
     length = read_int(fd)
@@ -123,7 +141,11 @@ def read_str(fd, max_len=None):
         return None
 
     if max_len is not None and length > max_len:
-        raise Exception("In columnar read_str, attempted to read string with max length {}, but read a length of {}".format(max_len, length))
+        raise Exception(
+            "In columnar read_str, attempted to read string with max length {}, but read a length of {}".format(
+                max_len, length
+            )
+        )
 
     bytes = fd.read(length)
     try:
@@ -185,6 +207,7 @@ class IntSerializer(object):
 # Column 2...
 # Column 3...
 
+
 def write_block_header(fd, row_count, column_lengths):
     write_int(fd, row_count)
     write_int(fd, len(column_lengths))
@@ -244,7 +267,7 @@ def compute_column_offsets(base_offset, column_lengths):
 
 
 def read_block(fd, column_count, columns):
-    'columns: list of (column_index, persister) tuples'
+    "columns: list of (column_index, persister) tuples"
     cursors = []
     pair = read_block_header(fd)
     if pair == None:
@@ -281,7 +304,7 @@ def select_from_cursors(all_columns, projection, predicate, row_count):
 
 
 def select(fd, column_count, columns, projection_indices, bind_predicate):
-    'columns is list of (index, persister)'
+    "columns is list of (index, persister)"
     while True:
         next_block = read_block(fd, column_count, columns)
         if next_block == None:
@@ -316,7 +339,13 @@ def execute_query(fd, select_names, predicate):
         return predicate.create_evaluator(cursor_map)
 
     projection_indices = [name_to_index[name] for name in select_names]
-    for row in select(fd, len(column_definitions), columns_to_extract, projection_indices, bind_predicate):
+    for row in select(
+        fd,
+        len(column_definitions),
+        columns_to_extract,
+        projection_indices,
+        bind_predicate,
+    ):
         yield row
 
 
@@ -337,7 +366,9 @@ class TableInfo:
 
     def __getitem__(self, key):
         if not (key in self.by_name):
-            raise Exception("No column named %s (columns: %s)" % (repr(key), self.by_name.keys()))
+            raise Exception(
+                "No column named %s (columns: %s)" % (repr(key), self.by_name.keys())
+            )
         return self.by_name[key]
 
     def __len__(self):
@@ -345,17 +376,17 @@ class TableInfo:
 
 
 def read_column_definitions(fd):
-    col_count_buffer = fd.read(4) # type: bytes
+    col_count_buffer = fd.read(4)  # type: bytes
     col_count = struct.unpack("I", col_count_buffer)[0]
     columns = []
     for i in range(col_count):
         name = read_str(fd)
         type_name = read_str(fd, max_len=10)
-        if type_name == 'str':
+        if type_name == "str":
             columns.append(ColumnDef(name, i, StringSerializer()))
-        elif type_name == 'float':
+        elif type_name == "float":
             columns.append(ColumnDef(name, i, DoubleSerializer()))
-        elif type_name == 'int':
+        elif type_name == "int":
             columns.append(ColumnDef(name, i, IntSerializer()))
         else:
             raise Exception("unknown type: %s" % repr(type_name))
@@ -384,7 +415,9 @@ class DatasetWriter(object):
         self.row_block = []
         self.rows_per_block = rows_per_block
 
-        write_column_definitions(self.output, [(columns[i].name, persisters[i]) for i in range(len(columns))])
+        write_column_definitions(
+            self.output, [(columns[i].name, persisters[i]) for i in range(len(columns))]
+        )
 
     def append(self, row):
         self.row_block.append(row)
@@ -432,19 +465,26 @@ def get_long_summary(input_file):
         b.write("Table with {} rows, {} columns\n".format(len(column_names), row_count))
         b.write("Column names:\n")
         for c in column_definitions:
-            b.write("\t\"{}\" {}\n".format(c.name, c.persister.type_name))
+            b.write('\t"{}" {}\n'.format(c.name, c.persister.type_name))
         return b.getvalue()
 
-def convert_csv_to_tabular(input_file, output_file, delimiter, encoding, rows_per_block=None):
+
+def convert_csv_to_tabular(
+    input_file, output_file, delimiter, encoding, rows_per_block=None
+):
     sha256 = get_file_sha256(input_file)
-    hasRowNames, datafile_columns = sniff.sniff(input_file, encoding, delimiter=delimiter)
+    hasRowNames, datafile_columns = sniff.sniff(
+        input_file, encoding, delimiter=delimiter
+    )
 
     if not rows_per_block:
-        rows_per_block = MAX_MB_PER_CHUNK / ((BYTES_PER_STR_OBJECT * len(datafile_columns)) / 1024**2)
+        rows_per_block = MAX_MB_PER_CHUNK / (
+            (BYTES_PER_STR_OBJECT * len(datafile_columns)) / 1024 ** 2
+        )
 
     # print("Before conversion")
     # tr.print_diff()
-    with open(input_file, 'rU', encoding=encoding) as fd:
+    with open(input_file, "rU", encoding=encoding) as fd:
         reader = csv.reader(fd, delimiter=delimiter)
 
         w = DatasetWriter(output_file, datafile_columns, rows_per_block=rows_per_block)
@@ -458,21 +498,51 @@ def convert_csv_to_tabular(input_file, output_file, delimiter, encoding, rows_pe
 
             if len(datafile_columns) != len(row):
                 raise Exception(
-                    "line %d column count mismatches: cols (%r) mismatches (%r)" % (line_number, datafile_columns, row))
+                    "line %d column count mismatches: cols (%r) mismatches (%r)"
+                    % (line_number, datafile_columns, row)
+                )
             w.append(row)
 
         w.close()
 
-    long_summary="Column names: {}\n".format(shortened_list([c.name for c in datafile_columns]))
+    long_summary = "Column names: {}\n".format(
+        shortened_list([c.name for c in datafile_columns])
+    )
 
-    return ImportResult(sha256=sha256, short_summary="{} rows, {} columns".format(line_number, len(datafile_columns)), long_summary=long_summary)
+    return ImportResult(
+        sha256=sha256,
+        short_summary="{} rows, {} columns".format(line_number, len(datafile_columns)),
+        long_summary=long_summary,
+    )
 
-def convert_tabular_to_csv(input_file, output_file, delimiter, encoding, select_names=None, predicate=None):
+
+def convert_tabular_to_csv(
+    input_file, output_file, delimiter, encoding, select_names=None, predicate=None
+):
     log.info("convert_tabular_to_csv %s -> %s", input_file, output_file)
-    _convert_tabular_to_csv(input_file, lambda: output_file, lambda row_count, file_len: False, delimiter, encoding, select_names, predicate)
+    _convert_tabular_to_csv(
+        input_file,
+        lambda: output_file,
+        lambda row_count, file_len: False,
+        delimiter,
+        encoding,
+        select_names,
+        predicate,
+    )
 
-def convert_tabular_to_multiple_csvs(input_file, temp_file_generator, delimiter, encoding, select_names=None, predicate=None, max_bytes=None, max_rows=None):
+
+def convert_tabular_to_multiple_csvs(
+    input_file,
+    temp_file_generator,
+    delimiter,
+    encoding,
+    select_names=None,
+    predicate=None,
+    max_bytes=None,
+    max_rows=None,
+):
     filenames = []
+
     def output_file_callback():
         filename = temp_file_generator()
         filenames.append(filename)
@@ -485,10 +555,27 @@ def convert_tabular_to_multiple_csvs(input_file, temp_file_generator, delimiter,
             return True
         return False
 
-    _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, delimiter, encoding, select_names, predicate)
+    _convert_tabular_to_csv(
+        input_file,
+        output_file_callback,
+        flush_callback,
+        delimiter,
+        encoding,
+        select_names,
+        predicate,
+    )
     return filenames
 
-def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, delimiter, encoding, select_names=None, predicate=None):
+
+def _convert_tabular_to_csv(
+    input_file,
+    output_file_callback,
+    flush_callback,
+    delimiter,
+    encoding,
+    select_names=None,
+    predicate=None,
+):
     assert isinstance(input_file, str)
     assert callable(output_file_callback)
     assert callable(flush_callback)
@@ -526,12 +613,28 @@ def _convert_tabular_to_csv(input_file, output_file_callback, flush_callback, de
         if output_file is not None:
             output.close()
 
+
 from typing import Callable
 
-def columnar_to_rds(progress, input_file, temp_file_generator: Callable[[], str], encoding="iso-8859-1", max_rows=None, max_bytes=50*1024*1024):
+
+def columnar_to_rds(
+    progress,
+    input_file,
+    temp_file_generator: Callable[[], str],
+    encoding="iso-8859-1",
+    max_rows=None,
+    max_bytes=50 * 1024 * 1024,
+):
     # two step conversion: First convert to csvs, then for each use R to load CSV and write Rdata file.  Not clear that we can do better
     # at the moment
-    csv_files = convert_tabular_to_multiple_csvs(input_file, temp_file_generator, ",", encoding="utf-8", max_rows=max_rows, max_bytes=max_bytes)
+    csv_files = convert_tabular_to_multiple_csvs(
+        input_file,
+        temp_file_generator,
+        ",",
+        encoding="utf-8",
+        max_rows=max_rows,
+        max_bytes=max_bytes,
+    )
     assert encoding in ["utf-8", "iso-8859-1"]
     if encoding == "utf-8":
         r_encoding = "UTF-8"
@@ -544,12 +647,18 @@ def columnar_to_rds(progress, input_file, temp_file_generator: Callable[[], str]
         script = """
             data <- read.table({csv_file}, sep=',', head=T, as.is=T, check.names=F, quote='\"', comment.char='', encoding={encoding});
             saveRDS(data, file={dest})
-            """.format(csv_file=r_escape_str(csv_file),
-                       dest=r_escape_str(destination_file),
-                       encoding=r_escape_str(r_encoding))
+            """.format(
+            csv_file=r_escape_str(csv_file),
+            dest=r_escape_str(destination_file),
+            encoding=r_escape_str(r_encoding),
+        )
 
-        handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE)
+        handle = subprocess.Popen(
+            ["R", "--vanilla"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
 
         stdout, stderr = handle.communicate(script.encode("utf8"))
         if handle.returncode != 0:

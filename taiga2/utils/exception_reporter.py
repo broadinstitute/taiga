@@ -26,7 +26,9 @@ class ExceptionReporter:
             return
 
         client = self._get_client()
-        client.report_exception(http_context=error_reporting.build_flask_context(request))
+        client.report_exception(
+            http_context=error_reporting.build_flask_context(request)
+        )
 
     def _create_client(self):
         return error_reporting.Client(service=self.service_name)
@@ -34,7 +36,7 @@ class ExceptionReporter:
     def _get_client(self):
         ctx = stack.top
         if ctx is not None:
-            if not hasattr(ctx, 'stackdriver_client'):
+            if not hasattr(ctx, "stackdriver_client"):
                 ctx.stackdriver_client = self._create_client()
             return ctx.stackdriver_client
         raise Exception("Missing context")

@@ -8,13 +8,20 @@ import csv
 import pytest
 from taiga2.conv.util import make_temp_file_generator
 
+
 def rds_to_csv(sources, dest):
-    handle = subprocess.Popen(["R", "--vanilla"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
+    handle = subprocess.Popen(
+        ["R", "--vanilla"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     script_buf = []
     for source in sources:
         if len(script_buf) > 0:
-            script_buf.append("data <- rbind(data, readRDS(%s));\n" % r_escape_str(source))
+            script_buf.append(
+                "data <- rbind(data, readRDS(%s));\n" % r_escape_str(source)
+            )
         else:
             script_buf.append("data <- readRDS(%s);\n" % r_escape_str(source))
     script_buf.append("write.table(data, file=%s, sep=',')" % r_escape_str(dest))
@@ -22,13 +29,14 @@ def rds_to_csv(sources, dest):
     if handle.returncode != 0:
         raise Exception("R process failed: %s\n%s" % (stdout, stderr))
 
+
 def write_sample_csv(csv_file, rows, columns):
     with open(csv_file, "wt") as fd:
         w = csv.writer(fd)
-        w.writerow([""]+["c"+str(i) for i in range(columns)])
+        w.writerow([""] + ["c" + str(i) for i in range(columns)])
         next_value = 0
         for row_i in range(rows):
-            row = ["r"+str(row_i)]
+            row = ["r" + str(row_i)]
             for i in range(columns):
                 row.append(next_value)
                 next_value += 1
@@ -36,10 +44,11 @@ def write_sample_csv(csv_file, rows, columns):
             w.writerow(row)
     fd.close()
 
+
 def write_sample_table(csv_file, rows, columns):
     with open(csv_file, "wt") as fd:
         w = csv.writer(fd)
-        w.writerow(["c"+str(i) for i in range(columns)])
+        w.writerow(["c" + str(i) for i in range(columns)])
         next_value = 0
         for row_i in range(rows):
             row = []
@@ -50,14 +59,15 @@ def write_sample_table(csv_file, rows, columns):
             w.writerow(row)
     fd.close()
 
+
 class ProgressStub:
     def progress(self, *args, **kwargs):
         print("progress", args, kwargs)
 
-@pytest.mark.parametrize("max_elements_per_block, expected_file_count", [
-    (10000,1),
-    (5*5, 2)
-])
+
+@pytest.mark.parametrize(
+    "max_elements_per_block, expected_file_count", [(10000, 1), (5 * 5, 2)]
+)
 def test_hdf5_to_rds(tmpdir, max_elements_per_block, expected_file_count):
     # actually test this by round-tripping from csv to hdf5 to rds to csv to make sure that we can recapitulate what was
     # originally submitted
@@ -71,15 +81,18 @@ def test_hdf5_to_rds(tmpdir, max_elements_per_block, expected_file_count):
     progress = ProgressStub()
     with make_temp_file_generator() as temp_file_generator:
         conv.csv_to_hdf5(progress, original_csv, hdf5_file)
-        files = exp.hdf5_to_rds(progress, hdf5_file, temp_file_generator, max_elements_per_block=max_elements_per_block)
+        files = exp.hdf5_to_rds(
+            progress,
+            hdf5_file,
+            temp_file_generator,
+            max_elements_per_block=max_elements_per_block,
+        )
         assert len(files) == expected_file_count
         rds_to_csv(files, final_csv)
 
-@pytest.mark.parametrize("max_rows, expected_file_count", [
-    (None,1),
-    (5, 2)
-])
-def test_columnar_to_rds(tmpdir,max_rows,expected_file_count):
+
+@pytest.mark.parametrize("max_rows, expected_file_count", [(None, 1), (5, 2)])
+def test_columnar_to_rds(tmpdir, max_rows, expected_file_count):
     # actually test this by round-tripping from csv to columnar to rds to csv to make sure that we can recapitulate what was
     # originally submitted
 
@@ -92,8 +105,8 @@ def test_columnar_to_rds(tmpdir,max_rows,expected_file_count):
     progress = ProgressStub()
     with make_temp_file_generator() as temp_file_generator:
         conv.csv_to_columnar(progress, original_csv, columnar_file)
-        files = exp.columnar_to_rds(progress, columnar_file, temp_file_generator, max_rows=max_rows)
+        files = exp.columnar_to_rds(
+            progress, columnar_file, temp_file_generator, max_rows=max_rows
+        )
         assert len(files) == expected_file_count
         rds_to_csv(files, final_csv)
-
-

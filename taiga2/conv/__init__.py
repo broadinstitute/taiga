@@ -9,11 +9,14 @@ from taiga2.conv.exp import hdf5_to_rds, hdf5_to_csv, hdf5_to_tsv, hdf5_to_gct
 
 from taiga2.conv import columnar
 
+
 def csv_to_columnar(progress, src, dst, encoding="iso-8859-1", **kwargs):
     return columnar.convert_csv_to_tabular(src, dst, ",", encoding, **kwargs)
 
+
 def tsv_to_columnar(progress, src, dst, encoding="iso-8859-1"):
     return columnar.convert_csv_to_tabular(src, dst, "\t", encoding)
+
 
 def columnar_to_csv(progress, src, temp_file_generator, encoding="iso-8859-1"):
     dst = temp_file_generator()
@@ -25,6 +28,7 @@ def columnar_to_tsv(progress, src, temp_file_generator, encoding="iso-8859-1"):
     dst = temp_file_generator()
     columnar.convert_tabular_to_csv(src, dst, "\t", encoding)
     return [dst]
+
 
 # text formats
 CSV_FORMAT = "csv"
