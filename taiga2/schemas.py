@@ -179,7 +179,6 @@ class DatasetSchema(ma.ModelSchema):
         additional = (
             "id",
             "name",
-            "description",
             "permaname",
             "dataset_versions",
             "parents",
@@ -210,6 +209,14 @@ class DatasetSchema(ma.ModelSchema):
             entry_user_right == EntryRightsEnum.can_view
             or entry_user_right == EntryRightsEnum.can_edit
         )
+
+    description = fields.fields.Method("description_str")
+
+    def description_str(self, dataset_version):
+        if dataset_version.description is None:
+            return ""
+        else:
+            return dataset_version.description
 
 
 class DataFileSummarySchema(ma.ModelSchema):

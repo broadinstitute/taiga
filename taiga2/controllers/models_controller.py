@@ -1132,10 +1132,16 @@ def get_datafile_by_taiga_id(taiga_id, one_or_none=False) -> DataFile:
     permaname = m.group(1)
     version = m.group(2)
     filename = m.group(3)
-    dataset_version = get_dataset_version_by_permaname_and_version(permaname, version)
+    dataset_version = get_dataset_version_by_permaname_and_version(permaname, version, one_or_none=one_or_none)
+    if dataset_version is None:
+        return None
+
     datafile = get_datafile_by_version_and_name(
         dataset_version.id, filename, one_or_none=one_or_none
     )
+    if datafile is None:
+        return None
+
     return resolve_virtual_datafile(datafile)
 
 

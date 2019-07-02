@@ -77,6 +77,7 @@ interface UploadDialogState {
     datasetDescription: string;
     newDatasetVersion?: DatasetIdAndVersionId;
     isProcessing: boolean;
+    error: string;
 }
 
 interface CreateDatasetDialogProps extends DialogProps {
@@ -117,6 +118,10 @@ export class CreateVersionDialog extends React.Component<CreateVersionDialogProp
     }
 }
 
+function isNonempty(v: string) {
+    // this covers "" and null
+    return !(!v);
+}
 
 class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDialogState>> {
     static contextTypes = {
@@ -146,7 +151,8 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
             formDisabled: false,
             datasetName: "",
             datasetDescription: this.props.previousDescription,
-            isProcessing: false
+            isProcessing: false,
+            error: null
         };
     }
 
@@ -169,6 +175,13 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
     }
 
     render() {
+        let validationError = null as string;
+        if (!this.props.datasetId && !isNonempty(this.state.datasetName)) {
+            validationError = "Dataset name is required";
+        } else if (this.state.uploadFiles.length == 0) {
+            validationError = "At least one file is required";
+        }
+
         let submitButton: any;
 
         console.log("state.isProcessing is", this.state.isProcessing);
@@ -183,6 +196,21 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
                     See my new Dataset
                 </Link>
             );
+        } else if (validationError) {
+            submitButton = (<button type="submit" className="btn btn-primary" disabled={true}>
+                {validationError}
+            </button>);
+        } else if (this.state.error) {
+            submitButton = (<button type="submit" className="btn btn-primary" onClick={(e => {
+                e.preventDefault();
+                this.setState({
+                    formDisabled: false,
+                    isProcessing: false,
+                    error: null
+                });
+            })}>
+                Edit
+            </button>);
         } else {
             submitButton = (
                 <button type="submit" className="btn btn-primary" disabled={this.state.formDisabled}
@@ -212,11 +240,14 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
                             (status) => this.uploadProgressCallback(status)).then((newDatasetVersion) => {
                                 // after a successful upload, set the newDatasetVersion which will give us a link to see it.
                                 this.setState({ newDatasetVersion: newDatasetVersion });
+                            }).catch((error) => {
+                                this.setState({ error: "" + error });
                             });
 
                         this.setState({
                             formDisabled: true,
-                            isProcessing: true
+                            isProcessing: true,
+                            error: null
                         });
                         // console.log("isProcessing set to true");
 
@@ -277,14 +308,11 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
     }
 
     onDrop(acceptedFiles: Array<File>, rejectedFiles: Array<File>) {
-        console.log(acceptedFiles);
         acceptedFiles.forEach((file) => this.props.controller.addUpload(file));
     }
 
     addTaigaReference() {
-        console.log("Add taiga ref");
         this.props.controller.addTaiga("", "...");
-        console.log("Add taiga ref done");
     }
 
     render() {

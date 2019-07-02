@@ -12,6 +12,7 @@ from taiga2.conv.util import make_temp_file_generator
 from taiga2.controllers import models_controller
 from taiga2.conv.imp import ImportResult
 from taiga2.models import S3DataFile
+import humanize
 
 celery = Celery("taiga2")
 log = logging.getLogger()
@@ -20,7 +21,6 @@ log = logging.getLogger()
 @celery.task
 def print_config():
     import flask
-
     print(flask.current_app.config)
 
 
@@ -49,9 +49,6 @@ def _from_s3_convert_to_s3(
     return import_result
 
 
-import humanize
-
-
 @celery.task(bind=True)
 def background_process_new_upload_session_file(
     self,
@@ -61,24 +58,6 @@ def background_process_new_upload_session_file(
     bucket_name,
     converted_s3_key,
 ):
-    print(
-        "background_process_new_upload_session_file, upload_session_file_id={} file_type={} bucket_name={} initial_s3_key={} converted_s3_key={}".format(
-            upload_session_file_id,
-            file_type,
-            bucket_name,
-            initial_s3_key,
-            converted_s3_key,
-        )
-    )
-    log.error(
-        "err -- background_process_new_upload_session_file, upload_session_file_id={} file_type={} bucket_name={} initial_s3_key={} converted_s3_key={}".format(
-            upload_session_file_id,
-            file_type,
-            bucket_name,
-            initial_s3_key,
-            converted_s3_key,
-        )
-    )
     s3 = aws.s3
     progress = Progress(self)
 
