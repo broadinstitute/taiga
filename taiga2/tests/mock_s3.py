@@ -52,6 +52,9 @@ class MockBucket:
         with open(path_source, "rb") as data_copy_source:
             self.put_object(key, data_copy_source)
 
+    def Object(self, key):
+        return MockS3Object(self.name, key)
+
     def __call__(self, name):
         return self
 
@@ -60,6 +63,7 @@ class MockS3Object:
     def __init__(self, bucket, key):
         self.bucket = bucket
         self.key = key
+        self.content_length = 10
 
     def download_fileobj(self, writer):
         full_path = self.bucket.s3.file_per_key[(self.bucket.name, self.key)]
