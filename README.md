@@ -18,7 +18,7 @@ Taiga 2 is built on the following stack:
 - Amazon S3 (to store the files)
 
 ### Backend/API
-- Python 3.5
+- Python 3.6
 - Flask
 - Celery/Redis
 - Swagger
