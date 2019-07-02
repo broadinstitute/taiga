@@ -62,6 +62,7 @@ grpc-google-iam-v1==0.11.4
 grpcio==1.21.1
 h5py==2.6.0
 httplib2==0.13.0
+humanize==0.5.1
 idna==2.7
 isort==4.3.21
 itsdangerous==1.1.0
