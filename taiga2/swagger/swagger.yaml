@@ -1463,7 +1463,7 @@ definitions:
         type: string
       filetype:
         type: string
-      existingTaigaID:
+      existingTaigaId:
         type: string
       s3Upload:
         "$ref": "#/definitions/S3UploadedFileMetadata"
