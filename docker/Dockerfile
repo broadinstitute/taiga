@@ -21,7 +21,7 @@ RUN rm nodesource_setup.sh
 RUN apt-get install -y vim
 
 # Install python and its related packages
-RUN apt-get install -y python3.5 python3-dev python3-pip python3-setuptools
+RUN apt-get install -y python3.6 python3-dev python3-pip python3-setuptools
 
 # Install postgresql minimal set binaries and headers
 RUN apt-get install -y libpq-dev
