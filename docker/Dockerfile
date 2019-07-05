@@ -1,6 +1,7 @@
 FROM ubuntu:xenial-20170619
 
 RUN apt-get update -y
+RUN apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa && apt-get update -y 
 
 # Preparing for yarn install
 RUN apt-get install -y curl apt-transport-https
@@ -18,13 +19,13 @@ RUN rm nodesource_setup.sh
 #RUN apt-get install -y nodejs npm
 
 # Install vim
-RUN apt-get install -y vim
-
 # Install python and its related packages
-RUN apt-get install -y python3.6 python3-dev python3-pip python3-setuptools
-
 # Install postgresql minimal set binaries and headers
-RUN apt-get install -y libpq-dev
+RUN apt-get install -y vim python3.6 libpq-dev python3.6-dev python3.6-venv
+
+RUN mkdir /install && python3.6 -m venv /install/python
+
+ENV PATH=/install/python/bin:$PATH
 
 # Pre-install the python packages needed by the app, so we don't have to reinstall them each time
 # But still install new ones in case we need them

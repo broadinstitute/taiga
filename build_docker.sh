@@ -2,7 +2,9 @@
 set -evx
 
 # TODO: Need to see how to tar from travis/
-tar --exclude='dist' --exclude='*/taiga.tar.gz' --exclude='.idea' --exclude='node_modules' --exclude='frontend/node_modules' --exclude='.git' -zcvf docker/taiga.tar.gz *
+tar --exclude='dist' --exclude='*/taiga.tar.gz' \
+--exclude='.idea' --exclude='node_modules' --exclude='frontend/node_modules' --exclude='.git' \
+--exclude='*.pyc' -zcvf docker/taiga.tar.gz *
 docker build -t taiga:latest docker/
 
 # TODO: We are missing multiple steps:
