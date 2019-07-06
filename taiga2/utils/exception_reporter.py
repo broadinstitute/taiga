@@ -31,7 +31,7 @@ class ExceptionReporter:
         )
 
     def _create_client(self):
-        return error_reporting.Client(service=self.service_name)
+        return error_reporting.Client(service=self.service_name, project='cds-logging')
 
     def _get_client(self):
         ctx = stack.top

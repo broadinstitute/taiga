@@ -40,8 +40,7 @@ script:
 after_success:
   # After tests have been successful, we build a new docker image and push it to ECR
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
-      chmod ugo+x build_docker.sh;
-      ./build_docker.sh;
+      bash ./build_docker.sh;
       chmod ugo+x travis/push_docker.sh;
       travis/push_docker.sh;
     fi
