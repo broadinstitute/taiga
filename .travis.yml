@@ -18,7 +18,6 @@ services:
 - docker
 script:
 - docker run taiga pytest
-after_success:
 - if [ "$TRAVIS_BRANCH" == "master" ]; then bash travis/push_docker.sh; fi
 env:
   global:
