@@ -9,7 +9,7 @@ language: python
 python:
 - '3.6'
 before_install:
-- openssl aes-256-cbc -K $encrypted_5880cf525281_key -iv $encrypted_5880cf525281_iv -in travis/travis-docker-push-account.json.enc -out travis/travis-docker-push-account.json -d
+- "openssl aes-256-cbc -k \"$super_secret_password\" -in travis/travis-docker-push-account.json.enc -out travis/travis-docker-push-account.json -d"
 install:
 - sh write_version.sh
 - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -32,3 +32,6 @@ script:
 after_success:
 - if [ "$TRAVIS_BRANCH" == "master" ]; then bash ./build_docker.sh; chmod ugo+x travis/push_docker.sh;
   travis/push_docker.sh; fi
+env:
+  global:
+    secure: zthKDZq3g/kdnzCYcMq6E+nJsvR6q+v646UPE8wA3hVQSl0QLV1CgffocynkEthnruO40Dq2WhYgq6wWSdzFMl8Qxcg7/GzWEu35Rb9hzXxZHhyJsmBIBU/qSHaLVVRYcKJ4RYdH2mU/fd8ODgPG+dHeAtFSmko72FFsg1o2hT4/pBmWtFMUR/ryWrO/JPxr3gxIhkjdqOaVs32ZdddhDVEUoBay6xYSOxRPQVoMrInIm0emZ+uPDvAzT91cgEpyGcWzr83yP2JPsxwzeWXkPGwmexa35o+jvrTczq0gklnh1h4l6FqFp8saGGpaWDMmNcoyqJ70vKtUuJyPIB852sAt7h1TQuy0W5jGElDqS/Zg9l0+9LLg017dae3NVa0CT5JOzqD2pO1VAGkOjKIEzXyBxHJiPeZm5/4nrlPzg3nia/xTSPC7J2ldC2CIMgWaoAo0RmqBiT8RRW9nWbRlPM2CssR5dMw1aLT1AQT3aok44GDPyj4ZsWFfqKKwT0/w3AGbWou6pV3cAjwj7m9G7E4yl/S0G7tN7LZZKBLC+uSUfrsc2xehnrpZeDNfkQ8GJsuXFqYHIvQew80ZEYICjnb9vpXK9N5BciMEHER3Z5G4T5L593sgjUyoNggsNKQ3KB2KDmXqhi7Ecqqdvdsu4FHY/lvCKfzS+yggdmk4lIk=
