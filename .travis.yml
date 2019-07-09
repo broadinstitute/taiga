@@ -9,6 +9,7 @@ language: python
 python:
 - '3.6'
 before_install:
+- openssl aes-256-cbc -K $encrypted_1f8527a9b911_key -iv $encrypted_1f8527a9b911_iv -in travis/travis-docker-push-account.json.enc -out travis/travis-docker-push-account.json -d
 - openssl aes-256-cbc -K $encrypted_0a6446eb3ae3_key -iv $encrypted_0a6446eb3ae3_iv -in travis/travis-docker-push-account.json.enc -out travis/travis-docker-push-account.json -d
 install:
 - sh write_version.sh
