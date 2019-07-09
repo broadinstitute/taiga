@@ -9,8 +9,7 @@ language: python
 python:
 - '3.6'
 before_install:
-- openssl aes-256-cbc -k "$super_secret_password" -in travis/travis-docker-push-account.json.enc
-  -out travis/travis-docker-push-account.json -d
+- sh travis/login_docker.sh
 install:
 - sh write_version.sh
 - bash ./build_docker.sh
