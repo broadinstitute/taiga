@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-set -ev
+set -exv
 
-# This script needs AWS environment to be set
-# REPO_URI needs also to be set as the repository URI
-docker_login=`aws ecr get-login --region us-east-1 --no-include-email`
-${docker_login}
+REPO_URL=us.gcr.io/cds-docker-containers/taiga
+
+cat travis/travis-docker-push-account.json | docker login -u _json_key --password-stdin https://us.gcr.io
 docker tag taiga:latest ${REPO_URI}
 docker push ${REPO_URI}
