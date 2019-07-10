@@ -119,9 +119,9 @@ For our case, it is pretty simple:
 
 2. Create a test database to have some data to work with:
 
-        `./flask recreate-dev-dev`
+        `./flask recreate-dev-db`
 
-6. Open 4 terminal windows to launch Webpack, Taiga 2, Celery and Redis processes: 
+3. Open 4 terminal windows to launch Webpack, Taiga 2, Celery and Redis processes:
 
     a. In terminal 1:
 
@@ -135,13 +135,13 @@ For our case, it is pretty simple:
 
         `./flask run`
 
-    c. In terminal 4:
+    d. In terminal 4:
 
         `./flask run-worker`
         
-7. Congratulations! You can now access to Taiga 2 through your browser at:
+4. Congratulations! You can now access to Taiga 2 through your browser at:
 
-        `http://localhost:8080/taiga/`
+        `http://127.0.0.1:5000/taiga/`
 
 
 ## adding user to admin group
