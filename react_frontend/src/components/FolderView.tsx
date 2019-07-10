@@ -70,8 +70,6 @@ export interface FolderViewState {
 
     loading?: boolean;
 
-    currentUser?: User;
-
     searchQuery?: string;
 }
 
@@ -261,11 +259,11 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             actionDescription = "Add the selected file(s) into the chosen folder";
         }
         else if (actionName === "linkToHome") {
-            this.setState({ initFolderId: this.state.currentUser.home_folder_id });
+            this.setState({ initFolderId: this.context.user.home_folder_id });
             actionDescription = "Add the selected file(s) into your Home folder";
         }
         else if (actionName === "currentFolderLinkToHome") {
-            this.setState({ initFolderId: this.state.currentUser.home_folder_id });
+            this.setState({ initFolderId: this.context.user.home_folder_id });
             actionDescription = "Add the current folder into your Home folder";
         }
         else if (actionName === "currentFolderLink") {
