@@ -707,6 +707,7 @@ def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
     assert len(dataset_version["datafiles"]) == 1
     datafile = dataset_version["datafiles"][0]
     assert datafile["name"] == vdatafile_name
+    assert datafile['type'] == "Raw"
     assert datafile["underlying_file_id"] == data_file_1_label
 
     # skipping get_dataset_versions because I don't know what uses it

@@ -281,6 +281,10 @@ class VirtualDataFile(DataFile):
         return self.underlying_data_file.short_summary
 
     @property
+    def format(self):
+        return self.underlying_data_file.format
+
+    @property
     def long_summary(self):
         return self.underlying_data_file.long_summary
 
