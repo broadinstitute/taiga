@@ -176,13 +176,7 @@ class DatasetVersionLightSchema(ma.ModelSchema):
 
 class DatasetSchema(ma.ModelSchema):
     class Meta:
-        additional = (
-            "id",
-            "name",
-            "permaname",
-            "dataset_versions",
-            "parents",
-        )
+        additional = ("id", "name", "permaname", "dataset_versions", "parents")
 
     # TODO: Change this field to properly handle multiple permanames (a new permaname is added when we change the name of the dataset)
     permaname = fields.fields.Function(
@@ -239,11 +233,15 @@ class DataFileSchema(ma.ModelSchema):
             "original_file_sha256",
         )
 
-    format = EnumField(S3DataFile.DataFileFormat)
+    # rename format -> type because that's what the existing client api expects
+    type = fields.fields.Method("_get_type")
 
     # Allowed Conversion Type
     allowed_conversion_type = fields.fields.Method("_get_allowed_conversion_type")
     provenance_nodes = ma.Nested(ProvenanceNodeSchema(), many=True)
+
+    def _get_type(self, data_file):
+        return data_file.format.name
 
     def _get_allowed_conversion_type(self, data_file: DataFile):
         return get_allowed_conversion_type(resolve_virtual_datafile(data_file).format)

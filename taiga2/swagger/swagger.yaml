@@ -497,68 +497,7 @@ paths:
         200:
           description: The data specific to a specific dataset version
           schema:
-            title: DatasetVersion
-            type: object
-            required:
-              - id
-              - dataset_id
-              - name
-              - creation_date
-              - creator
-              - datafiles
-              - description
-              - version
-              - folders
-            properties:
-              id:
-                type: string
-              folders:
-                type: array
-                items:
-                  "$ref": "#/definitions/NamedId"
-              dataset_id:
-                type: string
-              status:
-                "$ref": "#/definitions/StatusEnum"
-              name:
-                type: string
-              version:
-                type: string
-              description:
-                type: string
-              creation_date:
-                type: string
-              creator:
-                "$ref": "#/definitions/NamedId"
-              datafiles:
-                type: array
-                items:
-                  title: DataFile
-                  type: object
-                  required:
-                    - name
-                  properties:
-                    name:
-                      type: string
-                    provenance_nodes:
-                      type: array
-                    s3_bucket:
-                      type:
-                        - string
-                        - 'null'
-                    s3_key:
-                      type: 
-                        - string
-                        - 'null'
-                    description:
-                      type: string
-                    short_summary:
-                      description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
-                      type: 
-                        - string
-                        - 'null'
-              provenance:
-                "$ref": "#/definitions/Provenance"
+            "$ref": "#/definitions/DatasetVersion"
 
   /datasetVersion:
     post:
@@ -1269,42 +1208,48 @@ definitions:
       datafiles:
         type: array
         items:
-          title: DataFile
-          type: object
-          required:
-            - id
-            - name
-            - allowed_conversion_type
-            - short_summary
-          properties:
-            underlying_file_id:
-              description: "if this is a virtual dataset, this is the reference to the underlying file, and name is just an alias to that"
-              type: 
-                - string
-                - "null"
-            id:
-              type: string
-            name:
-              type: string
-            allowed_conversion_type:
-              type: array
-              items:
-                type: string
-            short_summary:
-              description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
-              type: 
-                - string
-                - "null"
-            original_file_sha256:
-              description: the sha256 of the uploaded file
-              type: 
-                - string
-                - "null"
+          "$ref": "#/definitions/Provenance"
       provenance:
         "$ref": "#/definitions/Provenance"
       state:
         "$ref": "#/definitions/StatusEnum"
       reason_state:
+        type: string
+
+  DataFile:
+    title: DataFile
+    type: object
+    required:
+      - id
+      - name
+      - allowed_conversion_type
+      - short_summary
+      - type
+    properties:
+      underlying_file_id:
+        description: "if this is a virtual dataset, this is the reference to the underlying file, and name is just an alias to that"
+        type: 
+          - string
+          - "null"
+      id:
+        type: string
+      name:
+        type: string
+      allowed_conversion_type:
+        type: array
+        items:
+          type: string
+      short_summary:
+        description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
+        type: 
+          - string
+          - "null"
+      original_file_sha256:
+        description: the sha256 of the uploaded file
+        type: 
+          - string
+          - "null"
+      type:
         type: string
 
   ProvenanceEdge:

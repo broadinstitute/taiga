@@ -339,6 +339,8 @@ def test_get_dataset_version_from_dataset(session: SessionBase, new_dataset):
         endpoint.get_dataset_version_from_dataset(new_dataset.permaname, "1")
     )
     assert dv["datasetVersion"]["id"] == dataset_version_id
+    for df in dv["datasetVersion"]["datafiles"]:
+        assert df["type"] == "Raw"
 
     # test fetching non-existant dataset results in 404
     with pytest.raises(werkzeug.exceptions.NotFound):
