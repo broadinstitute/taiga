@@ -2,7 +2,7 @@ import * as React from "react";
 import * as PropTypes from "prop-types";
 import * as ReactDOM from "react-dom";
 
-import { RouteProps, Router, Route, Redirect } from "react-router";
+import { RouteProps, Router, Route, Redirect, Switch } from "react-router";
 import { Link, BrowserRouter } from "react-router-dom";
 import { createBrowserHistory } from 'history';
 
@@ -339,8 +339,12 @@ export function initPage(element: any) {
             <BrowserRouter>
                 <App tapi={tapi} user={user}>
                     <Route path={relativePath("")} exact component={Home} />
-                    <Route path={relativePath("dataset/:datasetId")} component={DatasetView as any} />
-                    <Route path={relativePath("dataset/:datasetId/:datasetVersionId")} component={DatasetView as any} />
+                    <Switch>
+                        <Route path={relativePath("dataset/:datasetId.:datasetVersionId")} component={DatasetView as any} />
+                        <Route path={relativePath("dataset/:datasetId")} component={DatasetView as any} />
+                        <Route path={relativePath("dataset/:datasetId.:datasetVersionId/:fileName")} component={DatasetView as any} />
+                        <Route path={relativePath("dataset/:datasetId/:datasetVersionId")} component={DatasetView as any} />
+                    </Switch>
                     <Route path={relativePath("dataset_version/:datasetVersionId")} component={DatasetView as any} />
                     <Route path={relativePath("folder/:folderId")} component={FolderView as any} />
                     <Route path={relativePath("search/:currentFolderId/:searchQuery")} component={SearchView as any} />
