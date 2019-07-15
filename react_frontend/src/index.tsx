@@ -340,10 +340,10 @@ export function initPage(element: any) {
                 <App tapi={tapi} user={user}>
                     <Route path={relativePath("")} exact component={Home} />
                     <Switch>
-                        <Route path={relativePath("dataset/:datasetId.:datasetVersionId")} component={DatasetView as any} />
-                        <Route path={relativePath("dataset/:datasetId")} component={DatasetView as any} />
                         <Route path={relativePath("dataset/:datasetId.:datasetVersionId/:fileName")} component={DatasetView as any} />
                         <Route path={relativePath("dataset/:datasetId/:datasetVersionId")} component={DatasetView as any} />
+                        <Route path={relativePath("dataset/:datasetId.:datasetVersionId")} component={DatasetView as any} />
+                        <Route path={relativePath("dataset/:datasetId")} component={DatasetView as any} />
                     </Switch>
                     <Route path={relativePath("dataset_version/:datasetVersionId")} component={DatasetView as any} />
                     <Route path={relativePath("folder/:folderId")} component={FolderView as any} />
