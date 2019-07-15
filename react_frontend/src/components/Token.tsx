@@ -1,8 +1,8 @@
 import * as React from "react";
-import * as PropTypes from "prop-types";
+import { RouteComponentProps } from "react-router";
 
-import { Button, Col, Glyphicon, Grid, Row, OverlayTrigger, Tooltip, Well } from "react-bootstrap";
-import { InputGroup, InputGroupButton, FormGroup, FormControl } from "react-bootstrap";
+import { Col, Grid, Row, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { InputGroup, FormGroup, FormControl } from "react-bootstrap";
 
 import ClipboardButton from "../utilities/r-clipboard";
 import { LeftNav } from "./LeftNav";
@@ -10,17 +10,13 @@ import { LeftNav } from "./LeftNav";
 import { TaigaApi } from "../models/api";
 import { User } from "../models/models";
 
-export interface TokenProps {
-
+export interface TokenProps extends RouteComponentProps {
+    tapi: TaigaApi;
 }
 
 export interface TokenState {
     token?: string;
 }
-
-const inputTokenStyle = {
-    width: '100%'
-};
 
 const antiPadding = {
     paddingLeft: '0px'
@@ -28,13 +24,8 @@ const antiPadding = {
 
 const clipboardButtonStyle = {};
 
-let tapi: TaigaApi = null;
 
 export class Token extends React.Component<TokenProps, TokenState> {
-    static contextTypes = {
-        tapi: PropTypes.object
-    };
-
     constructor(props: any) {
         super(props);
 
@@ -45,12 +36,11 @@ export class Token extends React.Component<TokenProps, TokenState> {
     }
 
     componentDidMount() {
-        tapi = (this.context as any).tapi;
         this.doFetch();
     }
 
     doFetch() {
-        return tapi.get_user().then((user: User) => {
+        return this.props.tapi.get_user().then((user: User) => {
             this.setState({
                 token: user.token
             })

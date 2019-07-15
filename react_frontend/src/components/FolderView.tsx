@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as PropTypes from "prop-types";
+import { RouteComponentProps } from "react-router";
 import { Link } from 'react-router-dom';
 import * as update from 'immutability-helper';
 
@@ -17,21 +17,23 @@ import { relativePath } from "../utilities/route";
 import { LoadingOverlay } from "../utilities/loading";
 import { UploadTracker } from "./UploadTracker";
 
-import { Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button } from "react-bootstrap";
+import { Glyphicon } from "react-bootstrap";
 import { Grid, Row, Col } from "react-bootstrap";
-import { BootstrapTable, TableHeaderColumn, SelectRow, SelectRowMode, Options, SortOrder, CellEditClickMode, CellEdit } from "react-bootstrap-table";
-import { Dataset, Entry, FolderEntries, NamedId } from "../models/models";
+import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
+import { Entry, NamedId } from "../models/models";
 import { DatasetVersion } from "../models/models";
-import { isUndefined } from "util";
 import { DatasetFullDatasetVersions, BootstrapTableFolderEntry } from "../models/models";
-// import int = DataPipeline.int;
-import { debug } from "util";
 import { User } from "../models/models";
 import { AccessLog } from "../models/models";
-import { ShareEntries } from "./Dialogs";
 
-export interface FolderViewProps {
-    match: any
+interface FolderViewMatchParams {
+    folderId: string;
+}
+
+export interface FolderViewProps extends RouteComponentProps<FolderViewMatchParams> {
+    tapi: TaigaApi;
+    user: User;
+    currentUser: string;
 }
 
 const tableEntriesStyle: any = {
@@ -84,12 +86,6 @@ export class Conditional extends React.Component<any, any> {
 }
 
 export class FolderView extends React.Component<FolderViewProps, FolderViewState> {
-    static contextTypes = {
-        tapi: PropTypes.object,
-        currentUser: PropTypes.string,
-        user: PropTypes.object,
-    };
-
     constructor(props: any) {
         super(props);
     }
@@ -114,7 +110,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     getTapi() {
-        return (this.context as any).tapi as TaigaApi;
+        return this.props.tapi;
     }
 
     componentWillMount() {
@@ -201,14 +197,14 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     // TODO: Refactor logAccess in an util or in RecentlyViewed class
     logAccess() {
-        let tapi = (this.context as any).tapi as TaigaApi;
+        const { tapi } = this.props;
 
         return tapi.create_or_update_entry_access_log(this.state.folder.id).then(() => {
         });
     }
 
     updateName(name: string) {
-        let tapi = (this.context as any).tapi as TaigaApi;
+        const { tapi } = this.props;
 
         tapi.update_folder_name(this.state.folder.id, name).then(() => {
             return this.doFetch();
@@ -216,7 +212,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     updateDescription(description: string) {
-        let tapi = (this.context as any).tapi as TaigaApi;
+        const { tapi } = this.props;
 
         tapi.update_folder_description(this.state.folder.id, description).then(() => {
             return this.doFetch();
@@ -224,8 +220,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     createFolder(name: string, description: string) {
-        let tapi = (this.context as any).tapi as TaigaApi;
-        let user = (this.context as any).user as User;
+        const { tapi, user } = this.props;
 
         const current_folder_id: string = this.state.folder.id;
 
@@ -235,7 +230,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     moveToTrash() {
-        let tapi = (this.context as any).tapi as TaigaApi;
+        const { tapi } = this.props;
 
         // move_to_folder takes the entryIds, the current folder id and the target folder id as parameters
         // If the target folder is null, the backend will move this symbolic link to the trash
@@ -249,6 +244,8 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     openActionTo(actionName: string) {
         // TODO: Change the string telling the action to an enum, like in the backend
 
+        const {user} = this.props;
+
         let actionDescription = "";
 
         if (actionName === "move") {
@@ -259,11 +256,11 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
             actionDescription = "Add the selected file(s) into the chosen folder";
         }
         else if (actionName === "linkToHome") {
-            this.setState({ initFolderId: this.context.user.home_folder_id });
+            this.setState({ initFolderId: user.home_folder_id });
             actionDescription = "Add the selected file(s) into your Home folder";
         }
         else if (actionName === "currentFolderLinkToHome") {
-            this.setState({ initFolderId: this.context.user.home_folder_id });
+            this.setState({ initFolderId: user.home_folder_id });
             actionDescription = "Add the current folder into your Home folder";
         }
         else if (actionName === "currentFolderLink") {
@@ -282,7 +279,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     actionIntoFolder(folderId: string) {
-        let tapi = (this.context as any).tapi as TaigaApi;
+        const { tapi } = this.props;
 
         // TODO: Call to move the files
 
@@ -320,7 +317,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
 
     // Upload
     filesUploadedAndConverted(sid: string, datasetName: string, datasetDescription: string) {
-        let tapi = (this.context as any).tapi as TaigaApi;
+        const { tapi } = this.props;
 
         // We ask to create the dataset
         return tapi.create_dataset(sid,
@@ -452,7 +449,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     }
 
     removeAccessLogs(arrayAccessLogs: Array<AccessLog>): Promise<any> {
-        let tapi = (this.context as any).tapi as TaigaApi;
+        const { tapi } = this.props;
 
         return tapi.remove_entry_access_log(arrayAccessLogs).then(() => {
 
@@ -498,7 +495,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
     // endregion
 
     render() {
-        let user = (this.context as any).user as User;
+        const { user } = this.props;
         console.log("user", user);
 
         let entriesOutput: Array<any> = [];
@@ -715,6 +712,7 @@ export class FolderView extends React.Component<FolderViewProps, FolderViewState
                             cancel={() => { this.setState({ showEditPermissions: false }) }}
                             entry_id={this.state.folder.id}
                             handleDeletedRow={(arrayAccessLogs) => { return this.removeAccessLogs(arrayAccessLogs) }}
+                            tapi={this.props.tapi}
                         />
 
                         <Dialogs.ShareEntries

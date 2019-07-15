@@ -2,7 +2,6 @@ import * as React from "react";
 import { Form, FormControl, Col, ControlLabel, FormGroup, Label, Grid, Row, Glyphicon, HelpBlock } from 'react-bootstrap';
 import * as Dropzone from "react-dropzone";
 import * as Modal from "react-modal";
-import * as PropTypes from "prop-types";
 import { UploadStatus, UploadFileType, CreateVersionParams, CreateDatasetParams, DatasetIdAndVersionId } from "../UploadTracker";
 import update from "immutability-helper";
 import { UploadTable, UploadFile, UploadController } from "./UploadTable";
@@ -124,12 +123,6 @@ function isNonempty(v: string) {
 }
 
 class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDialogState>> {
-    static contextTypes = {
-        tapi: PropTypes.object,
-        currentUser: PropTypes.string,
-        user: PropTypes.object,
-    };
-
     controller: UploadController;
 
     constructor(props: UploadDialogProps) {
@@ -158,10 +151,6 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
 
     requestClose() {
         this.props.cancel();
-    }
-
-    getTapi(): TaigaApi {
-        return (this.context as any).tapi as TaigaApi;
     }
 
     uploadProgressCallback(statuses: Array<UploadStatus>) {

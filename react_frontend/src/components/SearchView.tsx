@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as PropTypes from "prop-types";
+import { RouteComponentProps } from "react-router";
 import { Link } from "react-router-dom";
 import * as update from "immutability-helper";
 
@@ -7,8 +7,6 @@ import { LeftNav, MenuItem } from "./LeftNav";
 import * as Models from "../models/models";
 import { TaigaApi } from "../models/api";
 
-import * as Dialogs from "./Dialogs";
-import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";
 import { NotFound } from "./NotFound";
 import { SearchInput } from "./Search";
 
@@ -16,31 +14,21 @@ import { toLocalDateString } from "../utilities/formats";
 import { relativePath } from "../utilities/route";
 import { LoadingOverlay } from "../utilities/loading";
 
-import { Glyphicon, Form, FormGroup, ControlLabel, FormControl, Button } from "react-bootstrap";
+import { Glyphicon } from "react-bootstrap";
 import { Grid, Row, Col } from "react-bootstrap";
-import {
-    BootstrapTable,
-    TableHeaderColumn,
-    SelectRow,
-    SelectRowMode,
-    Options,
-    SortOrder,
-    CellEditClickMode,
-    CellEdit
-} from "react-bootstrap-table";
-import { Dataset, NamedId } from "../models/models";
-import { DatasetVersion } from "../models/models";
-import { isUndefined } from "util";
-import { DatasetFullDatasetVersions, BootstrapTableSearchEntry } from "../models/models";
-// import int = DataPipeline.int;
-import { debug } from "util";
-import { User } from "../models/models";
-import { AccessLog } from "../models/models";
+import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
+import { BootstrapTableSearchEntry } from "../models/models";
 
 let _update: any = update;
 
-export interface SearchViewProps {
-    params: any;
+interface SearchViewMatchParams {
+    currentFolderId: string;
+    searchQuery: string;
+    folderId: string;
+}
+
+export interface SearchViewProps extends RouteComponentProps<SearchViewMatchParams> {
+    tapi: TaigaApi;
 }
 
 const tableEntriesStyle: any = {
@@ -73,8 +61,6 @@ export interface SearchViewState {
 
     loading?: boolean;
 
-    currentUser?: User;
-
     // New
     folder?: Models.NamedId;
     name?: string;
@@ -93,15 +79,7 @@ export class Conditional extends React.Component<any, any> {
     }
 }
 
-let tapi: TaigaApi = null;
-let currentUser: string = null;
-
 export class SearchView extends React.Component<SearchViewProps, SearchViewState> {
-    static contextTypes = {
-        tapi: PropTypes.object,
-        currentUser: PropTypes.string,
-    };
-
     constructor(props: any) {
         super(props);
     }
@@ -112,15 +90,9 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
     }
 
     componentDidMount() {
-        tapi = (this.context as any).tapi;
-        currentUser = (this.context as any).currentUser;
         // this.doFetch().then(() => {
         //     this.logAccess();
         // });
-
-        tapi.get_user().then(user => {
-            this.setState({ currentUser: user });
-        });
 
         // Get the datasets from query + current_folder
         this.doFetchSearch().then((searchResult: Models.SearchResult) => {
@@ -138,7 +110,7 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
     doFetchSearch() {
         // Ask the server about the entries matching the search inside the current_folder
         // Return entries with breadcrumb (list of folders)
-        return tapi.get_folder_search(this.props.params.currentFolderId, this.props.params.searchQuery);
+        return this.props.tapi.get_folder_search(this.props.match.params.currentFolderId, this.props.match.params.searchQuery);
     }
 
 
@@ -243,7 +215,7 @@ export class SearchView extends React.Component<SearchViewProps, SearchViewState
                 <div id="main-content" />
             </div>;
         } else if (this.state.error && this.state.error.toUpperCase() === "NOT FOUND".toUpperCase()) {
-            let message = "The folder " + this.props.params.folderId + " does not exist. Please check this id " +
+            let message = "The folder " + this.props.match.params.folderId + " does not exist. Please check this id " +
                 "is correct. We are also available via the feedback button.";
             return <div>
                 <LeftNav items={[]} />

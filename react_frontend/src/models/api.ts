@@ -3,7 +3,7 @@ import fetch from 'cross-fetch';
 import {
     User, Folder, Dataset, DatasetVersion, S3Credentials,
     TaskStatus, DatasetAndDatasetVersion, UploadedFileMetadata, NamedId, DatasetFullDatasetVersions,
-    AccessLog, DatafileUrl, ProvenanceGraphFull, SearchResult
+    AccessLog, DatafileUrl, SearchResult
 } from './models';
 
 // import { getUserToken } from '../utilities/route';
@@ -228,10 +228,6 @@ export class TaigaApi {
 
     create_or_update_entry_access_log(entry_id: string): Promise<void> {
         return this._post<void>("/entry/" + entry_id + "/logAccess", {});
-    }
-
-    get_provenance_graph(graph_id: string): Promise<ProvenanceGraphFull> {
-        return this._fetch<ProvenanceGraphFull>("/provenance/" + graph_id);
     }
 
     // Search

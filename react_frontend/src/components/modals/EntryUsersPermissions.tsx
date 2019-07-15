@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as PropTypes from "prop-types";
 import * as Modal from "react-modal";
 import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 
@@ -17,19 +16,15 @@ interface EntryUsersPermissionsProps {
     entry_id: string;
 
     handleDeletedRow: (arrayUserIds: Array<AccessLog>) => Promise<Function>;
+
+    tapi: TaigaApi;
 }
 
 interface EntryUsersPermissionsState {
     accessLogs?: Array<AccessLog>;
 }
 
-let tapi: TaigaApi = null;
-
 export class EntryUsersPermissions extends React.Component<EntryUsersPermissionsProps, EntryUsersPermissionsState> {
-    static contextTypes = {
-        tapi: PropTypes.object
-    };
-
     componentWillMount() {
         this.setState({
             accessLogs: []
@@ -37,7 +32,6 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
     }
 
     componentDidMount() {
-        tapi = (this.context as any).tapi;
         this.doFetch();
     }
 
@@ -49,7 +43,7 @@ export class EntryUsersPermissions extends React.Component<EntryUsersPermissions
 
     doFetch() {
         // Return access logs for this folder
-        return tapi.get_entry_access_log(this.props.entry_id).then((usersAccessLogs) => {
+        return this.props.tapi.get_entry_access_log(this.props.entry_id).then((usersAccessLogs) => {
             // TODO: Think about not using it as State because it does not change during the page lifecycle
             let mappedAL = usersAccessLogs.map((userAccessLogs) => {
                 return new AccessLog(userAccessLogs);

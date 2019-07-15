@@ -142,7 +142,6 @@ export interface DatasetVersionDatafiles {
     type: DataFileType;
     allowed_conversion_type: Array<string>;
     short_summary: string;
-    provenance_nodes?: Array<ProvenanceNode>; // Array of urls to provenance graph
 }
 
 export interface DatasetVersions {
@@ -181,61 +180,6 @@ export interface DatasetFullDatasetVersions {
 interface Method {
     description: string;
     parameters: string;
-}
-
-// interface ProvSource {
-//     dataset_version_id: string;
-//     name: string;
-//     method_parameter: string;
-//     dataset_version_name?: string;
-// }
-//
-// export interface Provenance {
-//     method: Method;
-//     inputs: Array<ProvSource>;
-// }
-
-export interface ProvenanceGraphFull {
-    graph_id: string;
-    name: string;
-    permaname: string;
-    created_timestamp: string;
-    created_by_user_id: string;
-    provenance_nodes: Array<ProvenanceNodeFull>;
-}
-
-export interface ProvenanceNodeFull {
-    node_id: string;
-    from_edges: Array<ProvenanceEdgeFull>;
-    to_edges: Array<ProvenanceEdgeFull>;
-    label: string;
-    type: ProvenanceNodeType;
-    datafile_id: string;
-    url: string;
-}
-
-export interface ProvenanceEdgeFull {
-    edge_id: string;
-    from_node_id: string;
-    to_node_id: string;
-    label: string;
-}
-
-export enum ProvenanceNodeType {
-    Dataset = <any>'Dataset',
-    Process = <any>'Process',
-    External = <any>'External'
-}
-
-export interface ProvenanceGraph {
-    graph_id: string;
-    name: string;
-    permaname: string;
-}
-
-export interface ProvenanceNode {
-    node_id: string;
-    graph: ProvenanceGraph;
 }
 
 interface Grant {

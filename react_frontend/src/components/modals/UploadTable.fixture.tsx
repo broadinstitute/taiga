@@ -80,7 +80,6 @@ let files = [
 // type: DataFileType;
 // allowed_conversion_type: Array<string>;
 // short_summary: string;
-// provenance_nodes?: Array<ProvenanceNode>; // Array of urls to provenance graph
 
 function mockUpload(files: any, params: any, uploadProgressCallback: (status: Array<UploadStatus>) => void) {
     console.log("MockUploadStart");
