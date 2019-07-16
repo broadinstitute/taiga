@@ -97,9 +97,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
     componentDidUpdate(prevProps: DatasetViewProps) {
         // respond to parameter change in scenario 3
-        let oldId = prevProps.match.params.datasetVersionId;
-        let newId = this.props.match.params.datasetVersionId;
-        if (newId !== oldId) {
+        const oldId = prevProps.match.params.datasetId;
+        const newId = this.props.match.params.datasetId;
+        const oldVersionId = prevProps.match.params.datasetVersionId;
+        const newVersionId = this.props.match.params.datasetVersionId;
+
+        if (newId !== oldId || oldVersionId != newVersionId) {
             this.doFetch();
             // We close the modal
             this.setState({
