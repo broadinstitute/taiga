@@ -160,11 +160,15 @@ Install rhdf5 R library => http://bioconductor.org/packages/release/bioc/html/rh
 ## Deployment
 
 Each commit on the taiga2 branch results in a Travis test/build. Travis, on test success, will build an image and push
-it to our AWS EC2 Taiga container.
+it the Taiga image to GCP's container registry.
 
+Once travis is complete, you can execute:
 
-- Follow the AWS instructions to pull the latest image (once Travis as finished pushing it)
+- `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
 - `sudo systemctl restart taiga`
+
+If there's any problems you can look for information in the logs (stored at
+/var/log/taiga) or asking journald for the output from the service ( `journalctl -u taiga` )
 
 ## Migrate the database
 
