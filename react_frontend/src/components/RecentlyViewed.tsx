@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as PropTypes from "prop-types";
+import { RouteComponentProps } from "react-router";
 import { Link } from 'react-router-dom';
 
 import { Grid, Row } from 'react-bootstrap';
@@ -14,21 +14,16 @@ import { AccessLog } from "../models/models";
 import { lastAccessFormatter } from "../utilities/formats";
 
 
-interface RecentlyViewedProps {
-
+export interface RecentlyViewedProps extends RouteComponentProps {
+    tapi: TaigaApi;
 }
 
 interface RecentlyViewedState {
     accessLogs?: Array<AccessLog>
 }
 
-let tapi: TaigaApi = null;
 
 export class RecentlyViewed extends React.Component<RecentlyViewedProps, RecentlyViewedState> {
-    static contextTypes = {
-        tapi: PropTypes.object
-    };
-
     constructor(props: any) {
         super(props);
 
@@ -38,12 +33,11 @@ export class RecentlyViewed extends React.Component<RecentlyViewedProps, Recentl
     }
 
     componentDidMount() {
-        tapi = (this.context as any).tapi;
         this.doFetch();
     }
 
     doFetch() {
-        return tapi.get_user_entry_access_log().then((userAccessLogs) => {
+        return this.props.tapi.get_user_entry_access_log().then((userAccessLogs) => {
             // TODO: Think about not using it as State because it does not change during the page lifecycle
 
             let mappedAL = userAccessLogs.map((userAccessLog) => {

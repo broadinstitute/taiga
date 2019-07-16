@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as PropTypes from 'prop-types';
+import { RouteComponentProps } from "react-router";
 import { Link } from "react-router-dom";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 
@@ -23,12 +23,13 @@ import { FolderEntries } from "../models/models";
 import ClipboardButton from "../utilities/r-clipboard";
 import { UploadTracker } from "./UploadTracker";
 
-interface Match {
-    params: any
+interface DatasetViewMatchParams {
+    datasetId: string;
+    datasetVersionId: string;
 }
 
-export interface DatasetViewProps {
-    match: Match;
+export interface DatasetViewProps extends RouteComponentProps<DatasetViewMatchParams> {
+    tapi: TaigaApi;
 }
 
 export interface DatasetViewState {
@@ -80,11 +81,6 @@ const deletionTitle = {
 };
 
 export class DatasetView extends React.Component<DatasetViewProps, DatasetViewState> {
-    static contextTypes = {
-        tapi: PropTypes.object,
-        currentUser: PropTypes.string
-    };
-
     uploadTracker: UploadTracker;
 
     constructor(props: DatasetViewProps) {
@@ -92,7 +88,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     getTapi(): TaigaApi {
-        return (this.context as any).tapi as TaigaApi
+        return this.props.tapi;
     }
 
     componentDidUpdate(prevProps: DatasetViewProps) {
@@ -533,7 +529,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             }
 
             let entries = null;
-            let weHaveProvenanceGraphs = null;
             if (datasetVersion) {
                 entries = datasetVersion.datafiles.sort((datafile_one, datafile_two) => {
                     let datafile_one_upper = datafile_one.name.toUpperCase();
@@ -551,21 +546,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
                     let conversionTypesOutput = this.getConversionTypesOutput(df);
                     let copy_button = this.getCopyButton(df);
-
-                    let provenanceGraphs = null;
-                    if (df.provenance_nodes) {
-
-                        provenanceGraphs = df.provenance_nodes.map((provenance_node, index) => {
-                            return <span key={provenance_node.graph.graph_id}>
-                                <Link to={relativePath("provenance/" + provenance_node.graph.graph_id)}>
-                                    {provenance_node.graph.name}
-                                    {df.provenance_nodes.length != index + 1 &&
-                                        <span>, </span>
-                                    }
-                                </Link>
-                            </span>
-                        });
-                    }
 
                     let linkToUnderlying = null;
                     if (df.underlying_file_id) {
@@ -588,17 +568,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         <td>
                             {copy_button}
                         </td>
-
-                        {df.provenance_nodes && df.provenance_nodes.length > 0 &&
-                            <td>
-                                {provenanceGraphs}
-                            </td>
-                        }
                     </tr>;
-                });
-
-                weHaveProvenanceGraphs = datasetVersion.datafiles.some((element, index, array) => {
-                    return element.provenance_nodes && element.provenance_nodes.length > 0;
                 });
             }
 
@@ -777,6 +747,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             handleDeletedRow={(arrayAccessLogs) => {
                                 return this.removeAccessLogs(arrayAccessLogs)
                             }}
+                            tapi={this.props.tapi}
                         />
                         <Dialogs.ShareEntries isVisible={this.state.showShareDatasetVersion}
                             cancel={() => {
@@ -842,10 +813,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                         <th>Summary</th>
                                         <th>Download</th>
                                         <th>Datafile Id</th>
-
-                                        {weHaveProvenanceGraphs &&
-                                            <th>Provenance Graph</th>
-                                        }
                                     </tr>
                                 </thead>
                                 <tbody>

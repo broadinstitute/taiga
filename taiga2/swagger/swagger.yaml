@@ -1448,12 +1448,26 @@ definitions:
   SearchEntry:
     type: object
     required:
+      - breadcrumbs
+      - entry
+    properties:
+      breadcrumbs:
+        type: array
+        items:
+          "$ref": "#/definitions/OrderedNamedId"
+      entry:
+        type: object
+        items:
+          "$ref": "#/definitions/Entry"
+
+  Entry:
+    type: object
+    required:
       - type
       - id
       - name
       - creation_date
       - creator
-      - breadcrumb
     properties:
       type:
         type: string
@@ -1465,7 +1479,3 @@ definitions:
         type: string
       creator:
         "$ref": "#/definitions/NamedId"
-      breadcrumb:
-        type: array
-        items:
-          "$ref": "#/definitions/OrderedNamedId"

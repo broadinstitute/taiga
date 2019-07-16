@@ -4,4 +4,3 @@ from flask import current_app
 
 configure_celery(current_app._get_current_object())
 app = tasks.celery
-

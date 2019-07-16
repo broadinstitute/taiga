@@ -21,6 +21,7 @@ log = logging.getLogger()
 @celery.task
 def print_config():
     import flask
+
     print(flask.current_app.config)
 
 
