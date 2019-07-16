@@ -5,6 +5,8 @@ dist
 typings
 *~
 .*
+!.pre-commit-config.yaml
+
 
 # PyCharm zsh terminal
 /pycharm_rc
