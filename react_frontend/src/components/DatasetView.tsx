@@ -2,6 +2,7 @@ import * as React from "react";
 import { RouteComponentProps } from "react-router";
 import { Link } from "react-router-dom";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
+import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 
 import { LeftNav } from "./LeftNav";
 import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";
@@ -20,6 +21,7 @@ import { DatasetVersion } from "../models/models";
 import { NotFound } from "./NotFound";
 import { NamedId } from "../models/models";
 import { FolderEntries } from "../models/models";
+import { ActivityLogEntry, ActivityTypeEnum } from "../models/models";
 import ClipboardButton from "../utilities/r-clipboard";
 import { UploadTracker } from "./UploadTracker";
 
@@ -58,6 +60,8 @@ export interface DatasetViewState {
 
     showShareDatasetVersion?: boolean;
     sharingEntries?: Array<Entry>;
+
+    activityLog?: Array<ActivityLogEntry>;
 }
 
 const buttonUploadNewVersionStyle = {
@@ -119,6 +123,8 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             });
 
             this.logAccess();
+
+            this.getActivityLog();
 
             this.setLoading(false);
 
@@ -188,6 +194,16 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         });
     }
 
+    getActivityLog() {
+        return this.getTapi()
+            .get_activity_log_for_dataset_id(
+                this.state.dataset.id
+            )
+            .then((r: Array<ActivityLogEntry>) => {
+                this.setState({ activityLog: r });
+            });
+    }
+
     updateName(name: string) {
         this.getTapi().update_dataset_name(this.state.datasetVersion.dataset_id, name).then(() => {
             return this.doFetch();
@@ -195,9 +211,15 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     updateDescription(description: string) {
-        this.getTapi().update_dataset_version_description(this.state.datasetVersion.id, description).then(() => {
-            return this.doFetch();
-        });
+        this.getTapi()
+			.update_dataset_version_description(
+				this.state.datasetVersion.id,
+				description
+			)
+			.then(() => {
+				this.getActivityLog();
+				return this.doFetch();
+			});
     }
 
     getLinkOrNot(dataset_version: NamedId) {
@@ -474,6 +496,71 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             return conversion_type === "raw";
         });
         return has_raw;
+    }
+
+    typeFormatter(cell: ActivityTypeEnum, row: ActivityLogEntry) {
+        if (cell == ActivityTypeEnum.changed_description) {
+			return (
+				<details>
+					<summary>{cell}</summary>
+					<span style={{ whiteSpace: "pre-wrap" }}>
+						{row.comments}
+					</span>
+				</details>
+			);
+		}
+		return cell;
+    }
+
+    dateFormatter(cell: string, row: ActivityLogEntry): string {
+        return new Date(cell).toLocaleString();
+    }
+
+    renderActivityLog() {
+        if (!this.state.activityLog) {
+			return null;
+        }
+		const options = {
+			noDataText: "No activity logged yet",
+			defaultSortName: "timestamp",
+			defaultSortOrder: "desc"
+		};
+		return (
+			<React.Fragment>
+				<h2>Activity Log</h2>
+				<BootstrapTable
+					data={this.state.activityLog}
+					options={options}
+					pagination
+					striped
+				>
+					<TableHeaderColumn dataField="id" isKey hidden>
+						ID
+					</TableHeaderColumn>
+					<TableHeaderColumn
+						dataField="timestamp"
+						dataFormat={this.dateFormatter}
+						dataSort
+						width="200"
+					>
+						Date
+					</TableHeaderColumn>
+					<TableHeaderColumn
+						dataField="user_name"
+						dataSort
+						width="150"
+					>
+						Editor
+					</TableHeaderColumn>
+					<TableHeaderColumn
+						dataField="type"
+						dataFormat={this.typeFormatter}
+					>
+						Type
+					</TableHeaderColumn>
+				</BootstrapTable>
+			</React.Fragment>
+		);
     }
 
     render() {
@@ -819,6 +906,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                     {entries}
                                 </tbody>
                             </table>
+
+                            {this.renderActivityLog()}
+
                             <h2>Direct access from R (<a
                                 href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse"
                                 target="_blank">TaigR Documentation</a>)</h2>

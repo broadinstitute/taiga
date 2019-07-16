@@ -482,6 +482,45 @@ paths:
         200:
           description: Successfully created or updated
 
+  /dataset/{datasetId}/activityLog:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_activity_log_for_dataset_id
+      description: TODO
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: path
+          type: string
+          description: Dataset ID
+          required: true
+      responses:
+        200:
+          description: Successfully created or updated
+          schema:
+            type: array
+            items:
+              type: object
+              required:
+                - id
+                - timestamp
+                - comments
+                - user_name
+                - type
+              properties:
+                id:
+                  type: string
+                timestamp:
+                  type: string
+                comments:
+                  type: string
+                user_name:
+                  type: string
+                type:
+                  type: string
+
+
   /datasetVersion/{datasetVersion_id}:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint

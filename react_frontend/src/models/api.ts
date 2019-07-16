@@ -1,10 +1,21 @@
 import fetch from 'cross-fetch';
 
 import {
-    User, Folder, Dataset, DatasetVersion, S3Credentials,
-    TaskStatus, DatasetAndDatasetVersion, UploadedFileMetadata, NamedId, DatasetFullDatasetVersions,
-    AccessLog, DatafileUrl, SearchResult
-} from './models';
+	User,
+	Folder,
+	Dataset,
+	DatasetVersion,
+	S3Credentials,
+	TaskStatus,
+	DatasetAndDatasetVersion,
+	UploadedFileMetadata,
+	NamedId,
+	DatasetFullDatasetVersions,
+	AccessLog,
+	DatafileUrl,
+	SearchResult,
+	ActivityLogEntry
+} from "./models";
 
 // import { getUserToken } from '../utilities/route';
 import { isUndefined } from "util";
@@ -258,6 +269,12 @@ export class TaigaApi {
     get_dataset_version_id(any_entry_identifier: string): Promise<string> {
         return this._fetch(
             "/datasetVersion/id/find?entry_submitted_by_user=" + any_entry_identifier
+        );
+    }
+
+    get_activity_log_for_dataset_id(dataset_id: string): Promise<Array<ActivityLogEntry>> {
+        return this._fetch(
+            "/dataset/" + dataset_id + "/activityLog"
         );
     }
 }

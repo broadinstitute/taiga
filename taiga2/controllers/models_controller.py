@@ -24,6 +24,7 @@ from taiga2.models import (
     Entry,
     Group,
     VirtualDataFile,
+    Activity,
 )
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
@@ -755,11 +756,21 @@ def get_dataset_version_by_dataset_id_and_dataset_version_id(
 
 
 def update_dataset_version_description(dataset_version_id, new_description):
+    current_user = get_current_session_user()
+
     dataset_version = get_dataset_version(dataset_version_id)
 
     dataset_version.description = new_description
 
+    activity = Activity(
+        user_id=current_user.id,
+        dataset_id=dataset_version.dataset_id,
+        type=Activity.ActivityType.changed_description,
+        comments=new_description,
+    )
+
     db.session.add(dataset_version)
+    db.session.add(activity)
     db.session.commit()
 
     return dataset_version
@@ -1731,6 +1742,14 @@ def find_matching_name(root_folder, breadcrumbs, search_query) -> List[SearchEnt
                 )
 
     return matching_entries
+
+
+def get_activity_for_dataset_id(dataset_id):
+    return (
+        db.session.query(Activity).filter(Activity.dataset_id == dataset_id)
+        # .order_by(Activity.timestamp.desc())
+        .all()
+    )
 
 
 # </editor-fold

@@ -495,3 +495,17 @@ export class OrderedNamedId {
     order: Number; // Order in which the breadcrumb should appear
 }
 
+export enum ActivityTypeEnum {
+    created = "Created",
+    changed_name = "Changed name",
+    changed_description = "Changed Description",
+    added_version = "Added version",
+}
+
+export class ActivityLogEntry {
+    id: string;
+    user_name: string;
+    timestamp: string;
+    type: ActivityTypeEnum;
+    comments: string;
+}

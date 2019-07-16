@@ -390,6 +390,8 @@ class Activity(db.Model):
     # We would want the type of change and the comments associated
     type = db.Column(db.Enum(ActivityType))
 
+    timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
     comments = db.Column(db.Text)
 
 

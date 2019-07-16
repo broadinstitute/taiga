@@ -359,4 +359,18 @@ class SearchResultSchema(ma.ModelSchema):
     entries = ma.Nested(SearchEntrySchema, many=True)
 
 
+class ActivityLogSchema(ma.ModelSchema):
+    class Meta:
+        additional = ("id", "timestamp", "comments")
+
+    user_name = fields.fields.Method("get_user_name")
+    type = fields.fields.Method("get_activity_type")
+
+    def get_user_name(self, obj):
+        return obj.user.name
+
+    def get_activity_type(self, obj):
+        return obj.type.value
+
+
 # </editor-fold>
