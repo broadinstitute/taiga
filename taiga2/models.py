@@ -392,7 +392,7 @@ class Activity(db.Model):
 
     timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
-    comments = db.Column(db.Text)
+    comments = db.Column(db.JSON)
 
 
 class ConversionEntryState(enum.Enum):

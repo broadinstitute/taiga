@@ -300,6 +300,8 @@ def add_dataset(
 def add_dataset_from_session(
     session_id, dataset_name, dataset_description, current_folder_id
 ):
+    current_user = get_current_session_user()
+
     added_datafiles = add_datafiles_from_session(session_id)
 
     # TODO: Get the user from the session
@@ -312,6 +314,16 @@ def add_dataset_from_session(
         datafiles_ids=[datafile.id for datafile in added_datafiles],
     )
     add_folder_entry(current_folder_id, added_dataset.id)
+
+    comments = {"name": dataset_name, "description": dataset_description}
+    activity = Activity(
+        user_id=current_user.id,
+        dataset_id=added_dataset.id,
+        type=Activity.ActivityType.created,
+        comments=comments,
+    )
+    db.session.add(activity)
+    db.session.commit()
 
     return added_dataset
 
@@ -367,13 +379,24 @@ def get_latest_dataset_version(dataset_id):
 
 
 def update_dataset_name(dataset_id, name) -> Dataset:
+    current_user = get_current_session_user()
+
     dataset = get_dataset(dataset_id)
 
     dataset.name = name
     # TODO: Update the permaname with the new name
-    # TODO: Update the activity
 
     db.session.add(dataset)
+
+    comments = {"name": name}
+    activity = Activity(
+        user_id=current_user.id,
+        dataset_id=dataset.id,
+        type=Activity.ActivityType.changed_name,
+        comments=comments,
+    )
+    db.session.add(activity)
+
     db.session.commit()
 
     return dataset
@@ -652,6 +675,7 @@ def add_dataset_version(
 
 
 def create_new_dataset_version_from_session(session_id, dataset_id, new_description):
+    current_user = get_current_session_user()
 
     added_datafiles = add_datafiles_from_session(session_id)
     all_datafile_ids = [datafile.id for datafile in added_datafiles]
@@ -661,6 +685,16 @@ def create_new_dataset_version_from_session(session_id, dataset_id, new_descript
         datafiles_ids=all_datafile_ids,
         new_description=new_description,
     )
+
+    comments = {"description": new_description, "version": new_dataset_version.version}
+    activity = Activity(
+        user_id=current_user.id,
+        dataset_id=new_dataset_version.dataset_id,
+        type=Activity.ActivityType.added_version,
+        comments=comments,
+    )
+    db.session.add(activity)
+    db.session.commit()
 
     return new_dataset_version
 
@@ -762,11 +796,12 @@ def update_dataset_version_description(dataset_version_id, new_description):
 
     dataset_version.description = new_description
 
+    comments = {"description": new_description}
     activity = Activity(
         user_id=current_user.id,
         dataset_id=dataset_version.dataset_id,
         type=Activity.ActivityType.changed_description,
-        comments=new_description,
+        comments=comments,
     )
 
     db.session.add(dataset_version)

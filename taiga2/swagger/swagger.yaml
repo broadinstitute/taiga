@@ -505,7 +505,6 @@ paths:
               required:
                 - id
                 - timestamp
-                - comments
                 - user_name
                 - type
               properties:
@@ -514,7 +513,14 @@ paths:
                 timestamp:
                   type: string
                 comments:
-                  type: string
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    version:
+                      type: integer
                 user_name:
                   type: string
                 type:

@@ -507,5 +507,9 @@ export class ActivityLogEntry {
     user_name: string;
     timestamp: string;
     type: ActivityTypeEnum;
-    comments: string;
+    comments: {
+        description?: string;
+        name?: string;
+        version?: number;
+    };
 }

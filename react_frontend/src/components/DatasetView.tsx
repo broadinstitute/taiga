@@ -84,6 +84,16 @@ const deletionTitle = {
     color: "red"
 };
 
+const descriptionDetailsFormatter = (title: string, description: string) => {
+    return (
+        <details>
+            <summary>{title}</summary>
+            <span className="activity-log-description">
+                {description}
+            </span>
+        </details>
+    );
+}
 export class DatasetView extends React.Component<DatasetViewProps, DatasetViewState> {
     uploadTracker: UploadTracker;
 
@@ -103,12 +113,19 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         const newVersionId = this.props.match.params.datasetVersionId;
 
         if (newId !== oldId || oldVersionId != newVersionId) {
-            this.doFetch();
-            // We close the modal
-            this.setState({
-                showUploadDataset: false,
-                loading: false,
-                exportError: false
+            this.setLoading(true);
+
+            this.doFetch().then(() => {
+                this.logAccess();
+
+                this.getActivityLog()
+
+                // We close the modal
+                this.setState({
+                    showUploadDataset: false,
+                    loading: false,
+                    exportError: false
+                });
             });
         }
     }
@@ -208,9 +225,15 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     updateName(name: string) {
-        this.getTapi().update_dataset_name(this.state.datasetVersion.dataset_id, name).then(() => {
-            return this.doFetch();
-        });
+        this.getTapi()
+			.update_dataset_name(
+				this.state.datasetVersion.dataset_id,
+				name
+			)
+			.then(() => {
+				this.getActivityLog();
+				return this.doFetch();
+			});
     }
 
     updateDescription(description: string) {
@@ -501,21 +524,51 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         return has_raw;
     }
 
-    typeFormatter(cell: ActivityTypeEnum, row: ActivityLogEntry) {
+    activityLogTypeFormatter(cell: ActivityTypeEnum, row: ActivityLogEntry) {
         if (cell == ActivityTypeEnum.changed_description) {
+			return descriptionDetailsFormatter(
+				cell,
+				row.comments.description
+			);
+		} else if (cell == ActivityTypeEnum.changed_name) {
 			return (
-				<details>
-					<summary>{cell}</summary>
-					<span style={{ whiteSpace: "pre-wrap" }}>
-						{row.comments}
-					</span>
-				</details>
+				<span>
+					Changed name to <strong>{row.comments.name}</strong>
+				</span>
+			);
+		} else if (cell == ActivityTypeEnum.created) {
+			return (
+				<div>
+					<div>
+						Created dataset{" "}
+						<strong>{row.comments.name}</strong>
+					</div>
+					{!!row.comments.description &&
+						descriptionDetailsFormatter(
+							"Description",
+							row.comments.description
+						)}
+				</div>
+			);
+		} else if (cell == ActivityTypeEnum.added_version) {
+			return (
+				<div>
+					<div>
+						Added dataset version{" "}
+						<strong>{row.comments.version}</strong>
+					</div>
+					{!!row.comments.description &&
+						descriptionDetailsFormatter(
+							"Description",
+							row.comments.description
+						)}
+				</div>
 			);
 		}
 		return cell;
     }
 
-    dateFormatter(cell: string, row: ActivityLogEntry): string {
+    activityLogDateFormatter(cell: string, row: ActivityLogEntry): string {
         return new Date(cell).toLocaleString();
     }
 
@@ -542,7 +595,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 					</TableHeaderColumn>
 					<TableHeaderColumn
 						dataField="timestamp"
-						dataFormat={this.dateFormatter}
+						dataFormat={this.activityLogDateFormatter}
 						dataSort
 						width="200"
 					>
@@ -557,7 +610,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 					</TableHeaderColumn>
 					<TableHeaderColumn
 						dataField="type"
-						dataFormat={this.typeFormatter}
+						dataFormat={this.activityLogTypeFormatter}
 					>
 						Type
 					</TableHeaderColumn>
