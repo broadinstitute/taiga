@@ -496,11 +496,11 @@ export class OrderedNamedId {
 }
 
 export enum ActivityTypeEnum {
-    created = "Created",
-    changed_name = "Changed name",
-    changed_description = "Changed Description",
-    added_version = "Added version",
-    started_log = "Log started",
+    created = "created",
+    changed_name = "changed_name",
+    changed_description = "changed_description",
+    added_version = "added_version",
+    started_log = "started_log",
 }
 
 export class ActivityLogEntry {

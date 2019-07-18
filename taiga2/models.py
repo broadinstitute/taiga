@@ -7,6 +7,7 @@ from .extensions import metadata
 from flask_migrate import Migrate
 
 from sqlalchemy import event, UniqueConstraint, CheckConstraint
+from sqlalchemy.ext.declarative import declared_attr
 
 from typing import List
 
@@ -395,21 +396,27 @@ class Activity(db.Model):
 
     comments = db.Column(db.Text)
 
-    dataset_name = db.Column(db.Text)
-
-    dataset_description = db.Column(db.Text)
-
-    dataset_version = db.Column(db.Integer)
-
     __mapper_args__ = {"polymorphic_on": type}
 
 
 class CreationActivity(Activity):
     __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.created}
 
+    @declared_attr
+    def dataset_name(cls):
+        return Activity.__table__.c.get("dataset_name", db.Column(db.Text))
+
+    @declared_attr
+    def dataset_description(cls):
+        return Activity.__table__.c.get("dataset_description", db.Column(db.Text))
+
 
 class NameUpdateActivity(Activity):
     __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.changed_name}
+
+    @declared_attr
+    def dataset_name(cls):
+        return Activity.__table__.c.get("dataset_name", db.Column(db.Text))
 
 
 class DescriptionUpdateActivity(Activity):
@@ -417,13 +424,37 @@ class DescriptionUpdateActivity(Activity):
         "polymorphic_identity": Activity.ActivityType.changed_description
     }
 
+    @declared_attr
+    def dataset_description(cls):
+        return Activity.__table__.c.get("dataset_description", db.Column(db.Text))
+
+    @declared_attr
+    def dataset_version(cls):
+        return Activity.__table__.c.get("dataset_version", db.Column(db.Integer))
+
 
 class VersionAdditionActivity(Activity):
     __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.added_version}
 
+    @declared_attr
+    def dataset_description(cls):
+        return Activity.__table__.c.get("dataset_description", db.Column(db.Text))
+
+    @declared_attr
+    def dataset_version(cls):
+        return Activity.__table__.c.get("dataset_version", db.Column(db.Integer))
+
 
 class LogStartActivity(Activity):
     __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.started_log}
+
+    @declared_attr
+    def dataset_name(cls):
+        return Activity.__table__.c.get("dataset_name", db.Column(db.Text))
+
+    @declared_attr
+    def dataset_description(cls):
+        return Activity.__table__.c.get("dataset_description", db.Column(db.Text))
 
 
 class ConversionEntryState(enum.Enum):
