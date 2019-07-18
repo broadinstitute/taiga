@@ -524,6 +524,7 @@ export class NameUpdateActivity extends ActivityLogEntry {
 export class DescriptionUpdateActivity extends ActivityLogEntry {
     type: ActivityTypeEnum.changed_description;
     dataset_description: string;
+    dataset_version: number;
 }
 
 export class VersionAdditionActivity extends ActivityLogEntry {

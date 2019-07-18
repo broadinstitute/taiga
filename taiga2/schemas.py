@@ -366,7 +366,7 @@ class ActivityLogSchema(ma.ModelSchema):
             "timestamp",
             "dataset_name",
             "dataset_description",
-            "dataset_name",
+            "dataset_version",
         )
 
     user_name = fields.fields.Method("get_user_name")

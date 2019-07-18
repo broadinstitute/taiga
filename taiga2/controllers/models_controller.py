@@ -804,6 +804,7 @@ def update_dataset_version_description(dataset_version_id, new_description):
         dataset_id=dataset_version.dataset_id,
         type=Activity.ActivityType.changed_description,
         dataset_description=new_description,
+        dataset_version=dataset_version.version,
     )
 
     db.session.add(dataset_version)

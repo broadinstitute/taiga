@@ -399,6 +399,8 @@ class Activity(db.Model):
 
     dataset_description = db.Column(db.Text)
 
+    dataset_version = db.Column(db.Integer)
+
     __mapper_args__ = {"polymorphic_on": type}
 
 
@@ -417,8 +419,6 @@ class DescriptionUpdateActivity(Activity):
 
 
 class VersionAdditionActivity(Activity):
-    dataset_version = db.Column(db.Integer)
-
     __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.added_version}
 
 

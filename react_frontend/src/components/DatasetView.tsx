@@ -93,7 +93,6 @@ const deletionTitle = {
 };
 
 const descriptionDetailsFormatter = (
-	title: string,
 	description: string | null
 ): React.ReactNode => {
 	if (!description) {
@@ -101,7 +100,7 @@ const descriptionDetailsFormatter = (
 	}
 	return (
 		<details>
-			<summary>{title}</summary>
+			<summary>Description</summary>
 			<span className="activity-log-description">{description}</span>
 		</details>
 	);
@@ -551,7 +550,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 						</strong>
 					</div>
 					{descriptionDetailsFormatter(
-						"Description",
 						(row as CreationActivityLogEntry)
 							.dataset_description
 					)}
@@ -567,12 +565,26 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 				</span>
 			);
 		} else if (cell == ActivityTypeEnum.changed_description) {
+			const changeDescriptionAction = !!(row as DescriptionUpdateActivity)
+				.dataset_description
+				? "Changed"
+				: "Deleted";
 			return (
-				descriptionDetailsFormatter(
-					cell,
-					(row as DescriptionUpdateActivity)
-						.dataset_description
-				) || "Deleted description"
+				<div>
+					<div>
+						{`${changeDescriptionAction} description for version `}
+						<strong>
+							{
+								(row as DescriptionUpdateActivity)
+									.dataset_version
+							}
+						</strong>
+					</div>
+					{descriptionDetailsFormatter(
+						(row as DescriptionUpdateActivity)
+							.dataset_description
+					)}
+				</div>
 			);
 		} else if (cell == ActivityTypeEnum.added_version) {
 			return (
@@ -587,7 +599,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 						</strong>
 					</div>
 					{descriptionDetailsFormatter(
-						"Description",
 						(row as VersionAdditionActivity)
 							.dataset_description
 					)}
@@ -603,7 +614,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 						</strong>
 					</div>
 					{descriptionDetailsFormatter(
-						"Description",
 						(row as LogStartActivity).dataset_description
 					)}
 				</div>
