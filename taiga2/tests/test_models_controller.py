@@ -237,9 +237,11 @@ def test_add_dataset_with_datafile(session: SessionBase, new_datafile):
         description=new_dataset_description,
         datafiles_ids=datafiles_ids,
     )
+    latest_dataset_version = mc.get_latest_dataset_version(new_dataset.id)
 
     assert new_dataset.name == new_dataset_name
-    assert new_dataset.description == new_dataset_description
+    assert new_dataset.description == None
+    assert latest_dataset_version.description == new_dataset_description
     assert len(new_dataset.dataset_versions) == 1
 
     assert len(new_dataset.dataset_versions[0].datafiles) == 1
@@ -252,16 +254,6 @@ def test_update_dataset_name(session: SessionBase, new_dataset):
 
     assert new_dataset == updated_dataset
     assert updated_dataset.name == new_dataset_name
-
-
-def test_update_dataset_description(session: SessionBase, new_dataset):
-    new_dataset_description = "New description"
-    updated_dataset = mc.update_dataset_description(
-        new_dataset.id, new_dataset_description
-    )
-
-    assert updated_dataset == new_dataset
-    assert updated_dataset.description == new_dataset_description
 
 
 # TODO: Deactivated for now since we are not yet doing updates

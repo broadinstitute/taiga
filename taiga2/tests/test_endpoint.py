@@ -838,8 +838,10 @@ def test_create_virtual_dataset_endpoint(session: SessionBase):
     endpoint.create_new_dataset_version(datasetVersionMetadata=datasetVersionMetadata)
 
     v = models_controller.get_dataset(virtual_dataset_id)
+    latest_dataset_version = models_controller.get_latest_dataset_version(v.id)
     assert v.name == "version-1-name"
-    assert v.description == "version-2-desc"
+    assert v.description == None
+    assert latest_dataset_version.description == "version-2-desc"
 
     assert len(v.dataset_versions) == 2
 

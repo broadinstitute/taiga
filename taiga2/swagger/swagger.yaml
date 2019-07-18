@@ -417,7 +417,7 @@ paths:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: update_dataset_description
-      description: Update dataset description
+      description: Update latest dataset version description
       consumes:
         - application/json
       parameters:

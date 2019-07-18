@@ -269,11 +269,7 @@ def add_dataset(
         creation_date = anterior_creation_date
 
     new_dataset = Dataset(
-        name=name,
-        permaname=permaname,
-        description=description,
-        creator=creator,
-        creation_date=creation_date,
+        name=name, permaname=permaname, creator=creator, creation_date=creation_date
     )
 
     db.session.add(new_dataset)
@@ -405,17 +401,6 @@ def update_dataset_name(dataset_id, name) -> Dataset:
     return dataset
 
 
-def update_dataset_description(dataset_id, description) -> Dataset:
-    dataset = get_dataset(dataset_id)
-
-    dataset.description = description
-
-    db.session.add(dataset)
-    db.session.commit()
-
-    return dataset
-
-
 def update_dataset_creation_date(dataset_id, new_date):
     """Update the creation date of a dataset. The format of the string new_date should be: %Y-%m-%d %H:%M:%S.%f
     (see https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior)"""
@@ -466,11 +451,6 @@ def update_dataset_contents(
         if dataset_version.version > max_version:
             dataset_version_latest_version = dataset_version
 
-    _description = dataset.description
-
-    if new_description is not None:
-        _description = new_description
-
     # latest_version_datafiles = dataset_version_latest_version.datafiles
 
     # Create the new dataset_version from the latest and update its version
@@ -480,7 +460,7 @@ def update_dataset_contents(
         datafiles_ids=[
             datafile.id for datafile in dataset_version_latest_version.datafiles
         ],
-        new_description=_description,
+        new_description=new_description,
     )
 
     new_updated_version_datafiles = new_updated_dataset_version.datafiles
@@ -648,11 +628,6 @@ def add_dataset_version(
     if anterior_creation_date:
         creation_date = _get_datetime_from_string(anterior_creation_date)
 
-    _description = new_description
-
-    if _description is None:
-        _description = dataset.description
-
     # Create the DatasetVersion object
     new_dataset_version = DatasetVersion(
         name=name,
@@ -666,11 +641,7 @@ def add_dataset_version(
     )
 
     # We now update the dataset description with the latest datasetVersion description
-    # TODO: We should probably remove the description of a dataset, to use only the DatasetVersion one
-    if new_description is not None:
-        dataset.description = _description
-        db.session.add(new_dataset_version)
-
+    db.session.add(new_dataset_version)
     db.session.add(dataset)
     db.session.commit()
 

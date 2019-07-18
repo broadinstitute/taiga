@@ -55,6 +55,10 @@ def get_dataset(datasetId):
     # Remove folders that are not allowed to be seen
     allowed_dataset = dataset
     allowed_dataset.parents = filter_allowed_parents(dataset.parents)
+    last_dataset_version = models_controller.get_latest_dataset_version(
+        allowed_dataset.id
+    )
+    allowed_dataset.description = last_dataset_version.description
 
     # Get the rights of the user over the folder
     right = models_controller.get_rights(dataset.id)
@@ -204,11 +208,12 @@ def update_dataset_name(datasetId, NameUpdate):
 
 @validate
 def update_dataset_description(datasetId, DescriptionUpdate):
-    updated_dataset = models_controller.update_dataset_description(
-        datasetId, DescriptionUpdate["description"]
+    last_dataset_version = models_controller.get_latest_dataset_version(datasetId)
+    updated_dataset = models_controller.update_dataset_version_description(
+        last_dataset_version.id, DescriptionUpdate["description"]
     )
 
-    return flask.jsonify(updated_dataset.id)
+    return flask.jsonify(updated_dataset.dataset_id)
 
 
 @validate
@@ -332,6 +337,7 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     dataset_right = models_controller.get_rights(dataset.id)
 
     dataset.parents = filter_allowed_parents(dataset.parents)
+    dataset.description = dataset_version.description
 
     dataset_version_schema = schemas.DatasetVersionSchema()
     dataset_version_schema.context["entry_user_right"] = dataset_version_right

@@ -182,7 +182,14 @@ class DatasetVersionLightSchema(ma.ModelSchema):
 
 class DatasetSchema(ma.ModelSchema):
     class Meta:
-        additional = ("id", "name", "permaname", "dataset_versions", "parents")
+        additional = (
+            "id",
+            "name",
+            "permaname",
+            "dataset_versions",
+            "parents",
+            "description",
+        )
 
     # TODO: Change this field to properly handle multiple permanames (a new permaname is added when we change the name of the dataset)
     permaname = fields.fields.Function(
@@ -209,14 +216,6 @@ class DatasetSchema(ma.ModelSchema):
             entry_user_right == EntryRightsEnum.can_view
             or entry_user_right == EntryRightsEnum.can_edit
         )
-
-    description = fields.fields.Method("description_str")
-
-    def description_str(self, dataset_version):
-        if dataset_version.description is None:
-            return ""
-        else:
-            return dataset_version.description
 
 
 class DataFileSummarySchema(ma.ModelSchema):
