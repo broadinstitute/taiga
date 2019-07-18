@@ -500,6 +500,7 @@ export enum ActivityTypeEnum {
     changed_name = "Changed name",
     changed_description = "Changed Description",
     added_version = "Added version",
+    started_log = "Log started",
 }
 
 export class ActivityLogEntry {
@@ -507,9 +508,32 @@ export class ActivityLogEntry {
     user_name: string;
     timestamp: string;
     type: ActivityTypeEnum;
-    comments: {
-        description?: string;
-        name?: string;
-        version?: number;
-    };
+}
+
+export class CreationActivityLogEntry extends ActivityLogEntry {
+    type: ActivityTypeEnum.created;
+    dataset_name: string;
+    dataset_description: string | null;
+}
+
+export class NameUpdateActivity extends ActivityLogEntry {
+    type: ActivityTypeEnum.changed_name;
+    dataset_name: string;
+}
+
+export class DescriptionUpdateActivity extends ActivityLogEntry {
+    type: ActivityTypeEnum.changed_description;
+    dataset_description: string;
+}
+
+export class VersionAdditionActivity extends ActivityLogEntry {
+    type: ActivityTypeEnum.added_version;
+    dataset_description: string | null;
+    dataset_version: number;
+}
+
+export class LogStartActivity extends ActivityLogEntry {
+    type: ActivityTypeEnum.started_log;
+    dataset_name: string;
+    dataset_description: string | null;
 }

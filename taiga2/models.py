@@ -374,6 +374,7 @@ class Activity(db.Model):
         changed_name = "Changed name"
         changed_description = "Changed Description"
         added_version = "Added version"
+        started_log = "Log started"
 
     __tablename__ = "activities"
 
@@ -388,11 +389,41 @@ class Activity(db.Model):
     dataset = db.relationship("Dataset", backref=__tablename__)
 
     # We would want the type of change and the comments associated
-    type = db.Column(db.Enum(ActivityType))
+    type = db.Column(db.Enum(ActivityType), nullable=False)
 
     timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
-    comments = db.Column(db.JSON)
+    comments = db.Column(db.Text)
+
+    dataset_name = db.Column(db.Text)
+
+    dataset_description = db.Column(db.Text)
+
+    __mapper_args__ = {"polymorphic_on": type}
+
+
+class CreationActivity(Activity):
+    __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.created}
+
+
+class NameUpdateActivity(Activity):
+    __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.changed_name}
+
+
+class DescriptionUpdateActivity(Activity):
+    __mapper_args__ = {
+        "polymorphic_identity": Activity.ActivityType.changed_description
+    }
+
+
+class VersionAdditionActivity(Activity):
+    dataset_version = db.Column(db.Integer)
+
+    __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.added_version}
+
+
+class LogStartActivity(Activity):
+    __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.started_log}
 
 
 class ConversionEntryState(enum.Enum):

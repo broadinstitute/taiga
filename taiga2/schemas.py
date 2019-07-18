@@ -361,7 +361,13 @@ class SearchResultSchema(ma.ModelSchema):
 
 class ActivityLogSchema(ma.ModelSchema):
     class Meta:
-        additional = ("id", "timestamp", "comments")
+        additional = (
+            "id",
+            "timestamp",
+            "dataset_name",
+            "dataset_description",
+            "dataset_name",
+        )
 
     user_name = fields.fields.Method("get_user_name")
     type = fields.fields.Method("get_activity_type")

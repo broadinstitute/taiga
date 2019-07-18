@@ -512,19 +512,22 @@ paths:
                   type: string
                 timestamp:
                   type: string
-                comments:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    description:
-                      type: string
-                    version:
-                      type: integer
                 user_name:
                   type: string
                 type:
                   type: string
+                dataset_name:
+                  type:
+                    - string
+                    - "null"
+                dataset_description:
+                  type:
+                    - string
+                    - "null"
+                dataset_version:
+                  type:
+                    - integer
+                    - "null"
 
 
   /datasetVersion/{datasetVersion_id}:

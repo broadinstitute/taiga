@@ -25,6 +25,10 @@ from taiga2.models import (
     Group,
     VirtualDataFile,
     Activity,
+    CreationActivity,
+    NameUpdateActivity,
+    DescriptionUpdateActivity,
+    VersionAdditionActivity,
 )
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
@@ -315,12 +319,12 @@ def add_dataset_from_session(
     )
     add_folder_entry(current_folder_id, added_dataset.id)
 
-    comments = {"name": dataset_name, "description": dataset_description}
-    activity = Activity(
+    activity = CreationActivity(
         user_id=current_user.id,
         dataset_id=added_dataset.id,
         type=Activity.ActivityType.created,
-        comments=comments,
+        dataset_name=dataset_name,
+        dataset_description=dataset_description,
     )
     db.session.add(activity)
     db.session.commit()
@@ -388,12 +392,11 @@ def update_dataset_name(dataset_id, name) -> Dataset:
 
     db.session.add(dataset)
 
-    comments = {"name": name}
-    activity = Activity(
+    activity = NameUpdateActivity(
         user_id=current_user.id,
         dataset_id=dataset.id,
         type=Activity.ActivityType.changed_name,
-        comments=comments,
+        dataset_name=name,
     )
     db.session.add(activity)
 
@@ -686,12 +689,12 @@ def create_new_dataset_version_from_session(session_id, dataset_id, new_descript
         new_description=new_description,
     )
 
-    comments = {"description": new_description, "version": new_dataset_version.version}
-    activity = Activity(
+    activity = VersionAdditionActivity(
         user_id=current_user.id,
         dataset_id=new_dataset_version.dataset_id,
         type=Activity.ActivityType.added_version,
-        comments=comments,
+        dataset_description=new_description,
+        dataset_version=new_dataset_version.version,
     )
     db.session.add(activity)
     db.session.commit()
@@ -796,12 +799,11 @@ def update_dataset_version_description(dataset_version_id, new_description):
 
     dataset_version.description = new_description
 
-    comments = {"description": new_description}
-    activity = Activity(
+    activity = DescriptionUpdateActivity(
         user_id=current_user.id,
         dataset_id=dataset_version.dataset_id,
         type=Activity.ActivityType.changed_description,
-        comments=comments,
+        dataset_description=new_description,
     )
 
     db.session.add(dataset_version)

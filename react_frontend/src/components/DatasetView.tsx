@@ -21,7 +21,15 @@ import { DatasetVersion } from "../models/models";
 import { NotFound } from "./NotFound";
 import { NamedId } from "../models/models";
 import { FolderEntries } from "../models/models";
-import { ActivityLogEntry, ActivityTypeEnum } from "../models/models";
+import {
+	ActivityLogEntry,
+	ActivityTypeEnum,
+	CreationActivityLogEntry,
+	NameUpdateActivity,
+	DescriptionUpdateActivity,
+    VersionAdditionActivity,
+    LogStartActivity,
+} from "../models/models";
 import ClipboardButton from "../utilities/r-clipboard";
 import { UploadTracker } from "./UploadTracker";
 
@@ -84,16 +92,21 @@ const deletionTitle = {
     color: "red"
 };
 
-const descriptionDetailsFormatter = (title: string, description: string) => {
-    return (
-        <details>
-            <summary>{title}</summary>
-            <span className="activity-log-description">
-                {description}
-            </span>
-        </details>
-    );
-}
+const descriptionDetailsFormatter = (
+	title: string,
+	description: string | null
+): React.ReactNode => {
+	if (!description) {
+		return null;
+	}
+	return (
+		<details>
+			<summary>{title}</summary>
+			<span className="activity-log-description">{description}</span>
+		</details>
+	);
+};
+
 export class DatasetView extends React.Component<DatasetViewProps, DatasetViewState> {
     uploadTracker: UploadTracker;
 
@@ -525,43 +538,74 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
     }
 
     activityLogTypeFormatter(cell: ActivityTypeEnum, row: ActivityLogEntry) {
-        if (cell == ActivityTypeEnum.changed_description) {
-			return descriptionDetailsFormatter(
-				cell,
-				row.comments.description
-			);
-		} else if (cell == ActivityTypeEnum.changed_name) {
-			return (
-				<span>
-					Changed name to <strong>{row.comments.name}</strong>
-				</span>
-			);
-		} else if (cell == ActivityTypeEnum.created) {
+        if (cell == ActivityTypeEnum.created) {
 			return (
 				<div>
 					<div>
 						Created dataset{" "}
-						<strong>{row.comments.name}</strong>
+						<strong>
+							{
+								(row as CreationActivityLogEntry)
+									.dataset_name
+							}
+						</strong>
 					</div>
-					{!!row.comments.description &&
-						descriptionDetailsFormatter(
-							"Description",
-							row.comments.description
-						)}
+					{descriptionDetailsFormatter(
+						"Description",
+						(row as CreationActivityLogEntry)
+							.dataset_description
+					)}
 				</div>
+			);
+		} else if (cell == ActivityTypeEnum.changed_name) {
+			return (
+				<span>
+					Changed name to{" "}
+					<strong>
+						{(row as NameUpdateActivity).dataset_name}
+					</strong>
+				</span>
+			);
+		} else if (cell == ActivityTypeEnum.changed_description) {
+			return (
+				descriptionDetailsFormatter(
+					cell,
+					(row as DescriptionUpdateActivity)
+						.dataset_description
+				) || "Deleted description"
 			);
 		} else if (cell == ActivityTypeEnum.added_version) {
 			return (
 				<div>
 					<div>
 						Added dataset version{" "}
-						<strong>{row.comments.version}</strong>
+						<strong>
+							{
+								(row as VersionAdditionActivity)
+									.dataset_version
+							}
+						</strong>
 					</div>
-					{!!row.comments.description &&
-						descriptionDetailsFormatter(
-							"Description",
-							row.comments.description
-						)}
+					{descriptionDetailsFormatter(
+						"Description",
+						(row as VersionAdditionActivity)
+							.dataset_description
+					)}
+				</div>
+			);
+		} else if (cell == ActivityTypeEnum.started_log) {
+			return (
+				<div>
+					<div>
+						Logs started for{" "}
+						<strong>
+							{(row as LogStartActivity).dataset_name}
+						</strong>
+					</div>
+					{descriptionDetailsFormatter(
+						"Description",
+						(row as LogStartActivity).dataset_description
+					)}
 				</div>
 			);
 		}
