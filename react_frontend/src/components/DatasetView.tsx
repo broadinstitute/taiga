@@ -611,6 +611,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 						Logs started for{" "}
 						<strong>
 							{(row as LogStartActivity).dataset_name}
+						</strong>{" "}
+						version{" "}
+						<strong>
+							{(row as LogStartActivity).dataset_version}
 						</strong>
 					</div>
 					{descriptionDetailsFormatter(

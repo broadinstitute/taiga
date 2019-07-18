@@ -456,6 +456,10 @@ class LogStartActivity(Activity):
     def dataset_description(cls):
         return Activity.__table__.c.get("dataset_description", db.Column(db.Text))
 
+    @declared_attr
+    def dataset_version(cls):
+        return Activity.__table__.c.get("dataset_version", db.Column(db.Integer))
+
 
 class ConversionEntryState(enum.Enum):
     failed = "Failed"

@@ -537,4 +537,5 @@ export class LogStartActivity extends ActivityLogEntry {
     type: ActivityTypeEnum.started_log;
     dataset_name: string;
     dataset_description: string | null;
+    dataset_version: number;
 }

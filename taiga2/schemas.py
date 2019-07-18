@@ -396,6 +396,7 @@ class VersionAdditionActivityLogSchema(ActivityLogBaseSchema):
 class LogStartActivityLogSchema(ActivityLogBaseSchema):
     dataset_name = fields.fields.String()
     dataset_description = fields.fields.String()
+    dataset_version = fields.fields.Integer()
 
 
 class ActivityLogSchema(OneOfSchema):
