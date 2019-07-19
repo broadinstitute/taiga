@@ -85,6 +85,10 @@ export class TaigaApi {
         return this._fetch<User>("/user")
     }
 
+    get_all_users(): Promise<Array<User>> {
+        return this._fetch<Array<User>>("/user/all")
+    }
+
     // TODO: Replace with FolderFullDatasetVersions
     get_folder(folderId: string): Promise<Folder> {
         return this._fetch<Folder>("/folder/" + folderId);
@@ -293,21 +297,18 @@ export class TaigaApi {
     }
 
     add_group_user_associations(
-        groupId: string,
-        userIds: Array<string>
-    ) {
-        return this._post<void>("/group/" + groupId + "/add", {
-            userIds
-        });
-    }
+		groupId: string,
+		userIds: Array<string>
+	): Promise<Group> {
+		return this._post<Group>("/group/" + groupId + "/add", {
+			userIds
+		});
+	}
 
-    remove_group_user_associations(
-        groupId: string,
-        userIds: Array<string>
-    ) {
-        return this._post<void>(
-            "/group/" + groupId + "/remove",
-            { userIds }
-        );
-    }
+	remove_group_user_associations(
+		groupId: string,
+		userIds: Array<string>
+	): Promise<Group> {
+		return this._post<Group>("/group/" + groupId + "/remove", { userIds });
+	}
 }

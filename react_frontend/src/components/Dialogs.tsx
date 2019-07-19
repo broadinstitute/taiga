@@ -2,7 +2,7 @@ import * as React from "react";
 import * as Modal from "react-modal";
 import * as Showdown from "showdown";
 
-import { ControlLabel, FormControl, FormGroup, HelpBlock } from "react-bootstrap";
+import { ControlLabel, FormControl, FormGroup, HelpBlock, Button } from "react-bootstrap";
 import {
 	BootstrapTable,
 	TableHeaderColumn
@@ -12,6 +12,7 @@ import { isUndefined } from "util";
 import { isNullOrUndefined } from "util";
 import { relativePath } from "../utilities/route";
 import { Dataset, Entry, Folder, FolderEntries, Group, User } from "../models/models";
+import update from "immutability-helper";
 
 interface InputFolderIdProps extends DialogProps {
     cancel: () => void;
@@ -443,17 +444,119 @@ export class ShareEntries extends React.Component<ShareEntriesProps, ShareEntrie
 }
 
 export interface AddUsersToGroupProps extends DialogProps {
-    group: Group,
+	group: Group;
 	allUsers: Array<User>;
+	addUsersToGroup: (userIds: Array<string>) => void;
 }
 
-export interface AddUsersToGroupState extends DialogState {}
+export interface AddUsersToGroupState extends DialogState {
+	selection: ReadonlyArray<string>;
+}
+
+type BootstrapTableButtonGroup = {
+	exportCSVBtn: any;
+	insertBtn: any;
+	deleteBtn: any;
+	showSelectedOnlyBtn: any;
+};
 
 export class AddUsersToGroup extends React.Component<
 	AddUsersToGroupProps,
 	AddUsersToGroupState
 > {
+	constructor(props: AddUsersToGroupProps) {
+		super(props);
+
+		this.state = {
+			selection: []
+		};
+	}
+
+	componentDidUpdate(prevProps: AddUsersToGroupProps) {
+		if (prevProps.group.users != this.props.group.users) {
+			this.setState({
+				selection: this.props.group.users.map(user => user.id)
+			});
+		}
+	}
+
+	createCustomButtonGroup(_: BootstrapTableButtonGroup) {
+		const userIdSet = new Set(this.props.group.users.map(user => user.id));
+		const { selection } = this.state;
+		const usersToAdd = selection.filter(userId => !userIdSet.has(userId));
+		return (
+			<Button
+				bsStyle="primary"
+				onClick={() => this.props.addUsersToGroup(usersToAdd)}
+			>
+				Add selected users to group
+			</Button>
+		);
+	}
+
+	onRowSelect(row: User, isSelected: Boolean, e: any) {
+		let select_key = row.id;
+		const original_selection: any = this.state.selection;
+
+		let updated_selection: Array<string>;
+
+		let index = original_selection.indexOf(select_key);
+		if (index !== -1) {
+			updated_selection = update(original_selection, {
+				$splice: [[index, 1]]
+			});
+		} else {
+			updated_selection = update(original_selection, {
+				$push: [select_key]
+			});
+		}
+
+		this.setState({ selection: updated_selection });
+	}
+
+	onAllRowsSelect(isSelected: Boolean, rows: Array<User>) {
+		const original_selection: ReadonlyArray<string> = this.state.selection;
+		let updated_selection: ReadonlyArray<string> = original_selection;
+
+		let select_key = null;
+		let index = null;
+		rows.forEach(row => {
+			select_key = row.id;
+			index = updated_selection.indexOf(select_key);
+
+			if (index != -1) {
+				updated_selection = update(updated_selection, {
+					$splice: [[index, 1]]
+				});
+			} else {
+				updated_selection = update(updated_selection, {
+					$push: [select_key]
+				});
+			}
+		});
+
+		this.setState({ selection: updated_selection });
+	}
+
 	render() {
+		const options = {
+			btnGroup: this.createCustomButtonGroup.bind(this)
+		};
+		const selectRow = {
+			mode: "checkbox",
+			selected: this.state.selection,
+			onSelect: (row: User, isSelected: Boolean, e: any) => {
+				this.onRowSelect(row, isSelected, e);
+				return true;
+			},
+			onSelectAll: (
+				isSelected: Boolean,
+				currentSelectedAndDisplayData: Array<User>
+			) => {
+				this.onAllRowsSelect(isSelected, currentSelectedAndDisplayData);
+				return true;
+			}
+		};
 		return (
 			<Modal
 				style={modalStyles}
@@ -471,9 +574,8 @@ export class AddUsersToGroup extends React.Component<
 					<div className="modal-body">
 						<BootstrapTable
 							data={this.props.allUsers}
-							selectRow={{
-								mode: "checkbox"
-							}}
+							options={options}
+							selectRow={selectRow}
 							search
 							bordered={false}
 							striped
@@ -505,5 +607,3 @@ export class AddUsersToGroup extends React.Component<
 		);
 	}
 }
-
-// endregion

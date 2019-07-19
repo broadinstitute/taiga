@@ -194,25 +194,21 @@ paths:
         200:
           description: Properties of current user
           schema:
-            title: User
-            type: object
-            required:
-              - id
-              - name
-              - home_folder_id
-              - trash_folder_id
-              - token
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              home_folder_id:
-                type: string
-              trash_folder_id:
-                type: string
-              token:
-                type: string
+            "$ref": "#/definitions/User"
+
+  /user/all:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_all_users
+      description: Fetch properties about the currently authenticated user
+      responses:
+        200:
+          description: Properties of current user
+          schema:
+            title: Users
+            type: array
+            items:
+              "$ref": "#/definitions/User"
 
   /credentials_s3:
     get:
@@ -1236,7 +1232,6 @@ paths:
                   type: string
           required: true
           description: "Ids of the users to add to group"
-
       responses:
         200:
           description: Group with id groupId
@@ -1272,7 +1267,6 @@ paths:
                   type: string
           required: true
           description: "Ids of the users to remove to group"
-
       responses:
         200:
           description: Group with id groupId
@@ -1283,6 +1277,27 @@ paths:
 
 
 definitions:
+  User:
+    title: User
+    type: object
+    required:
+      - id
+      - name
+      - home_folder_id
+      - trash_folder_id
+      - token
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      home_folder_id:
+        type: string
+      trash_folder_id:
+        type: string
+      token:
+        type: string
+
   DatasetVersionSummary:
     title: DatasetVersionSummary
     type: object

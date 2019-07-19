@@ -49,7 +49,11 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
 	}
 
 	componentDidMount() {
-		this.doFetch();
+		this.doFetch().then(() => {
+			this.props.tapi.get_all_users().then((r: Array<User>) => {
+				this.setState({ allUsers: r });
+			});
+		});
 	}
 
 	componentDidUpdate(prevProps: GroupViewProps) {
@@ -70,7 +74,7 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
 	}
 
 	handleInsertButtonClick() {
-		this.setState({showAddUsersDialog: true})
+		this.setState({ showAddUsersDialog: true });
 	}
 
 	renderInsertButton() {
@@ -83,7 +87,7 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
 	}
 
 	onCloseInsertDialog() {
-		this.setState({showAddUsersDialog: false})
+		this.setState({ showAddUsersDialog: false });
 	}
 
 	onDeleteRow(selections: Array<string>) {
@@ -137,7 +141,21 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
 		this.setState({ selection: updated_selection });
 	}
 
+	handleAddUsersToGroup(userIds: Array<string>) {
+		return this.props.tapi.add_group_user_associations(
+			this.state.group.id.toString(),
+			userIds
+		).then((group: Group) => {
+			this.setState({
+				group: group,
+				showAddUsersDialog: false
+			})
+		});
+	}
+
 	render() {
+		let navItems: Array<any> = [];
+
 		if (!!this.state.errorMessage) {
 			const message =
 				"Group ID " +
@@ -146,15 +164,13 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
 				"is correct. We are also available via the feedback button.";
 			return (
 				<div>
-					<LeftNav items={[]} />
+					<LeftNav items={navItems} />
 					<div id="main-content">
 						<NotFound message={message} />
 					</div>
 				</div>
 			);
 		}
-
-		let navItems: Array<any> = [];
 
 		const options = {
 			deleteText: "Remove users",
@@ -182,7 +198,8 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
 
 				<Dialogs.AddUsersToGroup
 					group={this.state.group}
-					allUsers={[]}
+					allUsers={this.state.allUsers}
+					addUsersToGroup={this.handleAddUsersToGroup.bind(this)}
 					isVisible={this.state.showAddUsersDialog}
 					cancel={this.onCloseInsertDialog.bind(this)}
 				/>

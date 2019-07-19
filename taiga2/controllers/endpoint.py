@@ -154,6 +154,15 @@ def get_user():
 
 
 @validate
+def get_all_users():
+    all_users = models_controller.get_all_users()
+    users_schema = schemas.UserSchema(many=True)
+    json_data_user = users_schema.dump(all_users).data
+
+    return flask.jsonify(json_data_user)
+
+
+@validate
 def get_s3_credentials():
     """
     Create an access token to access S3 using the ~/.aws/credentials information
@@ -967,6 +976,7 @@ def search_within_folder(current_folder_id, search_query):
     return flask.jsonify(result)
 
 
+@validate
 def get_all_groups_for_current_user():
     groups = models_controller.get_all_groups_for_current_user()
     group_list = {"groups": groups}
@@ -975,6 +985,7 @@ def get_all_groups_for_current_user():
     return flask.jsonify(result)
 
 
+@validate
 def get_group(groupId):
     group = models_controller.get_group(groupId)
     if group is None:
@@ -987,21 +998,29 @@ def get_group(groupId):
     return flask.jsonify(result)
 
 
+@validate
 def add_group_user_associations(groupId, groupUserAssociationMetadata):
     user_ids = groupUserAssociationMetadata["userIds"]
     try:
         group = models_controller.add_group_user_associations(groupId, user_ids)
         if not group:
             return flask.abort(404)
+        group_schema = schemas.GroupSchema()
+        result = group_schema.dump(group).data
+        return flask.jsonify(result)
     except AssertionError:
         return flask.abort(403)
 
 
+@validate
 def remove_group_user_associations(groupId, groupUserAssociationMetadata):
     user_ids = groupUserAssociationMetadata["userIds"]
     try:
         group = models_controller.remove_group_user_associations(groupId, user_ids)
         if not group:
             return flask.abort(404)
+        group_schema = schemas.GroupSchema()
+        result = group_schema.dump(group).data
+        return flask.jsonify(result)
     except AssertionError:
         return flask.abort(403)
