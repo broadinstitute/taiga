@@ -1709,6 +1709,34 @@ def remove_accessLogs(array_access_log):
 # <editor-fold desc="Group">
 
 
+def can_view_group(group_id):
+    """Return True if the current user can view the entry"""
+    admin_group = get_group_by_name("Admin")
+    current_user = get_current_session_user()
+
+    if current_user in admin_group.users:
+        return True
+
+    if admin_group.id == group_id:
+        # Since we've already determined that current_user is not in admin_group
+        return False
+
+    group = get_group(group_id)
+    return current_user in group.users
+
+
+def filter_allowed_groups(groups):
+    current_user = get_current_session_user()
+
+    return [group for group in groups if can_view_group(group.id)]
+
+
+def filtered_joined_groups(groups):
+    current_user = get_current_session_user()
+
+    return [group for group in groups if current_user in group.users]
+
+
 def add_group(name):
     new_group = Group(name=name)
     db.session.add(new_group)
@@ -1719,12 +1747,65 @@ def add_group(name):
 
 def get_all_groups() -> List[Group]:
     all_groups = db.session.query(Group).all()
-    return all_groups
+    filtered_groups = filter_allowed_groups(all_groups)
+    return filtered_groups
 
 
-# </editor-fold>
+def get_all_groups_for_current_user() -> List[Group]:
+    all_groups = db.session.query(Group).all()
+    filtered_groups = filtered_joined_groups(all_groups)
+    return filtered_groups
 
-# <editor-fold desc="Misc">
+
+def get_group(id):
+    return db.session.query(Group).filter(Group.id == id).one_or_none()
+
+
+def get_group_by_name(name):
+    return db.session.query(Group).filter(Group.name == name).one_or_none()
+
+
+def add_group_user_associations(group_id, user_ids):
+    current_user = get_current_session_user()
+    admin_group = get_group_by_name("Admin")
+
+    if admin_group.id == group_id:
+        group = admin_group
+    else:
+        group = get_group(group_id)
+        if not group:
+            return None
+
+    assert current_user in group.users or current_user in admin_group.users
+
+    for user_id in user_ids:
+        user = get_user(user_id)
+        group.users.append(user)
+
+    db.session.commit()
+    return group
+
+
+def remove_group_user_associations(group_id, user_ids):
+    current_user = get_current_session_user()
+    admin_group = get_group_by_name("Admin")
+
+    if admin_group.id == group_id:
+        group = admin_group
+    else:
+        group = get_group(group_id)
+        if not group:
+            return None
+
+    assert current_user in group.users or current_user in admin_group.users
+
+    for user_id in user_ids:
+        user = get_user(user_id)
+        if user in group.users:
+            group.users.remove(user)
+
+    db.session.commit()
+    return group
 
 
 def find_matching_name(root_folder, breadcrumbs, search_query) -> List[SearchEntry]:

@@ -413,4 +413,22 @@ class ActivityLogSchema(OneOfSchema):
         return obj.type.name
 
 
+class GroupSchema(ma.ModelSchema):
+    class Meta:
+        additional = ("id", "name")
+
+    users = ma.Nested(UserNamedIdSchema, many=True)
+    num_users = fields.fields.Method("get_num_users")
+
+    def get_num_users(self, obj):
+        return len(obj.users)
+
+
+class GroupListSchema(ma.ModelSchema):
+    class Meta:
+        load_only = ("groups.users",)
+
+    groups = ma.Nested(GroupSchema, many=True)
+
+
 # </editor-fold>

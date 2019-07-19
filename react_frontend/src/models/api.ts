@@ -14,7 +14,8 @@ import {
 	AccessLog,
 	DatafileUrl,
 	SearchResult,
-	ActivityLogEntry
+	ActivityLogEntry,
+	Group
 } from "./models";
 
 // import { getUserToken } from '../utilities/route';
@@ -275,6 +276,38 @@ export class TaigaApi {
     get_activity_log_for_dataset_id(dataset_id: string): Promise<Array<ActivityLogEntry>> {
         return this._fetch(
             "/dataset/" + dataset_id + "/activityLog"
+        );
+    }
+
+    get_all_groups_for_current_user(): Promise<
+        Array<Pick<Group, Exclude<keyof Group, "users">>>
+    > {
+        return this._fetch(
+            "/group/allJoined"
+        );
+
+    }
+
+    get_group(groupId: string): Promise<Group> {
+        return this._fetch("/group/" + groupId);
+    }
+
+    add_group_user_associations(
+        groupId: string,
+        userIds: Array<string>
+    ) {
+        return this._post<void>("/group/" + groupId + "/add", {
+            userIds
+        });
+    }
+
+    remove_group_user_associations(
+        groupId: string,
+        userIds: Array<string>
+    ) {
+        return this._post<void>(
+            "/group/" + groupId + "/remove",
+            { userIds }
         );
     }
 }

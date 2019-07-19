@@ -94,6 +94,11 @@ export interface User {
     "token": string;
 }
 
+export interface UserNamedId {
+    id: string;
+    name: string;
+}
+
 export enum StatusEnum {
     Deleted = "deleted",
     Approved = "approved",
@@ -538,4 +543,11 @@ export class LogStartActivity extends ActivityLogEntry {
     dataset_name: string;
     dataset_description: string | null;
     dataset_version: number;
+}
+
+export class Group {
+	id: number;
+	name: string;
+	users: Array<UserNamedId>;
+	num_users: number;
 }

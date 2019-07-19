@@ -63,10 +63,13 @@ def create_sample_dataset(
 def create_db_and_populate():
     create_db()
 
+    admin_group = models_controller.get_group_by_name("Admin")
+
     # Create the Admin user
     admin_user = models_controller.add_user(
         name="admin", email="admin@broadinstitute.org", token="test-token"
     )
+    admin_group.users.append(admin_user)
     home_folder_admin = admin_user.home_folder
 
     # Setting up the flask user

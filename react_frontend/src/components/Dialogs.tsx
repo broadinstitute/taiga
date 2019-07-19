@@ -3,10 +3,15 @@ import * as Modal from "react-modal";
 import * as Showdown from "showdown";
 
 import { ControlLabel, FormControl, FormGroup, HelpBlock } from "react-bootstrap";
+import {
+	BootstrapTable,
+	TableHeaderColumn
+} from "react-bootstrap-table";
+
 import { isUndefined } from "util";
 import { isNullOrUndefined } from "util";
 import { relativePath } from "../utilities/route";
-import { Dataset, Entry, Folder, FolderEntries } from "../models/models";
+import { Dataset, Entry, Folder, FolderEntries, Group, User } from "../models/models";
 
 interface InputFolderIdProps extends DialogProps {
     cancel: () => void;
@@ -435,6 +440,70 @@ export class ShareEntries extends React.Component<ShareEntriesProps, ShareEntrie
             </Modal>
         );
     }
+}
+
+export interface AddUsersToGroupProps extends DialogProps {
+    group: Group,
+	allUsers: Array<User>;
+}
+
+export interface AddUsersToGroupState extends DialogState {}
+
+export class AddUsersToGroup extends React.Component<
+	AddUsersToGroupProps,
+	AddUsersToGroupState
+> {
+	render() {
+		return (
+			<Modal
+				style={modalStyles}
+				closeTimeoutMS={150}
+				isOpen={this.props.isVisible}
+				onRequestClose={this.props.cancel}
+				contentLabel="Share entries"
+			>
+				<div className="modal-content">
+					<div className="modal-header">
+						<h2 ref="subtitle">
+							Add users to group <em>{this.props.group.name}</em>
+						</h2>
+					</div>
+					<div className="modal-body">
+						<BootstrapTable
+							data={this.props.allUsers}
+							selectRow={{
+								mode: "checkbox"
+							}}
+							search
+							bordered={false}
+							striped
+						>
+							<TableHeaderColumn
+								dataField="id"
+								isKey
+								hidden
+								searchable={false}
+							>
+								ID
+							</TableHeaderColumn>
+							<TableHeaderColumn dataField="name" dataSort>
+								User Name
+							</TableHeaderColumn>
+						</BootstrapTable>
+					</div>
+					<div className="modal-footer">
+						<button
+							type="button"
+							className="btn btn-default"
+							onClick={this.props.cancel}
+						>
+							Close
+						</button>
+					</div>
+				</div>
+			</Modal>
+		);
+	}
 }
 
 // endregion

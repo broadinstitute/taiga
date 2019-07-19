@@ -1177,6 +1177,109 @@ paths:
         404:
           description: No dataset version id exists for this entry
 
+  /group/allJoined:
+    get:
+      description: Return all groups that the currently authenticated user has joined
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_all_groups_for_current_user
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: A list of groups
+
+  /group/{groupId}:
+    get:
+      description: Return group with groupId
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_group
+      consumes:
+        - application/json
+      parameters:
+        - name: groupId
+          in: path
+          type: string
+          description: group ID
+          required: true
+      responses:
+        200:
+          description: A group
+        403:
+          description: Group not accessible to user
+        404:
+          description: No group with id groupId
+
+  /group/{groupId}/add:
+    post:
+      description: Add users with userIds to group with id groupId
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: add_group_user_associations
+      consumes:
+        - application/json
+      parameters:
+        - name: groupId
+          in: path
+          type: string
+          description: group ID
+          required: true
+        - name: groupUserAssociationMetadata
+          in: body
+          schema:
+            type: object
+            required:
+              - userIds
+            properties:
+              userIds:
+                type: array
+                items:
+                  title: userId
+                  type: string
+          required: true
+          description: "Ids of the users to add to group"
+
+      responses:
+        200:
+          description: Group with id groupId
+        403:
+          description: Group not accessible to current user
+        404:
+          description: No group with id groupId
+
+  /group/{groupId}/remove:
+    post:
+      description: Remove users with userIds from group with id groupId
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: remove_group_user_associations
+      consumes:
+        - application/json
+      parameters:
+        - name: groupId
+          in: path
+          type: string
+          description: group ID
+          required: true
+        - name: groupUserAssociationMetadata
+          in: body
+          schema:
+            type: object
+            required:
+              - userIds
+            properties:
+              userIds:
+                type: array
+                items:
+                  title: userId
+                  type: string
+          required: true
+          description: "Ids of the users to remove to group"
+
+      responses:
+        200:
+          description: Group with id groupId
+        403:
+          description: Group not accessible to current user
+        404:
+          description: No group with id groupId
 
 
 definitions:

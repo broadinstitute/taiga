@@ -14,6 +14,9 @@ import { User } from "./models/models";
 import { Token } from "./components/Token";
 import { RecentlyViewed } from "./components/RecentlyViewed";
 
+import { GroupListView } from "./components/GroupListView";
+import { GroupView } from "./components/GroupView";
+
 import { relativePath } from "./utilities/route";
 import { FormControl, Overlay, Popover, Tooltip } from "react-bootstrap";
 import { SHA } from "./version"
@@ -162,6 +165,8 @@ class App extends React.Component<AppProps, AppState> {
                         <Link className="tokenLink headerTitle" to={relativePath("token/")}>My Token</Link>
                         {/*TODO: Change this a proper logout behavior*/}
                         {/*<Link className="logoutLink" to={relativePath('')}>Logout</Link>*/}
+                        <span className="headerSpan"></span>
+                        <Link className="tokenLink headerTitle" to={relativePath("groups/")}>My Groups</Link>
                         <span className="headerSpan"></span>
                         <a href="https://docs.google.com/forms/d/e/1FAIpQLSe_byA04iJsZq9WPqwNfPkEOej8KXg0XVimr6NURMJ_x3ND9w/viewform"
                             target="_blank"
@@ -355,6 +360,22 @@ export function initPage(element: any) {
 						render={props => {
 							return (
 								<RecentlyViewed {...props} tapi={tapi} />
+							);
+						}}
+					/>
+					<Route
+						path={relativePath("groups/")}
+						render={props => {
+							return (
+								<GroupListView {...props} tapi={tapi} />
+							);
+						}}
+					/>
+					<Route
+						path={relativePath("group/:groupId")}
+						render={props => {
+							return (
+								<GroupView {...props} tapi={tapi} />
 							);
 						}}
 					/>

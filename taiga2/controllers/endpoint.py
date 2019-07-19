@@ -965,3 +965,43 @@ def search_within_folder(current_folder_id, search_query):
     # creator: NamedId;
     # breadcrumbs: Array<OrderedNamedId>
     return flask.jsonify(result)
+
+
+def get_all_groups_for_current_user():
+    groups = models_controller.get_all_groups_for_current_user()
+    group_list = {"groups": groups}
+    group_list_schema = schemas.GroupListSchema()
+    result = group_list_schema.dump(group_list).data
+    return flask.jsonify(result)
+
+
+def get_group(groupId):
+    group = models_controller.get_group(groupId)
+    if group is None:
+        return flask.abort(404)
+    if not models_controller.can_view_group(group.id):
+        return flask.abort(403)
+
+    group_schema = schemas.GroupSchema()
+    result = group_schema.dump(group).data
+    return flask.jsonify(result)
+
+
+def add_group_user_associations(groupId, groupUserAssociationMetadata):
+    user_ids = groupUserAssociationMetadata["userIds"]
+    try:
+        group = models_controller.add_group_user_associations(groupId, user_ids)
+        if not group:
+            return flask.abort(404)
+    except AssertionError:
+        return flask.abort(403)
+
+
+def remove_group_user_associations(groupId, groupUserAssociationMetadata):
+    user_ids = groupUserAssociationMetadata["userIds"]
+    try:
+        group = models_controller.remove_group_user_associations(groupId, user_ids)
+        if not group:
+            return flask.abort(404)
+    except AssertionError:
+        return flask.abort(403)

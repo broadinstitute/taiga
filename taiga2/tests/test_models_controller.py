@@ -548,19 +548,61 @@ def test_get_provenance_graph(session: SessionBase, new_graph):
 #     assert new_group.name == name
 
 
-def test_admin_group_exists(session: SessionBase):
+@pytest.fixture
+def current_user_in_admin_group():
+    admin_group = mc.get_group_by_name("Admin")
+    current_user = flask.g.current_user
+    if current_user not in admin_group.users:
+        admin_group.users.append(current_user)
+    return admin_group
+
+
+def test_admin_group_exists(session: SessionBase, current_user_in_admin_group):
     get_groups = mc.get_all_groups()
 
     assert len(get_groups) != 0
 
 
-def test_add_group_user_association(session: SessionBase):
+def test_add_group_user_association_not_in_admin_group(session: SessionBase):
     new_user = mc.add_user("test", "test@group.com")
-
     new_group = mc.add_group("test")
-    new_group.users.append(new_user)
 
-    assert new_user in new_group.users
+    with pytest.raises(AssertionError):
+        group = mc.add_group_user_associations(new_group.id, [new_user.id])
+
+
+def test_add_group_user_association_in_admin_group(
+    session: SessionBase, current_user_in_admin_group
+):
+    new_user = mc.add_user("test", "test@group.com")
+    new_group = mc.add_group("test")
+
+    group = mc.add_group_user_associations(new_group.id, [new_user.id])
+
+    assert new_user in group.users
+    assert len(group.users) == 1
+
+    group = mc.add_group_user_associations(new_group.id, [new_user.id])
+    assert len(group.users) == 1
+
+
+def test_remove_group_user_association_not_in_admin_group(session: SessionBase):
+    new_user = mc.add_user("test", "test@group.com")
+    new_group = mc.add_group("test")
+
+    with pytest.raises(AssertionError):
+        group = mc.remove_group_user_associations(new_group.id, [new_user.id])
+
+
+def test_remove_group_user_association_in_admin_group(
+    session: SessionBase, current_user_in_admin_group
+):
+    new_user = mc.add_user("test", "test@group.com")
+    new_group = mc.add_group("test")
+
+    group = mc.add_group_user_associations(new_group.id, [new_user.id])
+    group = mc.remove_group_user_associations(group.id, [new_user.id])
+    assert new_user not in group.users
 
 
 def test_view_not_owned(session: SessionBase):
