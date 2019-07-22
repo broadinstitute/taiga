@@ -586,6 +586,7 @@ export class AddUsersToGroup extends React.Component<
 							search
 							bordered={false}
 							striped
+							pagination
 						>
 							<TableHeaderColumn
 								dataField="id"

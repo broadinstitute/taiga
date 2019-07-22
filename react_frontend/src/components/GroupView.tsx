@@ -215,6 +215,7 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
 						deleteRow
 						bordered={false}
 						striped
+						pagination
 					>
 						<TableHeaderColumn
 							dataField="id"
