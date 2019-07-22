@@ -1183,6 +1183,10 @@ paths:
       responses:
         200:
           description: A list of groups
+          schema:
+            type: array
+            items:
+              "$ref": "#/definitions/Group"
 
   /group/{groupId}:
     get:
@@ -1200,6 +1204,8 @@ paths:
       responses:
         200:
           description: A group
+          schema:
+            "$ref": "#/definitions/Group"
         403:
           description: Group not accessible to user
         404:
@@ -1235,6 +1241,8 @@ paths:
       responses:
         200:
           description: Group with id groupId
+          schema:
+            "$ref": "#/definitions/Group"
         403:
           description: Group not accessible to current user
         404:
@@ -1270,6 +1278,8 @@ paths:
       responses:
         200:
           description: Group with id groupId
+          schema:
+            "$ref": "#/definitions/Group"
         403:
           description: Group not accessible to current user
         404:
@@ -1645,3 +1655,21 @@ definitions:
         type: string
       creator:
         "$ref": "#/definitions/NamedId"
+
+  Group:
+    type: object
+    required:
+      - id
+      - name
+      - num_users
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      num_users:
+        type: integer
+      users:
+        type: array
+        items:
+          "$ref": "#/definitions/NamedId"

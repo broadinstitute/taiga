@@ -979,9 +979,8 @@ def search_within_folder(current_folder_id, search_query):
 @validate
 def get_all_groups_for_current_user():
     groups = models_controller.get_all_groups_for_current_user()
-    group_list = {"groups": groups}
-    group_list_schema = schemas.GroupListSchema()
-    result = group_list_schema.dump(group_list).data
+    group_list_schema = schemas.GroupSchema(many=True, exclude=["users"])
+    result = group_list_schema.dump(groups).data
     return flask.jsonify(result)
 
 

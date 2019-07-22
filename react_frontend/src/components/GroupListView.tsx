@@ -13,39 +13,19 @@ import { relativePath } from "../utilities/route";
 
 export interface GroupListProps extends RouteComponentProps {
 	tapi: TaigaApi;
-}
-
-export interface GroupListState {
 	groups: Array<Pick<Group, Exclude<keyof Group, "users">>>;
 }
+
+export interface GroupListState {}
 
 export class GroupListView extends React.Component<
 	GroupListProps,
 	GroupListState
 > {
-	constructor(props: GroupListProps) {
-		super(props);
-
-		this.state = {
-			groups: []
-		};
-	}
-	componentDidMount() {
-		this.doFetch();
-	}
-
-	doFetch() {
-		return this.props.tapi
-			.get_all_groups_for_current_user()
-			.then((r: any) => {
-				this.setState(r);
-			})
-			.catch((err: any) => {
-				console.log(err);
-			});
-	}
-
-	groupLinkFormatter(cell: string, row: Pick<Group, Exclude<keyof Group, "users">>) {
+	groupLinkFormatter(
+		cell: string,
+		row: Pick<Group, Exclude<keyof Group, "users">>
+	) {
 		return <Link to={relativePath("group/" + row.id)}>{cell}</Link>;
 	}
 
@@ -57,7 +37,7 @@ export class GroupListView extends React.Component<
 
 				<div id="main-content">
 					<h2>Your User Groups</h2>
-					<BootstrapTable data={this.state.groups} striped>
+					<BootstrapTable data={this.props.groups} striped>
 						<TableHeaderColumn dataField="id" isKey hidden>
 							ID
 						</TableHeaderColumn>

@@ -424,11 +424,4 @@ class GroupSchema(ma.ModelSchema):
         return len(obj.users)
 
 
-class GroupListSchema(ma.ModelSchema):
-    class Meta:
-        load_only = ("groups.users",)
-
-    groups = ma.Nested(GroupSchema, many=True)
-
-
 # </editor-fold>

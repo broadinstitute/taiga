@@ -482,12 +482,14 @@ export class AddUsersToGroup extends React.Component<
 
 	createCustomButtonGroup(_: BootstrapTableButtonGroup) {
 		const userIdSet = new Set(this.props.group.users.map(user => user.id));
-		const { selection } = this.state;
-		const usersToAdd = selection.filter(userId => !userIdSet.has(userId));
+		const usersToAdd = this.state.selection.filter(
+			userId => !userIdSet.has(userId)
+		);
 		return (
 			<Button
-				bsStyle="primary"
+				bsStyle="info"
 				onClick={() => this.props.addUsersToGroup(usersToAdd)}
+				disabled={usersToAdd.length == 0}
 			>
 				Add selected users to group
 			</Button>
@@ -545,6 +547,7 @@ export class AddUsersToGroup extends React.Component<
 		const selectRow = {
 			mode: "checkbox",
 			selected: this.state.selection,
+			unselectable: this.props.group.users.map(user => user.id),
 			onSelect: (row: User, isSelected: Boolean, e: any) => {
 				this.onRowSelect(row, isSelected, e);
 				return true;
@@ -557,6 +560,10 @@ export class AddUsersToGroup extends React.Component<
 				return true;
 			}
 		};
+		const userIdSet = new Set(this.props.group.users.map(user => user.id));
+		const usersToAdd = this.state.selection.filter(
+			userId => !userIdSet.has(userId)
+		);
 		return (
 			<Modal
 				style={modalStyles}
@@ -597,7 +604,22 @@ export class AddUsersToGroup extends React.Component<
 						<button
 							type="button"
 							className="btn btn-default"
-							onClick={this.props.cancel}
+							onClick={() => {
+								if (
+									(usersToAdd.length > 0 &&
+										window.confirm(
+											"You have selected users to add to the group, but haven't saved the group ('Add selected users to group'). Close this modal anyway?"
+										)) ||
+									usersToAdd.length == 0
+								) {
+									this.props.cancel();
+									this.setState({
+										selection: this.props.group.users.map(
+											user => user.id
+										)
+									});
+								}
+							}}
 						>
 							Close
 						</button>

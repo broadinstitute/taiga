@@ -23,8 +23,9 @@ import { SHA } from "./version"
 
 interface AppProps {
     route?: any;
-    tapi: object;
+    tapi: TaigaApi;
     user: User;
+    showGroupLink: boolean;
 }
 
 interface AppState {
@@ -38,7 +39,7 @@ interface AppState {
 const tapi = new TaigaApi(relativePath("api"), (window as any).taigaUserToken); // FIXME
 
 class App extends React.Component<AppProps, AppState> {
-    constructor(props: any) {
+    constructor(props: AppProps) {
         super(props);
 
         this.state = {
@@ -166,8 +167,17 @@ class App extends React.Component<AppProps, AppState> {
                         {/*TODO: Change this a proper logout behavior*/}
                         {/*<Link className="logoutLink" to={relativePath('')}>Logout</Link>*/}
                         <span className="headerSpan"></span>
-                        <Link className="tokenLink headerTitle" to={relativePath("groups/")}>My Groups</Link>
-                        <span className="headerSpan"></span>
+                        {this.props.showGroupLink && (
+                            <React.Fragment>
+                                <Link
+                                    className="tokenLink headerTitle"
+                                    to={relativePath("groups/")}
+                                >
+                                    My Groups
+                                </Link>
+                                <span className="headerSpan" />
+                            </React.Fragment>
+                        )}
                         <a href="https://docs.google.com/forms/d/e/1FAIpQLSe_byA04iJsZq9WPqwNfPkEOej8KXg0XVimr6NURMJ_x3ND9w/viewform"
                             target="_blank"
                             className="headerTitle headerTitleMinor">
@@ -248,19 +258,22 @@ export class NoMatch extends React.Component<any, any> {
 
 export function initPage(element: any) {
     console.log("initPage", tapi);
-    console.log("initPage2", tapi);
-    tapi.get_user().then((user: User) => {
-        console.log("initPage3");
-        console.log("in initPage user", user);
-        ReactDOM.render(
+	console.log("initPage2", tapi);
+	Promise.all([
+		tapi.get_user(),
+		tapi.get_all_groups_for_current_user()
+	]).then(([user, groups]) => {
+		console.log("initPage3");
+		console.log("in initPage user", user);
+		ReactDOM.render(
 			<BrowserRouter>
-				<App tapi={tapi} user={user}>
+				<App tapi={tapi} user={user} showGroupLink={groups.length > 0}>
 					<Route
 						path={relativePath("")}
 						exact
 						render={_ => {
-                            return <Home user={user}/>
-                        }}
+							return <Home user={user} />;
+						}}
 					/>
 					<Switch>
 						<Route
@@ -269,10 +282,7 @@ export function initPage(element: any) {
 							)}
 							render={props => {
 								return (
-									<DatasetView
-										{...props}
-										tapi={tapi}
-									/>
+									<DatasetView {...props} tapi={tapi} />
 								);
 							}}
 						/>
@@ -282,10 +292,7 @@ export function initPage(element: any) {
 							)}
 							render={props => {
 								return (
-									<DatasetView
-										{...props}
-										tapi={tapi}
-									/>
+									<DatasetView {...props} tapi={tapi} />
 								);
 							}}
 						/>
@@ -295,10 +302,7 @@ export function initPage(element: any) {
 							)}
 							render={props => {
 								return (
-									<DatasetView
-										{...props}
-										tapi={tapi}
-									/>
+									<DatasetView {...props} tapi={tapi} />
 								);
 							}}
 						/>
@@ -306,10 +310,7 @@ export function initPage(element: any) {
 							path={relativePath("dataset/:datasetId")}
 							render={props => {
 								return (
-									<DatasetView
-										{...props}
-										tapi={tapi}
-									/>
+									<DatasetView {...props} tapi={tapi} />
 								);
 							}}
 						/>
@@ -319,9 +320,7 @@ export function initPage(element: any) {
 							"dataset_version/:datasetVersionId"
 						)}
 						render={props => {
-							return (
-								<DatasetView {...props} tapi={tapi} />
-							);
+							return <DatasetView {...props} tapi={tapi} />;
 						}}
 					/>
 					<Route
@@ -342,17 +341,13 @@ export function initPage(element: any) {
 							"search/:currentFolderId/:searchQuery"
 						)}
 						render={props => {
-							return (
-								<SearchView {...props} tapi={tapi} />
-							);
+							return <SearchView {...props} tapi={tapi} />;
 						}}
 					/>
 					<Route
 						path={relativePath("token/")}
 						render={props => {
-							return (
-								<Token {...props} tapi={tapi} />
-							);
+							return <Token {...props} tapi={tapi} />;
 						}}
 					/>
 					<Route
@@ -367,16 +362,18 @@ export function initPage(element: any) {
 						path={relativePath("groups/")}
 						render={props => {
 							return (
-								<GroupListView {...props} tapi={tapi} />
+								<GroupListView
+									{...props}
+									tapi={tapi}
+									groups={groups}
+								/>
 							);
 						}}
 					/>
 					<Route
 						path={relativePath("group/:groupId")}
 						render={props => {
-							return (
-								<GroupView {...props} tapi={tapi} />
-							);
+							return <GroupView {...props} tapi={tapi} />;
 						}}
 					/>
 					<Route path="*" component={NoMatch} />
@@ -384,5 +381,5 @@ export function initPage(element: any) {
 			</BrowserRouter>,
 			element
 		);
-    });
+	});
 }
