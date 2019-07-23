@@ -18,6 +18,7 @@ from taiga2.models import (
     User,
     Folder,
     Dataset,
+    DatasetPermaname,
     DataFile,
     S3DataFile,
     DatasetVersion,
@@ -268,11 +269,15 @@ def add_dataset(
     if anterior_creation_date:
         creation_date = anterior_creation_date
 
-    new_dataset = Dataset(
-        name=name, permaname=permaname, creator=creator, creation_date=creation_date
-    )
+    new_dataset = Dataset(name=name, creator=creator, creation_date=creation_date)
 
     db.session.add(new_dataset)
+    db.session.flush()
+
+    new_permaname_record = DatasetPermaname(
+        permaname=permaname, dataset_id=new_dataset.id
+    )
+    db.session.add(new_permaname_record)
 
     # It means we would want to create a first dataset with a DatasetVersion
     # containing DataFiles
@@ -329,8 +334,8 @@ def add_dataset_from_session(
 
 
 def update_permaname(dataset_id, permaname):
-    dataset = get_dataset(dataset_id)
-    dataset.permaname = permaname
+    permaname_record = DatasetPermaname(permaname=permaname, dataset_id=dataset_id)
+    db.session.add(permaname_record)
     db.session.commit()
 
 
@@ -346,7 +351,7 @@ def get_datasets(array_dataset_ids):
 def get_dataset_from_permaname(dataset_permaname, one_or_none=False):
     dataset = (
         db.session.query(Dataset)
-        .filter(Dataset.permaname == dataset_permaname)
+        .filter(Dataset.permanames.any(DatasetPermaname.permaname == dataset_permaname))
         .one_or_none()
     )
 
@@ -385,8 +390,12 @@ def update_dataset_name(dataset_id, name) -> Dataset:
 
     dataset.name = name
     # TODO: Update the permaname with the new name
-
+    new_permaname = models.generate_permaname(name)
+    new_permaname_record = DatasetPermaname(
+        permaname=new_permaname, dataset_id=dataset.id
+    )
     db.session.add(dataset)
+    db.session.add(new_permaname_record)
 
     activity = NameUpdateActivity(
         user_id=current_user.id,
@@ -729,8 +738,12 @@ def get_dataset_version_provenance(dataset_version_id, provenance):
 
 def get_latest_dataset_version_by_permaname(permaname):
     dataset_version = (
-        db.session.query(DatasetVersion)
-        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname))
+        db.session.query(models.DatasetVersion)
+        .filter(
+            DatasetVersion.dataset.has(
+                Dataset.permanames.any(DatasetPermaname.permaname == permaname)
+            )
+        )
         .order_by(DatasetVersion.version.desc())
         .first()
     )
@@ -744,7 +757,11 @@ def get_dataset_version_by_permaname_and_version(permaname, version, one_or_none
     obj = (
         db.session.query(DatasetVersion)
         .filter(DatasetVersion.version == version)
-        .filter(DatasetVersion.dataset.has(Dataset.permaname == permaname))
+        .filter(
+            DatasetVersion.dataset.has(
+                Dataset.permanames.any(DatasetPermaname.permaname == permaname)
+            )
+        )
         .one_or_none()
     )
 

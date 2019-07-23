@@ -10,7 +10,15 @@ import taiga2.controllers.models_controller as mc
 from taiga2.controllers.models_controller import DataFileAlias
 
 from taiga2.models import db
-from taiga2.models import User, Folder, Dataset, DatasetVersion, Group, S3DataFile
+from taiga2.models import (
+    User,
+    Folder,
+    Dataset,
+    DatasetPermaname,
+    DatasetVersion,
+    Group,
+    S3DataFile,
+)
 from taiga2.models import generate_permaname
 from taiga2.models import DataFile
 from taiga2.models import EntryRightsEnum
@@ -213,7 +221,11 @@ def test_add_dataset(session: SessionBase, new_datafile):
     )
 
     added_dataset_by_permaname = (
-        session.query(Dataset).filter(Dataset.permaname == _new_dataset.permaname).one()
+        session.query(Dataset)
+        .filter(
+            Dataset.permanames.any(DatasetPermaname.permaname == _new_dataset.permaname)
+        )
+        .one()
     )
 
     # Ensure the object we put in the database is the same than the one

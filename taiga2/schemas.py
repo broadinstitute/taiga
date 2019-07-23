@@ -50,9 +50,13 @@ class DatasetSummarySchema(ma.ModelSchema):
     class Meta:
         additional = ("id", "permaname")
 
-    permaname = fields.fields.Function(
-        lambda obj: [obj.permaname], dump_to="permanames"
-    )
+    permanames = fields.fields.Method("ordered_permanames")
+
+    def ordered_permanames(self, dataset):
+        permanames = sorted(
+            dataset.permanames, key=lambda permaname: permaname.creation_date
+        )
+        return [permaname.permaname for permaname in permanames]
 
 
 class DatasetVersionSummarySchema(ma.ModelSchema):
@@ -314,10 +318,8 @@ class DatasetFullSchema(ma.ModelSchema):
     class Meta:
         additional = ("id", "name", "description", "permaname", "dataset_versions")
 
-    # TODO: Change this field to properly handle multiple permanames (a new permaname is added when we change the name of the dataset)
-    permaname = fields.fields.Function(
-        lambda obj: [obj.permaname], dump_to="permanames"
-    )
+    permanames = fields.fields.Method("ordered_permanames")
+
     dataset_versions = ma.Nested(
         DatasetVersionLightSchema(), many=True, dump_to="versions"
     )
@@ -329,6 +331,12 @@ class DatasetFullSchema(ma.ModelSchema):
             return ""
         else:
             return dataset_version.description
+
+    def ordered_permanames(self, dataset):
+        permanames = sorted(
+            dataset.permanames, key=lambda permaname: permaname.creation_date
+        )
+        return [permaname.permaname for permaname in permanames]
 
     # parents = ma.Nested(FolderNamedIdSchema(), dump_to='folders', many=True)
 

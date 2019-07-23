@@ -179,9 +179,25 @@ class Dataset(Entry):
     id = db.Column(GUID, db.ForeignKey("entries.id"), primary_key=True)
 
     # TODO: Use the name/key of the dataset and add behind the uuid?
-    permaname = db.Column(db.Text)
+    permanames = db.relationship("DatasetPermaname")
+
+    @property
+    def permaname(self):
+        if len(self.permanames) > 0:
+            return max(
+                self.permanames, key=lambda permaname: permaname.creation_date
+            ).permaname
+        return ""
 
     __mapper_args__ = {"polymorphic_identity": "Dataset"}
+
+
+class DatasetPermaname(db.Model):
+    __tablename__ = "dataset_permanames"
+
+    permaname = db.Column(db.Text, primary_key=True)
+    dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
+    creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
 
 class InitialFileType(enum.Enum):
