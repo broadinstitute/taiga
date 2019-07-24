@@ -162,7 +162,7 @@ Install rhdf5 R library => http://bioconductor.org/packages/release/bioc/html/rh
 Each commit on the taiga2 branch results in a Travis test/build. Travis, on test success, will build an image and push
 it the Taiga image to GCP's container registry.
 
-Once travis is complete, you can execute:
+Once travis is complete, you can `ssh` into `ubuntu@cds.team` and execute:
 
 - `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
 - `sudo systemctl restart taiga`
@@ -179,14 +179,19 @@ Example (but use accordingly to the state of you database, see [Alembic](http://
 
 (Note, this requires that you put the config for the production database at
 ../prod_settings.cfg so that it can find the current schema to compare
-against.)
+against. You can test against a snapshot of a database by going to the AWS
+console and going to RDS, going to "Snapshots", and selecting "Restore
+Snapshot". You can then place the new database's endpoing into
+prod_settings.cfg.)
 
 - `cd taiga2`
 - `./manage.py -c ../prod_settings.cfg db migrate -m 'migration-msg'`
 
 Review the resulting generated migration. I've found I've had to re-order
-tables to ensure fk references are created successfully. After that's all
-done, you can apply the migration by running:
+tables to ensure fk references are created successfully. Before applying the
+migration, take a snapshot of the current Taiga db.After that's all done, you
+can take down the Taiga service (`ssh` into `ubuntu@cds.team` and run
+`sudo systemctl stop taiga`) and apply the migration by running:
 
 - `./manage.py -c ../prod_settings.cfg db upgrade`
 
