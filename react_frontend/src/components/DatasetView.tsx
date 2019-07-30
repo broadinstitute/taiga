@@ -880,7 +880,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 python_block += "tc = TaigaClient()\n";
 
                 let python_block_lines = datasetVersion.datafiles.map((df, index) => {
-                    let python_name = df.name;
+                    let python_name = df.name.replace(/[^A-Za-z0-9]+/g, "_");;
 
                     if (this.hasRaw(df)) {
                         return `${python_name} = tc.download_to_cache(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')  # download_to_cache for raw`;
@@ -1021,7 +1021,6 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                 </tbody>
                             </table>
 
-                            {this.renderActivityLog()}
 
                             <h2>Direct access from R (<a
                                 href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse"
@@ -1031,9 +1030,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                 Direct access from Python (<a
                                     href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse"
                                     target="_blank">Taigapy Documentation</a>)
-                        </h2>
+                            </h2>
                             <pre>{python_block}</pre>
-                        </span>
+
+                            {this.renderActivityLog()}
+
+                            </span>
                     }
                 </div>
                 {this.state.loading && <LoadingOverlay message={this.state.loadingMessage}></LoadingOverlay>}
