@@ -657,11 +657,86 @@ def add_dataset_version(
     return new_dataset_version
 
 
+def _datafiles_equivalent(datafile, other_datafile):
+    datafile_id = resolve_virtual_datafile(datafile).id
+    other_datafile_id = resolve_virtual_datafile(other_datafile).id
+    return datafile_id == other_datafile_id
+
+
+def _get_dataset_version_datafiles_diff(new_datafiles, previous_datafiles):
+    datafile_diff = {"updated": [], "added": [], "removed": [], "renamed": []}
+
+    for datafile in new_datafiles:
+        previous_datafile = next(
+            (
+                previous_datafile
+                for previous_datafile in previous_datafiles
+                if previous_datafile.name == datafile.name
+            ),
+            None,
+        )
+        if previous_datafile:
+            previous_datafiles.remove(previous_datafile)
+            if not _datafiles_equivalent(datafile, previous_datafile):
+                datafile_diff["updated"].append(datafile)
+            continue
+
+        previous_datafile = next(
+            (
+                previous_datafile
+                for previous_datafile in previous_datafiles
+                if _datafiles_equivalent(datafile, previous_datafile)
+            ),
+            None,
+        )
+        if previous_datafile:
+            previous_datafiles.remove(previous_datafile)
+            datafile_diff["renamed"].append((datafile, previous_datafile))
+            continue
+
+        datafile_diff["added"].append(datafile)
+
+    datafile_diff["removed"] = previous_datafiles
+
+    return datafile_diff
+
+
+def _format_datafile_diff(datafile_diff):
+    def format_added_removed_updated(datafiles):
+        return ["- {}".format(datafile.name) for datafile in datafiles]
+
+    def format_renamed(datafiles):
+        return [
+            "- {} -> {}".format(previous_datafile.name, datafile.name)
+            for (datafile, previous_datafile) in datafiles
+        ]
+
+    comments = ""
+    for category in ["added", "removed", "updated", "renamed"]:
+        if len(datafile_diff[category]):
+            comments += "{}:\n".format(category.capitalize())
+            f = (
+                format_added_removed_updated
+                if category in ["added", "removed", "updated"]
+                else format_renamed
+            )
+            comments += "\n".join(f(datafile_diff[category]))
+    return comments
+
+
 def create_new_dataset_version_from_session(session_id, dataset_id, new_description):
     current_user = get_current_session_user()
 
     added_datafiles = add_datafiles_from_session(session_id)
     all_datafile_ids = [datafile.id for datafile in added_datafiles]
+
+    latest_dataset_version = get_latest_dataset_version(dataset_id)
+
+    datafile_diff = _get_dataset_version_datafiles_diff(
+        list(added_datafiles), list(latest_dataset_version.datafiles)
+    )
+
+    comments = _format_datafile_diff(datafile_diff)
 
     new_dataset_version = add_dataset_version(
         dataset_id=dataset_id,
@@ -673,8 +748,11 @@ def create_new_dataset_version_from_session(session_id, dataset_id, new_descript
         user_id=current_user.id,
         dataset_id=new_dataset_version.dataset_id,
         type=Activity.ActivityType.added_version,
-        dataset_description=new_description,
+        dataset_description=new_description
+        if new_description != latest_dataset_version.description
+        else None,
         dataset_version=new_dataset_version.version,
+        comments=comments,
     )
     db.session.add(activity)
     db.session.commit()

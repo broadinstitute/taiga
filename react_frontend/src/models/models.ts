@@ -513,6 +513,7 @@ export class ActivityLogEntry {
     user_name: string;
     timestamp: string;
     type: ActivityTypeEnum;
+    comments: string | null;
 }
 
 export class CreationActivityLogEntry extends ActivityLogEntry {

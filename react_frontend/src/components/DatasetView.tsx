@@ -93,14 +93,15 @@ const deletionTitle = {
 };
 
 const descriptionDetailsFormatter = (
-	description: string | null
+	description: string | null,
+	title = "Description",
 ): React.ReactNode => {
 	if (!description) {
 		return null;
 	}
 	return (
 		<details>
-			<summary>Description</summary>
+			<summary>{title}</summary>
 			<span className="activity-log-description">{description}</span>
 		</details>
 	);
@@ -598,6 +599,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 							}
 						</strong>
 					</div>
+					{descriptionDetailsFormatter(row.comments, "Changelog")}
 					{descriptionDetailsFormatter(
 						(row as VersionAdditionActivity)
 							.dataset_description
