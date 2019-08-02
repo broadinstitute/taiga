@@ -540,9 +540,10 @@ def create_new_dataset_version(datasetVersionMetadata):
     session_id = datasetVersionMetadata["sessionId"]
     dataset_id = datasetVersionMetadata["datasetId"]
     new_description = datasetVersionMetadata["newDescription"]
+    changes_description = datasetVersionMetadata["changesDescription"]
 
     new_dataset_version = models_controller.create_new_dataset_version_from_session(
-        session_id, dataset_id, new_description
+        session_id, dataset_id, new_description, changes_description
     )
 
     return flask.jsonify(new_dataset_version.id)

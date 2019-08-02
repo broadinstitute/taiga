@@ -234,11 +234,12 @@ export class TaigaApi {
         })
     }
 
-    create_new_dataset_version(sid: string, dataset_id: string, new_description: string) {
+    create_new_dataset_version(sid: string, dataset_id: string, new_description: string, changes_description: string,) {
         return this._post<string>("/datasetVersion", {
             sessionId: sid,
             datasetId: dataset_id,
-            newDescription: new_description
+            newDescription: new_description,
+            changesDescription: changes_description,
         })
     }
 

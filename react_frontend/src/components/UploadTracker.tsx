@@ -20,6 +20,7 @@ export interface CreateDatasetParams {
 export interface CreateVersionParams {
     datasetId: string;
     description: string;
+    changesDescription: string;
 }
 
 
@@ -202,7 +203,14 @@ export class UploadTracker {
         return Promise.all(uploadPromises).then((datafile_ids: string[]): Promise<DatasetIdAndVersionId> => {
             if ((params as any).datasetId) {
                 let p = params as CreateVersionParams;
-                return this.getTapi().create_new_dataset_version(sid, p.datasetId, p.description).then((dataset_version_id: string) => {
+                return this.getTapi()
+                .create_new_dataset_version(
+                  sid,
+                  p.datasetId,
+                  p.description,
+                  p.changesDescription
+                )
+                .then((dataset_version_id: string) => {
                     return this.getTapi().get_dataset_version(dataset_version_id).then((version: DatasetVersion) => {
                         return { dataset_id: version.dataset_id, version_id: dataset_version_id };
                     });

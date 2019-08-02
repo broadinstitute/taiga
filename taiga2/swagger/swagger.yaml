@@ -566,6 +566,8 @@ paths:
                 type: string
               newDescription:
                 type: string
+              changesDescription:
+                type: string
       responses:
         200:
           description: The info about the newly created dataset version
@@ -1376,6 +1378,8 @@ definitions:
       version:
         type: string
       description:
+        type: string
+      changes_description:
         type: string
       creation_date:
         type: string

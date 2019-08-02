@@ -608,6 +608,7 @@ def add_dataset_version(
     dataset_id,
     datafiles_ids=None,
     new_description=None,
+    changes_description=None,
     permaname=None,
     anterior_creation_date=None,
     forced_id=None,
@@ -644,6 +645,7 @@ def add_dataset_version(
         dataset=dataset,
         datafiles=datafiles,
         description=new_description,
+        changes_description=changes_description,
         version=version,
         creation_date=creation_date,
         id=forced_id,
@@ -724,7 +726,9 @@ def _format_datafile_diff(datafile_diff):
     return comments
 
 
-def create_new_dataset_version_from_session(session_id, dataset_id, new_description):
+def create_new_dataset_version_from_session(
+    session_id, dataset_id, new_description, changes_description
+):
     current_user = get_current_session_user()
 
     added_datafiles = add_datafiles_from_session(session_id)
@@ -742,6 +746,7 @@ def create_new_dataset_version_from_session(session_id, dataset_id, new_descript
         dataset_id=dataset_id,
         datafiles_ids=all_datafile_ids,
         new_description=new_description,
+        changes_description=changes_description,
     )
 
     activity = VersionAdditionActivity(

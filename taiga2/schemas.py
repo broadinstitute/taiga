@@ -268,6 +268,7 @@ class DatasetVersionSchema(ma.ModelSchema):
             "creator",
             "datafiles",
             "parents",
+            "changes_description",
         )
 
     creator = ma.Nested(UserNamedIdSchema)

@@ -114,6 +114,7 @@ export class DatasetVersion extends Entry {
     reason_state: string;
     version: string;
     description?: string;
+    changes_description?: string;
     datafiles: Array<DatasetVersionDatafiles>;
     folders: Array<NamedId>;
     can_edit: boolean;

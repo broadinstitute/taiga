@@ -375,6 +375,8 @@ class DatasetVersion(Entry):
     # Reason for the state of the version. Should be empty if approved
     reason_state = db.Column(db.Text)
 
+    changes_description = db.Column(db.Text)
+
     __table_args__ = (UniqueConstraint("dataset_id", "version"),)
 
     # TODO: See how to manage the status (persist.py)

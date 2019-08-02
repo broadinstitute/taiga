@@ -679,6 +679,22 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 		);
     }
 
+    renderChangesDescription() {
+        const { datasetVersion } = this.state;
+        if (!datasetVersion || !datasetVersion.changes_description) {
+          return null;
+        }
+
+        return (
+          <React.Fragment>
+            <h4>Changes this version</h4>
+            {Dialogs.renderDescription(
+              datasetVersion.changes_description
+            )}
+          </React.Fragment>
+        );
+    }
+
     render() {
         if (!this.state) {
             return <div>
@@ -1006,6 +1022,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                 Dialogs.renderDescription(this.state.datasetVersion.description)
                             }
 
+                            {this.renderChangesDescription()}
 
                             <h2>Contents</h2>
                             <table className="table">

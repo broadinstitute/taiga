@@ -13,12 +13,15 @@ import { relativePath } from "../../utilities/route";
 interface UploadFormProps {
     help?: string
     showNameField: boolean;
+    showChangesField: boolean;
     controller: UploadController;
     name: string;
     description: string
+    changesDescription: string
     files: Array<UploadFile>;
     onNameChange: (value: string) => void;
     onDescriptionChange: (value: string) => void;
+    onChangesDescriptionChange: (value: string) => void;
     isProcessing: boolean;
 }
 
@@ -74,6 +77,7 @@ interface UploadDialogState {
     formDisabled: boolean;
     datasetName: string;
     datasetDescription: string;
+    changesDescription: string;
     newDatasetVersion?: DatasetIdAndVersionId;
     isProcessing: boolean;
     error: string;
@@ -102,18 +106,35 @@ interface CreateVersionDialogProps extends DialogProps {
 interface UploadDialogProps extends Partial<CreateDatasetDialogProps>, Partial<CreateVersionDialogProps> {
     title: string;
     showNameField?: boolean;
+    showChangesField: boolean;
     help?: string;
 }
 
 export class CreateDatasetDialog extends React.Component<CreateDatasetDialogProps, Readonly<{}>> {
     render() {
-        return <UploadDialog title="Create new Dataset" help="help text" showNameField={true} {...this.props} />
+        return (
+          <UploadDialog
+            title="Create new Dataset"
+            help="help text"
+            showNameField={true}
+            showChangesField={false}
+            {...this.props}
+          />
+        );
     }
 }
 
 export class CreateVersionDialog extends React.Component<CreateVersionDialogProps, Readonly<{}>> {
     render() {
-        return <UploadDialog title="Create new Dataset version" help="help text" showNameField={false} {...this.props} />
+        return (
+          <UploadDialog
+            title="Create new Dataset version"
+            help="help text"
+            showNameField={false}
+            showChangesField={true}
+            {...this.props}
+          />
+        );
     }
 }
 
@@ -144,6 +165,7 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
             formDisabled: false,
             datasetName: "",
             datasetDescription: this.props.previousDescription,
+            changesDescription: "",
             isProcessing: false,
             error: null
         };
@@ -218,7 +240,8 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
                             // create a new version
                             params = {
                                 datasetId: this.props.datasetId,
-                                description: this.state.datasetDescription
+                                description: this.state.datasetDescription,
+                                changesDescription: this.state.changesDescription,
                             };
                         }
                         // console.log("Creating with params", params);
@@ -262,10 +285,15 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
                             controller={this.controller}
                             name={this.state.datasetName}
                             description={this.state.datasetDescription}
+                            changesDescription={this.state.changesDescription}
                             files={this.state.uploadFiles}
                             showNameField={this.props.showNameField}
+                            showChangesField={this.props.showChangesField}
                             onNameChange={(value: string) => this.onNameChange(value)}
                             onDescriptionChange={(value: string) => this.onDescriptionChange(value)}
+                            onChangesDescriptionChange={(value: string) =>
+                                this.onChangesDescriptionChange(value)
+                            }
                             isProcessing={this.state.isProcessing}
                         />
                     </div>
@@ -288,6 +316,10 @@ class UploadDialog extends React.Component<UploadDialogProps, Partial<UploadDial
 
     onDescriptionChange(value: string) {
         this.setState({ datasetDescription: value });
+    }
+
+    onChangesDescriptionChange(value: string) {
+        this.setState({ changesDescription: value });
     }
 }
 
@@ -316,7 +348,13 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
             <FormControl value={this.props.description}
                 onChange={(evt) => { this.props.onDescriptionChange((evt.target as any).value) }}
                 componentClass="textarea"
-                placeholder="Dataset description" rows={15} />
+                placeholder="Dataset description" rows={10} />
+        )
+        let inputChanges = (
+            <FormControl value={this.props.changesDescription}
+                onChange={(evt) => { this.props.onChangesDescriptionChange((evt.target as any).value) }}
+                componentClass="textarea"
+                placeholder="Dataset description" rows={5} />
         )
 
         return <div>
@@ -338,6 +376,12 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
                                     Description
                                 </label>
                                 {inputDescription}
+                            </FormGroup>
+                            <FormGroup controlId="formDescription" style={{ marginLeft: "0px" }}>
+                                <label className="col-sm-12 col-form-label">
+                                    Description of changes
+                                </label>
+                                {inputChanges}
                             </FormGroup>
                         </div>
                     </div>
