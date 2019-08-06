@@ -159,49 +159,6 @@ def new_dataset_in_new_folder_in_home(
     return _new_dataset
 
 
-def add_version(dataset, new_upload_session_file) -> DatasetVersion:
-    """ 
-
-    :param dataset:
-    :param new_upload_session_file: 
-    :return: DatasetVersion
-    """
-    new_description = "My new description!"
-
-    session_id = new_upload_session_file.session.id
-
-    # TODO: Get instead the last datasetVersion
-    latest_dataset_version = dataset.dataset_versions[0]
-
-    # We fetch the datafiles from the first dataset_version
-    assert len(latest_dataset_version.datafiles) == 1
-    datafile = latest_dataset_version.datafiles[0]
-
-    datasetVersionMetadata = {
-        "sessionId": session_id,
-        "datasetId": dataset.id,
-        "newDescription": new_description,
-    }
-
-    _add_virtual_file_to_upload_session(
-        session_id, datafile.name, datafile_id=datafile.id
-    )
-
-    response_json_create_new_dataset_version_id = endpoint.create_new_dataset_version(
-        datasetVersionMetadata
-    )
-    new_dataset_version_id = get_data_from_flask_jsonify(
-        response_json_create_new_dataset_version_id
-    )
-
-    _new_dataset_version = models_controller.get_dataset_version(new_dataset_version_id)
-
-    return _new_dataset_version
-
-
-# </editor-fold>
-
-
 def get_data_from_flask_jsonify(flask_jsonified):
     return flask.json.loads(flask_jsonified.data.decode("UTF8"))
 

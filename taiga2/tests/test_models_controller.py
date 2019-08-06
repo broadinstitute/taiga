@@ -23,11 +23,7 @@ from taiga2.models import generate_permaname
 from taiga2.models import DataFile
 from taiga2.models import EntryRightsEnum
 
-from taiga2.tests.test_endpoint import (
-    add_version,
-    new_upload_session_file,
-    new_upload_session,
-)
+from taiga2.tests.test_endpoint import new_upload_session_file, new_upload_session
 
 
 # from taiga2.tests.factories import GroupFactory, UserFactory, FolderFactory
@@ -680,62 +676,6 @@ def test_jumpto_dataset_version_id(session: SessionBase, new_dataset: Dataset):
     assert param_latest_dataset_version_id == returned_latest_dataset_version_id
 
 
-@pytest.mark.parametrize("dataset_identifier", ["id", "permaname"])
-@pytest.mark.parametrize("separator", [".", "/"])
-def test_jumpto_dataset_id_with_separator_version_latest(
-    session: SessionBase,
-    new_dataset: Dataset,
-    new_upload_session_file,
-    separator: str,
-    dataset_identifier: str,
-):
-    param_dataset_version = add_version(
-        dataset=new_dataset, new_upload_session_file=new_upload_session_file
-    )
-    param_latest_dataset_version_id = param_dataset_version.id
-    identifier_and_version = (
-        getattr(new_dataset, dataset_identifier)
-        + separator
-        + str(param_dataset_version.version)
-    )
-
-    returned_latest_dataset_version_id = mc.get_dataset_version_id_from_any(
-        identifier_and_version
-    )
-
-    assert param_latest_dataset_version_id == returned_latest_dataset_version_id
-
-
-@pytest.mark.parametrize("dataset_identifier", ["id", "permaname"])
-@pytest.mark.parametrize("separator", [".", "/"])
-def test_jumpto_dataset_id_with_separator_version_first(
-    session: SessionBase,
-    new_dataset: Dataset,
-    new_upload_session_file,
-    separator: str,
-    dataset_identifier: str,
-):
-    # Adding a dataset_version to check we return the first one and not the last one
-    add_version(dataset=new_dataset, new_upload_session_file=new_upload_session_file)
-
-    param_first_dataset_version = new_dataset.dataset_versions[0]
-    param_first_dataset_version_id = param_first_dataset_version.id
-    identifier_and_version = (
-        getattr(new_dataset, dataset_identifier)
-        + separator
-        + str(param_first_dataset_version.version)
-    )
-
-    returned_first_dataset_version_id = mc.get_dataset_version_id_from_any(
-        identifier_and_version
-    )
-
-    assert param_first_dataset_version_id == returned_first_dataset_version_id
-
-
-# </editor-fold
-
-# <editor-fold desc="Test Virtual datasets">
 def test_basic_create_virtual_dataset(session: SessionBase):
     # create mock data of a single dataset and a virtual dataset which references the files but with a different name
     _new_datafile = mc.add_s3_datafile(
