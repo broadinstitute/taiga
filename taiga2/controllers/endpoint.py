@@ -540,7 +540,7 @@ def create_new_dataset_version(datasetVersionMetadata):
     session_id = datasetVersionMetadata["sessionId"]
     dataset_id = datasetVersionMetadata["datasetId"]
     new_description = datasetVersionMetadata["newDescription"]
-    changes_description = datasetVersionMetadata["changesDescription"]
+    changes_description = datasetVersionMetadata.get("changesDescription", None)
 
     new_dataset_version = models_controller.create_new_dataset_version_from_session(
         session_id, dataset_id, new_description, changes_description
