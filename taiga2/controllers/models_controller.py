@@ -25,6 +25,7 @@ from taiga2.models import (
     Entry,
     Group,
     VirtualDataFile,
+    GCSObjectDataFile,
     Activity,
     CreationActivity,
     NameUpdateActivity,
@@ -1190,6 +1191,16 @@ def add_virtual_datafile(name, datafile_id):
     return new_datafile
 
 
+def add_gcs_datafile(name, gcs_path, generation_id):
+    new_datafile = GCSObjectDataFile(
+        name=name, gcs_path=gcs_path, generation_id=generation_id
+    )
+
+    db.session.add(new_datafile)
+    db.session.commit()
+    return new_datafile
+
+
 # def add_virtual_datafile(name, datafile_id):
 #     assert isinstance(datafile_id, str)
 #
@@ -1277,6 +1288,12 @@ def add_datafiles_from_session(session_id):
         if file.data_file is not None:
             new_datafile = add_virtual_datafile(
                 name=file.filename, datafile_id=file.data_file.id
+            )
+        elif file.gcs_path is not None:
+            new_datafile = add_gcs_datafile(
+                name=file.filename,
+                gcs_path=file.gcs_path,
+                generation_id=file.generation_id,
             )
         else:
             new_datafile = add_s3_datafile(
@@ -1399,6 +1416,18 @@ def add_upload_session_virtual_file(session_id, filename, data_file_id):
 
     upload_session_file = UploadSessionFile(
         session_id=session_id, filename=filename, data_file=data_file
+    )
+    db.session.add(upload_session_file)
+    db.session.commit()
+    return upload_session_file
+
+
+def add_upload_session_gcs_file(session_id, filename, gcs_path, generation_id):
+    upload_session_file = UploadSessionFile(
+        session_id=session_id,
+        filename=filename,
+        gcs_path=gcs_path,
+        generation_id=generation_id,
     )
     db.session.add(upload_session_file)
     db.session.commit()

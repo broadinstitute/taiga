@@ -242,7 +242,7 @@ class DataFile(db.Model):
     __table_args__ = (
         UniqueConstraint("dataset_version_id", "name"),
         CheckConstraint(
-            "(type = 'virtual' and underlying_data_file_id is not null) or (type = 's3')",
+            "(type = 'virtual' and underlying_data_file_id is not null) or (type = 's3') or (type = 'gcs')",
             name="typedcheck",
         ),
     )
@@ -308,6 +308,17 @@ class VirtualDataFile(DataFile):
     @property
     def original_file_sha256(self):
         return self.underlying_data_file.original_file_sha256
+
+
+class GCSObjectDataFile(DataFile):
+    __mapper_args__ = {"polymorphic_identity": "gcs"}
+
+    gcs_path = db.Column(db.Text)
+    generation_id = db.Column(db.Text)
+
+    @property
+    def underlying_file_id(self):
+        return None
 
 
 def get_allowed_conversion_type(datafile_type):
@@ -533,6 +544,9 @@ class UploadSessionFile(db.Model):
     converted_s3_key = db.Column(db.Text)
 
     s3_bucket = db.Column(db.Text)
+
+    gcs_path = db.Column(db.Text)
+    generation_id = db.Column(db.Text)
 
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)

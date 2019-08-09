@@ -71,9 +71,15 @@ export class UploadController {
         return path;
     }
 
-    addGCS(gcsPath: string, size: number) {
-        let name = this.getDefaultName(gcsPath)
-        this.addFile({ name: name, computeNameFromTaigaId: false, fileType: UploadFileType.GCSPath, size: "unknown", gcsPath: gcsPath })
+    addGCS(gcsPath: string) {
+        let name = this.getDefaultName(gcsPath);
+        this.addFile({
+            name: name,
+            computeNameFromTaigaId: false,
+            fileType: UploadFileType.GCSPath,
+            size: "unknown",
+            gcsPath: gcsPath
+        });
     }
 
     addUpload(file: File) {
@@ -104,6 +110,15 @@ export class UploadController {
 
     onTaigaIdChange(index: number, newValue: string) {
         let changes = { existingTaigaId: { $set: newValue } } as any;
+        if (this.files[index].computeNameFromTaigaId) {
+            changes.name = { "$set": this.getDefaultName(newValue) }
+        }
+        this.files = update(this.files, { [index]: changes })
+        this.listener(this.files)
+    }
+
+    onGCSPathChange(index: number, newValue: string) {
+        let changes = { gcsPath: { $set: newValue } } as any;
         if (this.files[index].computeNameFromTaigaId) {
             changes.name = { "$set": this.getDefaultName(newValue) }
         }
@@ -178,7 +193,20 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
 
             if (file.fileType == UploadFileType.GCSPath) {
                 typeLabel = "GCS Object";
-                source = file.gcsPath;
+                source = (
+                  <input
+                    className="form-control"
+                    placeholder="GCS Object Path"
+                    type="text"
+                    value={file.gcsPath}
+                    onChange={event =>
+                      this.props.controller.onGCSPathChange(
+                        i,
+                        event.target.value
+                      )
+                    }
+                  />
+                );
             } else if (file.fileType == UploadFileType.TaigaPath) {
                 typeLabel = "Taiga file";
                 source = <input className="form-control" placeholder="Taiga ID" type="text" value={file.existingTaigaId} onChange={event => this.props.controller.onTaigaIdChange(i, event.target.value)} />
@@ -199,8 +227,20 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
 
             return (<tr key={"r" + i}>
                 <td>
-                    <input type="text" value={name} onChange={event => this.props.controller.onNameChange(i, event.target.value)} className="form-control" placeholder="Name" />
-                </td>
+                    <input
+                        type="text"
+                        value={name}
+                        onChange={event =>
+                            this.props.controller.onNameChange(
+                                i,
+                                event.target.value
+                            )
+                        }
+                        className="form-control"
+                        placeholder="Name"
+                        required
+                    />
+                    </td>
                 <td>
                     {source}
                 </td>

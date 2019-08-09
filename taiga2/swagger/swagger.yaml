@@ -1431,6 +1431,11 @@ definitions:
         type: 
           - string
           - "null"
+      gcs_path:
+        description: GCS path of the datafile or file's underlying datafile
+        type: 
+          - string
+          - "null"
       type:
         type: string
 

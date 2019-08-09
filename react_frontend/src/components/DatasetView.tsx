@@ -767,6 +767,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     let copy_button = this.getCopyButton(df);
 
                     let linkToUnderlying = null;
+                    let gsPath = null;
                     if (df.underlying_file_id) {
                         let m = df.underlying_file_id.match(/([^.]+)\.([^/]+)\/.+/);
 
@@ -777,9 +778,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                             {df.underlying_file_id}
                         </Link>)</div>
                     }
+                    if (df.gcs_path) {
+                        gsPath = <div>({"gs://" + df.gcs_path})</div>;
+                    }
 
                     return <tr key={index}>
-                        <td>{df.name}{linkToUnderlying}</td>
+                        <td>{df.name}{linkToUnderlying}{gsPath}</td>
                         <td>{df.short_summary}</td>
                         <td>
                             {conversionTypesOutput}

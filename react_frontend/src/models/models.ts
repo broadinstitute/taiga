@@ -148,6 +148,7 @@ export interface DatasetVersionDatafiles {
     type: DataFileType;
     allowed_conversion_type: Array<string>;
     short_summary: string;
+    gcs_path: string;
 }
 
 export interface DatasetVersions {

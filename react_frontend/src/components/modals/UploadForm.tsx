@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Form, FormControl, Col, ControlLabel, FormGroup, Label, Grid, Row, Glyphicon, HelpBlock } from 'react-bootstrap';
+import { Form, FormControl, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
 import * as Dropzone from "react-dropzone";
 import * as Modal from "react-modal";
 import { UploadStatus, UploadFileType, CreateVersionParams, CreateDatasetParams, DatasetIdAndVersionId } from "../UploadTracker";
@@ -336,6 +336,10 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
         this.props.controller.addTaiga("", "...");
     }
 
+    addGCSPointer() {
+        this.props.controller.addGCS("");
+    }
+
     render() {
         let help = this.props.help;
 
@@ -396,7 +400,22 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
                             e.preventDefault();
                             this.addTaigaReference();
                         }}>Add reference to existing Taiga file</button>
-
+                        <br/>
+                        <button
+                            className="btn btn-default"
+                            style={{ marginTop: "15px" }}
+                            onClick={e => {
+                                e.preventDefault();
+                                this.addGCSPointer();
+                            }}
+                        >
+                            Add pointer to existing GCS object
+                        </button>
+                        <div>
+                            To add a pointer to a GCS object,{" "}
+                            <code>taiga-892@cds-logging.iam.gserviceaccount.com</code>{" "}
+                            must have access to the object.
+                        </div>
                         <UploadTable controller={this.props.controller} files={this.props.files} isProcessing={this.props.isProcessing} />
 
                     </div>

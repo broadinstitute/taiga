@@ -154,6 +154,16 @@ export class UploadTracker {
         });
     }
 
+    addGCSPointer(name: string, gcsPath: string, sid: string): Promise<any> {
+        let fileMetadata = {
+            filename: name,
+            filetype: "gcs",
+            gcsPath: gcsPath
+        };
+
+        return this.getTapi().create_datafile(sid, fileMetadata);
+    }
+
     // returns a promise yielding the dataset_id of the newly constructed dataset
     submitCreateDataset(s3_credentials: S3Credentials, datafiles: Array<UploadFile>, sid: string, params: (CreateVersionParams | CreateDatasetParams)): Promise<DatasetIdAndVersionId> {
         // TODO: If we change the page, we lose the download
@@ -176,6 +186,27 @@ export class UploadTracker {
             if (file.fileType === UploadFileType.Upload) {
                 status = { progress: 0, progressMessage: "Upload starting" }
                 let p = this.uploadAndConvert(s3, s3_credentials, file, sid, i);
+                uploadPromises.push(p);
+            } else if (file.fileType === UploadFileType.GCSPath) {
+                status = {
+                    progress: 0,
+                    progressMessage:
+                        "Attempting to pointer to GCS object"
+                };
+                let p = this.addGCSPointer(file.name, file.gcsPath, sid)
+                    .then(datafileId => {
+                        this.displayStatusUpdate(
+                            "Added pointer to GCS object",
+                            100,
+                            i
+                        );
+                        return datafileId;
+                    })
+                    .catch(reason => {
+                        console.log("failure", reason);
+                        this.displayStatusUpdate("" + reason, 0, i);
+                        throw "Create dataset failed";
+                    });
                 uploadPromises.push(p);
             } else {
                 // initial status

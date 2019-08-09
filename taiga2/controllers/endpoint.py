@@ -8,6 +8,8 @@ import re
 from .endpoint_validation import validate
 
 from sqlalchemy.orm.exc import NoResultFound
+from google.cloud import storage
+from google.cloud.exceptions import NotFound
 
 # TODO: Change the app containing db to api_app => current_app
 import taiga2.controllers.models_controller as models_controller
@@ -470,6 +472,38 @@ def create_upload_session_file(uploadMetadata, sid):
 
         models_controller.add_upload_session_virtual_file(
             session_id=sid, filename=filename, data_file_id=data_file.id
+        )
+
+        return flask.jsonify("done")
+    elif uploadMetadata["filetype"] == "gcs":
+        gcs_path = uploadMetadata["gcsPath"]
+
+        if gcs_path is None:
+            api_error("No GCS path given")
+
+        if "/" not in gcs_path:
+            api_error("Invalid GCS path: {}".format(gcs_path))
+
+        bucket_name, object_name = gcs_path.split("/", 1)
+        client = storage.Client()
+
+        try:
+            bucket = client.get_bucket(bucket_name)
+        except NotFound as e:
+            api_error("No GCS bucket found: {}".format(bucket_name))
+
+        blob = bucket.get_blob(object_name)
+
+        if not blob:
+            api_error("No object found: {}".format(object_name))
+
+        generation_id = blob.generation
+
+        models_controller.add_upload_session_gcs_file(
+            session_id=sid,
+            filename=filename,
+            gcs_path=gcs_path,
+            generation_id=str(generation_id),
         )
 
         return flask.jsonify("done")

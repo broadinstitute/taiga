@@ -250,11 +250,22 @@ class DataFileSchema(ma.ModelSchema):
     allowed_conversion_type = fields.fields.Method("_get_allowed_conversion_type")
     provenance_nodes = ma.Nested(ProvenanceNodeSchema(), many=True)
 
+    gcs_path = fields.fields.Method("_get_gcs_path")
+
     def _get_type(self, data_file):
         return data_file.format.name
 
     def _get_allowed_conversion_type(self, data_file: DataFile):
-        return get_allowed_conversion_type(resolve_virtual_datafile(data_file).format)
+        actual_datafile = resolve_virtual_datafile(data_file)
+        if actual_datafile.type == "gcs":
+            return []
+        return get_allowed_conversion_type(actual_datafile.format)
+
+    def _get_gcs_path(self, data_file: DataFile):
+        actual_datafile = resolve_virtual_datafile(data_file)
+        if actual_datafile.type == "gcs":
+            return actual_datafile.gcs_path
+        return None
 
 
 class DatasetVersionSchema(ma.ModelSchema):
