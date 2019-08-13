@@ -381,12 +381,14 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
                                 </label>
                                 {inputDescription}
                             </FormGroup>
-                            <FormGroup controlId="formDescription" style={{ marginLeft: "0px" }}>
-                                <label className="col-sm-12 col-form-label">
-                                    Description of changes
-                                </label>
-                                {inputChanges}
-                            </FormGroup>
+                            {this.props.showChangesField &&
+                                <FormGroup controlId="formDescription" style={{ marginLeft: "0px" }}>
+                                    <label className="col-sm-12 col-form-label">
+                                        Description of changes
+                                    </label>
+                                    {inputChanges}
+                                </FormGroup>
+                            }
                         </div>
                     </div>
 
