@@ -231,25 +231,35 @@ class DataFileSummarySchema(ma.ModelSchema):
     type = EnumField(S3DataFile.DataFileFormat)
 
 
-class DataFileSchema(ma.ModelSchema):
+class DataFileBaseSchema(ma.ModelSchema):
     class Meta:
-        additional = (
-            "id",
-            "name",
-            "s3_bucket",
-            "s3_key",
-            "short_summary",
-            "underlying_file_id",
-            "original_file_sha256",
-        )
+        additional = ("id", "name")
+
+
+class S3DataFileSchema(DataFileBaseSchema):
+    s3_bucket = fields.fields.String()
+    s3_key = fields.fields.String()
+    short_summary = fields.fields.String()
+    original_file_sha256 = fields.fields.String()
 
     # rename format -> type because that's what the existing client api expects
     type = fields.fields.Method("_get_type")
-
-    # Allowed Conversion Type
     allowed_conversion_type = fields.fields.Method("_get_allowed_conversion_type")
-    provenance_nodes = ma.Nested(ProvenanceNodeSchema(), many=True)
 
+    def _get_type(self, data_file):
+        return data_file.format.name
+
+    def _get_allowed_conversion_type(self, data_file: DataFile):
+        return get_allowed_conversion_type(data_file.format)
+
+
+class VirtualDataFileSchema(DataFileBaseSchema):
+    underlying_file_id = fields.fields.String()
+    short_summary = fields.fields.String()
+
+    # rename format -> type because that's what the existing client api expects
+    type = fields.fields.Method("_get_type")
+    allowed_conversion_type = fields.fields.Method("_get_allowed_conversion_type")
     gcs_path = fields.fields.Method("_get_gcs_path")
 
     def _get_type(self, data_file):
@@ -257,15 +267,31 @@ class DataFileSchema(ma.ModelSchema):
 
     def _get_allowed_conversion_type(self, data_file: DataFile):
         actual_datafile = resolve_virtual_datafile(data_file)
-        if actual_datafile.type == "gcs":
-            return []
-        return get_allowed_conversion_type(actual_datafile.format)
+        if actual_datafile.type == "s3":
+            return get_allowed_conversion_type(actual_datafile.format)
+        return []
 
     def _get_gcs_path(self, data_file: DataFile):
         actual_datafile = resolve_virtual_datafile(data_file)
         if actual_datafile.type == "gcs":
             return actual_datafile.gcs_path
         return None
+
+
+class GCSObjectDataFileSchema(DataFileBaseSchema):
+    gcs_path = fields.fields.String()
+
+
+class DataFileSchema(OneOfSchema):
+    type_field = "datafile_type"
+    type_schemas = {
+        "s3": S3DataFileSchema,
+        "virtual": VirtualDataFileSchema,
+        "gcs": GCSObjectDataFileSchema,
+    }
+
+    def get_obj_type(self, obj):
+        return obj.type
 
 
 class DatasetVersionSchema(ma.ModelSchema):
