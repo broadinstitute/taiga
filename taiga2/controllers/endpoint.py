@@ -663,6 +663,10 @@ def get_datafile(
     else:
         real_datafile = datafile
 
+    # TODO: Implement something for GCS pointer datafiles
+    if real_datafile.type == "gcs":
+        flask.abort(404)
+
     if format == "metadata":
         urls = None
         conversion_status = "Completed successfully"

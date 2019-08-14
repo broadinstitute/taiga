@@ -280,6 +280,10 @@ class VirtualDataFileSchema(DataFileBaseSchema):
 
 class GCSObjectDataFileSchema(DataFileBaseSchema):
     gcs_path = fields.fields.String()
+    allowed_conversion_type = fields.fields.Method("_get_allowed_conversion_type")
+
+    def _get_allowed_conversion_type(self, data_file: DataFile):
+        return []
 
 
 class DataFileSchema(OneOfSchema):
