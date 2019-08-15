@@ -8,8 +8,7 @@ import re
 from .endpoint_validation import validate
 
 from sqlalchemy.orm.exc import NoResultFound
-from google.cloud import storage
-from google.cloud.exceptions import NotFound
+from google.cloud import storage, exceptions as gcs_exceptions
 
 # TODO: Change the app containing db to api_app => current_app
 import taiga2.controllers.models_controller as models_controller
@@ -489,7 +488,13 @@ def create_upload_session_file(uploadMetadata, sid):
 
         try:
             bucket = client.get_bucket(bucket_name)
-        except NotFound as e:
+        except gcs_exceptions.Forbidden as e:
+            api_error(
+                "taiga-892@cds-logging.iam.gserviceaccount.com does not have storage.buckets.get access to bucket: {}".format(
+                    bucket_name
+                )
+            )
+        except gcs_exceptions.NotFound as e:
             api_error("No GCS bucket found: {}".format(bucket_name))
 
         blob = bucket.get_blob(object_name)

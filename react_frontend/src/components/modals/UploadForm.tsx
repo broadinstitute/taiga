@@ -416,7 +416,7 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
                         <div>
                             To add a pointer to a GCS object,{" "}
                             <code>taiga-892@cds-logging.iam.gserviceaccount.com</code>{" "}
-                            must have access to the object.
+                            must have <code>storage.buckets.get</code> access to the bucket.
                         </div>
                         <UploadTable controller={this.props.controller} files={this.props.files} isProcessing={this.props.isProcessing} />
 

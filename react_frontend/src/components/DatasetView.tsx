@@ -887,7 +887,9 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 permaname = dataset.permanames[dataset.permanames.length - 1];
                 r_block = "library(taigr);\n";
 
-                let r_block_lines = datasetVersion.datafiles.map((df, index) => {
+                const s3AndVirtualDatafiles = datasetVersion.datafiles.filter(df => !df.gcs_path);
+
+                let r_block_lines = s3AndVirtualDatafiles.map((df, index) => {
                     let r_name = df.name.replace(/[^A-Za-z0-9]+/g, ".");
                     if (this.hasRaw(df)) {
                         return `${r_name} <- download.raw.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
@@ -901,7 +903,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 python_block = "from taigapy import TaigaClient\n";
                 python_block += "tc = TaigaClient()\n";
 
-                let python_block_lines = datasetVersion.datafiles.map((df, index) => {
+                let python_block_lines = s3AndVirtualDatafiles.map((df, index) => {
                     let python_name = df.name.replace(/[^A-Za-z0-9]+/g, "_");;
 
                     if (this.hasRaw(df)) {
