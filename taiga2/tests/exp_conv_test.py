@@ -64,6 +64,9 @@ class ProgressStub:
     def progress(self, *args, **kwargs):
         print("progress", args, kwargs)
 
+    def failed(self, *args, **kwargs):
+        print("failed", args, kwargs)
+
 
 @pytest.mark.parametrize(
     "max_elements_per_block, expected_file_count", [(10000, 1), (5 * 5, 2)]

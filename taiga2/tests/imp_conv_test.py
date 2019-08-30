@@ -107,6 +107,19 @@ def test_get_csv_dims(tmpdir):
     assert sha256 == "629910bba467f4d6f518d309b3d2a99e316d7d5ef1faa744a7c5a6a084219255"
 
 
+def test_get_large_csv_dims_wrong_delimeter(tmpdir):
+    filename = tmpdir.join("sample")
+    file_contents = ",".join(str(i) for i in range(10000000))
+    file_contents = "\n".join(file_contents for _ in range(3))
+    file_contents = file_contents.encode("ascii")
+    filename.write_binary(file_contents)
+
+    with pytest.raises(Exception, match=r".*field larger than field limit.*"):
+        row_count, col_count, sha256 = _get_csv_dims(
+            ProgressStub(), str(filename), csv.excel_tab, "utf-8"
+        )
+
+
 def test_non_utf8(tmpdir):
     dest = str(tmpdir.join("dest.columnar"))
     final = str(tmpdir.join("final.csv"))

@@ -17,22 +17,28 @@ BYTES_PER_STR_OBJECT = 60
 
 def _get_csv_dims(progress, filename, dialect, encoding):
     hash = get_file_sha256(filename)
-    with open(filename, "rU", encoding=encoding) as fd:
-        r = csv.reader(fd, dialect)
-        row_count = 0
-        col_header = next(r)
-        first_row = None
+    try:
+        with open(filename, "rU", encoding=encoding) as fd:
+            r = csv.reader(fd, dialect)
+            row_count = 0
+            col_header = next(r)
+            first_row = None
 
-        for row in r:
-            if first_row is None:
-                first_row = row
-            row_count += 1
-            if row_count % 1000 == 0:
-                message = "Scanning through file to determine size (line {})".format(
-                    row_count + 1
-                )
-                progress.progress(message, None, row_count + 1)
-
+            for row in r:
+                if first_row is None:
+                    first_row = row
+                row_count += 1
+                if row_count % 1000 == 0:
+                    message = "Scanning through file to determine size (line {})".format(
+                        row_count + 1
+                    )
+                    progress.progress(message, None, row_count + 1)
+    except csv.Error as e:
+        message = "Error while getting file dimensions: {}.".format(e)
+        if "field larger than field limit" in message:
+            message += " Try using a different delimeter."
+        progress.failed(message, None)
+        raise Exception(message)
     return row_count, len(first_row) - 1, hash
 
 
@@ -160,7 +166,6 @@ def tcsv_to_hdf5(
         )
 
         col_header, r = _determine_col_header(textIO_tcsv, dialect, progress)
-
         _validate_columns(progress, col_header)
 
         na_count, row_header = _convert_to_hdf5_file(
