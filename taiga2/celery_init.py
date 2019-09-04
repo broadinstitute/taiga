@@ -1,3 +1,4 @@
+from taiga2.api_app import exception_reporter
 from taiga2.tasks import celery
 
 
@@ -10,15 +11,11 @@ def configure_celery(app):
     # only relevant for the worker process
     TaskBase = celery.Task
 
-    class ContextTask(TaskBase):
-        abstract = True
+    class TaskWithStackdriverLogging(TaskBase):
+        def on_failure(self, exc, task_id, args, kwargs, einfo):
+            exception_reporter.report(with_request_context=False)
+            super().on_failure(exc, task_id, args, kwargs, einfo)
 
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                print(app.config)
-                return TaskBase.__call__(self, *args, **kwargs)
-
-    if not app.config.get("CELERY_ALWAYS_EAGER", False):
-        celery.Task = ContextTask
+    celery.Task = TaskWithStackdriverLogging
 
     return celery

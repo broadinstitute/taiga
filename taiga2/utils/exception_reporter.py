@@ -21,14 +21,17 @@ class ExceptionReporter:
         if not self.disabled:
             self._create_client()
 
-    def report(self):
+    def report(self, with_request_context=True):
         if self.disabled:
             return
 
         client = self._get_client()
-        client.report_exception(
-            http_context=error_reporting.build_flask_context(request)
-        )
+        if with_request_context:
+            client.report_exception(
+                http_context=error_reporting.build_flask_context(request)
+            )
+        else:
+            client.report_exception()
 
     def _create_client(self):
         return error_reporting.Client(service=self.service_name, project="cds-logging")
