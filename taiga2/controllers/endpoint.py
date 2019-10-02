@@ -785,12 +785,7 @@ def get_datafile_column_types(
 
     table_info = conversion.read_column_definitions(r["Body"])
 
-    return flask.jsonify(
-        [
-            {"index": c.index, "name": c.name, "type_name": c.persister.type_name}
-            for c in table_info
-        ]
-    )
+    return flask.jsonify({c.name: c.persister.type_name for c in table_info})
 
 
 def entry_is_valid(entry):
