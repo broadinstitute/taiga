@@ -758,6 +758,41 @@ def get_datafile_short_summary(
         flask.abort(404)
 
 
+@validate
+def get_datafile_column_types(
+    dataset_permaname=None, version=None, dataset_version_id=None, datafile_name=None
+):
+    datafile = models_controller.find_datafile(
+        dataset_permaname, version, dataset_version_id, datafile_name
+    )
+    if datafile is None:
+        flask.abort(404)
+
+    if datafile.type == "virtual":
+        real_datafile = datafile.underlying_data_file
+    else:
+        real_datafile = datafile
+
+    if real_datafile.type == "gcs":
+        flask.abort(400)
+
+    if real_datafile.format.name != "Columnar":
+        flask.abort(400)
+
+    r = aws.s3_client.get_object(
+        Bucket=real_datafile.s3_bucket, Key=real_datafile.s3_key
+    )
+
+    table_info = conversion.read_column_definitions(r["Body"])
+
+    return flask.jsonify(
+        [
+            {"index": c.index, "name": c.name, "type_name": c.persister.type_name}
+            for c in table_info
+        ]
+    )
+
+
 def entry_is_valid(entry):
     # while celery eager eval is enabled, we cannot use AsyncResult so just assume any existing
     # cache value is fine.

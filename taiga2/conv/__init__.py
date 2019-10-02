@@ -2,7 +2,7 @@ BYTES_PER_STR_OBJECT = 60
 MAX_MB_PER_CHUNK = 50
 
 # These three must all have the same signature: ( input_file, temp_file_generator: "() -> str" ) -> list of files
-from taiga2.conv.columnar import columnar_to_rds
+from taiga2.conv.columnar import columnar_to_rds, read_column_definitions
 
 from taiga2.conv.imp import csv_to_hdf5, tsv_to_hdf5, gct_to_hdf5
 from taiga2.conv.exp import hdf5_to_rds, hdf5_to_csv, hdf5_to_tsv, hdf5_to_gct

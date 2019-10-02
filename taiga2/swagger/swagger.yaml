@@ -816,6 +816,43 @@ paths:
         500:
           description: Error encountered during datafile retrieval.
 
+  /datafile/column_types:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_datafile_column_types
+      description: Get datafile column types
+      parameters:
+        - name: dataset_permaname
+          in: query
+          type: string
+          description: "The permaname of the dataset (Either permaname or dataset_version_id must be supplied)"
+        - name: version
+          in: query
+          type: string
+          description: "The version number of the dataset (only valid when permaname is supplied)"
+        - name: dataset_version_id
+          in: query
+          type: string
+          description: "dataset version id to look up.  (Either permaname or dataset_version_id must be supplied)"
+        - name: datafile_name
+          in: query
+          type: string
+          description: "datafile name (optional if there is only one datafile associated with the dataset)"
+      responses:
+        200:
+          description: Will return the short summary computed when the datafile was created
+          schema:
+            title: column_types
+            type: object
+            additionalProperties:
+              type: string
+        400:
+          description: Malformed request
+        404:
+          description: No dataset found
+        500:
+          description: Error encountered during datafile retrieval.
+
   /task_status/{taskStatusId}:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint

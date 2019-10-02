@@ -147,6 +147,12 @@ def read_str(fd, max_len=None):
             )
         )
 
+    # HACK: The version of boto3 we use has a bug where reading 0 bytes from a
+    # StreamingBody raises IncompleteReadError
+    # See https://github.com/boto/botocore/issues/1309
+    if length == 0:
+        return ""
+
     bytes = fd.read(length)
     try:
         s = str(bytes, "utf8")
