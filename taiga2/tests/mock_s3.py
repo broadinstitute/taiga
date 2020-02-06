@@ -53,7 +53,7 @@ class MockBucket:
             self.put_object(key, data_copy_source)
 
     def Object(self, key):
-        return MockS3Object(self.name, key)
+        return MockS3Object(self, key)
 
     def __call__(self, name):
         return self
@@ -71,7 +71,7 @@ class MockS3Object:
         with open(full_path, "rb") as f:
             writer.write(f.read())
 
-    def upload_fileobj(self, fileobj):
+    def upload_fileobj(self, fileobj, ExtraArgs=None):
         full_path = self.bucket.s3._get_unique_filename()
 
         with open(full_path, "w+b") as f:

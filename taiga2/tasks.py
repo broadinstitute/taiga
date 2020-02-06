@@ -28,14 +28,15 @@ def print_config():
 
 
 def _compress_and_upload_to_s3(
-    s3_object, download_dest, compressed_dest, compressed_s3_object
+    s3_object, download_dest, compressed_dest, compressed_s3_object, mime_type
 ):
     # Create a new compressed object to upload
     with open(download_dest.name, "rb") as f:
         with gzip.open(compressed_dest.name, "wb") as f_compressed:
             shutil.copyfileobj(f, f_compressed)
             compressed_s3_object.upload_fileobj(
-                compressed_dest, ExtraArgs={"ContentEncoding": "gzip"}
+                compressed_dest,
+                ExtraArgs={"ContentEncoding": "gzip", "ContentType": mime_type},
             )
 
 
@@ -49,6 +50,7 @@ def _from_s3_convert_to_s3(
     converter,
     compressed_dest,
     compressed_s3_object,
+    mime_type,
 ):
     progress.progress("Downloading the file from S3")
 
@@ -64,7 +66,7 @@ def _from_s3_convert_to_s3(
     converted_s3_object.upload_fileobj(converted_dest)
 
     _compress_and_upload_to_s3(
-        s3_object, download_dest, compressed_dest, compressed_s3_object
+        s3_object, download_dest, compressed_dest, compressed_s3_object, mime_type
     )
 
     return import_result
@@ -109,7 +111,11 @@ def background_process_new_upload_session_file(
                 download_dest.flush()
 
                 _compress_and_upload_to_s3(
-                    existing_obj, download_dest, compressed_dest, compressed_s3_object
+                    existing_obj,
+                    download_dest,
+                    compressed_dest,
+                    compressed_s3_object,
+                    "text/plain",
                 )
 
         import_result = ImportResult(
@@ -139,6 +145,14 @@ def background_process_new_upload_session_file(
         with tempfile.NamedTemporaryFile("w+b") as download_dest:
             with tempfile.NamedTemporaryFile("w+b") as converted_dest:
                 with tempfile.NamedTemporaryFile("w+b") as compressed_dest:
+                    if (
+                        file_type == models.InitialFileType.NumericMatrixCSV.value
+                        or file_type == models.InitialFileType.TableCSV.value
+                    ):
+                        mime_type = "text/csv"
+                    else:
+                        mime_type = "text/tab-separated-values"
+
                     import_result = _from_s3_convert_to_s3(
                         progress,
                         upload_session_file_id,
@@ -149,6 +163,7 @@ def background_process_new_upload_session_file(
                         converter,
                         compressed_dest,
                         compressed_s3_object,
+                        mime_type,
                     )
 
     models_controller.update_upload_session_file_summaries(
