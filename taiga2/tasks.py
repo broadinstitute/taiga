@@ -4,6 +4,8 @@ import tempfile
 import uuid
 import flask
 import logging
+import gzip
+import shutil
 
 from taiga2.aws import aws
 import taiga2.conv as conversion
@@ -25,6 +27,18 @@ def print_config():
     print(flask.current_app.config)
 
 
+def _compress_and_upload_to_s3(
+    s3_object, download_dest, compressed_dest, compressed_s3_object
+):
+    # Create a new compressed object to upload
+    with open(download_dest.name, "rb") as f:
+        with gzip.open(compressed_dest.name, "wb") as f_compressed:
+            shutil.copyfileobj(f, f_compressed)
+            compressed_s3_object.upload_fileobj(
+                compressed_dest, ExtraArgs={"ContentEncoding": "gzip"}
+            )
+
+
 def _from_s3_convert_to_s3(
     progress,
     upload_session_file_id,
@@ -33,6 +47,8 @@ def _from_s3_convert_to_s3(
     converted_dest,
     converted_s3_object,
     converter,
+    compressed_dest,
+    compressed_s3_object,
 ):
     progress.progress("Downloading the file from S3")
 
@@ -47,6 +63,10 @@ def _from_s3_convert_to_s3(
     converted_dest.seek(0)
     converted_s3_object.upload_fileobj(converted_dest)
 
+    _compress_and_upload_to_s3(
+        s3_object, download_dest, compressed_dest, compressed_s3_object
+    )
+
     return import_result
 
 
@@ -58,6 +78,7 @@ def background_process_new_upload_session_file(
     file_type,
     bucket_name,
     converted_s3_key,
+    compressed_s3_key,
 ):
     s3 = aws.s3
     progress = Progress(self)
@@ -81,8 +102,19 @@ def background_process_new_upload_session_file(
         existing_obj = b.Object(initial_s3_key)
         b.copy(copy_source, converted_s3_key)
 
+        compressed_s3_object = s3.Object(bucket_name, compressed_s3_key)
+        with tempfile.NamedTemporaryFile("w+b") as download_dest:
+            with tempfile.NamedTemporaryFile("w+b") as compressed_dest:
+                existing_obj.download_fileobj(download_dest)
+                download_dest.flush()
+
+                _compress_and_upload_to_s3(
+                    existing_obj, download_dest, compressed_dest, compressed_s3_object
+                )
+
         import_result = ImportResult(
             sha256=None,
+            md5=None,
             long_summary=None,
             short_summary=humanize.naturalsize(existing_obj.content_length),
         )
@@ -102,24 +134,29 @@ def background_process_new_upload_session_file(
 
         s3_object = s3.Object(bucket_name, initial_s3_key)
         converted_s3_object = s3.Object(bucket_name, converted_s3_key)
+        compressed_s3_object = s3.Object(bucket_name, compressed_s3_key)
 
         with tempfile.NamedTemporaryFile("w+b") as download_dest:
             with tempfile.NamedTemporaryFile("w+b") as converted_dest:
-                import_result = _from_s3_convert_to_s3(
-                    progress,
-                    upload_session_file_id,
-                    s3_object,
-                    download_dest,
-                    converted_dest,
-                    converted_s3_object,
-                    converter,
-                )
+                with tempfile.NamedTemporaryFile("w+b") as compressed_dest:
+                    import_result = _from_s3_convert_to_s3(
+                        progress,
+                        upload_session_file_id,
+                        s3_object,
+                        download_dest,
+                        converted_dest,
+                        converted_s3_object,
+                        converter,
+                        compressed_dest,
+                        compressed_s3_object,
+                    )
 
     models_controller.update_upload_session_file_summaries(
         upload_session_file_id,
         import_result.short_summary,
         import_result.long_summary,
         import_result.sha256,
+        import_result.md5,
     )
 
 

@@ -938,7 +938,7 @@ def deprecate_dataset_version(
 
 
 def deprecate_dataset_version_from_delete_state(
-    dataset_version_id: str
+    dataset_version_id: str,
 ) -> DatasetVersion.DatasetVersionState:
     """
     This function is mainly here to retrieve the reason message of deprecation (so if deletion was a mistake,
@@ -958,7 +958,7 @@ def deprecate_dataset_version_from_delete_state(
 
 
 def approve_dataset_version(
-    dataset_version_id: str
+    dataset_version_id: str,
 ) -> DatasetVersion.DatasetVersionState:
     """Change the current state of a DatasetVersion to approve (see DatasetVersionState).
     It should be the state by default
@@ -974,7 +974,7 @@ def approve_dataset_version(
 
 
 def delete_dataset_version(
-    dataset_version_id: str
+    dataset_version_id: str,
 ) -> DatasetVersion.DatasetVersionState:
     """Change the current state of a DatasetVersion to deleted (see DatasetVersionState).
     :param dataset_version_id: ID of the dataset version to delete
@@ -1133,6 +1133,7 @@ def add_s3_datafile(
     short_summary,
     long_summary,
     original_file_sha256=None,
+    original_file_md5=None,
     forced_id=None,
 ):
     assert type is not None
@@ -1159,6 +1160,7 @@ def add_s3_datafile(
         long_summary=long_summary,
         id=forced_id,
         original_file_sha256=original_file_sha256,
+        original_file_md5=original_file_md5,
     )
 
     db.session.add(new_datafile)
@@ -1304,6 +1306,7 @@ def add_datafiles_from_session(session_id):
                 short_summary=file.short_summary,
                 long_summary=file.long_summary,
                 original_file_sha256=file.original_file_sha256,
+                original_file_md5=file.original_file_md5,
             )
         added_datafiles.append(new_datafile)
 
@@ -1377,6 +1380,9 @@ class EnumS3FolderPath(enum.Enum):
     Convert = (
         "convert/"
     )  # key prefix used for data converted to canonical form.  These are the authorative source.
+    Compress = (
+        "compressed/"
+    )  # key prefix used for compressed raw data.  These are the authorative source.
     Export = (
         "export/"
     )  # key prefix used for results converted for export.  These are transient because they can be re-generated.
@@ -1385,6 +1391,11 @@ class EnumS3FolderPath(enum.Enum):
 def generate_convert_key():
     enumed_convert_path = EnumS3FolderPath.Convert.value
     return os.path.join(enumed_convert_path + str(uuid.uuid4()))
+
+
+def generate_compressed_key():
+    enumed_compressed_path = EnumS3FolderPath.Compress.value
+    return os.path.join(enumed_compressed_path + str(uuid.uuid4()))
 
 
 def add_upload_session_s3_file(
@@ -1396,6 +1407,8 @@ def add_upload_session_s3_file(
     converted_filetype = models.find_converted_type_by_initial_type(initial_file_type)
     assert converted_filetype is not None
 
+    compressed_s3_key = generate_compressed_key()
+
     upload_session_file = UploadSessionFile(
         session_id=session_id,
         filename=filename,
@@ -1404,6 +1417,7 @@ def add_upload_session_s3_file(
         s3_bucket=s3_bucket,
         converted_s3_key=converted_s3_key,
         converted_filetype=converted_filetype,
+        compressed_s3_key=compressed_s3_key,
     )
     db.session.add(upload_session_file)
     db.session.commit()
@@ -1443,12 +1457,15 @@ def get_upload_session_file(upload_session_file_id):
     return upload_session_file
 
 
-def update_upload_session_file_summaries(file_id, short_summary, long_summary, sha256):
+def update_upload_session_file_summaries(
+    file_id, short_summary, long_summary, sha256, md5
+):
     db.session.query(UploadSessionFile).filter(UploadSessionFile.id == file_id).update(
         dict(
             short_summary=short_summary,
             long_summary=long_summary,
             original_file_sha256=sha256,
+            original_file_md5=md5,
         )
     )
     db.session.commit()

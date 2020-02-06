@@ -449,6 +449,7 @@ def create_upload_session_file(uploadMetadata, sid):
             initial_file_type,
             s3_bucket,
             upload_session_file.converted_s3_key,
+            upload_session_file.compressed_s3_key,
         )
 
         return flask.jsonify(task.id)

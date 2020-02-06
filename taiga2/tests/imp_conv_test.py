@@ -67,6 +67,7 @@ def test_upload_session_file(
     new_bucket.create()
 
     converted_s3_key = models_controller.generate_convert_key()
+    compressed_s3_key = models_controller.generate_compressed_key()
 
     with open(filename, "rb") as data:
         aws.s3.Bucket(new_bucket.name).put_object(Key=converted_s3_key, Body=data)
@@ -90,6 +91,7 @@ def test_upload_session_file(
         initial_file_type,
         bucket_name,
         converted_s3_key,
+        compressed_s3_key,
     ).wait()
 
     # confirm the converted object was published back to s3
@@ -99,12 +101,13 @@ def test_upload_session_file(
 def test_get_csv_dims(tmpdir):
     filename = tmpdir.join("sample")
     filename.write_binary(b"a,b,c\nd,1,2,3\n")
-    row_count, col_count, sha256 = _get_csv_dims(
+    row_count, col_count, sha256, md5 = _get_csv_dims(
         ProgressStub(), str(filename), csv.excel, "utf-8"
     )
     assert row_count == 1
     assert col_count == 3
     assert sha256 == "629910bba467f4d6f518d309b3d2a99e316d7d5ef1faa744a7c5a6a084219255"
+    assert md5 == "28ed28fa14570cc1409563f848a4c962"
 
 
 def test_get_large_csv_dims_wrong_delimeter(tmpdir):
@@ -115,7 +118,7 @@ def test_get_large_csv_dims_wrong_delimeter(tmpdir):
     filename.write_binary(file_contents)
 
     with pytest.raises(Exception, match=r".*field larger than field limit.*"):
-        row_count, col_count, sha256 = _get_csv_dims(
+        row_count, col_count, sha256, md5 = _get_csv_dims(
             ProgressStub(), str(filename), csv.excel_tab, "utf-8"
         )
 

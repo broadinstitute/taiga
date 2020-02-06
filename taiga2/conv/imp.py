@@ -2,7 +2,7 @@ import csv
 import io
 import numpy as np
 import logging
-from taiga2.conv.util import ImportResult, shortened_list, get_file_sha256
+from taiga2.conv.util import ImportResult, shortened_list, get_file_hashes
 
 from taiga2.conv import BYTES_PER_STR_OBJECT, MAX_MB_PER_CHUNK
 
@@ -16,7 +16,7 @@ BYTES_PER_STR_OBJECT = 60
 
 
 def _get_csv_dims(progress, filename, dialect, encoding):
-    hash = get_file_sha256(filename)
+    sha256, md5 = get_file_hashes(filename)
     try:
         with open(filename, "rU", encoding=encoding) as fd:
             r = csv.reader(fd, dialect)
@@ -39,7 +39,7 @@ def _get_csv_dims(progress, filename, dialect, encoding):
             message += " Try using a different delimeter."
         progress.failed(message, None)
         raise Exception(message)
-    return row_count, len(first_row) - 1, hash
+    return row_count, len(first_row) - 1, sha256, md5
 
 
 def csv_to_hdf5(progress, src_csv_file, dst_hdf5_file, **kwargs):
@@ -57,7 +57,7 @@ def gct_to_hdf5(
     rows_per_block=None,
     max_size_per_block=DEFAULT_MAX_ELEMENTS_PER_BLOCK,
 ):
-    sha256 = get_file_sha256(src_gct_file)
+    sha256, md5 = get_file_hashes(src_gct_file)
 
     with open(src_gct_file, "rb") as gct:
         line = gct.readline().strip()
@@ -102,7 +102,7 @@ def gct_to_hdf5(
         )
 
     return _make_import_result(
-        col_count, col_header, na_count, row_count, row_header, sha256
+        col_count, col_header, na_count, row_count, row_header, sha256, md5
     )
 
 
@@ -161,7 +161,7 @@ def tcsv_to_hdf5(
         # Wrapping the tcsv file into TextIOWrapper to avoid disabling .tell() function on the file
         textIO_tcsv = io.TextIOWrapper(io.BufferedReader(tcsv))  # type: ignore
 
-        row_count, col_count, sha256 = _get_csv_dims(
+        row_count, col_count, sha256, md5 = _get_csv_dims(
             progress, src_csv_file, dialect, encoding
         )
 
@@ -182,11 +182,13 @@ def tcsv_to_hdf5(
         )
 
     return _make_import_result(
-        col_count, col_header, na_count, row_count, row_header, sha256
+        col_count, col_header, na_count, row_count, row_header, sha256, md5
     )
 
 
-def _make_import_result(col_count, col_header, na_count, row_count, row_header, sha256):
+def _make_import_result(
+    col_count, col_header, na_count, row_count, row_header, sha256, md5
+):
     pid = os.getpid()
     current_process = psutil.Process(pid)
     log.info(
@@ -201,6 +203,7 @@ def _make_import_result(col_count, col_header, na_count, row_count, row_header, 
 
     import_result = ImportResult(
         sha256=sha256,
+        md5=md5,
         short_summary="{}x{} matrix, {} NAs".format(row_count, col_count, na_count),
         long_summary=long_summary,
     )

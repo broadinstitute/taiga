@@ -9,7 +9,7 @@ from io import BytesIO
 import logging
 import subprocess
 import sys
-from taiga2.conv.util import r_escape_str, shortened_list, ImportResult, get_file_sha256
+from taiga2.conv.util import r_escape_str, shortened_list, ImportResult, get_file_hashes
 from taiga2.conv import BYTES_PER_STR_OBJECT, MAX_MB_PER_CHUNK
 
 log = logging.getLogger(__name__)
@@ -478,7 +478,7 @@ def get_long_summary(input_file):
 def convert_csv_to_tabular(
     input_file, output_file, delimiter, encoding, rows_per_block=None
 ):
-    sha256 = get_file_sha256(input_file)
+    sha256, md5 = get_file_hashes(input_file)
     hasRowNames, datafile_columns = sniff.sniff(
         input_file, encoding, delimiter=delimiter
     )
@@ -517,6 +517,7 @@ def convert_csv_to_tabular(
 
     return ImportResult(
         sha256=sha256,
+        md5=md5,
         short_summary="{} rows, {} columns".format(line_number, len(datafile_columns)),
         long_summary=long_summary,
     )

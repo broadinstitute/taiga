@@ -210,7 +210,11 @@ def test_create_dataset(session: SessionBase, new_upload_session_file):
     _new_upload_session_id = new_upload_session_file.session.id
 
     models_controller.update_upload_session_file_summaries(
-        new_upload_session_file.id, "short_summary_test", "long_summary_test", None
+        new_upload_session_file.id,
+        "short_summary_test",
+        "long_summary_test",
+        None,
+        None,
     )
 
     dataset_name = "Dataset Name"

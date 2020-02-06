@@ -2,6 +2,7 @@ import math
 import contextlib
 import os
 import tempfile
+from typing import Tuple
 
 
 @contextlib.contextmanager
@@ -65,7 +66,7 @@ import hashlib
 
 from collections import namedtuple
 
-ImportResult = namedtuple("ImportResult", "sha256 short_summary long_summary")
+ImportResult = namedtuple("ImportResult", "sha256 md5 short_summary long_summary")
 
 
 def get_file_sha256(filename):
@@ -77,3 +78,17 @@ def get_file_sha256(filename):
                 break
             hash.update(buffer)
     return hash.hexdigest()
+
+
+def get_file_hashes(filename: str) -> Tuple[str, str]:
+    """Returns the sha256 and md5 hashes for a file."""
+    sha256 = hashlib.sha256()
+    md5 = hashlib.md5()
+    with open(filename, "rb") as fd:
+        while True:
+            buffer = fd.read(1024 * 1024)
+            if len(buffer) == 0:
+                break
+            sha256.update(buffer)
+            md5.update(buffer)
+    return sha256.hexdigest(), md5.hexdigest()

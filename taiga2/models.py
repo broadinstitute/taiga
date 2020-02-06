@@ -260,10 +260,12 @@ class S3DataFile(DataFile):
     format = db.Column(db.Enum(DataFileFormat))
     s3_bucket = db.Column(db.Text)
     s3_key = db.Column(db.Text)
+    compressed_s3_key = db.Column(db.Text)
 
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)
     original_file_sha256 = db.Column(db.Text)
+    original_file_md5 = db.Column(db.Text)
 
     __mapper_args__ = {"polymorphic_identity": "s3"}
 
@@ -290,6 +292,10 @@ class VirtualDataFile(DataFile):
         return None
 
     @property
+    def compressed_s3_key(self):
+        return None
+
+    @property
     def s3_bucket(self):
         return None
 
@@ -308,6 +314,10 @@ class VirtualDataFile(DataFile):
     @property
     def original_file_sha256(self):
         return self.underlying_data_file.original_file_sha256
+
+    @property
+    def original_file_md5(self):
+        return self.underlying_data_file.original_file_md5
 
 
 class GCSObjectDataFile(DataFile):
@@ -543,6 +553,8 @@ class UploadSessionFile(db.Model):
     converted_filetype = db.Column(db.Enum(S3DataFile.DataFileFormat))
     converted_s3_key = db.Column(db.Text)
 
+    compressed_s3_key = db.Column(db.Text)
+
     s3_bucket = db.Column(db.Text)
 
     gcs_path = db.Column(db.Text)
@@ -551,6 +563,7 @@ class UploadSessionFile(db.Model):
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)
     original_file_sha256 = db.Column(db.Text)
+    original_file_md5 = db.Column(db.Text)
 
     data_file_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
     data_file = db.relationship(
