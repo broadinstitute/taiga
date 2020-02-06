@@ -209,7 +209,7 @@ class InitialFileType(enum.Enum):
     Raw = "Raw"
 
 
-def resolve_virtual_datafile(datafile):
+def resolve_virtual_datafile(datafile) -> "S3DataFile":
     attempt_count = 0
     while datafile.type == "virtual":
         attempt_count += 1
@@ -257,15 +257,15 @@ class S3DataFile(DataFile):
         HDF5 = "HDF5"
         Columnar = "Columnar"
 
-    format = db.Column(db.Enum(DataFileFormat))
-    s3_bucket = db.Column(db.Text)
-    s3_key = db.Column(db.Text)
-    compressed_s3_key = db.Column(db.Text)
+    format: DataFileFormat = db.Column(db.Enum(DataFileFormat))
+    s3_bucket: str = db.Column(db.Text)
+    s3_key: str = db.Column(db.Text)
+    compressed_s3_key: str = db.Column(db.Text)
 
-    short_summary = db.Column(db.Text)
-    long_summary = db.Column(db.Text)
-    original_file_sha256 = db.Column(db.Text)
-    original_file_md5 = db.Column(db.Text)
+    short_summary: str = db.Column(db.Text)
+    long_summary: str = db.Column(db.Text)
+    original_file_sha256: str = db.Column(db.Text)
+    original_file_md5: str = db.Column(db.Text)
 
     __mapper_args__ = {"polymorphic_identity": "s3"}
 
@@ -331,23 +331,33 @@ class GCSObjectDataFile(DataFile):
         return None
 
 
-def get_allowed_conversion_type(datafile_type):
-    if datafile_type == S3DataFile.DataFileFormat.HDF5:
-        return [
+def get_allowed_conversion_type(datafile: S3DataFile):
+    if datafile.format == S3DataFile.DataFileFormat.HDF5:
+        allowed_conversion_types = [
             conversion.CSV_FORMAT,
             conversion.GCT_FORMAT,
             conversion.HDF5_FORMAT,
             conversion.TSV_FORMAT,
         ]
 
-    if datafile_type == S3DataFile.DataFileFormat.Columnar:
-        return [conversion.CSV_FORMAT, conversion.TSV_FORMAT]
+        if datafile.compressed_s3_key is not None:
+            allowed_conversion_types.insert(0, conversion.RAW_FORMAT)
 
-    if datafile_type == S3DataFile.DataFileFormat.Raw:
+        return allowed_conversion_types
+
+    if datafile.format == S3DataFile.DataFileFormat.Columnar:
+        allowed_conversion_types = [conversion.CSV_FORMAT, conversion.TSV_FORMAT]
+
+        if datafile.compressed_s3_key is not None:
+            allowed_conversion_types.insert(0, conversion.RAW_FORMAT)
+
+        return allowed_conversion_types
+
+    if datafile.format == S3DataFile.DataFileFormat.Raw:
         return [conversion.RAW_FORMAT]
 
     raise Exception(
-        "datafile type {} does not exist in the model".format(datafile_type)
+        "datafile type {} does not exist in the model".format(datafile.type)
     )
 
 

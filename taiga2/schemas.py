@@ -250,7 +250,7 @@ class S3DataFileSchema(DataFileBaseSchema):
         return data_file.format.name
 
     def _get_allowed_conversion_type(self, data_file: DataFile):
-        return get_allowed_conversion_type(data_file.format)
+        return get_allowed_conversion_type(data_file)
 
 
 class VirtualDataFileSchema(DataFileBaseSchema):
@@ -268,7 +268,7 @@ class VirtualDataFileSchema(DataFileBaseSchema):
     def _get_allowed_conversion_type(self, data_file: DataFile):
         actual_datafile = resolve_virtual_datafile(data_file)
         if actual_datafile.type == "s3":
-            return get_allowed_conversion_type(actual_datafile.format)
+            return get_allowed_conversion_type(actual_datafile)
         return []
 
     def _get_gcs_path(self, data_file: DataFile):

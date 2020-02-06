@@ -5,7 +5,7 @@ import uuid
 import os
 import re
 
-from typing import List
+from typing import List, Optional
 
 import json
 
@@ -1595,7 +1595,9 @@ class IllegalArgumentError(ValueError):
     pass
 
 
-def find_datafile(dataset_permaname, version_number, dataset_version_id, datafile_name):
+def find_datafile(
+    dataset_permaname, version_number, dataset_version_id, datafile_name
+) -> Optional[DataFile]:
     """Look up a datafile given either a permaname (and optional version number) or a dataset_version_id.  The datafile_name
     is also optional.  If unspecified, and there is a single datafile for that dataset_version, that will be returned.
     Otherwise datafile_name is required. """

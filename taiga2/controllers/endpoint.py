@@ -673,6 +673,8 @@ def get_datafile(
     if real_datafile.type == "gcs":
         flask.abort(404)
 
+    real_datafile: S3DataFile
+
     if format == "metadata":
         urls = None
         conversion_status = "Completed successfully"
@@ -681,6 +683,15 @@ def get_datafile(
         urls = [
             create_signed_get_obj(
                 real_datafile.s3_bucket, real_datafile.s3_key, dl_filename
+            )
+        ]
+        conversion_status = "Completed successfully"
+    elif format == "raw":
+        if real_datafile.compressed_s3_key is None:
+            flask.abort(404)
+        urls = [
+            create_signed_get_obj(
+                real_datafile.s3_bucket, real_datafile.compressed_s3_key, dl_filename
             )
         ]
         conversion_status = "Completed successfully"
