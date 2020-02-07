@@ -9,7 +9,7 @@ from flask_migrate import Migrate
 from sqlalchemy import event, UniqueConstraint, CheckConstraint
 from sqlalchemy.ext.declarative import declared_attr
 
-from typing import List
+from typing import Dict, List
 
 import taiga2.conv as conversion
 from taiga2.extensions import db
@@ -264,6 +264,7 @@ class S3DataFile(DataFile):
 
     short_summary: str = db.Column(db.Text)
     long_summary: str = db.Column(db.Text)
+    column_types_as_json: Dict[str, str] = db.Column(db.JSON)
     original_file_sha256: str = db.Column(db.Text)
     original_file_md5: str = db.Column(db.Text)
 
@@ -572,6 +573,7 @@ class UploadSessionFile(db.Model):
 
     short_summary = db.Column(db.Text)
     long_summary = db.Column(db.Text)
+    column_types_as_json: Dict[str, str] = db.Column(db.JSON)
     original_file_sha256 = db.Column(db.Text)
     original_file_md5 = db.Column(db.Text)
 

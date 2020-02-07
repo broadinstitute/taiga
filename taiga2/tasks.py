@@ -51,6 +51,7 @@ def _from_s3_convert_to_s3(
     compressed_dest,
     compressed_s3_object,
     mime_type,
+    encoding,
 ):
     progress.progress("Downloading the file from S3")
 
@@ -69,7 +70,16 @@ def _from_s3_convert_to_s3(
         s3_object, download_dest, compressed_dest, compressed_s3_object, mime_type
     )
 
-    return import_result
+    delimiter = "," if mime_type == "text/csv" else "\t"
+    try:
+        column_types = conversion.sniff.sniff2(download_dest.name, encoding, delimiter)
+    except Exception:
+        log.warning(
+            "Could not guess column types for {}".format(compressed_dest), exc_info=1
+        )
+        column_types = None
+
+    return import_result, column_types
 
 
 @celery.task(bind=True)
@@ -124,6 +134,7 @@ def background_process_new_upload_session_file(
             long_summary=None,
             short_summary=humanize.naturalsize(existing_obj.content_length),
         )
+        column_types = None
     else:
         if file_type == models.InitialFileType.NumericMatrixCSV.value:
             converter = conversion.csv_to_hdf5
@@ -153,7 +164,7 @@ def background_process_new_upload_session_file(
                     else:
                         mime_type = "text/tab-separated-values"
 
-                    import_result = _from_s3_convert_to_s3(
+                    import_result, column_types = _from_s3_convert_to_s3(
                         progress,
                         upload_session_file_id,
                         s3_object,
@@ -164,12 +175,14 @@ def background_process_new_upload_session_file(
                         compressed_dest,
                         compressed_s3_object,
                         mime_type,
+                        "utf-8",
                     )
 
     models_controller.update_upload_session_file_summaries(
         upload_session_file_id,
         import_result.short_summary,
         import_result.long_summary,
+        column_types,
         import_result.sha256,
         import_result.md5,
     )

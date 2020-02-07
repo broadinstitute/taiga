@@ -216,6 +216,7 @@ def test_create_dataset(session: SessionBase, new_upload_session_file):
         "long_summary_test",
         None,
         None,
+        None,
     )
 
     dataset_name = "Dataset Name"

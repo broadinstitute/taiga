@@ -1133,6 +1133,7 @@ def add_s3_datafile(
     type,
     short_summary,
     long_summary,
+    column_types=None,
     original_file_sha256=None,
     original_file_md5=None,
     forced_id=None,
@@ -1160,6 +1161,7 @@ def add_s3_datafile(
         format=received_type,
         short_summary=short_summary,
         long_summary=long_summary,
+        column_types_as_json=column_types,
         id=forced_id,
         original_file_sha256=original_file_sha256,
         original_file_md5=original_file_md5,
@@ -1308,6 +1310,7 @@ def add_datafiles_from_session(session_id):
                 type=file.converted_filetype,
                 short_summary=file.short_summary,
                 long_summary=file.long_summary,
+                column_types=file.column_types_as_json,
                 original_file_sha256=file.original_file_sha256,
                 original_file_md5=file.original_file_md5,
             )
@@ -1359,7 +1362,7 @@ def get_user_from_upload_session(session_id):
     return session.user
 
 
-def get_upload_session_files_from_session(session_id) -> List[UploadSession]:
+def get_upload_session_files_from_session(session_id) -> List[UploadSessionFile]:
     # TODO: We could also fetch the datafiles with only one query
     upload_session = (
         db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
@@ -1461,12 +1464,13 @@ def get_upload_session_file(upload_session_file_id):
 
 
 def update_upload_session_file_summaries(
-    file_id, short_summary, long_summary, sha256, md5
+    file_id, short_summary, long_summary, column_types, sha256, md5
 ):
     db.session.query(UploadSessionFile).filter(UploadSessionFile.id == file_id).update(
         dict(
             short_summary=short_summary,
             long_summary=long_summary,
+            column_types_as_json=column_types,
             original_file_sha256=sha256,
             original_file_md5=md5,
         )
