@@ -141,6 +141,7 @@ def create_db_and_populate():
                     name=datafile.name + "v" + str(i),
                     s3_bucket=bucket_name,
                     s3_key=models_controller.generate_convert_key(),
+                    compressed_s3_key=models_controller.generate_compressed_key(),
                     type=datafile.format,
                     short_summary="short summary",
                     long_summary="long_summary",

@@ -1128,6 +1128,7 @@ def can_view(entry_id):
 def add_s3_datafile(
     s3_bucket,
     s3_key,
+    compressed_s3_key: Optional[str],
     name,
     type,
     short_summary,
@@ -1155,6 +1156,7 @@ def add_s3_datafile(
         name=new_datafile_name,
         s3_bucket=s3_bucket,
         s3_key=s3_key,
+        compressed_s3_key=compressed_s3_key,
         format=received_type,
         short_summary=short_summary,
         long_summary=long_summary,
@@ -1302,6 +1304,7 @@ def add_datafiles_from_session(session_id):
                 name=file.filename,
                 s3_bucket=file.s3_bucket,
                 s3_key=file.converted_s3_key,
+                compressed_s3_key=file.compressed_s3_key,
                 type=file.converted_filetype,
                 short_summary=file.short_summary,
                 long_summary=file.long_summary,
@@ -1356,7 +1359,7 @@ def get_user_from_upload_session(session_id):
     return session.user
 
 
-def get_upload_session_files_from_session(session_id):
+def get_upload_session_files_from_session(session_id) -> List[UploadSession]:
     # TODO: We could also fetch the datafiles with only one query
     upload_session = (
         db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
