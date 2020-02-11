@@ -28,7 +28,7 @@ def print_config():
 
 
 def _compress_and_upload_to_s3(
-    s3_object, download_dest, compressed_dest, compressed_s3_object, mime_type
+    s3_object, download_dest, compressed_dest, compressed_s3_object, mime_type, encoding
 ):
     # Create a new compressed object to upload
     with open(download_dest.name, "rb") as f:
@@ -36,7 +36,10 @@ def _compress_and_upload_to_s3(
             shutil.copyfileobj(f, f_compressed)
             compressed_s3_object.upload_fileobj(
                 compressed_dest,
-                ExtraArgs={"ContentEncoding": "gzip", "ContentType": mime_type},
+                ExtraArgs={
+                    "ContentEncoding": "gzip",
+                    "ContentType": "{}; charset={}".format(mime_type, encoding),
+                },
             )
 
 
@@ -68,7 +71,12 @@ def _from_s3_convert_to_s3(
     converted_s3_object.upload_fileobj(converted_dest)
 
     _compress_and_upload_to_s3(
-        s3_object, download_dest, compressed_dest, compressed_s3_object, mime_type
+        s3_object,
+        download_dest,
+        compressed_dest,
+        compressed_s3_object,
+        mime_type,
+        encoding,
     )
 
     column_types = None
@@ -132,6 +140,7 @@ def background_process_new_upload_session_file(
                     compressed_dest,
                     compressed_s3_object,
                     "text/plain",
+                    encoding,
                 )
 
         import_result = ImportResult(
