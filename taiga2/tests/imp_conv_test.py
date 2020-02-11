@@ -83,6 +83,7 @@ def test_upload_session_file(
         initial_file_type,
         initial_s3_key,
         bucket_name,
+        "UTF-8",
     )
 
     background_process_new_upload_session_file.delay(
@@ -92,6 +93,7 @@ def test_upload_session_file(
         bucket_name,
         converted_s3_key,
         compressed_s3_key,
+        upload_session_file.encoding,
     ).wait()
 
     # confirm the converted object was published back to s3

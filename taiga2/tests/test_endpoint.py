@@ -33,14 +33,19 @@ def new_upload_session():
 
 
 def _add_s3_file_to_upload_session(
-    sid, bucket="test_bucket", format="Raw", file_name="filekey"
+    sid, bucket="test_bucket", format="Raw", file_name="filekey", encoding="UTF-8"
 ):
     key = file_name
 
     uploadMetadata = {
         "filename": file_name,
         "filetype": "s3",
-        "s3Upload": {"bucket": bucket, "format": format, "key": key},
+        "s3Upload": {
+            "bucket": bucket,
+            "format": format,
+            "key": key,
+            "encoding": encoding,
+        },
     }
 
     endpoint.create_upload_session_file(uploadMetadata=uploadMetadata, sid=sid)
@@ -182,11 +187,17 @@ def test_create_upload_session_file(app, session: SessionBase, new_upload_sessio
     format = "Raw"
     file_key = "filekey"
     file_name = file_key
+    encoding = "UTF-8"
 
     uploadMetadata = {
         "filename": file_name,
         "filetype": "s3",
-        "s3Upload": {"bucket": bucket, "format": format, "key": file_key},
+        "s3Upload": {
+            "bucket": bucket,
+            "format": format,
+            "key": file_key,
+            "encoding": encoding,
+        },
     }
 
     sid = new_upload_session.id

@@ -91,6 +91,7 @@ def background_process_new_upload_session_file(
     bucket_name,
     converted_s3_key,
     compressed_s3_key,
+    encoding,
 ):
     s3 = aws.s3
     progress = Progress(self)
@@ -175,7 +176,7 @@ def background_process_new_upload_session_file(
                         compressed_dest,
                         compressed_s3_object,
                         mime_type,
-                        "utf-8",
+                        encoding,
                     )
 
     models_controller.update_upload_session_file_summaries(

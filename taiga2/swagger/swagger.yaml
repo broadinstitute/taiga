@@ -1645,12 +1645,15 @@ definitions:
       - bucket
       - key
       - format
+      - encoding
     properties:
       format:
         type: string
       bucket:
         type: string
       key:
+        type: string
+      encoding:
         type: string
 
   SearchResult:

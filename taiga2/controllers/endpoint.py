@@ -431,6 +431,8 @@ def create_upload_session_file(uploadMetadata, sid):
         initial_file_type = S3UploadedFileMetadata["format"]
         initial_s3_key = S3UploadedFileMetadata["key"]
 
+        encoding = S3UploadedFileMetadata["encoding"]
+
         # Register this new file to the UploadSession received
         upload_session_file = models_controller.add_upload_session_s3_file(
             session_id=sid,
@@ -438,6 +440,7 @@ def create_upload_session_file(uploadMetadata, sid):
             initial_file_type=initial_file_type,
             initial_s3_key=initial_s3_key,
             s3_bucket=s3_bucket,
+            encoding=encoding,
         )
 
         # Launch a Celery process to convert and get back to populate the db + send finish to client
@@ -450,6 +453,7 @@ def create_upload_session_file(uploadMetadata, sid):
             s3_bucket,
             upload_session_file.converted_s3_key,
             upload_session_file.compressed_s3_key,
+            upload_session_file.encoding,
         )
 
         return flask.jsonify(task.id)

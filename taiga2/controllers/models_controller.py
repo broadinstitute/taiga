@@ -1262,7 +1262,7 @@ class InvalidTaigaIdFormat(Exception):
         self.taiga_id = taiga_id
 
 
-def get_datafile_by_taiga_id(taiga_id, one_or_none=False) -> DataFile:
+def get_datafile_by_taiga_id(taiga_id, one_or_none=False) -> Optional[DataFile]:
     m = re.match("([a-z0-9-]+)\\.(\\d+)/(.*)", taiga_id)
     if m is None:
         raise InvalidTaigaIdFormat(taiga_id)
@@ -1405,7 +1405,12 @@ def generate_compressed_key():
 
 
 def add_upload_session_s3_file(
-    session_id, filename, initial_file_type, initial_s3_key, s3_bucket
+    session_id,
+    filename,
+    initial_file_type,
+    initial_s3_key,
+    s3_bucket,
+    encoding: Optional[str],
 ):
     initial_file_type = models.InitialFileType(initial_file_type)
 
@@ -1424,6 +1429,7 @@ def add_upload_session_s3_file(
         converted_s3_key=converted_s3_key,
         converted_filetype=converted_filetype,
         compressed_s3_key=compressed_s3_key,
+        encoding=encoding,
     )
     db.session.add(upload_session_file)
     db.session.commit()

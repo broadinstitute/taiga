@@ -557,6 +557,7 @@ class UploadSessionFile(db.Model):
 
     # filename submitted by user
     filename = db.Column(db.Text)
+    encoding = db.Column(db.Text)
 
     initial_filetype = db.Column(db.Enum(InitialFileType))
     initial_s3_key = db.Column(db.Text)

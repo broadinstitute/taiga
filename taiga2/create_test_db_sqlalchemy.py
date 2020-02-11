@@ -47,6 +47,7 @@ def create_sample_dataset(
         s3_bucket=bucket_name,
         initial_file_type=models.InitialFileType.Raw,
         initial_s3_key="y",
+        encoding="UTF-8",
     )
 
     data = models_controller.add_dataset_from_session(
@@ -85,6 +86,7 @@ def create_db_and_populate():
         s3_bucket=bucket_name,
         initial_file_type=models.InitialFileType.Raw,
         initial_s3_key="x",
+        encoding="UTF-8",
     )
 
     origin_dataset = models_controller.add_dataset_from_session(
@@ -116,6 +118,7 @@ def create_db_and_populate():
         s3_bucket=bucket_name,
         initial_file_type=models.InitialFileType.Raw,
         initial_s3_key="y",
+        encoding="UTF-8",
     )
 
     data = models_controller.add_dataset_from_session(

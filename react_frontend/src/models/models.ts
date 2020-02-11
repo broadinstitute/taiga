@@ -222,13 +222,14 @@ export interface S3UploadedLocation {
     format: string;
     bucket: string;
     key: string;
+    encoding: string;
 }
 
 export interface UploadedFileMetadata {
     filename: string;
     filetype: string;
-    s3Upload?: S3UploadedLocation
-    existingTaigaId?: string
+    s3Upload?: S3UploadedLocation;
+    existingTaigaId?: string;
 }
 
 export function dropExtension(filename: string): string {

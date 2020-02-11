@@ -1,6 +1,8 @@
 import {
-    S3Credentials, TaskStatus,
+    S3Credentials,
+    TaskStatus,
     S3UploadedData,
+    UploadedFileMetadata,
     InitialFileType,
     DatasetVersion
 } from "../models/models";
@@ -42,6 +44,7 @@ export interface UploadFile {
     existingTaigaId?: string; // the ID of an existing taiga data file.
     uploadFile?: File;
     uploadFormat?: InitialFileType;
+    encoding?: string; // Character encoding of the file
 }
 
 // Async function to wait
@@ -79,7 +82,11 @@ export class UploadTracker {
         return this.tapi;
     }
 
-    upload(uploadFiles: Array<UploadFile>, params: (CreateVersionParams | CreateDatasetParams), uploadProgressCallback: (status: Array<UploadStatus>) => void): Promise<DatasetIdAndVersionId> {
+    upload(
+        uploadFiles: Array<UploadFile>,
+        params: CreateVersionParams | CreateDatasetParams,
+        uploadProgressCallback: (status: Array<UploadStatus>) => void
+    ): Promise<DatasetIdAndVersionId> {
         console.log("uploading, params:", params);
 
         this.uploadProgressCallback = uploadProgressCallback;
@@ -107,7 +114,13 @@ export class UploadTracker {
         return this.getTapi().create_datafile(sid, fileMetadata);
     }
 
-    uploadAndConvert(s3: AWS.S3, s3_credentials: S3Credentials, file: UploadFile, sid: string, uploadIndex: number): Promise<string> {
+    uploadAndConvert(
+        s3: AWS.S3,
+        s3_credentials: S3Credentials,
+        file: UploadFile,
+        sid: string,
+        uploadIndex: number
+    ): Promise<string> {
         let s3Key = s3_credentials.prefix + file.name;
         let params = {
             Bucket: s3_credentials.bucket,
@@ -133,13 +146,14 @@ export class UploadTracker {
             // POST
             // We need to retrieve the filetype and the filename to send it to the api too
 
-            let s3FileMetadata = {
+            const s3FileMetadata: UploadedFileMetadata = {
                 filename: file.name,
                 filetype: "s3",
                 s3Upload: {
                     format: file.uploadFormat,
                     bucket: s3_credentials.bucket,
-                    key: s3Key
+                    key: s3Key,
+                    encoding: file.encoding,
                 }
             };
 

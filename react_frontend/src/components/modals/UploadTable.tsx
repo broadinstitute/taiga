@@ -1,9 +1,15 @@
 import * as React from "react";
 import update from "immutability-helper";
 import * as filesize from "filesize";
-import { Form } from "react-bootstrap"
+import {
+    FormGroup,
+    FormControl,
+    Glyphicon,
+    Popover,
+    OverlayTrigger
+} from "react-bootstrap";
 import { InitialFileType } from "../../models/models";
-import { UploadFileType } from "../UploadTracker";
+import { UploadFileType, UploadFile as UploadTrackerFile } from "../UploadTracker";
 
 // import { FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
 // import { InitialFileType } from "../../models/models";
@@ -19,20 +25,12 @@ import { UploadFileType } from "../UploadTracker";
 // }
 
 
-export interface UploadFile {
-    name: string; // the name of the datafile record in once dataset has been created
+const CHARACTER_ENCODING_OPTIONS = ["ASCII", "ISO 8859-1", "UTF-8"];
+
+export interface UploadFile extends UploadTrackerFile {
     size: string; // desciption of size
 
     computeNameFromTaigaId: boolean;
-
-    fileType: UploadFileType;
-
-    gcsPath?: string; // If the path to a GCS object
-
-    existingTaigaId?: string; // the ID of an existing taiga data file.
-
-    uploadFile?: File;
-    uploadFormat?: InitialFileType;
 
     progress?: number; // between 0 and 100
     progressMessage?: string;
@@ -84,7 +82,15 @@ export class UploadController {
 
     addUpload(file: File) {
         let name = this.getDefaultName(file.name)
-        this.addFile({ name: name, computeNameFromTaigaId: false, fileType: UploadFileType.Upload, size: filesize(file.size), uploadFile: file, uploadFormat: InitialFileType.Raw })
+        this.addFile({
+            name: name,
+            computeNameFromTaigaId: false,
+            fileType: UploadFileType.Upload,
+            size: filesize(file.size),
+            uploadFile: file,
+            uploadFormat: InitialFileType.Raw,
+            encoding: "UTF-8"
+        });
     }
 
     addTaiga(existingTaigaId: string, size: string) {
@@ -131,6 +137,10 @@ export class UploadController {
         this.listener(this.files)
     }
 
+    onEncodingChange(index: number, newEncoding: string) {
+        this.files = update(this.files, { [index]: { encoding: { $set: newEncoding }} })
+        this.listener(this.files)
+    }
 }
 
 export class UploadTable extends React.Component<UploadTableProps, UploadTableState> {
@@ -186,10 +196,12 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
     }
 
     renderInputForm() {
+        const requestEncoding = this.props.files.some(file => !!file.uploadFile);
         let rows = this.props.files.map((file, i) => {
             let name = file.name;
             let source: any = "";
             let typeLabel: any = "";
+            let encodingInput: any = null;
 
             if (file.fileType == UploadFileType.GCSPath) {
                 typeLabel = "GCS Object";
@@ -219,7 +231,29 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
                     <option value={InitialFileType.GCT}>{InitialFileType.GCT}</option>
                     <option value={InitialFileType.Raw}>{InitialFileType.Raw}</option>
                 </select>
-
+                const requestEncodingFromFile = requestEncoding && !!file.uploadFile;
+                if (requestEncodingFromFile) {
+                    encodingInput = (
+                        <FormGroup controlId="characterEncoding">
+                            <FormControl
+                                componentClass="select"
+                                defaultValue={file.encoding}
+                                onChange={event =>
+                                    this.props.controller.onEncodingChange(
+                                        i,
+                                        (event.target as HTMLSelectElement).value
+                                    )
+                                }
+                            >
+                                {CHARACTER_ENCODING_OPTIONS.map(encoding => (
+                                    <option key={encoding} value={encoding}>
+                                        {encoding}
+                                    </option>
+                                ))}
+                            </FormControl>
+                        </FormGroup>
+                    );
+                }
                 // source = file.uploadFile.name;
             } else {
                 throw "unknown filetype";
@@ -244,6 +278,7 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
                 <td>
                     {source}
                 </td>
+                {requestEncoding && <td>{encodingInput}</td>}
                 <td>
                     <button type="button" className="btn btn-default" aria-label="Left Align" onClick={event => this.props.controller.onDelete(i)}>
                         <span className="glyphicon glyphicon-trash" aria-hidden="true"></span>
@@ -261,6 +296,23 @@ export class UploadTable extends React.Component<UploadTableProps, UploadTableSt
                     <th>
                         Source
                     </th>
+                    {requestEncoding && (
+                        <th>
+                            <span style={{marginInlineEnd: 4}}>Encoding</span>
+                            <OverlayTrigger
+                                trigger="hover"
+                                placement="top"
+                                overlay={
+                                    <Popover>
+                                        Character encoding of the uploaded file
+                                        (usually UTF-8).
+                                    </Popover>
+                                }
+                            >
+                                <Glyphicon glyph="glyphicon glyphicon-info-sign"/>
+                            </OverlayTrigger>
+                        </th>
+                    )}
                     <th>
                         Delete
                     </th>
