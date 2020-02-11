@@ -26,6 +26,7 @@ from taiga2.conv import (
     csv_to_hdf5,
     hdf5_to_csv,
 )
+from taiga2.conv.sniff import sniff2
 
 test_files_folder_path = "taiga2/tests/test_files"
 
@@ -34,6 +35,9 @@ raw_file_path = os.path.join(test_files_folder_path, raw_file_name)
 
 csv_file_name = "tiny_matrix.csv"
 csv_file_path = os.path.join(test_files_folder_path, csv_file_name)
+
+tiny_table_name = "tiny_table.csv"
+tiny_table_path = os.path.join(test_files_folder_path, tiny_table_name)
 
 nonutf8_file_name = "non-utf8-table.csv"
 nonutf8_file_path = os.path.join(test_files_folder_path, nonutf8_file_name)
@@ -54,6 +58,7 @@ large_table_path = os.path.join(test_files_folder_path, large_table_name)
     [
         (raw_file_path, InitialFileType.Raw.value),
         (csv_file_path, InitialFileType.NumericMatrixCSV.value),
+        (tiny_table_path, InitialFileType.TableCSV.value),
         # (large_numerical_matrix_path, InitialFileType.NumericMatrixCSV.value),
         # (large_table_path, InitialFileType.TableCSV.value)
     ],
@@ -98,6 +103,18 @@ def test_upload_session_file(
 
     # confirm the converted object was published back to s3
     assert aws.s3.Object(bucket_name, converted_s3_key).download_as_bytes() is not None
+
+    # Check updated UploadSessionFile
+    updated_upload_session_file = models_controller.get_upload_session_file(
+        upload_session_file.id
+    )
+    if (
+        initial_file_type == InitialFileType.TableCSV.value
+        or initial_file_type == InitialFileType.TableTSV.value
+    ):
+        assert updated_upload_session_file.column_types_as_json is not None
+    else:
+        assert updated_upload_session_file.column_types_as_json is None
 
 
 def test_get_csv_dims(tmpdir):
@@ -163,3 +180,19 @@ def test_matrix_with_full_header_import(tmpdir):
     hdf5_to_csv(ProgressStub(), str(pandas_dest), lambda: str(pandas_final))
 
     assert r_final.read_binary() == pandas_final.read_binary()
+
+
+def test_column_type_inference():
+    tiny_table_column_types = sniff2(tiny_table_path, "UTF-8")
+    assert tiny_table_column_types == {
+        "a": "float",
+        "b": "float",
+        "c": "str",
+        "d": "float",
+    }
+
+    nonutf8_column_types = sniff2(nonutf8_file_path, "UTF-8")
+    assert nonutf8_column_types == {"row": "float", "validutf8": "str", "value": "str"}
+
+    with pytest.raises(UnicodeDecodeError):
+        sniff2(nonutf8_file_path, "ASCII")
