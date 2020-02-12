@@ -189,11 +189,30 @@ prod_settings.cfg.)
 
 Review the resulting generated migration. I've found I've had to re-order
 tables to ensure fk references are created successfully. Before applying the
-migration, take a snapshot of the current Taiga db.After that's all done, you
-can take down the Taiga service (`ssh` into `ubuntu@cds.team` and run
-`sudo systemctl stop taiga`) and apply the migration by running:
+migration, take a snapshot of the current Taiga db.
 
-- `./manage.py -c ../prod_settings.cfg db upgrade`
+Depending on your changes, you may be able to apply them without stopping the service and minimizing downtime. You can apply online changes **if** they are compatible with both the old and new versions of the code that will be deployed. In general changes that migrate data are not safe, but trivial changes like adding new nullable fields or new tables are safe. See "Applying online changes" for updating the DB without stopping the service.
+
+### Applying "offline" changes
+
+- (Stop the service)
+- `ssh ubuntu@cds.team sudo systemctl stop taiga` 
+- (Apply changes to the DB)
+- `./manage.py -c ../prod_settings.cfg db upgrade` 
+- (And then pull and start the new code)
+- `ssh ubuntu@cds.team`
+- `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
+- `sudo systemctl start taiga`
+
+### Applying "online" changes
+
+- (Apply changes to the DB)
+- `./manage.py -c ../prod_settings.cfg db upgrade` 
+- (And then pull new code)
+- `ssh ubuntu@cds.team`
+- `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
+- (start the service running the new code)
+- `sudo systemctl start taiga`
 
 ## Undeletion
 
