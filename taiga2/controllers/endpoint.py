@@ -693,6 +693,19 @@ def get_datafile(
     elif format == "raw":
         if real_datafile.compressed_s3_key is None:
             flask.abort(404)
+
+        obj = aws.s3.Object(real_datafile.s3_bucket, real_datafile.compressed_s3_key)
+
+        new_format = format
+        if "text/csv" in obj.content_type:
+            new_format = "csv"
+        elif "text/tab-separated-values" in obj.content_type:
+            new_format = "tsv"
+
+        dl_filename = _make_dl_name(
+            datafile_name, dataset_version_version, dataset_name, new_format
+        )
+
         urls = [
             create_signed_get_obj(
                 real_datafile.s3_bucket, real_datafile.compressed_s3_key, dl_filename
