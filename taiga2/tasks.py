@@ -31,9 +31,11 @@ def _compress_and_upload_to_s3(
     s3_object, download_dest, compressed_dest, compressed_s3_object, mime_type, encoding
 ):
     # Create a new compressed object to upload
+    download_dest.seek(0)
     with open(download_dest.name, "rb") as f:
         with gzip.open(compressed_dest.name, "wb") as f_compressed:
             shutil.copyfileobj(f, f_compressed)
+            compressed_dest.seek(0)
             compressed_s3_object.upload_fileobj(
                 compressed_dest,
                 ExtraArgs={
