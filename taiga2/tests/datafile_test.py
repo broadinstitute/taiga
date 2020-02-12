@@ -37,6 +37,7 @@ def create_matrix_dataset_version(tmpdir, mock_s3):
         s3_key="key",
         compressed_s3_key="compressed/key",
         type=models.S3DataFile.DataFileFormat.HDF5,
+        encoding="UTF-8",
         short_summary="short",
         long_summary="long",
     )
@@ -68,6 +69,7 @@ def create_table_dataset_version(tmpdir, mock_s3):
         s3_key="key",
         compressed_s3_key="compressed/key",
         type=models.S3DataFile.DataFileFormat.Columnar,
+        encoding="UTF-8",
         short_summary="short",
         long_summary="long",
     )
@@ -158,6 +160,7 @@ def create_simple_dataset():
         s3_key="converted/key",
         compressed_s3_key="compressed/key",
         type=models.S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
         short_summary="short",
         long_summary="long",
     )

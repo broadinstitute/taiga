@@ -102,6 +102,7 @@ def new_datafile():
         s3_key=models_controller.generate_convert_key(),
         compressed_s3_key=models_controller.generate_compressed_key(),
         type=S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
         short_summary="short",
         long_summary="long",
     )
@@ -595,6 +596,7 @@ def _create_dataset_with_a_file(name="datafile") -> Dataset:
         s3_key=models_controller.generate_convert_key(),
         compressed_s3_key=models_controller.generate_compressed_key(),
         type=models_controller.S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
         short_summary="short",
         long_summary="long",
     )

@@ -258,6 +258,7 @@ class S3DataFile(DataFile):
         Columnar = "Columnar"
 
     format: DataFileFormat = db.Column(db.Enum(DataFileFormat))
+    encoding = db.Column(db.Text)
     s3_bucket: str = db.Column(db.Text)
     s3_key: str = db.Column(db.Text)
     compressed_s3_key: str = db.Column(db.Text)

@@ -344,6 +344,7 @@ def test_add_dataset_version(session: SessionBase):
         s3_key=mc.generate_convert_key(),
         compressed_s3_key=mc.generate_compressed_key(),
         type=mc.S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
         short_summary="short",
         long_summary="long",
     )
@@ -466,6 +467,7 @@ def new_datafile():
         s3_key=mc.generate_convert_key(),
         compressed_s3_key=mc.generate_compressed_key(),
         type=S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
         short_summary="short",
         long_summary="long",
     )
@@ -686,6 +688,7 @@ def test_basic_create_virtual_dataset(session: SessionBase):
         s3_key=mc.generate_convert_key(),
         compressed_s3_key=mc.generate_compressed_key(),
         type=mc.S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
         short_summary="short",
         long_summary="long",
     )
