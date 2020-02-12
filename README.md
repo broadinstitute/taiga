@@ -212,7 +212,7 @@ Depending on your changes, you may be able to apply them without stopping the se
 - `ssh ubuntu@cds.team`
 - `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
 - (start the service running the new code)
-- `sudo systemctl start taiga`
+- `sudo systemctl restart taiga`
 
 ## Undeletion
 
