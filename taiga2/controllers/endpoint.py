@@ -431,7 +431,7 @@ def create_upload_session_file(uploadMetadata, sid):
         initial_file_type = S3UploadedFileMetadata["format"]
         initial_s3_key = S3UploadedFileMetadata["key"]
 
-        encoding = S3UploadedFileMetadata["encoding"]
+        encoding = S3UploadedFileMetadata.get("encoding")
 
         # Register this new file to the UploadSession received
         upload_session_file = models_controller.add_upload_session_s3_file(

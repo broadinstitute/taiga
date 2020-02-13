@@ -7,6 +7,8 @@ import logging
 import gzip
 import shutil
 
+from typing import Optional
+
 from taiga2.aws import aws
 import taiga2.conv as conversion
 from taiga2.conv.util import Progress
@@ -28,7 +30,12 @@ def print_config():
 
 
 def _compress_and_upload_to_s3(
-    s3_object, download_dest, compressed_dest, compressed_s3_object, mime_type, encoding
+    s3_object,
+    download_dest,
+    compressed_dest,
+    compressed_s3_object,
+    mime_type: str,
+    encoding: Optional[str],
 ):
     # Create a new compressed object to upload
     download_dest.seek(0)
@@ -41,7 +48,9 @@ def _compress_and_upload_to_s3(
                 compressed_dest,
                 ExtraArgs={
                     "ContentEncoding": "gzip",
-                    "ContentType": "{}; charset={}".format(mime_type, encoding),
+                    "ContentType": "{}; charset={}".format(
+                        mime_type, encoding if encoding is not None else "ISO 8859-1"
+                    ),
                 },
             )
 
@@ -58,7 +67,7 @@ def _from_s3_convert_to_s3(
     compressed_dest,
     compressed_s3_object,
     mime_type,
-    encoding,
+    encoding: Optional[str],
 ):
     progress.progress("Downloading the file from S3")
 
@@ -87,7 +96,9 @@ def _from_s3_convert_to_s3(
     if calculate_column_types:
         try:
             column_types = conversion.sniff.sniff2(
-                download_dest.name, encoding, delimiter
+                download_dest.name,
+                encoding if encoding is not None else "iso-8859-1",
+                delimiter,
             )
         except Exception:
             log.warning(

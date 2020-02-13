@@ -1645,7 +1645,6 @@ definitions:
       - bucket
       - key
       - format
-      - encoding
     properties:
       format:
         type: string
