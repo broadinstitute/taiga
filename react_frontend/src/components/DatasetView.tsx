@@ -1048,12 +1048,12 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
 
                             <h2>Direct access from R (<a
-                                href="https://stash.broadinstitute.org/projects/CPDS/repos/taigr/browse"
+                                href="https://github.com/broadinstitute/taigr"
                                 target="_blank">TaigR Documentation</a>)</h2>
                             <pre>{r_block}</pre>
                             <h2>
                                 Direct access from Python (<a
-                                    href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse"
+                                    href="https://github.com/broadinstitute/taigapy"
                                     target="_blank">Taigapy Documentation</a>)
                             </h2>
                             <pre>{python_block}</pre>

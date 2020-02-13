@@ -69,7 +69,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
                             Please, place the string below in <code>`~/.taiga/token`</code> to use taigaR and taigaPy.
                         </p>
                         <p>
-                            <a href="https://stash.broadinstitute.org/projects/CPDS/repos/taigapy/browse" target="_blank">More information.</a>
+                            <a href="https://github.com/broadinstitute/taigapy" target="_blank">More information.</a>
                         </p>
                     </Row>
                     <Row>
