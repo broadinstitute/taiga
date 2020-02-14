@@ -24,6 +24,7 @@ Flask==1.0.3
 flask-marshmallow==0.7.0
 Flask-Migrate==2.0.3
 Flask-Script==2.0.5
+flask-shell-ipython==0.4.1
 Flask-SQLAlchemy==2.1
 freezegun==0.3.8
 future==0.16.0
