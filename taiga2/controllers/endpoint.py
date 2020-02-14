@@ -1,5 +1,6 @@
 import flask
 import logging
+import requests
 import sys
 import time
 import urllib
@@ -9,6 +10,7 @@ from .endpoint_validation import validate
 
 from sqlalchemy.orm.exc import NoResultFound
 from google.cloud import storage, exceptions as gcs_exceptions
+from requests.exceptions import HTTPError
 
 # TODO: Change the app containing db to api_app => current_app
 import taiga2.controllers.models_controller as models_controller
@@ -21,6 +23,8 @@ from taiga2.models import S3DataFile
 from taiga2.aws import aws
 from taiga2.aws import create_signed_get_obj
 from taiga2.aws import create_s3_url as aws_create_s3_url
+
+import taiga2.figshare as figshare
 
 log = logging.getLogger(__name__)
 
@@ -1074,12 +1078,6 @@ def search_within_folder(current_folder_id, search_query):
         "entries": [],
     }
 
-    # type: FolderEntriesTypeEnum
-    # id: string;
-    # name: string;
-    # creation_date: string;
-    # creator: NamedId;
-    # breadcrumbs: Array<OrderedNamedId>
     return flask.jsonify(result)
 
 
@@ -1130,3 +1128,56 @@ def remove_group_user_associations(groupId, groupUserAssociationMetadata):
         return flask.jsonify(result)
     except AssertionError:
         return flask.abort(403)
+
+
+@validate
+def get_figshare_auth_url():
+    config = flask.current_app.config
+    return flask.jsonify(
+        {
+            "figshare_auth_url": figshare.AUTH_URL.format(
+                "?client_id={}".format(
+                    (config["FIGSHARE_CLIENT_ID"])
+                    + "&response_type=code"
+                    + "&scope=all"
+                    + "&redirect_uri%3Dhttps%3A%2F%2Fcds.team%2Ftaiga"
+                )
+            )
+        }
+    )
+
+
+@validate
+def add_figshare_token(figshareOAuthRequest):
+    config = flask.current_app.config
+    code = figshareOAuthRequest["code"]
+    state = figshareOAuthRequest["state"]
+
+    response = requests.post(
+        figshare.BASE_URL.format(
+            "token"
+            + "?client_id={}".format(config["FIGSHARE_CLIENT_ID"])
+            + "&client_secret={}".format(config["FIGSHARE_CLIENT_SECRET"])
+            + "&grant_type=authorization_code"
+            + "&code={}".format(code)
+            + "&state={}".format(state)
+        )
+    )
+
+    try:
+        response.raise_for_status()
+        data = response.json()
+        token = data["token"]
+        refresh_token = data["refresh_token"]
+
+        account_data = figshare.issue_request("GET", "account", token)
+
+        figshare_authorization, is_new = models_controller.add_figshare_token(
+            account_data["id"], token, refresh_token
+        )
+        if is_new:
+            return flask.make_response(flask.jsonify({}), 201)
+        else:
+            return flask.jsonify({})
+    except HTTPError as error:
+        return flask.abort(400)

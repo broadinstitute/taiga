@@ -17,6 +17,8 @@ import { RecentlyViewed } from "./components/RecentlyViewed";
 import { GroupListView } from "./components/GroupListView";
 import { GroupView } from "./components/GroupView";
 
+import FigshareConnectionView from "./components/FigshareConnectionView";
+
 import { relativePath } from "./utilities/route";
 import { FormControl, Overlay, Popover, Tooltip } from "react-bootstrap";
 import { SHA } from "./version"
@@ -374,6 +376,12 @@ export function initPage(element: any) {
 						path={relativePath("group/:groupId")}
 						render={props => {
 							return <GroupView {...props} tapi={tapi} />;
+						}}
+					/>
+					<Route
+						path={relativePath("figshare/")}
+						render={props => {
+							return <FigshareConnectionView {...props} tapi={tapi} />;
 						}}
 					/>
 					<Route path="*" component={NoMatch} />

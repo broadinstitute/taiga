@@ -7,6 +7,7 @@ from .extensions import metadata
 from flask_migrate import Migrate
 
 from sqlalchemy import event, UniqueConstraint, CheckConstraint
+from sqlalchemy.orm import backref
 from sqlalchemy.ext.declarative import declared_attr
 
 from typing import Dict, List
@@ -708,6 +709,20 @@ class SearchResult:
         self.current_folder = current_folder
         self.name = name
         self.entries = entries
+
+
+class FigshareAuthorization(db.Model):
+    __tablename__ = "figshare_authorizations"
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+
+    user_id = db.Column(GUID, db.ForeignKey("users.id"))
+    user = db.relationship(
+        "User", backref=backref("figshare_authorization", uselist=False)
+    )
+
+    figshare_account_id = db.Column(db.Integer)
+    token = db.Column(db.Text, nullable=False)
+    refresh_token = db.Column(db.Text, nullable=False)
 
 
 # </editor-fold>

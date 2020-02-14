@@ -5,7 +5,7 @@ import { Col, Grid, Row, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { InputGroup, FormGroup, FormControl } from "react-bootstrap";
 
 import ClipboardButton from "../utilities/r-clipboard";
-import { LeftNav } from "./LeftNav";
+import { LeftNav, MenuItem } from "./LeftNav";
 
 import { TaigaApi } from "../models/api";
 import { User } from "../models/models";
@@ -16,6 +16,7 @@ export interface TokenProps extends RouteComponentProps {
 
 export interface TokenState {
     token?: string;
+    figshareAuthUrl?: string;
 }
 
 const antiPadding = {
@@ -40,9 +41,17 @@ export class Token extends React.Component<TokenProps, TokenState> {
     }
 
     doFetch() {
-        return this.props.tapi.get_user().then((user: User) => {
+        this.props.tapi.get_user().then((user: User) => {
             this.setState({
                 token: user.token
+            })
+        }).catch((err: any) => {
+            console.log(err);
+        });
+
+        this.props.tapi.get_figshare_authorization_url().then(({figshare_auth_url}) => {
+            this.setState({
+                figshareAuthUrl: figshare_auth_url
             })
         }).catch((err: any) => {
             console.log(err);
@@ -50,7 +59,14 @@ export class Token extends React.Component<TokenProps, TokenState> {
     }
 
     render() {
-        let navItems: Array<any> = [];
+        let navItems: Array<MenuItem> = [];
+
+        if (!!this.state.figshareAuthUrl) {
+            navItems.push({
+                label: "Connect to Figshare",
+                action: () => {window.location.assign(this.state.figshareAuthUrl)}
+            })
+        }
 
         const tooltipToken = (
             <Tooltip id="token_copy_confirmation"><strong>Copied!</strong></Tooltip>

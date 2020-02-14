@@ -5,7 +5,7 @@ import uuid
 import os
 import re
 
-from typing import List, Optional
+from typing import List, Tuple, Optional
 
 import json
 
@@ -31,6 +31,7 @@ from taiga2.models import (
     NameUpdateActivity,
     DescriptionUpdateActivity,
     VersionAdditionActivity,
+    FigshareAuthorization,
 )
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
@@ -2004,6 +2005,52 @@ def get_activity_for_dataset_id(dataset_id):
         # .order_by(Activity.timestamp.desc())
         .all()
     )
+
+
+def get_figshare_authorization(
+    figshare_authorization_id: str,
+) -> Optional[FigshareAuthorization]:
+    return (
+        db.session.query(FigshareAuthorization)
+        .filter(FigshareAuthorization.id == figshare_authorization_id)
+        .one_or_none()
+    )
+
+
+def get_figshare_authorization_for_user(user: User) -> Optional[FigshareAuthorization]:
+    return (
+        db.session.query(FigshareAuthorization)
+        .filter(FigshareAuthorization.user_id == user.id)
+        .one_or_none()
+    )
+
+
+def add_figshare_token(
+    figshare_account_id: int, token: str, refresh_token: str
+) -> Tuple[FigshareAuthorization, bool]:
+    current_user = get_current_session_user()
+
+    figshare_authorization = get_figshare_authorization_for_user(current_user)
+
+    if figshare_authorization is not None:
+        is_new = False
+        figshare_authorization.token = token
+        figshare_authorization.refresh_token = refresh_token
+    else:
+        is_new = True
+        figshare_authorization = FigshareAuthorization(
+            user_id=current_user.id,
+            figshare_account_id=figshare_account_id,
+            token=token,
+            refresh_token=refresh_token,
+        )
+
+    current_user.figshare_authorization_id = figshare_authorization.id
+
+    db.session.add(figshare_authorization)
+    db.session.add(current_user)
+    db.session.commit()
+    return figshare_authorization, is_new
 
 
 # </editor-fold

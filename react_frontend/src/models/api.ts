@@ -81,6 +81,22 @@ export class TaigaApi {
             })
     }
 
+    _put<T>(url: string, args: any): Promise<T> {
+        return fetch(this.baseUrl + url, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": this.authHeaders.auth
+            },
+            body: JSON.stringify(args)
+        })
+            .then((response: Response) => this._checkResponse(response))
+            .then<T>((response: Response) => {
+                return response.json();
+            })
+    }
+
     get_user(): Promise<User> {
         return this._fetch<User>("/user")
     }
@@ -311,5 +327,13 @@ export class TaigaApi {
 		userIds: Array<string>
 	): Promise<Group> {
 		return this._post<Group>("/group/" + groupId + "/remove", { userIds });
-	}
+    }
+
+    get_figshare_authorization_url(): Promise<{figshare_auth_url: string}> {
+        return this._fetch<{figshare_auth_url: string}>("/figshare/auth_url");
+    }
+
+    authorize_figshare(state: string, code: string): Promise<{}> {
+        return this._put<{}>("/figshare", {state, code})
+    }
 }
