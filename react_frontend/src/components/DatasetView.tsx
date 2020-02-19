@@ -530,11 +530,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         }
     }
 
-    hasRaw(df: Models.DatasetVersionDatafiles) {
-        let has_raw = df.allowed_conversion_type.some((conversion_type) => {
-            return conversion_type === "raw";
-        });
-        return has_raw;
+    onlyRawAvailable(df: Models.DatasetVersionDatafiles): boolean {
+        const onlyRawAvailable =
+            df.allowed_conversion_type.length == 1 &&
+            df.allowed_conversion_type[0] == "raw";
+        return onlyRawAvailable;
     }
 
     activityLogTypeFormatter(cell: ActivityTypeEnum, row: ActivityLogEntry) {
@@ -891,7 +891,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
 
                 let r_block_lines = s3AndVirtualDatafiles.map((df, index) => {
                     let r_name = df.name.replace(/[^A-Za-z0-9]+/g, ".");
-                    if (this.hasRaw(df)) {
+                    if (this.onlyRawAvailable(df)) {
                         return `${r_name} <- download.raw.from.taiga(data.name='${permaname}', data.version=${datasetVersion.version}, data.file='${df.name}')`;
                     }
                     else {
@@ -906,7 +906,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 let python_block_lines = s3AndVirtualDatafiles.map((df, index) => {
                     let python_name = df.name.replace(/[^A-Za-z0-9]+/g, "_");;
 
-                    if (this.hasRaw(df)) {
+                    if (this.onlyRawAvailable(df)) {
                         return `${python_name} = tc.download_to_cache(name='${permaname}', version=${datasetVersion.version}, file='${df.name}')  # download_to_cache for raw`;
                     }
                     else {
