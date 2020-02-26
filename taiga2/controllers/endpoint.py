@@ -690,7 +690,7 @@ def get_datafile(
             )
         ]
         conversion_status = "Completed successfully"
-    elif format == "raw":
+    elif format == conversion.COMPRESSED_FORMAT:
         if real_datafile.compressed_s3_key is None:
             flask.abort(404)
 

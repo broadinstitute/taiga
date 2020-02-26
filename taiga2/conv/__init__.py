@@ -36,6 +36,7 @@ TSV_FORMAT = "tsv"
 GCT_FORMAT = "gct"
 
 RAW_FORMAT = "raw"
+COMPRESSED_FORMAT = "raw_test"
 
 # R format
 RDS_FORMAT = "rds"

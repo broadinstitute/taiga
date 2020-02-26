@@ -343,7 +343,7 @@ def get_allowed_conversion_type(datafile: S3DataFile):
         ]
 
         if datafile.compressed_s3_key is not None:
-            allowed_conversion_types.insert(0, conversion.RAW_FORMAT)
+            allowed_conversion_types.insert(0, conversion.COMPRESSED_FORMAT)
 
         return allowed_conversion_types
 
@@ -351,7 +351,7 @@ def get_allowed_conversion_type(datafile: S3DataFile):
         allowed_conversion_types = [conversion.CSV_FORMAT, conversion.TSV_FORMAT]
 
         if datafile.compressed_s3_key is not None:
-            allowed_conversion_types.insert(0, conversion.RAW_FORMAT)
+            allowed_conversion_types.insert(0, conversion.COMPRESSED_FORMAT)
 
         return allowed_conversion_types
 
