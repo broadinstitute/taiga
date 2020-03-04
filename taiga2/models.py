@@ -725,4 +725,57 @@ class FigshareAuthorization(db.Model):
     refresh_token = db.Column(db.Text, nullable=False)
 
 
+class ThirdPartyDatasetVersionLink(db.Model):
+    __tablename__ = "third_party_dataset_version_links"
+
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+    type = db.Column(db.String(50))
+    __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "abstract"}
+
+
+class FigshareDatasetVersionLink(ThirdPartyDatasetVersionLink):
+    __tablename__ = "figshare_dataset_version_links"
+
+    id = db.Column(
+        GUID, db.ForeignKey("third_party_dataset_version_links.id"), primary_key=True
+    )
+    figshare_article_id = db.Column(db.Integer, nullable=False)
+    dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
+    dataset_version = db.relationship(
+        "DatasetVersion",
+        foreign_keys="FigshareDatasetVersionLink.dataset_version_id",
+        backref=__tablename__,
+    )
+    figshare_datafile_links = db.relationship("FigshareDataFileLink")
+    __mapper_args__ = {"polymorphic_identity": "figshare"}
+
+
+class ThirdPartyDataFileLink(db.Model):
+    __tablename__ = "third_party_datafile_links"
+
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+    type = db.Column(db.String(50))
+    __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "abstract"}
+
+
+class FigshareDataFileLink(ThirdPartyDataFileLink):
+    __tablename__ = "figshare_datafile_links"
+
+    id = db.Column(
+        GUID, db.ForeignKey("third_party_datafile_links.id"), primary_key=True
+    )
+    figshare_file_id = db.Column(db.Integer, nullable=False)
+    datafile_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
+    datafile = db.relationship(
+        "DataFile",
+        foreign_keys="FigshareDataFileLink.datafile_id",
+        backref=__tablename__,
+    )
+    figshare_dataset_version_link_id = db.Column(
+        GUID, db.ForeignKey("figshare_dataset_version_links.id")
+    )
+
+    __mapper_args__ = {"polymorphic_identity": "figshare"}
+
+
 # </editor-fold>

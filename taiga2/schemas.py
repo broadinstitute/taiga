@@ -28,7 +28,19 @@ ma = Marshmallow()
 
 class UserSchema(ma.ModelSchema):
     class Meta:
-        fields = ("id", "name", "home_folder_id", "trash_folder_id", "token")
+        fields = (
+            "id",
+            "name",
+            "home_folder_id",
+            "trash_folder_id",
+            "token",
+            "figshare_linked",
+        )
+
+    figshare_linked = fields.fields.Method("check_figshare_authorization")
+
+    def check_figshare_authorization(self, user):
+        return user.figshare_authorization is not None
 
 
 class UserNamedIdSchema(ma.ModelSchema):

@@ -1369,6 +1369,72 @@ paths:
         400:
           description: Figshare API request failed
 
+  /figshare/link:
+    post:
+      description: Upload dataset version and files to Figshare
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: upload_dataset_version_to_figshare
+      consumes:
+        - application/json
+      parameters:
+        - name: figshareDatasetVersionLink
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - dataset_version_id
+              - article_name
+              - files_to_upload
+            properties:
+              dataset_version_id:
+                type: string
+              article_name:
+                type: string
+              article_description:
+                type: string
+              files_to_upload:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - datafile_id
+                    - file_name
+                  properties:
+                    datafile_id:
+                      type: string
+                    file_name:
+                      type: string
+      responses:
+        200:
+          description: An existing authorization was updated
+          schema:
+            type: object
+            required:
+              - article_id
+              - files
+            properties:
+              article_id:
+                type: integer
+              files:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - datafile_id
+                    - file_name
+                  properties:
+                    datafile_id:
+                      type: string
+                    file_name:
+                      type: string
+                    figshare_file_id:
+                      type: integer
+                    failure_reason:
+                      type: string
+        401:
+          description: TODO (token does not work)
+
 
 definitions:
   User:
@@ -1380,6 +1446,7 @@ definitions:
       - home_folder_id
       - trash_folder_id
       - token
+      - figshare_linked
     properties:
       id:
         type: string
@@ -1391,6 +1458,8 @@ definitions:
         type: string
       token:
         type: string
+      figshare_linked:
+        type: boolean
 
   DatasetVersionSummary:
     title: DatasetVersionSummary
