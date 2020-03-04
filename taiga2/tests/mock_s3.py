@@ -79,7 +79,7 @@ class MockS3Object:
 
         self.bucket.s3.file_per_key[(self.bucket.name, self.key)] = full_path
 
-    def upload_file(self, path):
+    def upload_file(self, path, ExtraArgs=None):
         with open(path, "rb") as data:
             self.upload_fileobj(data)
 

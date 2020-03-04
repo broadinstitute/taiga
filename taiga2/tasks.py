@@ -42,17 +42,16 @@ def _compress_and_upload_to_s3(
     with open(download_dest.name, "rb") as f:
         with gzip.open(compressed_dest.name, "wb") as f_compressed:
             shutil.copyfileobj(f, f_compressed)
-            f_compressed.flush()
-            compressed_dest.seek(0)
-            compressed_s3_object.upload_fileobj(
-                compressed_dest,
-                ExtraArgs={
-                    "ContentEncoding": "gzip",
-                    "ContentType": "{}; charset={}".format(
-                        mime_type, encoding if encoding is not None else "ISO 8859-1"
-                    ),
-                },
-            )
+
+    compressed_s3_object.upload_file(
+        compressed_dest.name,
+        ExtraArgs={
+            "ContentEncoding": "gzip",
+            "ContentType": "{}; charset={}".format(
+                mime_type, encoding if encoding is not None else "ISO 8859-1"
+            ),
+        },
+    )
 
 
 def _from_s3_convert_to_s3(
