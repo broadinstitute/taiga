@@ -336,4 +336,34 @@ export class TaigaApi {
     authorize_figshare(state: string, code: string): Promise<{}> {
         return this._put<{}>("/figshare", {state, code})
     }
+
+    upload_dataset_version_to_figshare(
+        dataset_version_id: string,
+        article_name: string,
+        article_description: string,
+        files_to_upload: Array<{ datafile_id: string; file_name: string }>
+    ): Promise<{
+        article_id: number;
+        files: Array<{
+            datafile_id: string;
+            file_name: string;
+            failure_reason?: string;
+            task_id?: string;
+        }>;
+    }> {
+        return this._post<{
+            article_id: number;
+            files: Array<{
+                datafile_id: string;
+                file_name: string;
+                failure_reason?: string;
+                task_id?: string;
+            }>;
+        }>("/figshare/link", {
+            dataset_version_id,
+            article_name,
+            article_description,
+            files_to_upload
+        });
+    }
 }

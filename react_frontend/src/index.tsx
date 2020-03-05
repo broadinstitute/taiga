@@ -284,7 +284,7 @@ export function initPage(element: any) {
 							)}
 							render={props => {
 								return (
-									<DatasetView {...props} tapi={tapi} />
+									<DatasetView {...props} tapi={tapi} user={user} />
 								);
 							}}
 						/>
@@ -294,7 +294,7 @@ export function initPage(element: any) {
 							)}
 							render={props => {
 								return (
-									<DatasetView {...props} tapi={tapi} />
+									<DatasetView {...props} tapi={tapi} user={user} />
 								);
 							}}
 						/>
@@ -304,7 +304,7 @@ export function initPage(element: any) {
 							)}
 							render={props => {
 								return (
-									<DatasetView {...props} tapi={tapi} />
+									<DatasetView {...props} tapi={tapi} user={user} />
 								);
 							}}
 						/>
@@ -312,7 +312,7 @@ export function initPage(element: any) {
 							path={relativePath("dataset/:datasetId")}
 							render={props => {
 								return (
-									<DatasetView {...props} tapi={tapi} />
+									<DatasetView {...props} tapi={tapi} user={user} />
 								);
 							}}
 						/>
@@ -322,7 +322,7 @@ export function initPage(element: any) {
 							"dataset_version/:datasetVersionId"
 						)}
 						render={props => {
-							return <DatasetView {...props} tapi={tapi} />;
+							return <DatasetView {...props} tapi={tapi} user={user} />;
 						}}
 					/>
 					<Route

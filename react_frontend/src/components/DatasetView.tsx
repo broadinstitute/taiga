@@ -1,7 +1,7 @@
 import * as React from "react";
 import { RouteComponentProps } from "react-router";
 import { Link } from "react-router-dom";
-import { OverlayTrigger, Tooltip } from "react-bootstrap";
+import { OverlayTrigger, Tooltip, Button } from "react-bootstrap";
 import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 
 import { LeftNav } from "./LeftNav";
@@ -12,6 +12,7 @@ import { TaigaApi } from "../models/api";
 
 import * as Dialogs from "./Dialogs";
 import { CreateDatasetDialog, CreateVersionDialog } from "./modals/UploadForm";
+import UploadToFigshare from "./modals/UploadToFigshare";
 
 import { toLocalDateString } from "../utilities/formats";
 import { LoadingOverlay } from "../utilities/loading";
@@ -40,6 +41,7 @@ interface DatasetViewMatchParams {
 
 export interface DatasetViewProps extends RouteComponentProps<DatasetViewMatchParams> {
     tapi: TaigaApi;
+    user: Models.User;
 }
 
 export interface DatasetViewState {
@@ -68,6 +70,8 @@ export interface DatasetViewState {
 
     showShareDatasetVersion?: boolean;
     sharingEntries?: Array<Entry>;
+
+    showUploadToFigshare?: boolean;
 
     activityLog?: Array<ActivityLogEntry>;
 }
@@ -136,6 +140,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 // We close the modal
                 this.setState({
                     showUploadDataset: false,
+                    showUploadToFigshare: false,
                     loading: false,
                     exportError: false
                 });
@@ -486,6 +491,15 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 this.doFetch();
             });
         }
+    }
+
+    // Figshare
+    showUploadToFigshare() {
+        this.setState({ showUploadToFigshare: true });
+    }
+
+    handleCloseUploadToFigshare() {
+        this.setState({ showUploadToFigshare: false });
     }
 
     getCopyButton(datafile: Models.DatasetVersionDatafiles) {
@@ -857,10 +871,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                 // },
                 {
                     label: "Add to Home", action: () => {
-                        // TODO: Fetch the current user only once, and reuse it as a state OR better, get it as a props from parent
-                        this.getTapi().get_user().then(user => {
-                            this.copyTo(user.home_folder_id);
-                        });
+                        this.copyTo(this.props.user.home_folder_id);
                     }
                 },
                 {
@@ -950,6 +961,14 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                 previousVersionFiles={this.state.datasetVersion.datafiles}
                                 datasetPermaname={this.state.dataset.permanames[0]}
                             />}
+                        
+                        <UploadToFigshare
+                            tapi={this.props.tapi}
+                            handleClose={() => this.handleCloseUploadToFigshare()}
+                            show={this.state.showUploadToFigshare}
+                            figshareLinked={this.props.user.figshare_linked}
+                            datasetVersion={this.state.datasetVersion}
+                        />
 
                         <Dialogs.InputFolderId
                             actionDescription="Link this dataset into the chosen folder"
@@ -1023,6 +1042,20 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                     <span>&emsp;{this.state.datasetVersion.reason_state}</span>
                                 </div>
                             }
+
+                            {this.state.datasetVersion.figshare_article_id ? (
+                                    <Button bsSize="xs" disabled={true}>
+                                        See the Figshare article created from this
+                                        dataset version
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        bsSize="xs"
+                                        onClick={() => this.showUploadToFigshare()}
+                                    >
+                                        Upload to Figshare
+                                    </Button>
+                                )}
 
                             {this.state.datasetVersion.description &&
                                 Dialogs.renderDescription(this.state.datasetVersion.description)
