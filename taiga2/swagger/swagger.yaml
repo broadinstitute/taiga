@@ -1428,8 +1428,8 @@ paths:
                       type: string
                     file_name:
                       type: string
-                    figshare_file_id:
-                      type: integer
+                    task_id:
+                      type: string
                     failure_reason:
                       type: string
         401:
@@ -1548,6 +1548,10 @@ definitions:
         "$ref": "#/definitions/StatusEnum"
       reason_state:
         type: string
+      figshare_dataset_version_link:
+        type:
+          - string
+          - "null"
 
   DataFile:
     title: DataFile
@@ -1589,6 +1593,10 @@ definitions:
           - "null"
       type:
         type: string
+      figshare_link_article_id:
+        type:
+          - integer
+          - "null"
 
   ProvenanceEdge:
     type: object

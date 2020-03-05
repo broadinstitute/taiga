@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.result import AsyncResult
 
 import tempfile
 import uuid
@@ -225,7 +226,7 @@ def background_process_new_upload_session_file(
 # TODO: This is only for background_process_new_upload_session_file, how to get it generic for any Celery tasks?
 def taskstatus(task_id):
     print("In task status of task_id {}".format(task_id))
-    task = background_process_new_upload_session_file.AsyncResult(task_id)
+    task = AsyncResult(task_id, app=celery)
     print("Task {}".format(task))
     print("The task is in state: {}".format(task.state))
     print("Task info is {}".format(task.info))

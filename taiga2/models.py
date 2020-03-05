@@ -730,6 +730,14 @@ class ThirdPartyDatasetVersionLink(db.Model):
 
     id = db.Column(GUID, primary_key=True, default=generate_uuid)
     type = db.Column(db.String(50))
+
+    creator_id = db.Column(GUID, db.ForeignKey("users.id"))
+    creator = db.relationship(
+        "User",
+        foreign_keys="ThirdPartyDatasetVersionLink.creator_id",
+        backref=__tablename__,
+    )
+
     __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "abstract"}
 
 
@@ -743,8 +751,7 @@ class FigshareDatasetVersionLink(ThirdPartyDatasetVersionLink):
     dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
     dataset_version = db.relationship(
         "DatasetVersion",
-        foreign_keys="FigshareDatasetVersionLink.dataset_version_id",
-        backref=__tablename__,
+        backref=backref("figshare_dataset_version_link", uselist=False),
     )
     figshare_datafile_links = db.relationship("FigshareDataFileLink")
     __mapper_args__ = {"polymorphic_identity": "figshare"}
@@ -767,9 +774,7 @@ class FigshareDataFileLink(ThirdPartyDataFileLink):
     figshare_file_id = db.Column(db.Integer, nullable=False)
     datafile_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
     datafile = db.relationship(
-        "DataFile",
-        foreign_keys="FigshareDataFileLink.datafile_id",
-        backref=__tablename__,
+        "DataFile", backref=backref("figshare_datafile_link", uselist=False)
     )
     figshare_dataset_version_link_id = db.Column(
         GUID, db.ForeignKey("figshare_dataset_version_links.id")

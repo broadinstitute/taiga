@@ -1210,12 +1210,11 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
         )
 
     dataset_version = models_controller.get_dataset_version(dataset_version_id)
-    new_article_id = figshare.create_article(
-        article_name, article_description, figshare_authorization.token
-    )
-
-    figshare_dataset_version_link = models_controller.add_figshare_dataset_version_link(
-        dataset_version_id, new_article_id
+    figshare_dataset_version_link = figshare.create_article(
+        dataset_version_id,
+        article_name,
+        article_description,
+        figshare_authorization.token,
     )
 
     for file_to_upload in files_to_upload:
@@ -1232,22 +1231,21 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
             ] = "Cannot upload files without compressed S3 file"
             continue
 
-        upload_successful, message_or_id = figshare.upload_datafile(
-            new_article_id,
+        task = figshare.upload_datafile.delay(
+            figshare_dataset_version_link.figshare_article_id,
+            figshare_dataset_version_link.id,
             file_to_upload["file_name"],
+            file_to_upload["datafile_id"],
             datafile.compressed_s3_key,
             datafile.original_file_md5,
             figshare_authorization.token,
         )
 
-        if upload_successful:
-            figshare_datafile_link = models_controller.add_figshare_datafile_link(
-                file_to_upload["datafile_id"],
-                message_or_id,
-                figshare_dataset_version_link.id,
-            )
-            file_to_upload["figshare_file_id"] = figshare_datafile_link.figshare_file_id
-        else:
-            file_to_upload["failure_reason"] = message_or_id
+        file_to_upload["task_id"] = task.id
 
-    return flask.jsonify({"article_id": new_article_id, "files": files_to_upload})
+    return flask.jsonify(
+        {
+            "article_id": figshare_dataset_version_link.figshare_article_id,
+            "files": files_to_upload,
+        }
+    )

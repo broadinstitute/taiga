@@ -2071,8 +2071,11 @@ def update_figshare_token(
 def add_figshare_dataset_version_link(
     dataset_version_id: str, figshare_article_id: int
 ):
+    current_user = get_current_session_user()
     figshare_dataset_version_link = FigshareDatasetVersionLink(
-        figshare_article_id=figshare_article_id, dataset_version_id=dataset_version_id
+        figshare_article_id=figshare_article_id,
+        dataset_version_id=dataset_version_id,
+        creator_id=current_user.id,
     )
 
     db.session.add(figshare_dataset_version_link)

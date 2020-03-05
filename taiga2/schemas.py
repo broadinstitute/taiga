@@ -247,6 +247,13 @@ class DataFileBaseSchema(ma.ModelSchema):
     class Meta:
         additional = ("id", "name")
 
+    figshare_file_id = fields.fields.Method("figshare_link_file_id")
+
+    def figshare_link_file_id(self, datafile):
+        if datafile.figshare_datafile_link is not None:
+            return datafile.figshare_datafile_link.figshare_file_id
+        return None
+
 
 class S3DataFileSchema(DataFileBaseSchema):
     s3_bucket = fields.fields.String()
@@ -337,6 +344,7 @@ class DatasetVersionSchema(ma.ModelSchema):
     version = fields.fields.Method("version_as_str")
     reason_state = fields.fields.Method("reason_state_str")
     description = fields.fields.Method("description_str")
+    figshare_article_id = fields.fields.Method("figshare_link_article_id")
 
     def description_str(self, dataset_version):
         if dataset_version.description is None:
@@ -365,6 +373,11 @@ class DatasetVersionSchema(ma.ModelSchema):
             return ""
         else:
             return reason_state
+
+    def figshare_link_article_id(self, dataset_version):
+        if dataset_version.figshare_dataset_version_link is not None:
+            return dataset_version.figshare_dataset_version_link.figshare_article_id
+        return None
 
 
 class DatasetFullSchema(ma.ModelSchema):
