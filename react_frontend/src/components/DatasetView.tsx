@@ -3,6 +3,7 @@ import { RouteComponentProps } from "react-router";
 import { Link } from "react-router-dom";
 import { OverlayTrigger, Tooltip, Button } from "react-bootstrap";
 import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
+import update from "immutability-helper";
 
 import { LeftNav } from "./LeftNav";
 import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";
@@ -74,6 +75,8 @@ export interface DatasetViewState {
     showUploadToFigshare?: boolean;
 
     activityLog?: Array<ActivityLogEntry>;
+
+    figshare_public_url? : string;
 }
 
 const buttonUploadNewVersionStyle = {
@@ -135,7 +138,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             this.doFetch().then(() => {
                 this.logAccess();
 
-                this.getActivityLog()
+                this.getActivityLog();
+
+                if (this.state.datasetVersion.figshare_linked) {
+                    this.getFigshareUrl();
+                }
 
                 // We close the modal
                 this.setState({
@@ -163,6 +170,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             this.logAccess();
 
             this.getActivityLog();
+
+            if (this.state.datasetVersion.figshare_linked) {
+                this.getFigshareUrl();
+            }
 
             this.setLoading(false);
 
@@ -240,6 +251,10 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
             .then((r: Array<ActivityLogEntry>) => {
                 this.setState({ activityLog: r });
             });
+    }
+
+    getFigshareUrl() {
+        this.getTapi().get_figshare_article_public_url(this.state.datasetVersion.id).then((v) => this.setState(v))
     }
 
     updateName(name: string) {
@@ -498,8 +513,22 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
         this.setState({ showUploadToFigshare: true });
     }
 
-    handleCloseUploadToFigshare() {
-        this.setState({ showUploadToFigshare: false });
+    handleCloseUploadToFigshare(
+        uploadComplete: boolean, figsharePrivateUrl: string
+    ) {
+        if (uploadComplete) {
+            this.doFetch().then(() => {
+                this.setState({
+                    showUploadToFigshare: false,
+                    figshare_public_url: figsharePrivateUrl
+                });
+            });
+        } else {
+            this.setState({
+                showUploadToFigshare: false,
+                figshare_public_url: figsharePrivateUrl
+            });
+        }
     }
 
     getCopyButton(datafile: Models.DatasetVersionDatafiles) {
@@ -799,6 +828,11 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                     return <tr key={index}>
                         <td>{df.name}{linkToUnderlying}{gsPath}</td>
                         <td>{df.short_summary}</td>
+                        {this.state.datasetVersion.figshare_linked && (
+                                <td>
+                                    {df.figshare_linked && <i className="fa fa-check" aria-label="yes"></i>}
+                                </td>
+                            )}
                         <td>
                             {conversionTypesOutput}
                         </td>
@@ -964,9 +998,13 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                         
                         <UploadToFigshare
                             tapi={this.props.tapi}
-                            handleClose={() => this.handleCloseUploadToFigshare()}
+                            handleClose={(uploadComplete, figsharePrivateUrl) =>
+                                this.handleCloseUploadToFigshare(
+                                    uploadComplete, figsharePrivateUrl
+                                )
+                            }
                             show={this.state.showUploadToFigshare}
-                            figshareLinked={this.props.user.figshare_linked}
+                            userFigshareLinked={this.props.user.figshare_linked}
                             datasetVersion={this.state.datasetVersion}
                         />
 
@@ -1043,21 +1081,41 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                 </div>
                             }
 
-                            {this.state.datasetVersion.figshare_article_id ? (
-                                    <Button bsSize="xs" disabled={true}>
+                            {this.state.datasetVersion.figshare_linked ? (
+                                this.state.figshare_public_url ? (
+                                    <Button
+                                        bsSize="xs"
+                                        bsStyle="link"
+                                        href={this.state.figshare_public_url}
+                                        target="_blank"
+                                    >
                                         See the Figshare article created from this
-                                        dataset version
+                                        dataset version{" "}
+                                        <i
+                                            className="fa fa-external-link"
+                                            aria-hidden="true"
+                                        ></i>
                                     </Button>
                                 ) : (
                                     <Button
                                         bsSize="xs"
-                                        onClick={() => this.showUploadToFigshare()}
+                                        bsStyle="link"
+                                        disabled={true}
                                     >
-                                        Upload to Figshare
+                                        This dataset version is linked to a private
+                                        article on Figshare.
                                     </Button>
-                                )}
+                                )
+                            ) : (
+                                <Button
+                                    bsSize="xs"
+                                    onClick={() => this.showUploadToFigshare()}
+                                >
+                                    Upload to Figshare
+                                </Button>
+                            )}
 
-                            {this.state.datasetVersion.description &&
+                        {this.state.datasetVersion.description &&
                                 Dialogs.renderDescription(this.state.datasetVersion.description)
                             }
 
@@ -1070,6 +1128,7 @@ export class DatasetView extends React.Component<DatasetViewProps, DatasetViewSt
                                         <th>Name</th>
                                         {/*<th>Description</th>*/}
                                         <th>Summary</th>
+                                        {this.state.datasetVersion.figshare_linked && <th>Uploaded to Figshare</th>}
                                         <th>Download</th>
                                         <th>Datafile Id</th>
                                     </tr>

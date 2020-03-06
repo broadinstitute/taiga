@@ -2068,6 +2068,12 @@ def update_figshare_token(
     return figshare_authorization
 
 
+def remove_figshare_token(figshare_authorization_id: str):
+    figshare_authorization = get_figshare_authorization(figshare_authorization_id)
+    db.session.delete(figshare_authorization)
+    db.session.commit()
+
+
 def add_figshare_dataset_version_link(
     dataset_version_id: str, figshare_article_id: int
 ):

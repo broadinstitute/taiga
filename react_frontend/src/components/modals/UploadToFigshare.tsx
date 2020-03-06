@@ -19,9 +19,9 @@ import { relativePath } from "../../utilities/route";
 import "../../styles/modals/uploadtofigshare.css";
 type Props = {
     tapi: TaigaApi;
-    handleClose: () => void;
+    handleClose: (uploadComplete: boolean, figsharePrivateUrl: string) => void;
     show: boolean;
-    figshareLinked: boolean;
+    userFigshareLinked: boolean;
     datasetVersion: Models.DatasetVersion;
 };
 
@@ -296,7 +296,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     }
 
     renderModalBodyContent() {
-        if (!this.props.figshareLinked) {
+        if (!this.props.userFigshareLinked) {
             return (
                 <p>
                     You are not connected to Figshare. You can connect to Figshare via
@@ -319,20 +319,17 @@ export default class UploadToFigshare extends React.Component<Props, State> {
                         (file.taskStatus.state == "SUCCESS" ||
                             file.taskStatus.state == "FAILURE"))
             );
-        const uploadSuccessful =
-            uploadComplete &&
-            this.state.uploadResults.files.every(
-                file => file.taskStatus && file.taskStatus.state == "SUCCESS"
-            );
 
         const isUploading = !!this.state.uploadResults && !uploadComplete;
 
         let primaryAction = null;
+        let figsharePrivateUrl: string = null
         if (uploadComplete) {
+            figsharePrivateUrl = `https://figshare.com/account/articles/${this.state.uploadResults.article_id}`;
             primaryAction = (
                 <Button
                     bsStyle="success"
-                    href={`https://figshare.com/account/articles/${this.state.uploadResults.article_id}`}
+                    href={figsharePrivateUrl}
                     target="_blank"
                 >
                     See your new Figshare article
@@ -349,7 +346,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
                 <Button
                     onClick={() => this.handleUploadToFigshare()}
                     bsStyle="primary"
-                    disabled={!this.props.figshareLinked}
+                    disabled={!this.props.userFigshareLinked}
                 >
                     Upload to Figshare
                 </Button>
@@ -358,7 +355,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
         return (
             <Modal
                 show={this.props.show}
-                onHide={this.props.handleClose}
+                onHide={() => this.props.handleClose(uploadComplete, figsharePrivateUrl)}
                 dialogClassName="upload-to-figshare-modal"
             >
                 <Modal.Header closeButton>
@@ -366,7 +363,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
                 </Modal.Header>
                 <Modal.Body>{this.renderModalBodyContent()}</Modal.Body>
                 <Modal.Footer>
-                    <Button onClick={this.props.handleClose}>Close</Button>
+                    <Button onClick={() => this.props.handleClose(uploadComplete, figsharePrivateUrl)}>Close</Button>
                     {primaryAction}
                 </Modal.Footer>
             </Modal>

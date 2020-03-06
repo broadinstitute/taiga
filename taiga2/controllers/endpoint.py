@@ -1202,6 +1202,7 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
         figshare_authorization.token, figshare_authorization.refresh_token
     )
     if token is None:
+        models_controller.remove_figshare_token(figshare_authorization.id)
         flask.abort(401)
 
     if token != figshare_authorization.token:
@@ -1249,3 +1250,28 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
             "files": files_to_upload,
         }
     )
+
+
+@validate
+def get_figshare_public_url(datasetVersionId):
+    dataset_version = models_controller.get_dataset_version(datasetVersionId)
+    if not dataset_version.figshare_dataset_version_link:
+        flask.abort(404)
+    try:
+        article_info = figshare.get_public_article_information(
+            dataset_version.figshare_dataset_version_link.figshare_article_id
+        )
+        return flask.jsonify({"figshare_public_url": article_info["url_public_html"]})
+    except HTTPError as error:
+        print(error)
+        try:
+            article_info = figshare.get_private_article_information(
+                dataset_version.figshare_dataset_version_link
+            )
+            if article_info is None:
+                flask.abort(404)
+            return flask.jsonify(
+                {"figshare_public_url": article_info["url_private_html"]}
+            )
+        except HTTPError as error:
+            return flask.abort(404)

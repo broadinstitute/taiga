@@ -330,11 +330,11 @@ export class TaigaApi {
     }
 
     get_figshare_authorization_url(): Promise<{figshare_auth_url: string}> {
-        return this._fetch<{figshare_auth_url: string}>("/figshare/auth_url");
+        return this._fetch("/figshare/auth_url");
     }
 
     authorize_figshare(state: string, code: string): Promise<{}> {
-        return this._put<{}>("/figshare", {state, code})
+        return this._put("/figshare", {state, code})
     }
 
     upload_dataset_version_to_figshare(
@@ -351,19 +351,17 @@ export class TaigaApi {
             task_id?: string;
         }>;
     }> {
-        return this._post<{
-            article_id: number;
-            files: Array<{
-                datafile_id: string;
-                file_name: string;
-                failure_reason?: string;
-                task_id?: string;
-            }>;
-        }>("/figshare/link", {
+        return this._post("/figshare/link", {
             dataset_version_id,
             article_name,
             article_description,
             files_to_upload
         });
+    }
+
+    get_figshare_article_public_url(
+        datasetVersionId: string
+    ): Promise<{ figshare_public_url: string }> {
+        return this._fetch(`/figshare/article/${datasetVersionId}`);
     }
 }

@@ -16,6 +16,7 @@ from flask import current_app
 import taiga2.controllers.models_controller as mc
 from taiga2.aws import aws
 from taiga2.conv.util import Progress
+from taiga2.models import FigshareDatasetVersionLink
 from taiga2.tasks import celery
 
 AUTH_URL = "https://figshare.com/account/applications/authorize{}"
@@ -185,3 +186,34 @@ def upload_datafile(
         datafile_id, file_info["id"], figshare_dataset_version_link_id
     )
     return figshare_datafile_link.id
+
+
+def get_public_article_information(article_id: int):
+    return issue_request("GET", "articles/{}".format(article_id), "")
+
+
+def get_private_article_information(
+    figshare_dataset_version_link: FigshareDatasetVersionLink,
+):
+    current_user = mc.get_current_session_user()
+    if current_user.id == figshare_dataset_version_link.creator_id:
+        figshare_authorization = mc.get_figshare_authorization_for_current_user()
+        if figshare_authorization is None:
+            return None
+
+        token, refresh_token = validate_token(
+            figshare_authorization.token, figshare_authorization.refresh_token
+        )
+
+        if not token:
+            mc.remove_figshare_token(figshare_authorization.id)
+            return None
+
+        return issue_request(
+            "GET",
+            "account/articles/{}".format(
+                figshare_dataset_version_link.figshare_article_id
+            ),
+            token,
+        )
+    return None

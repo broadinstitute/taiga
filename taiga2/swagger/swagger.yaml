@@ -1435,6 +1435,32 @@ paths:
         401:
           description: TODO (token does not work)
 
+  /figshare/article/{datasetVersionId}:
+    get:
+      description: Return public url for figshare article associated with dataset version
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_figshare_public_url
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetVersionId
+          in: path
+          type: string
+          description: dataset version ID
+          required: true
+      responses:
+        200:
+          description: Fig
+          schema:
+            type: object
+            required:
+              - figshare_public_url
+            properties:
+              figshare_public_url:
+                type: string
+        404:
+          description: No public article found
+
 
 definitions:
   User:
@@ -1548,10 +1574,8 @@ definitions:
         "$ref": "#/definitions/StatusEnum"
       reason_state:
         type: string
-      figshare_dataset_version_link:
-        type:
-          - string
-          - "null"
+      figshare_linked:
+        type: boolean
 
   DataFile:
     title: DataFile
@@ -1593,10 +1617,8 @@ definitions:
           - "null"
       type:
         type: string
-      figshare_link_article_id:
-        type:
-          - integer
-          - "null"
+      figshare_linked:
+        type: boolean
 
   ProvenanceEdge:
     type: object
