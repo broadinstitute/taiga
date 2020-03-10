@@ -49,8 +49,8 @@ def get_body_parameter(endpoint):
     return body_params[0]["name"], body_params[0]["schema"]
 
 
-def get_response_schema(endpoint):
-    return endpoint["responses"][200].get("schema")
+def get_response_schema(endpoint, status_code: int):
+    return endpoint["responses"][status_code].get("schema")
 
 
 def get_endpoint_for(operation_id):
@@ -86,7 +86,7 @@ def validate(endpoint_func):
         #        if result.content_type == "application/json"
         parsed_result = json.loads(result.data.decode("utf8"))
 
-        response_schema = get_response_schema(endpoint)
+        response_schema = get_response_schema(endpoint, result.status_code)
         # assert response_schema is not None, "No response schema for {}".format(endpoint_func.__name__)
         if response_schema is not None:
             try:
