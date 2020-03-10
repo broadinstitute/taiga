@@ -1,13 +1,15 @@
 from celery import Celery
 
+import flask
+import gzip
+import json
+import logging
+import shutil
 import tempfile
 import uuid
-import flask
-import logging
-import gzip
-import shutil
 
-from typing import Optional
+from typing import IO, Optional
+from urllib.parse import urlparse
 
 from taiga2.aws import aws
 import taiga2.conv as conversion
@@ -54,6 +56,25 @@ def _compress_and_upload_to_s3(
     )
 
 
+def _infer_column_types(
+    download_dest: IO, compressed_dest: IO, mime_type: str, encoding: Optional[str]
+):
+    delimiter = "," if mime_type == "text/csv" else "\t"
+    try:
+        column_types = conversion.sniff.sniff2(
+            download_dest.name,
+            encoding if encoding is not None else "iso-8859-1",
+            delimiter,
+        )
+        return column_types
+    except Exception:
+        log.warning(
+            "Could not guess column types for {}".format(compressed_dest.name),
+            exc_info=True,
+        )
+    return None
+
+
 def _from_s3_convert_to_s3(
     progress,
     upload_session_file_id,
@@ -90,20 +111,11 @@ def _from_s3_convert_to_s3(
         encoding,
     )
 
-    column_types = None
-    delimiter = "," if mime_type == "text/csv" else "\t"
-    if calculate_column_types:
-        try:
-            column_types = conversion.sniff.sniff2(
-                download_dest.name,
-                encoding if encoding is not None else "iso-8859-1",
-                delimiter,
-            )
-        except Exception:
-            log.warning(
-                "Could not guess column types for {}".format(compressed_dest),
-                exc_info=True,
-            )
+    column_types = (
+        _infer_column_types(download_dest, compressed_dest, mime_type, encoding)
+        if calculate_column_types
+        else None
+    )
 
     return import_result, column_types
 
@@ -372,3 +384,88 @@ def start_conversion_task(self, bucket, key, src_format, dst_format, cache_entry
             cache_entry_id,
         )
         raise
+
+
+def _get_s3_key_from_conversion_cache_url(cache_entry_id: str) -> str:
+    conversion_cache_entry = models_controller.get_conversion_cache_entry_by_id(
+        cache_entry_id
+    )
+    s3_path = json.loads(conversion_cache_entry.urls_as_json)[0]
+    p = urlparse(s3_path)
+    s3_key = p.path.lstrip("/")
+    return s3_key
+
+
+def _download_and_compress_s3(datafile_id: str, s3_key: str, mime_type: str):
+    # TODO: Add progress?
+    s3 = aws.s3
+    datafile = models_controller.get_datafile(datafile_id)
+    compressed_s3_key = models_controller.generate_compressed_key()
+
+    bucket_name = flask.current_app.config["S3_BUCKET"]
+
+    s3_object = s3.Object(bucket_name, s3_key)
+    compressed_s3_object = s3.Object(bucket_name, compressed_s3_key)
+
+    with tempfile.NamedTemporaryFile() as download_dest:
+        with tempfile.NamedTemporaryFile() as compressed_dest:
+            s3_object.download_fileobj(download_dest)
+            _compress_and_upload_to_s3(
+                s3_object,
+                download_dest,
+                compressed_dest,
+                compressed_s3_object,
+                mime_type,
+                None,
+            )
+
+    models_controller.update_datafile_compressed_key_and_column_types(
+        datafile_id, compressed_s3_key, None
+    )
+
+
+@celery.task(bind=True)
+def convert_and_backfill_compressed_file(self, datafile_id: str, cache_entry_id: str):
+    """
+    Convert a HDF5 or Columnar file to CSV, then compress, upload to S3, and update
+    DataFile compressed_s3_key and column types
+    
+    Args:
+        datafile_id (str): ID for the (S3) DataFile to update
+        cache_entry_id (str): ID for the ConversionCache entry to update
+    """
+    datafile = models_controller.get_datafile(datafile_id)
+    _start_conversion_task(
+        self,
+        Progress(self),
+        datafile.s3_bucket,
+        datafile.s3_key,
+        datafile.format,
+        "csv",
+        cache_entry_id,
+    )
+    s3_key = _get_s3_key_from_conversion_cache_url(cache_entry_id)
+
+    _download_and_compress_s3(datafile_id, s3_key, "text/csv")
+
+
+@celery.task(bind=True)
+def backfill_compressed_file(self, datafile_id: str, cache_entry_id: Optional[str]):
+    """
+    Get the S3 key from ConversionCache (if DataFile is not Raw) or s3_key field, then
+    compress, upload to S3, and update DataFile compressed_s3_key and column types
+    
+    Args:
+        datafile_id (str): ID for the (S3) DataFile to update
+        cache_entry_id (Optional[str]): ID for the ConversionCache entry to use, or
+            None if the DataFile is a Raw DataFile
+    """
+    if cache_entry_id is None:
+        s3_key = _get_s3_key_from_conversion_cache_url(cache_entry_id)
+        mime_type = "text/csv"
+    else:
+        datafile = models_controller.get_datafile(datafile_id)
+        s3_key = datafile.s3_key
+        mime_type = "text/plain"
+
+    _download_and_compress_s3(datafile_id, s3_key, mime_type)

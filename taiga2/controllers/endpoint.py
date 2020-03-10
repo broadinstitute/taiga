@@ -821,6 +821,35 @@ def get_datafile_column_types(
     return flask.jsonify({c.name: c.persister.type_name for c in table_info})
 
 
+@validate
+def backfill_compressed_file(datafile_id: str):
+    if not models_controller.user_in_admin_group():
+        flask.abort(403)
+
+    datafile = models_controller.get_datafile(datafile_id)
+    if datafile.type != "s3" or datafile.compressed_s3_key is not None:
+        return flask.make_response(flask.jsonify(None), 304)
+
+    from taiga2.tasks import (
+        convert_and_backfill_compressed_file,
+        backfill_compressed_file,
+    )
+
+    if datafile.format == S3DataFile.DataFileFormat.Raw:
+        task = backfill_compressed_file.delay(datafile_id, entry.id)
+    else:
+        is_new, entry = models_controller.get_conversion_cache_entry(
+            datafile.dataset_version.id, datafile.name, "csv"
+        )
+
+        if is_new:
+            task = convert_and_backfill_compressed_file.delay(datafile_id, entry.id)
+        else:
+            task = backfill_compressed_file.delay(datafile_id, entry.id)
+
+    return flask.make_response(flask.jsonify(task.id), 202)
+
+
 def entry_is_valid(entry):
     # while celery eager eval is enabled, we cannot use AsyncResult so just assume any existing
     # cache value is fine.

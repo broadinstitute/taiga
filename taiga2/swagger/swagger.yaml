@@ -853,6 +853,30 @@ paths:
         500:
           description: Error encountered during datafile retrieval.
 
+  /datafile/backfill_compressed_file/{datafileId}:
+    post:
+      description: Remove users with userIds from group with id groupId
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: backfill_compressed_file
+      consumes:
+        - application/json
+      parameters:
+        - name: datafileId
+          in: path
+          type: string
+          description: group ID
+          required: true
+      responses:
+        202:
+          description: Started task to backfill compressed file
+        304:
+          description: Datafile already has compressed_s3_key or is not s3 file
+          schema:
+            title: task_id
+            type: string
+        403:
+          description: Feature not accessible to non-admin users
+
   /task_status/{taskStatusId}:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint

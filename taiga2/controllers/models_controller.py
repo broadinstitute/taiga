@@ -5,7 +5,7 @@ import uuid
 import os
 import re
 
-from typing import List, Optional
+from typing import List, Dict, Optional
 
 import json
 
@@ -1340,9 +1340,32 @@ def copy_datafile(original_datafile_id):
     return _copy_datafile
 
 
-# </editor-fold>
+def update_datafile_compressed_key_and_column_types(
+    datafile_id: str,
+    compressed_s3_key: str,
+    column_types_as_json: Optional[Dict[str, str]],
+):
+    datafile = get_datafile(datafile_id)
+    if datafile.type != "s3":
+        raise Exception(
+            "{} datafiles should not have compressed_s3_keys.".format(datafile.type)
+        )
 
-# <editor-fold desc="Upload Session">
+    if (
+        datafile.format != S3DataFile.DataFileFormat.Columnar
+        and column_types_as_json is not None
+    ):
+        raise Exception(
+            "{} datafiles should not have column_types_as_json".format(datafile.format)
+        )
+
+    datafile.compressed_s3_key = compressed_s3_key
+    datafile.column_types_as_json = column_types_as_json
+    db.session.add(datafile)
+    db.session.commit()
+    return datafile
+
+
 def add_new_upload_session():
     user = get_current_session_user()
     us = UploadSession(user_id=user.id)
@@ -1571,6 +1594,12 @@ def get_conversion_cache_entry(dataset_version_id, datafile_name, format):
 
     assert entry.id is not None
     return is_new, entry
+
+
+def get_conversion_cache_entry_by_id(entry_id: str) -> ConversionCache:
+    return (
+        db.session.query(ConversionCache).filter(ConversionCache.id == entry_id).one()
+    )
 
 
 def update_conversion_cache_entry(entry_id, status, urls=None):
@@ -1871,6 +1900,14 @@ def remove_accessLogs(array_access_log):
 # </editor-fold>
 
 # <editor-fold desc="Group">
+
+
+def user_in_admin_group() -> bool:
+    """Return True if the current user is in the admin group"""
+    admin_group = get_group_by_name("Admin")
+    current_user = get_current_session_user()
+
+    return current_user in admin_group.users
 
 
 def can_view_group(group_id):
