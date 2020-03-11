@@ -1348,6 +1348,143 @@ paths:
         404:
           description: No group with id groupId
 
+  /figshare/auth_url:
+    get:
+      description: Get the endpoint to authorize the Figshare Taiga app
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_figshare_auth_url
+      responses:
+        200:
+          description: The Figshare endpoint
+          schema:
+            type: object
+            required:
+              - figshare_auth_url
+            properties:
+              figshare_auth_url:
+                type: string
+
+  /figshare:
+    put:
+      description: After receiving Figshare authorization code, request and save token
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: add_figshare_token
+      consumes:
+        - application/json
+      parameters:
+        - name: figshareOAuthRequest
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - code
+              - state
+            properties:
+              code:
+                type: string
+              state:
+                type: string
+      responses:
+        200:
+          description: An existing authorization was updated
+        201:
+          description: A new authorization was created
+        400:
+          description: Figshare API request failed
+
+  /figshare/link:
+    post:
+      description: Upload dataset version and files to Figshare
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: upload_dataset_version_to_figshare
+      consumes:
+        - application/json
+      parameters:
+        - name: figshareDatasetVersionLink
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - dataset_version_id
+              - article_name
+              - files_to_upload
+            properties:
+              dataset_version_id:
+                type: string
+              article_name:
+                type: string
+              article_description:
+                type: string
+              files_to_upload:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - datafile_id
+                    - file_name
+                  properties:
+                    datafile_id:
+                      type: string
+                    file_name:
+                      type: string
+      responses:
+        200:
+          description: An existing authorization was updated
+          schema:
+            type: object
+            required:
+              - article_id
+              - files
+            properties:
+              article_id:
+                type: integer
+              files:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - datafile_id
+                    - file_name
+                  properties:
+                    datafile_id:
+                      type: string
+                    file_name:
+                      type: string
+                    task_id:
+                      type: string
+                    failure_reason:
+                      type: string
+        401:
+          description: TODO (token does not work)
+
+  /figshare/article/{datasetVersionId}:
+    get:
+      description: Return public url for figshare article associated with dataset version
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_figshare_public_url
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetVersionId
+          in: path
+          type: string
+          description: dataset version ID
+          required: true
+      responses:
+        200:
+          description: Fig
+          schema:
+            type: object
+            required:
+              - figshare_public_url
+            properties:
+              figshare_public_url:
+                type: string
+        404:
+          description: No public article found
+
 
 definitions:
   User:
@@ -1359,6 +1496,7 @@ definitions:
       - home_folder_id
       - trash_folder_id
       - token
+      - figshare_linked
     properties:
       id:
         type: string
@@ -1370,6 +1508,8 @@ definitions:
         type: string
       token:
         type: string
+      figshare_linked:
+        type: boolean
 
   DatasetVersionSummary:
     title: DatasetVersionSummary
@@ -1458,6 +1598,8 @@ definitions:
         "$ref": "#/definitions/StatusEnum"
       reason_state:
         type: string
+      figshare_linked:
+        type: boolean
 
   DataFile:
     title: DataFile
@@ -1499,6 +1641,8 @@ definitions:
           - "null"
       type:
         type: string
+      figshare_linked:
+        type: boolean
 
   ProvenanceEdge:
     type: object

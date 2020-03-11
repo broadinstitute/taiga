@@ -21,3 +21,7 @@ SQLALCHEMY_DATABASE_URI = 'sqlite:///db.sqlite3'
 
 # Exception to StackDriver
 REPORT_EXCEPTIONS = False
+
+# Figshare
+FIGSHARE_CLIENT_ID = ''
+FIGSHARE_CLIENT_SECRET = ''

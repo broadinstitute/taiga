@@ -1,14 +1,18 @@
 import flask
 import logging
+import requests
 import sys
 import time
 import urllib
 import re
+from typing import List, Dict
+from typing_extensions import TypedDict
 
 from .endpoint_validation import validate
 
 from sqlalchemy.orm.exc import NoResultFound
 from google.cloud import storage, exceptions as gcs_exceptions
+from requests.exceptions import HTTPError
 
 # TODO: Change the app containing db to api_app => current_app
 import taiga2.controllers.models_controller as models_controller
@@ -21,6 +25,8 @@ from taiga2.models import S3DataFile
 from taiga2.aws import aws
 from taiga2.aws import create_signed_get_obj
 from taiga2.aws import create_s3_url as aws_create_s3_url
+
+import taiga2.figshare as figshare
 
 log = logging.getLogger(__name__)
 
@@ -1103,12 +1109,6 @@ def search_within_folder(current_folder_id, search_query):
         "entries": [],
     }
 
-    # type: FolderEntriesTypeEnum
-    # id: string;
-    # name: string;
-    # creation_date: string;
-    # creator: NamedId;
-    # breadcrumbs: Array<OrderedNamedId>
     return flask.jsonify(result)
 
 
@@ -1159,3 +1159,148 @@ def remove_group_user_associations(groupId, groupUserAssociationMetadata):
         return flask.jsonify(result)
     except AssertionError:
         return flask.abort(403)
+
+
+@validate
+def get_figshare_auth_url():
+    config = flask.current_app.config
+    return flask.jsonify(
+        {
+            "figshare_auth_url": figshare.AUTH_URL.format(
+                "?client_id={}".format(
+                    (config["FIGSHARE_CLIENT_ID"])
+                    + "&response_type=code"
+                    + "&scope=all"
+                    + "&redirect_uri%3Dhttps%3A%2F%2Fcds.team%2Ftaiga"
+                )
+            )
+        }
+    )
+
+
+@validate
+def add_figshare_token(figshareOAuthRequest):
+    config = flask.current_app.config
+    code = figshareOAuthRequest["code"]
+    state = figshareOAuthRequest["state"]
+
+    response = requests.post(
+        figshare.BASE_URL.format(
+            "token"
+            + "?client_id={}".format(config["FIGSHARE_CLIENT_ID"])
+            + "&client_secret={}".format(config["FIGSHARE_CLIENT_SECRET"])
+            + "&grant_type=authorization_code"
+            + "&code={}".format(code)
+            + "&state={}".format(state)
+        )
+    )
+
+    try:
+        response.raise_for_status()
+        data = response.json()
+        token = data["token"]
+        refresh_token = data["refresh_token"]
+
+        account_data = figshare.issue_request("GET", "account", token)
+
+        figshare_authorization, is_new = models_controller.add_figshare_token(
+            account_data["id"], token, refresh_token
+        )
+        if is_new:
+            return flask.make_response(flask.jsonify({}), 201)
+        else:
+            return flask.jsonify({})
+    except HTTPError as error:
+        return flask.abort(400)
+
+
+@validate
+def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
+    dataset_version_id = figshareDatasetVersionLink["dataset_version_id"]
+    article_name = figshareDatasetVersionLink["article_name"]
+    article_description = figshareDatasetVersionLink["article_description"]
+    files_to_upload = figshareDatasetVersionLink["files_to_upload"]
+
+    figshare_authorization = (
+        models_controller.get_figshare_authorization_for_current_user()
+    )
+    if figshare_authorization is None:
+        flask.abort(401)
+
+    token, refresh_token = figshare.validate_token(
+        figshare_authorization.token, figshare_authorization.refresh_token
+    )
+    if token is None:
+        models_controller.remove_figshare_token(figshare_authorization.id)
+        flask.abort(401)
+
+    if token != figshare_authorization.token:
+        figshare_authorization = models_controller.update_figshare_token(
+            figshare_authorization.id, token, refresh_token
+        )
+
+    dataset_version = models_controller.get_dataset_version(dataset_version_id)
+    figshare_dataset_version_link = figshare.create_article(
+        dataset_version_id,
+        article_name,
+        article_description,
+        figshare_authorization.token,
+    )
+
+    for file_to_upload in files_to_upload:
+        datafile = models_controller.get_datafile(file_to_upload["datafile_id"])
+        if datafile.type == "gcs":
+            file_to_upload["failure_reason"] = "Cannot upload GCS pointer files"
+            continue
+        elif datafile.type == "virtual":
+            datafile = datafile.underlying_data_file
+
+        if datafile.compressed_s3_key is None:
+            file_to_upload[
+                "failure_reason"
+            ] = "Cannot upload files without compressed S3 file"
+            continue
+
+        task = figshare.upload_datafile.delay(
+            figshare_dataset_version_link.figshare_article_id,
+            figshare_dataset_version_link.id,
+            file_to_upload["file_name"],
+            file_to_upload["datafile_id"],
+            datafile.compressed_s3_key,
+            datafile.original_file_md5,
+            figshare_authorization.token,
+        )
+
+        file_to_upload["task_id"] = task.id
+
+    return flask.jsonify(
+        {
+            "article_id": figshare_dataset_version_link.figshare_article_id,
+            "files": files_to_upload,
+        }
+    )
+
+
+@validate
+def get_figshare_public_url(datasetVersionId):
+    dataset_version = models_controller.get_dataset_version(datasetVersionId)
+    if not dataset_version.figshare_dataset_version_link:
+        flask.abort(404)
+    try:
+        article_info = figshare.get_public_article_information(
+            dataset_version.figshare_dataset_version_link.figshare_article_id
+        )
+        return flask.jsonify({"figshare_public_url": article_info["url_public_html"]})
+    except HTTPError as error:
+        print(error)
+        try:
+            article_info = figshare.get_private_article_information(
+                dataset_version.figshare_dataset_version_link
+            )
+            if article_info is None:
+                flask.abort(404)
+            return flask.jsonify(
+                {"figshare_public_url": article_info["url_private_html"]}
+            )
+        except HTTPError as error:
+            return flask.abort(404)

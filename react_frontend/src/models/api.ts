@@ -81,6 +81,22 @@ export class TaigaApi {
             })
     }
 
+    _put<T>(url: string, args: any): Promise<T> {
+        return fetch(this.baseUrl + url, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": this.authHeaders.auth
+            },
+            body: JSON.stringify(args)
+        })
+            .then((response: Response) => this._checkResponse(response))
+            .then<T>((response: Response) => {
+                return response.json();
+            })
+    }
+
     get_user(): Promise<User> {
         return this._fetch<User>("/user")
     }
@@ -311,5 +327,41 @@ export class TaigaApi {
 		userIds: Array<string>
 	): Promise<Group> {
 		return this._post<Group>("/group/" + groupId + "/remove", { userIds });
-	}
+    }
+
+    get_figshare_authorization_url(): Promise<{figshare_auth_url: string}> {
+        return this._fetch("/figshare/auth_url");
+    }
+
+    authorize_figshare(state: string, code: string): Promise<{}> {
+        return this._put("/figshare", {state, code})
+    }
+
+    upload_dataset_version_to_figshare(
+        dataset_version_id: string,
+        article_name: string,
+        article_description: string,
+        files_to_upload: Array<{ datafile_id: string; file_name: string }>
+    ): Promise<{
+        article_id: number;
+        files: Array<{
+            datafile_id: string;
+            file_name: string;
+            failure_reason?: string;
+            task_id?: string;
+        }>;
+    }> {
+        return this._post("/figshare/link", {
+            dataset_version_id,
+            article_name,
+            article_description,
+            files_to_upload
+        });
+    }
+
+    get_figshare_article_public_url(
+        datasetVersionId: string
+    ): Promise<{ figshare_public_url: string }> {
+        return this._fetch(`/figshare/article/${datasetVersionId}`);
+    }
 }

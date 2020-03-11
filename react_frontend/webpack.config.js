@@ -27,7 +27,7 @@ module.exports = {
             { test: /\.tsx?$/, loader: "awesome-typescript-loader" },
             // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
             { enforce: "pre", test: /\.js$/, loader: "source-map-loader", exclude: ["/node_modules/"] },
-            // the following are only needed for processing css, which we (currently) only do when running cosmos
+            // the following are only needed for processing css
             { test: /\.css$/, use: ['style-loader', 'css-loader'] },
             { test: /\.(ttf|otf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?|(jpg|gif)$/, loader: 'file-loader'},
             { test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?limit=10000&mimetype=application/font-woff'},

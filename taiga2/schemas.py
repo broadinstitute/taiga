@@ -28,7 +28,19 @@ ma = Marshmallow()
 
 class UserSchema(ma.ModelSchema):
     class Meta:
-        fields = ("id", "name", "home_folder_id", "trash_folder_id", "token")
+        fields = (
+            "id",
+            "name",
+            "home_folder_id",
+            "trash_folder_id",
+            "token",
+            "figshare_linked",
+        )
+
+    figshare_linked = fields.fields.Method("check_figshare_authorization")
+
+    def check_figshare_authorization(self, user):
+        return user.figshare_authorization is not None
 
 
 class UserNamedIdSchema(ma.ModelSchema):
@@ -233,7 +245,14 @@ class DataFileSummarySchema(ma.ModelSchema):
 
 class DataFileBaseSchema(ma.ModelSchema):
     class Meta:
-        additional = ("id", "name")
+        additional = ("id", "name", "figshare_linked")
+
+    figshare_linked = fields.fields.Method("figshare_link_exists")
+
+    def figshare_link_exists(self, datafile):
+        if datafile.figshare_datafile_link is not None:
+            return True
+        return False
 
 
 class S3DataFileSchema(DataFileBaseSchema):
@@ -325,6 +344,7 @@ class DatasetVersionSchema(ma.ModelSchema):
     version = fields.fields.Method("version_as_str")
     reason_state = fields.fields.Method("reason_state_str")
     description = fields.fields.Method("description_str")
+    figshare_linked = fields.fields.Method("figshare_link_exists")
 
     def description_str(self, dataset_version):
         if dataset_version.description is None:
@@ -353,6 +373,11 @@ class DatasetVersionSchema(ma.ModelSchema):
             return ""
         else:
             return reason_state
+
+    def figshare_link_exists(self, dataset_version):
+        if dataset_version.figshare_dataset_version_link is not None:
+            return True
+        return False
 
 
 class DatasetFullSchema(ma.ModelSchema):

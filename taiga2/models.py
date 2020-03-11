@@ -7,6 +7,7 @@ from .extensions import metadata
 from flask_migrate import Migrate
 
 from sqlalchemy import event, UniqueConstraint, CheckConstraint
+from sqlalchemy.orm import backref
 from sqlalchemy.ext.declarative import declared_attr
 
 from typing import Dict, List
@@ -708,6 +709,78 @@ class SearchResult:
         self.current_folder = current_folder
         self.name = name
         self.entries = entries
+
+
+class FigshareAuthorization(db.Model):
+    __tablename__ = "figshare_authorizations"
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+
+    user_id = db.Column(GUID, db.ForeignKey("users.id"))
+    user = db.relationship(
+        "User", backref=backref("figshare_authorization", uselist=False)
+    )
+
+    figshare_account_id = db.Column(db.Integer)
+    token = db.Column(db.Text, nullable=False)
+    refresh_token = db.Column(db.Text, nullable=False)
+
+
+class ThirdPartyDatasetVersionLink(db.Model):
+    __tablename__ = "third_party_dataset_version_links"
+
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+    type = db.Column(db.String(50))
+
+    creator_id = db.Column(GUID, db.ForeignKey("users.id"))
+    creator = db.relationship(
+        "User",
+        foreign_keys="ThirdPartyDatasetVersionLink.creator_id",
+        backref=__tablename__,
+    )
+
+    __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "abstract"}
+
+
+class FigshareDatasetVersionLink(ThirdPartyDatasetVersionLink):
+    __tablename__ = "figshare_dataset_version_links"
+
+    id = db.Column(
+        GUID, db.ForeignKey("third_party_dataset_version_links.id"), primary_key=True
+    )
+    figshare_article_id = db.Column(db.Integer, nullable=False)
+    dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
+    dataset_version = db.relationship(
+        "DatasetVersion",
+        backref=backref("figshare_dataset_version_link", uselist=False),
+    )
+    figshare_datafile_links = db.relationship("FigshareDataFileLink")
+    __mapper_args__ = {"polymorphic_identity": "figshare"}
+
+
+class ThirdPartyDataFileLink(db.Model):
+    __tablename__ = "third_party_datafile_links"
+
+    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+    type = db.Column(db.String(50))
+    __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "abstract"}
+
+
+class FigshareDataFileLink(ThirdPartyDataFileLink):
+    __tablename__ = "figshare_datafile_links"
+
+    id = db.Column(
+        GUID, db.ForeignKey("third_party_datafile_links.id"), primary_key=True
+    )
+    figshare_file_id = db.Column(db.Integer, nullable=False)
+    datafile_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
+    datafile = db.relationship(
+        "DataFile", backref=backref("figshare_datafile_link", uselist=False)
+    )
+    figshare_dataset_version_link_id = db.Column(
+        GUID, db.ForeignKey("figshare_dataset_version_links.id")
+    )
+
+    __mapper_args__ = {"polymorphic_identity": "figshare"}
 
 
 # </editor-fold>

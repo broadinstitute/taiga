@@ -92,6 +92,7 @@ export interface User {
     "home_folder_id": string;
     "trash_folder_id": string;
     "token": string;
+    "figshare_linked": boolean;
 }
 
 export interface UserNamedId {
@@ -119,6 +120,7 @@ export class DatasetVersion extends Entry {
     folders: Array<NamedId>;
     can_edit: boolean;
     can_view: boolean;
+    figshare_linked: boolean;
 
     constructor(data: any, dataset: Dataset) {
         super(data);
@@ -149,6 +151,7 @@ export interface DatasetVersionDatafiles {
     allowed_conversion_type: Array<string>;
     short_summary: string;
     gcs_path: string;
+    figshare_linked: boolean;
 }
 
 export interface DatasetVersions {
