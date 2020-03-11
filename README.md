@@ -225,7 +225,7 @@ You can use a curl request, e.g `curl -d '{"deprecationReason":"notNeeded"}' -H 
 
 ## Contributing
 
-Feel free to make a contribution and then submit a Pull Request! Please make sure the Git hooks are set up before committing (by running `pre-commit install` after installing pip requirements).
+Feel free to make a contribution and then submit a Pull Request!
 
 ## Versioning
 
