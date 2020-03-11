@@ -6,16 +6,15 @@
 declare const jest: any;
 declare const beforeEach: any;
 
-import * as Enzyme from 'enzyme'
-import * as Adapter from 'enzyme-adapter-react-16'
+import * as Enzyme from "enzyme";
+import * as Adapter from "enzyme-adapter-react-16";
 // jest.mock("plotly.js", () => {}, {virtual: true}) // virtual mocks modules that don't exist (plotly is pulled in via a CDN). see link to docs above
 // import * as context from './src/utilities/context'
 
-
 Enzyme.configure({
-  adapter: new Adapter(),
-})
+  adapter: new Adapter()
+});
 
-
-beforeEach(() => { // reset any dapi mocks between tests
+beforeEach(() => {
+  // reset any dapi mocks between tests
 });

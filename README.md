@@ -9,21 +9,25 @@ These instructions will get you a copy of the project up and running on your loc
 See deployment for notes on how to deploy the project on a live system (Coming soon).
 
 ## Prerequisites
+
 Taiga 2 is built on the following stack:
 
 ### Database
+
 - PostGre (to store the app information)
 - Psycopg2
 - SQLAlchemy
 - Amazon S3 (to store the files)
 
 ### Backend/API
+
 - Python 3.6
 - Flask
 - Celery/Redis
 - Swagger
 
 ### FrontEnd
+
 - React
 - TypeScript
 - Webpack
@@ -31,10 +35,11 @@ Taiga 2 is built on the following stack:
 
 ### Configuring AWS users
 
-We need two users: One IAM account (main) is used in general by the app to read/write to S3.   The second (uploader) has it's rights delegated via STS on a short term basis.  However, this user should 
+We need two users: One IAM account (main) is used in general by the app to read/write to S3. The second (uploader) has it's rights delegated via STS on a short term basis. However, this user should
 only have access to upload to a single location within S3.
 
 Permissions for the main user:
+
 ```{
     "Version": "2012-10-17",
     "Statement": [
@@ -51,6 +56,7 @@ Permissions for the main user:
 ```
 
 Permissions for the "upload" user:
+
 ```{
     "Version": "2012-10-17",
     "Statement": [
@@ -84,26 +90,28 @@ We need now to be able to access to this Bucket programmatically,
 and through [CORS](https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html#how-do-i-enable-cors) (Cross Origin Resource Sharing):
 
 For our case, it is pretty simple:
+
 1. Select your bucket in your [amazon S3 console](https://console.aws.amazon.com/s3/home?region=eu-west-1#)
 2. Click on `Properties`
 3. Click on the `Permissions` accordion
 4. Click on `Edit CORS Configuration`
 5. Paste the following configuration into the page that should appear (CORS Configuration Editor):
-  ```xml
+
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-    <CORSRule>
-        <AllowedOrigin>*</AllowedOrigin>
-        <AllowedMethod>GET</AllowedMethod>
-        <AllowedMethod>POST</AllowedMethod>
-        <AllowedMethod>PUT</AllowedMethod>
-        <ExposeHeader>ETag</ExposeHeader>
-        <AllowedHeader>*</AllowedHeader>
-    </CORSRule>
+  <CORSRule>
+      <AllowedOrigin>*</AllowedOrigin>
+      <AllowedMethod>GET</AllowedMethod>
+      <AllowedMethod>POST</AllowedMethod>
+      <AllowedMethod>PUT</AllowedMethod>
+      <ExposeHeader>ETag</ExposeHeader>
+      <AllowedHeader>*</AllowedHeader>
+  </CORSRule>
 </CORSConfiguration>
-  ```
-  
-***Warning: Be careful to not override your existing configuration!***
+```
+
+**_Warning: Be careful to not override your existing configuration!_**
 
 #### Configure Taiga to use your Bucket
 
@@ -113,15 +121,15 @@ For our case, it is pretty simple:
 
 ## Installing
 
-1. Install all the dependencies:
+1.  Install all the dependencies:
 
         `sh install_prereqs.sh`
 
-2. Create a test database to have some data to work with:
+2.  Create a test database to have some data to work with:
 
         `./flask recreate-dev-db`
 
-3. Open 4 terminal windows to launch Webpack, Taiga 2, Celery and Redis processes:
+3.  Open 4 terminal windows to launch Webpack, Taiga 2, Celery and Redis processes:
 
     a. In terminal 1:
 
@@ -138,11 +146,10 @@ For our case, it is pretty simple:
     d. In terminal 4:
 
         `./flask run-worker`
-        
-4. Congratulations! You can now access to Taiga 2 through your browser at:
+
+4.  Congratulations! You can now access to Taiga 2 through your browser at:
 
         `http://127.0.0.1:5000/taiga/`
-
 
 ## adding user to admin group
 
@@ -196,9 +203,9 @@ Depending on your changes, you may be able to apply them without stopping the se
 ### Applying "offline" changes
 
 - (Stop the service)
-- `ssh ubuntu@cds.team sudo systemctl stop taiga` 
+- `ssh ubuntu@cds.team sudo systemctl stop taiga`
 - (Apply changes to the DB)
-- `./manage.py -c ../prod_settings.cfg db upgrade` 
+- `./manage.py -c ../prod_settings.cfg db upgrade`
 - (And then pull and start the new code)
 - `ssh ubuntu@cds.team`
 - `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
@@ -207,7 +214,7 @@ Depending on your changes, you may be able to apply them without stopping the se
 ### Applying "online" changes
 
 - (Apply changes to the DB)
-- `./manage.py -c ../prod_settings.cfg db upgrade` 
+- `./manage.py -c ../prod_settings.cfg db upgrade`
 - (And then pull new code)
 - `ssh ubuntu@cds.team`
 - `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
@@ -240,4 +247,3 @@ We use Git for versioning! If you don't know how to use it, we strongly recommen
 
 - Cancer Data Science
 - Broad Institute
-

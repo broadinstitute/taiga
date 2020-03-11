@@ -14,16 +14,16 @@ import * as React from "react";
 // import { LoadingOverlay } from "../utilities/loading";
 
 interface NotFoundProps {
-    message?: string;
+  message?: string;
 }
 
 export class NotFound extends React.Component<NotFoundProps, any> {
-    render() {
-        return <div className="notFound">
-            <h1>Not found :(</h1>
-            <p>
-                {this.props.message}
-            </p>
-        </div>
-    }
+  render() {
+    return (
+      <div className="notFound">
+        <h1>Not found :(</h1>
+        <p>{this.props.message}</p>
+      </div>
+    );
+  }
 }

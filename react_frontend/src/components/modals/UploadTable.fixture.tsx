@@ -7,7 +7,12 @@ import * as Dropzone from "react-dropzone";
 import { DataFileType } from "../../models/models";
 
 let files = [
-    { name: "taigafile", fileType: UploadFileType.TaigaPath, size: "100", existingTaigaId: "original-123183.2/sample" }
+  {
+    name: "taigafile",
+    fileType: UploadFileType.TaigaPath,
+    size: "100",
+    existingTaigaId: "original-123183.2/sample"
+  }
 ];
 
 //let w = window as any;
@@ -81,50 +86,56 @@ let files = [
 // allowed_conversion_type: Array<string>;
 // short_summary: string;
 
-function mockUpload(files: any, params: any, uploadProgressCallback: (status: Array<UploadStatus>) => void) {
-    console.log("MockUploadStart");
-    return new Promise((resolve) => {
-        let fileCount = files.length;
-        let counter = 0;
+function mockUpload(
+  files: any,
+  params: any,
+  uploadProgressCallback: (status: Array<UploadStatus>) => void
+) {
+  console.log("MockUploadStart");
+  return new Promise(resolve => {
+    let fileCount = files.length;
+    let counter = 0;
 
-        let nextCall = function () {
-            counter += 5;
-            console.log("counter=", counter);
-            uploadProgressCallback([{ progress: counter, progressMessage: "Completed " + counter + "%" }]);
+    let nextCall = function() {
+      counter += 5;
+      console.log("counter=", counter);
+      uploadProgressCallback([
+        { progress: counter, progressMessage: "Completed " + counter + "%" }
+      ]);
 
-            if (counter >= 100) {
-                resolve();
-            } else {
-                setTimeout(nextCall, 1000);
-            }
-        };
+      if (counter >= 100) {
+        resolve();
+      } else {
+        setTimeout(nextCall, 1000);
+      }
+    };
 
-        nextCall();
-    }).then(() => {
-        console.log("MockUploadComplete");
-    });
+    nextCall();
+  }).then(() => {
+    console.log("MockUploadComplete");
+  });
 }
 
 export default [
-    {
-        component: CreateVersionDialog,
-        name: "dialog",
-        props: {
-            isVisible: true,
-            isProcessing: true,
-            upload: mockUpload,
-            previousDescription: "prev Description",
-            previousVersionNumber: "100",
-            previousVersionFiles: [
-                {
-                    id: "id",
-                    name: "samplename",
-                    allowed_conversion_type: ["raw"],
-                    short_summary: "200x20",
-                    type: DataFileType.Raw
-                }
-            ],
-            datasetPermaname: "permaname-1000"
-        },
+  {
+    component: CreateVersionDialog,
+    name: "dialog",
+    props: {
+      isVisible: true,
+      isProcessing: true,
+      upload: mockUpload,
+      previousDescription: "prev Description",
+      previousVersionNumber: "100",
+      previousVersionFiles: [
+        {
+          id: "id",
+          name: "samplename",
+          allowed_conversion_type: ["raw"],
+          short_summary: "200x20",
+          type: DataFileType.Raw
+        }
+      ],
+      datasetPermaname: "permaname-1000"
     }
-]
+  }
+];

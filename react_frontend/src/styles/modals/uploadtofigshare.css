@@ -1,11 +1,11 @@
 .upload-to-figshare-modal {
-    min-width: 66%;
+  min-width: 66%;
 }
 
 .figshare-upload-files-table > tbody > tr > td {
-    vertical-align: middle !important;
+  vertical-align: middle !important;
 }
 
 .textarea-lock-width {
-    resize: vertical;
+  resize: vertical;
 }

@@ -1,4 +1,4 @@
-swagger: '2.0'
+swagger: "2.0"
 info:
   version: 1.0.0
   title: Taiga
@@ -26,7 +26,7 @@ paths:
           required: true
       responses:
         200:
-          description:  Properties of requested folder
+          description: Properties of requested folder
           schema:
             title: Folder
             type: object
@@ -525,7 +525,6 @@ paths:
                     - integer
                     - "null"
 
-
   /datasetVersion/{datasetVersion_id}:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
@@ -672,7 +671,6 @@ paths:
       responses:
         200:
           description: Successfully de-deprecated
-
 
   /datasetVersion/{datasetVersionId}/delete:
     post:
@@ -1485,7 +1483,6 @@ paths:
         404:
           description: No public article found
 
-
 definitions:
   User:
     title: User
@@ -1525,7 +1522,7 @@ definitions:
         type: string
       state:
         "$ref": "#/definitions/StatusEnum"
-    
+
   Dataset:
     title: Dataset
     type: object
@@ -1573,7 +1570,7 @@ definitions:
         items:
           "$ref": "#/definitions/NamedId"
       dataset_id:
-          type: string
+        type: string
       name:
         type: string
       version:
@@ -1613,7 +1610,7 @@ definitions:
     properties:
       underlying_file_id:
         description: "if this is a virtual dataset, this is the reference to the underlying file, and name is just an alias to that"
-        type: 
+        type:
           - string
           - "null"
       id:
@@ -1626,17 +1623,17 @@ definitions:
           type: string
       short_summary:
         description: "A textual description of the size.  (ie: '200 x 30 table')  Should be relatively short and summarize the shape/size of the contents."
-        type: 
+        type:
           - string
           - "null"
       original_file_sha256:
         description: the sha256 of the uploaded file
-        type: 
+        type:
           - string
           - "null"
       gcs_path:
         description: GCS path of the datafile or file's underlying datafile
-        type: 
+        type:
           - string
           - "null"
       type:
@@ -1787,7 +1784,7 @@ definitions:
     type: string
     enum:
       - deprecated # Discourage use.  Warn when fetching
-      - deleted    # Underlying data has been deleted
+      - deleted # Underlying data has been deleted
       - approved
 
   UploadSessionFile:
