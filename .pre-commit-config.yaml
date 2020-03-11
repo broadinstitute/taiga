@@ -2,4 +2,9 @@ repos:
   - repo: https://github.com/ambv/black
     rev: "19.3b0"
     hooks:
-        - id: black
+      - id: black
+  - repo: https://github.com/prettier/prettier
+    rev: "1.19.1"
+    hooks:
+      - id: prettier
+        exclude: '^.*\.(json|d\.ts)$'
