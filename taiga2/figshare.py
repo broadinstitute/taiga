@@ -17,7 +17,6 @@ import taiga2.controllers.models_controller as mc
 from taiga2.aws import aws
 from taiga2.conv.util import Progress
 from taiga2.models import FigshareDatasetVersionLink
-from taiga2.tasks import celery
 
 AUTH_URL = "https://figshare.com/account/applications/authorize{}"
 BASE_URL = "https://api.figshare.com/v2/{}"
@@ -141,51 +140,6 @@ def complete_upload(article_id: int, file_id: str, token: str):
     issue_request(
         "POST", "account/articles/{}/files/{}".format(article_id, file_id), token
     )
-
-
-@celery.task(bind=True)
-def upload_datafile(
-    self,
-    new_article_id: int,
-    figshare_dataset_version_link_id: str,
-    file_name: str,
-    datafile_id: str,
-    compressed_s3_key: str,
-    original_file_md5: Optional[str],
-    token: str,
-) -> str:
-    progress = Progress(self)
-    with tempfile.NamedTemporaryFile("w+b") as download_dest:
-        try:
-            progress.progress("Downloading file from S3")
-            file_info = initiate_new_upload(
-                new_article_id,
-                file_name,
-                compressed_s3_key,
-                original_file_md5,
-                token,
-                download_dest,
-            )
-        except HTTPError as error:
-            progress.failed(str(error))
-            raise error
-
-        try:
-            upload_parts(download_dest, file_info, progress, token)
-        except HTTPError as error:
-            progress.failed(str(error))
-            raise error
-
-        try:
-            complete_upload(new_article_id, file_info["id"], token)
-        except HTTPError as error:
-            progress.failed(str(error))
-            raise error
-
-    figshare_datafile_link = mc.add_figshare_datafile_link(
-        datafile_id, file_info["id"], figshare_dataset_version_link_id
-    )
-    return figshare_datafile_link.id
 
 
 def get_public_article_information(article_id: int):

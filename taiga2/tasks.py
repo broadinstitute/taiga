@@ -9,6 +9,7 @@ import shutil
 import tempfile
 import uuid
 
+from requests.exceptions import HTTPError
 from typing import IO, Optional
 from urllib.parse import urlparse
 
@@ -19,6 +20,7 @@ from taiga2.conv.util import make_temp_file_generator
 from taiga2.controllers import models_controller
 from taiga2.conv.imp import ImportResult
 from taiga2.models import S3DataFile
+from taiga2.figshare import initiate_new_upload, upload_parts, complete_upload
 import humanize
 
 celery = Celery("taiga2")
@@ -470,3 +472,48 @@ def backfill_compressed_file(self, datafile_id: str, cache_entry_id: Optional[st
         mime_type = "text/plain"
 
     _download_and_compress_s3(datafile_id, s3_key, mime_type)
+
+
+@celery.task(bind=True)
+def upload_datafile(
+    self,
+    new_article_id: int,
+    figshare_dataset_version_link_id: str,
+    file_name: str,
+    datafile_id: str,
+    compressed_s3_key: str,
+    original_file_md5: Optional[str],
+    token: str,
+) -> str:
+    progress = Progress(self)
+    with tempfile.NamedTemporaryFile("w+b") as download_dest:
+        try:
+            progress.progress("Downloading file from S3")
+            file_info = initiate_new_upload(
+                new_article_id,
+                file_name,
+                compressed_s3_key,
+                original_file_md5,
+                token,
+                download_dest,
+            )
+        except HTTPError as error:
+            progress.failed(str(error))
+            raise error
+
+        try:
+            upload_parts(download_dest, file_info, progress, token)
+        except HTTPError as error:
+            progress.failed(str(error))
+            raise error
+
+        try:
+            complete_upload(new_article_id, file_info["id"], token)
+        except HTTPError as error:
+            progress.failed(str(error))
+            raise error
+
+    figshare_datafile_link = models_controller.add_figshare_datafile_link(
+        datafile_id, file_info["id"], figshare_dataset_version_link_id
+    )
+    return figshare_datafile_link.id
