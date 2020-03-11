@@ -475,7 +475,7 @@ def backfill_compressed_file(self, datafile_id: str, cache_entry_id: Optional[st
 
 
 @celery.task(bind=True)
-def upload_datafile(
+def upload_datafile_to_figshare(
     self,
     new_article_id: int,
     figshare_dataset_version_link_id: str,

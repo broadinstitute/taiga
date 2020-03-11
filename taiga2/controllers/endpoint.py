@@ -1261,7 +1261,9 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
             ] = "Cannot upload files without compressed S3 file"
             continue
 
-        task = figshare.upload_datafile.delay(
+        from taiga2.tasks import upload_datafile_to_figshare
+
+        task = upload_datafile_to_figshare.delay(
             figshare_dataset_version_link.figshare_article_id,
             figshare_dataset_version_link.id,
             file_to_upload["file_name"],
