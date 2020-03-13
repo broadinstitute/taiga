@@ -862,7 +862,7 @@ paths:
         - name: datafileId
           in: path
           type: string
-          description: group ID
+          description: ID of DataFile to backfill
           required: true
       responses:
         202:

@@ -828,11 +828,11 @@ def get_datafile_column_types(
 
 
 @validate
-def backfill_compressed_file(datafile_id: str):
+def backfill_compressed_file(datafileId: str):
     if not models_controller.user_in_admin_group():
         flask.abort(403)
 
-    datafile = models_controller.get_datafile(datafile_id)
+    datafile = models_controller.get_datafile(datafileId)
     if datafile.type != "s3" or datafile.compressed_s3_key is not None:
         return flask.make_response(flask.jsonify(None), 304)
 
@@ -842,16 +842,16 @@ def backfill_compressed_file(datafile_id: str):
     )
 
     if datafile.format == S3DataFile.DataFileFormat.Raw:
-        task = backfill_compressed_file.delay(datafile_id, entry.id)
+        task = backfill_compressed_file.delay(datafileId, None)
     else:
         is_new, entry = models_controller.get_conversion_cache_entry(
             datafile.dataset_version.id, datafile.name, "csv"
         )
 
         if is_new:
-            task = convert_and_backfill_compressed_file.delay(datafile_id, entry.id)
+            task = convert_and_backfill_compressed_file.delay(datafileId, entry.id)
         else:
-            task = backfill_compressed_file.delay(datafile_id, entry.id)
+            task = backfill_compressed_file.delay(datafileId, entry.id)
 
     return flask.make_response(flask.jsonify(task.id), 202)
 
