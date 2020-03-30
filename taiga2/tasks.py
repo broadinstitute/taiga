@@ -465,11 +465,11 @@ def backfill_compressed_file(self, datafile_id: str, cache_entry_id: Optional[st
     """
     if cache_entry_id is None:
         s3_key = _get_s3_key_from_conversion_cache_url(cache_entry_id)
-        mime_type = "text/csv"
+        mime_type = "text/plain"
     else:
         datafile = models_controller.get_datafile(datafile_id)
         s3_key = datafile.s3_key
-        mime_type = "text/plain"
+        mime_type = "text/csv"
 
     _download_and_compress_s3(datafile_id, s3_key, mime_type)
 
