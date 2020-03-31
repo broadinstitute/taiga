@@ -771,6 +771,9 @@ def get_datafile(
         status=conversion_status,
         state=dataset_version.state.value,
         reason_state=dataset_version.reason_state,
+        datafile_type=datafile.type,
+        datafile_format=real_datafile.format.value,
+        datafile_encoding=real_datafile.encoding,
     )
 
     if urls is not None:

@@ -770,6 +770,14 @@ paths:
                 type: string
               datafile_name:
                 type: string
+              datafile_type:
+                type: string
+              datafile_format:
+                type: string
+              datafile_encoding:
+                type:
+                  - string
+                  - "null"
               urls:
                 type: array
                 items:
