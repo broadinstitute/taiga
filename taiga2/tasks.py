@@ -305,7 +305,7 @@ def get_converter(src_format, dst_format):
     from taiga2.models import DataFile
 
     is_hdf5 = src_format == str(S3DataFile.DataFileFormat.HDF5)
-    is_columnar = str(S3DataFile.DataFileFormat.Columnar)
+    is_columnar = src_format == str(S3DataFile.DataFileFormat.Columnar)
 
     if is_hdf5:
         if dst_format == conversion.CSV_FORMAT:
@@ -443,7 +443,7 @@ def convert_and_backfill_compressed_file(self, datafile_id: str, cache_entry_id:
         Progress(self),
         datafile.s3_bucket,
         datafile.s3_key,
-        datafile.format,
+        str(datafile.format),
         "csv",
         cache_entry_id,
     )
