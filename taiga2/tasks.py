@@ -399,11 +399,11 @@ def _get_s3_key_from_conversion_cache_url(cache_entry_id: str) -> str:
     return s3_key
 
 
-def _download_and_compress_s3(datafile_id: str, s3_key: str, mime_type: str):
+def _download_and_compress_s3_backfill(datafile_id: str, s3_key: str, mime_type: str):
     # TODO: Add progress?
     s3 = aws.s3
     datafile = models_controller.get_datafile(datafile_id)
-    compressed_s3_key = models_controller.generate_compressed_key()
+    compressed_s3_key = models_controller.generate_compressed_key() + "-backfilled"
 
     bucket_name = flask.current_app.config["S3_BUCKET"]
 
@@ -449,7 +449,7 @@ def convert_and_backfill_compressed_file(self, datafile_id: str, cache_entry_id:
     )
     s3_key = _get_s3_key_from_conversion_cache_url(cache_entry_id)
 
-    _download_and_compress_s3(datafile_id, s3_key, "text/csv")
+    _download_and_compress_s3_backfill(datafile_id, s3_key, "text/csv")
 
 
 @celery.task(bind=True)
@@ -471,7 +471,7 @@ def backfill_compressed_file(self, datafile_id: str, cache_entry_id: Optional[st
         s3_key = _get_s3_key_from_conversion_cache_url(cache_entry_id)
         mime_type = "text/csv"
 
-    _download_and_compress_s3(datafile_id, s3_key, mime_type)
+    _download_and_compress_s3_backfill(datafile_id, s3_key, mime_type)
 
 
 @celery.task(bind=True)
