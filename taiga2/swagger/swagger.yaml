@@ -784,6 +784,11 @@ paths:
                   type: string
               status:
                 type: string
+        202:
+          description: Backfilling compressed data
+          schema:
+            title: task_id
+            type: string
         400:
           description: Malformed request
         500:
