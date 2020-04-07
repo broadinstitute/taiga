@@ -8,8 +8,7 @@ RUN apt-get install -y \
     apt-get update -y 
 
 # Install R dependencies
-RUN gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9 && \ 
-    gpg -a --export E084DAB9 | apt-key add - && \
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 51716619E084DAB9 && \
     echo "deb http://cran.rstudio.com/bin/linux/ubuntu xenial/" | tee -a /etc/apt/sources.list && \
     apt-get update -y && \
     apt-get -y install r-base r-base-dev
