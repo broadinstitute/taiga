@@ -1,4 +1,4 @@
-FROM us.gcr.io/cds-docker-containers/taiga-base:v1
+FROM us.gcr.io/cds-docker-containers/taiga-base:v2
 
 COPY taiga2 /install/taiga/taiga2
 COPY requirements.txt setup.py /install/taiga/
