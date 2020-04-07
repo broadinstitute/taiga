@@ -779,6 +779,9 @@ def get_datafile(
     if urls is not None:
         result["urls"] = urls
 
+    if datafile.type == "virtual":
+        result["underlying_file_id"] = datafile.underlying_file_id
+
     return flask.jsonify(result)
 
 

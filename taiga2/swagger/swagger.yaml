@@ -784,6 +784,10 @@ paths:
                   type: string
               status:
                 type: string
+              underlying_file_id:
+                type:
+                  - string
+                  - "null"
         202:
           description: Backfilling compressed data
           schema:
