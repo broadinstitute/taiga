@@ -6,12 +6,12 @@ import {
   FormControl,
   Glyphicon,
   Popover,
-  OverlayTrigger
+  OverlayTrigger,
 } from "react-bootstrap";
 import { InitialFileType } from "../../models/models";
 import {
   UploadFileType,
-  UploadFile as UploadTrackerFile
+  UploadFile as UploadTrackerFile,
 } from "../UploadTracker";
 
 // import { FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
@@ -77,7 +77,7 @@ export class UploadController {
       computeNameFromTaigaId: false,
       fileType: UploadFileType.GCSPath,
       size: "unknown",
-      gcsPath: gcsPath
+      gcsPath: gcsPath,
     });
   }
 
@@ -90,7 +90,7 @@ export class UploadController {
       size: filesize(file.size),
       uploadFile: file,
       uploadFormat: InitialFileType.Raw,
-      encoding: "UTF-8"
+      encoding: "UTF-8",
     });
   }
 
@@ -101,7 +101,7 @@ export class UploadController {
       computeNameFromTaigaId: true,
       fileType: UploadFileType.TaigaPath,
       size: size,
-      existingTaigaId: existingTaigaId
+      existingTaigaId: existingTaigaId,
     });
   }
 
@@ -113,7 +113,7 @@ export class UploadController {
   changeUploadFormat(index: number, format: string) {
     console.log("changeUploadFormat", index, format);
     this.files = update(this.files, {
-      [index]: { uploadFormat: { $set: format } }
+      [index]: { uploadFormat: { $set: format } },
     });
     this.listener(this.files);
   }
@@ -145,15 +145,15 @@ export class UploadController {
     this.files = update(this.files, {
       [index]: {
         name: { $set: newName },
-        computeNameFromTaigaId: { $set: false }
-      }
+        computeNameFromTaigaId: { $set: false },
+      },
     });
     this.listener(this.files);
   }
 
   onEncodingChange(index: number, newEncoding: string) {
     this.files = update(this.files, {
-      [index]: { encoding: { $set: newEncoding } }
+      [index]: { encoding: { $set: newEncoding } },
     });
     this.listener(this.files);
   }
@@ -215,7 +215,7 @@ export class UploadTable extends React.Component<
   }
 
   renderInputForm() {
-    const requestEncoding = this.props.files.some(file => !!file.uploadFile);
+    const requestEncoding = this.props.files.some((file) => !!file.uploadFile);
     let rows = this.props.files.map((file, i) => {
       let name = file.name;
       let source: any = "";
@@ -230,7 +230,7 @@ export class UploadTable extends React.Component<
             placeholder="GCS Object Path"
             type="text"
             value={file.gcsPath}
-            onChange={event =>
+            onChange={(event) =>
               this.props.controller.onGCSPathChange(i, event.target.value)
             }
           />
@@ -243,7 +243,7 @@ export class UploadTable extends React.Component<
             placeholder="Taiga ID"
             type="text"
             value={file.existingTaigaId}
-            onChange={event =>
+            onChange={(event) =>
               this.props.controller.onTaigaIdChange(i, event.target.value)
             }
           />
@@ -253,7 +253,7 @@ export class UploadTable extends React.Component<
           <select
             className="form-control"
             value={file.uploadFormat}
-            onChange={event =>
+            onChange={(event) =>
               this.props.controller.changeUploadFormat(i, event.target.value)
             }
           >
@@ -280,14 +280,14 @@ export class UploadTable extends React.Component<
               <FormControl
                 componentClass="select"
                 defaultValue={file.encoding}
-                onChange={event =>
+                onChange={(event) =>
                   this.props.controller.onEncodingChange(
                     i,
                     (event.target as HTMLSelectElement).value
                   )
                 }
               >
-                {CHARACTER_ENCODING_OPTIONS.map(encoding => (
+                {CHARACTER_ENCODING_OPTIONS.map((encoding) => (
                   <option key={encoding} value={encoding}>
                     {encoding}
                   </option>
@@ -307,7 +307,7 @@ export class UploadTable extends React.Component<
             <input
               type="text"
               value={name}
-              onChange={event =>
+              onChange={(event) =>
                 this.props.controller.onNameChange(i, event.target.value)
               }
               className="form-control"
@@ -322,7 +322,7 @@ export class UploadTable extends React.Component<
               type="button"
               className="btn btn-default"
               aria-label="Left Align"
-              onClick={event => this.props.controller.onDelete(i)}
+              onClick={(event) => this.props.controller.onDelete(i)}
             >
               <span
                 className="glyphicon glyphicon-trash"

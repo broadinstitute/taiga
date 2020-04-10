@@ -22,7 +22,7 @@ import {
   DatafileUrl,
   ConversionStatusEnum,
   StatusEnum,
-  Entry
+  Entry,
 } from "../models/models";
 import { DatasetVersion } from "../models/models";
 import { NotFound } from "./NotFound";
@@ -35,7 +35,7 @@ import {
   NameUpdateActivity,
   DescriptionUpdateActivity,
   VersionAdditionActivity,
-  LogStartActivity
+  LogStartActivity,
 } from "../models/models";
 import ClipboardButton from "../utilities/r-clipboard";
 import { UploadTracker } from "./UploadTracker";
@@ -90,23 +90,23 @@ export interface DatasetViewState {
 }
 
 const buttonUploadNewVersionStyle = {
-  margin: "0 0 10px"
+  margin: "0 0 10px",
 };
 
 const deprecationStyle = {
-  color: "orange"
+  color: "orange",
 };
 
 const deprecationTitle = {
-  color: "orange"
+  color: "orange",
 };
 
 const deletionStyle = {
-  color: "red"
+  color: "red",
 };
 
 const deletionTitle = {
-  color: "red"
+  color: "red",
 };
 
 const descriptionDetailsFormatter = (
@@ -162,7 +162,7 @@ export class DatasetView extends React.Component<
           showUploadDataset: false,
           showUploadToFigshare: false,
           loading: false,
-          exportError: false
+          exportError: false,
         });
       });
     }
@@ -178,7 +178,7 @@ export class DatasetView extends React.Component<
     this.doFetch()
       .then(() => {
         this.setState({
-          showInputFolderId: false
+          showInputFolderId: false,
         });
 
         this.logAccess();
@@ -203,7 +203,7 @@ export class DatasetView extends React.Component<
         let history_obj = {
           Title:
             this.state.dataset.name + " v" + this.state.datasetVersion.version,
-          Url: url
+          Url: url,
         };
         history.replaceState(history_obj, history_obj.Title, history_obj.Url);
         // window.location.pathname = relativePath("/dataset/" +
@@ -245,7 +245,7 @@ export class DatasetView extends React.Component<
 
             this.setState({
               dataset: dataset,
-              datasetVersion: datasetVersion
+              datasetVersion: datasetVersion,
             });
           } else if ((datasetAndDatasetVersion as Models.Dataset).id) {
             // It means we received a Models.Dataset, we need to get the last datasetVersion now
@@ -253,7 +253,7 @@ export class DatasetView extends React.Component<
             dataset = new Models.Dataset(datasetAndDatasetVersion);
             return this.getTapi()
               .get_dataset_version_last(dataset.id)
-              .then(last_datasetVersion => {
+              .then((last_datasetVersion) => {
                 datasetVersion = new DatasetVersion(
                   last_datasetVersion,
                   dataset
@@ -262,7 +262,7 @@ export class DatasetView extends React.Component<
               .then(() => {
                 this.setState({
                   dataset: dataset,
-                  datasetVersion: datasetVersion
+                  datasetVersion: datasetVersion,
                 });
               });
           } else {
@@ -272,9 +272,9 @@ export class DatasetView extends React.Component<
           }
         }
       )
-      .catch(error => {
+      .catch((error) => {
         this.setState({
-          fetchError: error.message
+          fetchError: error.message,
         });
         console.log("Error: " + error.stack);
         return Promise.reject(
@@ -303,7 +303,7 @@ export class DatasetView extends React.Component<
   getFigshareUrl() {
     this.getTapi()
       .get_figshare_article_public_url(this.state.datasetVersion.id)
-      .then(v => this.setState(v));
+      .then((v) => this.setState(v));
   }
 
   updateName(name: string) {
@@ -351,7 +351,7 @@ export class DatasetView extends React.Component<
   // Upload
   showUploadNewVersion() {
     this.setState({
-      showUploadDataset: true
+      showUploadDataset: true,
     });
   }
 
@@ -377,7 +377,7 @@ export class DatasetView extends React.Component<
 
   // Async function to wait
   delay(milliseconds: number) {
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve) => {
       setTimeout(resolve, milliseconds);
     });
   }
@@ -420,7 +420,7 @@ export class DatasetView extends React.Component<
         } else {
           this.setLoading(false);
           // We stop the loading, and download the file because it is ready
-          result.urls.forEach(url => {
+          result.urls.forEach((url) => {
             window.location.href = url;
             console.log("- " + url);
           });
@@ -433,7 +433,7 @@ export class DatasetView extends React.Component<
         const exportErrorInfo = {
           datasetVersionId: datasetVersionId,
           datafileName: datafileName,
-          conversionType: format
+          conversionType: format,
         };
         // TODO: The reason should be passed along, but the other message should be written in the Dialog.ExportError module
         this.setLoadingMessage(
@@ -444,7 +444,7 @@ export class DatasetView extends React.Component<
         );
         this.setState({
           exportError: true,
-          exportErrorInfo: exportErrorInfo
+          exportErrorInfo: exportErrorInfo,
         });
       });
   }
@@ -453,25 +453,25 @@ export class DatasetView extends React.Component<
     if (message) {
       this.setState({
         loading: requireLoading,
-        loadingMessage: message
+        loadingMessage: message,
       });
     } else {
       this.setState({
-        loading: requireLoading
+        loading: requireLoading,
       });
     }
   }
 
   setLoadingMessage(message: string) {
     this.setState({
-      loadingMessage: message
+      loadingMessage: message,
     });
   }
 
   forceExport() {
     this.setLoadingMessage("Sent the request to the server...");
     this.setState({
-      exportError: false
+      exportError: false,
     });
     this.getOrLaunchConversion(
       undefined,
@@ -495,7 +495,7 @@ export class DatasetView extends React.Component<
       },
       showInputFolderId: true,
       actionIntoFolderValidation: null,
-      actionIntoFolderHelp: null
+      actionIntoFolderHelp: null,
     });
   }
 
@@ -504,10 +504,10 @@ export class DatasetView extends React.Component<
     this.doFetch()
       .then(() => {
         this.setState({
-          showInputFolderId: false
+          showInputFolderId: false,
         });
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
 
         // If we receive 422 error
@@ -516,7 +516,7 @@ export class DatasetView extends React.Component<
             "Folder id is not valid. Please check it and retry :)";
           this.setState({
             actionIntoFolderValidation: "error",
-            actionIntoFolderHelp: err_message_user
+            actionIntoFolderHelp: err_message_user,
           });
         }
       });
@@ -546,13 +546,13 @@ export class DatasetView extends React.Component<
   askDeprecationReason() {
     // Fetch the deprecation pop-up
     this.setState({
-      showDeprecationReason: true
+      showDeprecationReason: true,
     });
   }
 
   closeDeprecationReason() {
     this.setState({
-      showDeprecationReason: false
+      showDeprecationReason: false,
     });
   }
 
@@ -608,13 +608,13 @@ export class DatasetView extends React.Component<
       this.doFetch().then(() => {
         this.setState({
           showUploadToFigshare: false,
-          figshare_public_url: figsharePrivateUrl
+          figshare_public_url: figsharePrivateUrl,
         });
       });
     } else {
       this.setState({
         showUploadToFigshare: false,
-        figshare_public_url: figsharePrivateUrl
+        figshare_public_url: figsharePrivateUrl,
       });
     }
   }
@@ -770,7 +770,7 @@ export class DatasetView extends React.Component<
     const options = {
       noDataText: "No activity logged yet",
       defaultSortName: "timestamp",
-      defaultSortOrder: "desc"
+      defaultSortOrder: "desc",
     };
     return (
       <React.Fragment>
@@ -949,7 +949,7 @@ export class DatasetView extends React.Component<
         label: "Share dataset",
         action: () => {
           this.setState({ showShareDatasetVersion: true });
-        }
+        },
       });
 
       // TODO: Look into why we are here despite the fact dataset is undefined
@@ -959,19 +959,19 @@ export class DatasetView extends React.Component<
             label: "Edit name",
             action: () => {
               this.setState({ showEditName: true });
-            }
+            },
           },
           {
             label: "Edit description",
             action: () => {
               this.setState({ showEditDescription: true });
-            }
+            },
           },
           {
             label: "Edit permissions",
             action: () => {
               this.setState({ showEditPermissions: true });
-            }
+            },
           }
         );
       }
@@ -980,27 +980,27 @@ export class DatasetView extends React.Component<
           label: "Create new version",
           action: () => {
             this.showUploadNewVersion();
-          }
+          },
         });
         if (datasetVersion.state === StatusEnum.Approved) {
           navItems.push({
             label: "Deprecate this version",
             action: () => {
               this.askDeprecationReason();
-            }
+            },
           });
         } else if (datasetVersion.state === StatusEnum.Deprecated) {
           navItems.push({
             label: "De-deprecate this version",
             action: () => {
               this.deDeprecateDatasetVersion();
-            }
+            },
           });
           navItems.push({
             label: "Delete this version",
             action: () => {
               this.deleteDatasetVersion();
-            }
+            },
           });
         } else if (datasetVersion.state === StatusEnum.Deleted) {
           // Don't add anything so we can't change the state anymore
@@ -1016,13 +1016,13 @@ export class DatasetView extends React.Component<
           label: "Add to Home",
           action: () => {
             this.copyTo(this.props.user.home_folder_id);
-          }
+          },
         },
         {
           label: "Add to a folder",
           action: () => {
             this.copyTo("");
-          }
+          },
         }
         // {
         //     label: "Deprecate version", action: function () {
@@ -1044,7 +1044,7 @@ export class DatasetView extends React.Component<
         r_block = "library(taigr);\n";
 
         const s3AndVirtualDatafiles = datasetVersion.datafiles.filter(
-          df => !df.gcs_path
+          (df) => !df.gcs_path
         );
 
         let r_block_lines = s3AndVirtualDatafiles.map((df, index) => {
@@ -1131,7 +1131,7 @@ export class DatasetView extends React.Component<
               cancel={() => {
                 this.setState({ showInputFolderId: false });
               }}
-              save={folderId => {
+              save={(folderId) => {
                 this.state.callbackIntoFolderAction(folderId);
               }}
               initFolderId={this.state.initInputFolderId}
@@ -1143,7 +1143,7 @@ export class DatasetView extends React.Component<
                 this.setState({ showEditPermissions: false });
               }}
               entry_id={this.state.dataset.id}
-              handleDeletedRow={arrayAccessLogs => {
+              handleDeletedRow={(arrayAccessLogs) => {
                 return this.removeAccessLogs(arrayAccessLogs);
               }}
               tapi={this.props.tapi}
@@ -1304,7 +1304,7 @@ export class DatasetView extends React.Component<
           <Dialogs.DeprecationReason
             isVisible={this.state.showDeprecationReason}
             cancel={() => this.cancelDeprecation()}
-            save={reason => this.deprecateDatasetVersion(reason)}
+            save={(reason) => this.deprecateDatasetVersion(reason)}
           />
         </div>
       );

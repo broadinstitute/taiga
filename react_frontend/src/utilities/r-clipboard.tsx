@@ -18,7 +18,7 @@ export default class ClipboardButton extends React.Component<
   ClipboardButtonState
 > {
   static defaultProps = {
-    onClick: function() {}
+    onClick: function () {},
   };
 
   constructor(props: any) {
@@ -54,7 +54,7 @@ export default class ClipboardButton extends React.Component<
   propsWith(regexp: any, remove = false): Object {
     let object: any = Object;
 
-    Object.keys(this.props).forEach(function(key) {
+    Object.keys(this.props).forEach(function (key) {
       if (key.search(regexp) !== -1) {
         const objectKey: any = remove ? key.replace(regexp, "") : key;
         object[objectKey] = this.props[key];
@@ -78,7 +78,7 @@ export default class ClipboardButton extends React.Component<
     this.clipboard = new Clipboard(element, options);
 
     const callbacks = this.propsWith(/^on/, true);
-    Object.keys(callbacks).forEach(function(callback) {
+    Object.keys(callbacks).forEach(function (callback) {
       this.clipboard.on(callback.toLowerCase(), this.props["on" + callback]);
     }, this);
   }
@@ -91,7 +91,7 @@ export default class ClipboardButton extends React.Component<
       ref: "element",
       onClick: this.props.onClick,
       ...this.propsWith(/^data-/),
-      ...this.propsWith(/^button-/, true)
+      ...this.propsWith(/^button-/, true),
     };
 
     // not sure when this is getting added, but we get a warning if we try to create the element with this attribute

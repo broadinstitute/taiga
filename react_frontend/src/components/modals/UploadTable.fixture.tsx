@@ -11,8 +11,8 @@ let files = [
     name: "taigafile",
     fileType: UploadFileType.TaigaPath,
     size: "100",
-    existingTaigaId: "original-123183.2/sample"
-  }
+    existingTaigaId: "original-123183.2/sample",
+  },
 ];
 
 //let w = window as any;
@@ -92,15 +92,15 @@ function mockUpload(
   uploadProgressCallback: (status: Array<UploadStatus>) => void
 ) {
   console.log("MockUploadStart");
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     let fileCount = files.length;
     let counter = 0;
 
-    let nextCall = function() {
+    let nextCall = function () {
       counter += 5;
       console.log("counter=", counter);
       uploadProgressCallback([
-        { progress: counter, progressMessage: "Completed " + counter + "%" }
+        { progress: counter, progressMessage: "Completed " + counter + "%" },
       ]);
 
       if (counter >= 100) {
@@ -132,10 +132,10 @@ export default [
           name: "samplename",
           allowed_conversion_type: ["raw"],
           short_summary: "200x20",
-          type: DataFileType.Raw
-        }
+          type: DataFileType.Raw,
+        },
       ],
-      datasetPermaname: "permaname-1000"
-    }
-  }
+      datasetPermaname: "permaname-1000",
+    },
+  },
 ];

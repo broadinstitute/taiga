@@ -4,7 +4,7 @@ import {
   S3UploadedData,
   UploadedFileMetadata,
   InitialFileType,
-  DatasetVersion
+  DatasetVersion,
 } from "../models/models";
 import update from "immutability-helper";
 
@@ -33,7 +33,7 @@ export interface UploadStatus {
 export enum UploadFileType {
   Upload,
   TaigaPath,
-  GCSPath
+  GCSPath,
 }
 
 export interface UploadFile {
@@ -100,14 +100,14 @@ export class UploadTracker {
 
     return Promise.all([
       this.getTapi().get_s3_credentials(),
-      this.getTapi().get_upload_session()
+      this.getTapi().get_upload_session(),
     ])
       .then((values: Array<any>) => {
         let credentials = values[0] as S3Credentials;
         let sid = values[1] as string;
         return this.submitCreateDataset(credentials, uploadFiles, sid, params);
       })
-      .then(datasetId => {
+      .then((datasetId) => {
         console.log("Created new dataset", datasetId);
         return datasetId;
       });
@@ -121,7 +121,7 @@ export class UploadTracker {
     let fileMetadata = {
       filename: name,
       filetype: "virtual",
-      existingTaigaId: taigaId
+      existingTaigaId: taigaId,
     };
 
     return this.getTapi().create_datafile(sid, fileMetadata);
@@ -138,12 +138,12 @@ export class UploadTracker {
     let params = {
       Bucket: s3_credentials.bucket,
       Key: s3Key,
-      Body: file.uploadFile
+      Body: file.uploadFile,
     };
 
     let upload = new AWS.S3.ManagedUpload({
       params: params,
-      service: s3
+      service: s3,
     });
 
     // Subscribe to measure progress
@@ -166,13 +166,13 @@ export class UploadTracker {
           format: file.uploadFormat,
           bucket: s3_credentials.bucket,
           key: s3Key,
-          encoding: file.encoding
-        }
+          encoding: file.encoding,
+        },
       };
 
       return this.getTapi()
         .create_datafile(sid, s3FileMetadata)
-        .then(taskStatusId => {
+        .then((taskStatusId) => {
           return this.waitForConversion(uploadIndex, taskStatusId);
         })
         .then((success: boolean) => {
@@ -194,7 +194,7 @@ export class UploadTracker {
     let fileMetadata = {
       filename: name,
       filetype: "gcs",
-      gcsPath: gcsPath
+      gcsPath: gcsPath,
     };
 
     return this.getTapi().create_datafile(sid, fileMetadata);
@@ -214,8 +214,8 @@ export class UploadTracker {
       credentials: {
         accessKeyId: s3_credentials.accessKeyId,
         secretAccessKey: s3_credentials.secretAccessKey,
-        sessionToken: s3_credentials.sessionToken
-      }
+        sessionToken: s3_credentials.sessionToken,
+      },
     });
 
     // Looping through all the files
@@ -231,14 +231,14 @@ export class UploadTracker {
       } else if (file.fileType === UploadFileType.GCSPath) {
         status = {
           progress: 0,
-          progressMessage: "Attempting to pointer to GCS object"
+          progressMessage: "Attempting to pointer to GCS object",
         };
         let p = this.addGCSPointer(file.name, file.gcsPath, sid)
           .then(() => {
             this.displayStatusUpdate("Added pointer to GCS object", 100, i);
             return true;
           })
-          .catch(reason => {
+          .catch((reason) => {
             console.log("failure", reason);
             this.displayStatusUpdate("" + reason, 0, i);
             return false;
@@ -248,7 +248,7 @@ export class UploadTracker {
         // initial status
         status = {
           progress: 0,
-          progressMessage: "Attempting to add existing file"
+          progressMessage: "Attempting to add existing file",
         };
 
         // perform the attach
@@ -258,7 +258,7 @@ export class UploadTracker {
             // update the status after successful adding to upload session
             return true;
           })
-          .catch(reason => {
+          .catch((reason) => {
             console.log("failure", reason);
             this.displayStatusUpdate("" + reason, 0, i);
             return false;
@@ -293,7 +293,7 @@ export class UploadTracker {
                 .then((version: DatasetVersion) => {
                   return {
                     dataset_id: version.dataset_id,
-                    version_id: dataset_version_id
+                    version_id: dataset_version_id,
                   };
                 });
             });
@@ -308,7 +308,7 @@ export class UploadTracker {
                   .then((version: DatasetVersion) => {
                     return {
                       dataset_id: version.dataset_id,
-                      version_id: version.id
+                      version_id: version.id,
                     };
                   });
               }

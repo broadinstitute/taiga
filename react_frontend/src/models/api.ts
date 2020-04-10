@@ -15,7 +15,7 @@ import {
   DatafileUrl,
   SearchResult,
   ActivityLogEntry,
-  Group
+  Group,
 } from "./models";
 
 // import { getUserToken } from '../utilities/route';
@@ -34,7 +34,7 @@ export class TaigaApi {
     this.userToken = userToken;
 
     this.authHeaders = {
-      auth: "Bearer " + this.userToken
+      auth: "Bearer " + this.userToken,
     };
     this.loading = false;
   }
@@ -44,7 +44,7 @@ export class TaigaApi {
       return Promise.resolve(response);
     } else if (response.status === 400) {
       console.log("response status 400");
-      return response.json().then(errorDetail => {
+      return response.json().then((errorDetail) => {
         console.log("reponse error text", errorDetail);
         return Promise.reject<Response>(new Error(errorDetail.detail));
       });
@@ -56,8 +56,8 @@ export class TaigaApi {
   _fetch<T>(url: string): Promise<T> {
     return fetch(this.baseUrl + url, {
       headers: {
-        Authorization: this.authHeaders.auth
-      }
+        Authorization: this.authHeaders.auth,
+      },
     })
       .then((response: Response) => this._checkResponse(response))
       .then<T>((response: Response) => {
@@ -71,9 +71,9 @@ export class TaigaApi {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        Authorization: this.authHeaders.auth
+        Authorization: this.authHeaders.auth,
       },
-      body: JSON.stringify(args)
+      body: JSON.stringify(args),
     })
       .then((response: Response) => this._checkResponse(response))
       .then<T>((response: Response) => {
@@ -87,9 +87,9 @@ export class TaigaApi {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        Authorization: this.authHeaders.auth
+        Authorization: this.authHeaders.auth,
       },
-      body: JSON.stringify(args)
+      body: JSON.stringify(args),
     })
       .then((response: Response) => this._checkResponse(response))
       .then<T>((response: Response) => {
@@ -133,7 +133,7 @@ export class TaigaApi {
   ): Promise<Array<DatasetFullDatasetVersions>> {
     // TODO: We should not use a post method for a get
     return this._post<Array<DatasetFullDatasetVersions>>("/datasets", {
-      datasetIds: datasetIds
+      datasetIds: datasetIds,
     });
   }
 
@@ -145,7 +145,7 @@ export class TaigaApi {
     datasetVersionIds: Array<string>
   ): Promise<Array<DatasetVersion>> {
     return this._post<Array<DatasetVersion>>("/datasetVersions", {
-      datasetVersionIds: datasetVersionIds
+      datasetVersionIds: datasetVersionIds,
     });
   }
 
@@ -185,7 +185,7 @@ export class TaigaApi {
 
   update_dataset_description(dataset_id: string, description: string) {
     return this._post<void>("/dataset/" + dataset_id + "/description", {
-      description: description
+      description: description,
     });
   }
 
@@ -209,7 +209,7 @@ export class TaigaApi {
       creatorId: current_user_id,
       parentId: current_folder_id,
       name: name,
-      description: description
+      description: description,
     });
   }
 
@@ -219,7 +219,7 @@ export class TaigaApi {
 
   update_folder_description(folder_id: string, description: string) {
     return this._post<void>("/folder/" + folder_id + "/description", {
-      description: description
+      description: description,
     });
   }
 
@@ -269,7 +269,7 @@ export class TaigaApi {
       sessionId: sid,
       datasetName: datasetName,
       datasetDescription: datasetDescription,
-      currentFolderId: currentFolderId
+      currentFolderId: currentFolderId,
     });
   }
 
@@ -285,14 +285,14 @@ export class TaigaApi {
     return this._post<void>("/move", {
       entryIds: entryIds,
       currentFolderId: currentFolderId,
-      targetFolderId: targetFolderId
+      targetFolderId: targetFolderId,
     });
   }
 
   copy_to_folder(entryIds: Array<string>, folderId: string) {
     return this._post<void>("/copy", {
       entryIds: entryIds,
-      folderId: folderId
+      folderId: folderId,
     });
   }
 
@@ -306,7 +306,7 @@ export class TaigaApi {
       sessionId: sid,
       datasetId: dataset_id,
       newDescription: new_description,
-      changesDescription: changes_description
+      changesDescription: changes_description,
     });
   }
 
@@ -377,7 +377,7 @@ export class TaigaApi {
     userIds: Array<string>
   ): Promise<Group> {
     return this._post<Group>("/group/" + groupId + "/add", {
-      userIds
+      userIds,
     });
   }
 
@@ -414,7 +414,7 @@ export class TaigaApi {
       dataset_version_id,
       article_name,
       article_description,
-      files_to_upload
+      files_to_upload,
     });
   }
 

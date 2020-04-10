@@ -5,7 +5,7 @@ export function toLocalDateString(stringDate: string) {
   var options = {
     month: "2-digit",
     day: "2-digit",
-    year: "2-digit"
+    year: "2-digit",
   };
   return _date.toLocaleDateString("en-us", options);
 }
@@ -40,7 +40,7 @@ export function lastAccessFormatter(cell: any, row: any) {
     day: "2-digit",
     year: "2-digit",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
   };
   return _date.toLocaleTimeString("en-us", options);
 }

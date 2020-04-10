@@ -3,11 +3,11 @@ const webpack = require("webpack");
 
 module.exports = {
   entry: {
-    frontend: "./frontend/src/Index.tsx"
+    frontend: "./frontend/src/Index.tsx",
   },
   output: {
     filename: "[name].js",
-    path: path.join(__dirname + "/taiga2/static")
+    path: path.join(__dirname + "/taiga2/static"),
   },
 
   // Enable sourcemaps for debugging webpack's output.
@@ -18,7 +18,7 @@ module.exports = {
 
   resolve: {
     // Add '.ts' and '.tsx' as resolvable extensions.
-    extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
+    extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"],
   },
 
   module: {
@@ -29,9 +29,9 @@ module.exports = {
         enforce: "pre",
         test: /\.js$/,
         exclude: ["/node_modules/", "/frontend/node_modules/"],
-        use: "source-map-loader"
-      }
-    ]
+        use: "source-map-loader",
+      },
+    ],
   },
 
   // When importing a module whose path matches one of the following, just
@@ -46,8 +46,8 @@ module.exports = {
     "react-bootstrap": "ReactBootstrap",
     "react-bootstrap-table": "ReactBootstrapTable",
     cytoscape: "cytoscape",
-    dagre: "dagre"
+    dagre: "dagre",
   },
 
-  plugins: []
+  plugins: [],
 };

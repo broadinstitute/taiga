@@ -8,7 +8,7 @@ import {
   FormControlProps,
   ControlLabel,
   Table,
-  ProgressBar
+  ProgressBar,
 } from "react-bootstrap";
 import update from "immutability-helper";
 
@@ -58,7 +58,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
   }
 
   populateDatafileIdToNameMap(props: Props) {
-    props.datasetVersion.datafiles.forEach(datafile => {
+    props.datasetVersion.datafiles.forEach((datafile) => {
       this.datafileIdToName.set(datafile.id, datafile.name);
     });
   }
@@ -67,16 +67,16 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     return {
       articleTitle: props.datasetVersion.dataset.name,
       articleDescription: "",
-      filesToUpload: props.datasetVersion.datafiles.map(datafile => {
+      filesToUpload: props.datasetVersion.datafiles.map((datafile) => {
         return {
           datafileId: datafile.id,
           datafileName: datafile.name,
           figshareFileName:
             datafile.type == "Raw" ? datafile.name : datafile.name + ".csv",
-          include: true
+          include: true,
         };
       }),
-      uploadResults: undefined
+      uploadResults: undefined,
     };
   }
 
@@ -99,8 +99,8 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     // @ts-ignore
     this.setState({
       filesToUpload: update(this.state.filesToUpload, {
-        [i]: { figshareFileName: { $set: e.currentTarget.value } }
-      })
+        [i]: { figshareFileName: { $set: e.currentTarget.value } },
+      }),
     });
   }
 
@@ -108,8 +108,8 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     // @ts-ignore
     this.setState({
       filesToUpload: update(this.state.filesToUpload, {
-        [i]: { include: { $set: !currentVal } }
-      })
+        [i]: { include: { $set: !currentVal } },
+      }),
     });
   }
 
@@ -120,15 +120,15 @@ export default class UploadToFigshare extends React.Component<Props, State> {
         this.state.articleTitle,
         this.state.articleDescription,
         this.state.filesToUpload
-          .filter(fileToUpload => fileToUpload.include)
-          .map(fileToUpload => {
+          .filter((fileToUpload) => fileToUpload.include)
+          .map((fileToUpload) => {
             return {
               datafile_id: fileToUpload.datafileId,
-              file_name: fileToUpload.figshareFileName
+              file_name: fileToUpload.figshareFileName,
             };
           })
       )
-      .then(value => {
+      .then((value) => {
         this.setState({ uploadResults: value });
         value.files.forEach((file, i) => {
           if (file.task_id) {
@@ -136,7 +136,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
           }
         });
       })
-      .catch(value => {
+      .catch((value) => {
         console.log("failure");
         console.log(value);
       });
@@ -151,9 +151,9 @@ export default class UploadToFigshare extends React.Component<Props, State> {
           {
             uploadResults: update(this.state.uploadResults, {
               files: {
-                [i]: { taskStatus: { $set: newStatus } }
-              }
-            })
+                [i]: { taskStatus: { $set: newStatus } },
+              },
+            }),
           },
           () => {
             if (newStatus.state != "SUCCESS" && newStatus.state != "FAILURE") {
@@ -308,7 +308,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     const uploadComplete =
       this.state.uploadResults &&
       this.state.uploadResults.files.every(
-        file =>
+        (file) =>
           !!file.failure_reason ||
           (file.taskStatus &&
             (file.taskStatus.state == "SUCCESS" ||

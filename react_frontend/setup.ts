@@ -12,7 +12,7 @@ import * as Adapter from "enzyme-adapter-react-16";
 // import * as context from './src/utilities/context'
 
 Enzyme.configure({
-  adapter: new Adapter()
+  adapter: new Adapter(),
 });
 
 beforeEach(() => {

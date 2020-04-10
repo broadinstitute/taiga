@@ -1,6 +1,6 @@
 import {
   getInitialFileTypeFromMimeType,
-  toLocalDateString
+  toLocalDateString,
 } from "../utilities/formats";
 import { relativePath } from "../utilities/route";
 
@@ -54,7 +54,7 @@ export class Folder extends Entry {
 export enum TypeFolderEnum {
   Folder = <any>"folder",
   Trash = <any>"trash",
-  Home = <any>"home"
+  Home = <any>"home",
 }
 
 // TODO: Remove to instead use Entry and DatasetVersion/Dataset(/Folder) extending Entry
@@ -79,7 +79,7 @@ export enum FolderEntriesTypeEnum {
   Dataset = <any>"dataset",
   DatasetVersion = <any>"dataset_version",
   VirtualDataset = <any>"virtual_dataset",
-  VirtualDatasetVersion = <any>"virtual_dataset_version"
+  VirtualDatasetVersion = <any>"virtual_dataset_version",
 }
 
 export class NamedId {
@@ -104,7 +104,7 @@ export interface UserNamedId {
 export enum StatusEnum {
   Deleted = "deleted",
   Approved = "approved",
-  Deprecated = "deprecated"
+  Deprecated = "deprecated",
 }
 
 export class DatasetVersion extends Entry {
@@ -442,13 +442,13 @@ export enum InitialFileType {
   TableCSV = "TableCSV",
   TableTSV = "TableTSV",
   GCT = "GCT",
-  Raw = "Raw"
+  Raw = "Raw",
 }
 
 export enum DataFileType {
   Raw = "Raw",
   HDF5 = "HDF5",
-  Columnar = "Columnar"
+  Columnar = "Columnar",
 }
 
 export interface DatafileUrl {
@@ -466,7 +466,7 @@ export enum ConversionStatusEnum {
   Downloading = <any>"Downloading from S3",
   Running = <any>"Running conversion",
   Uploading = <any>"Uploading converted file to S3",
-  Completed = <any>"Completed successfully"
+  Completed = <any>"Completed successfully",
 }
 
 export class AccessLog {
@@ -529,7 +529,7 @@ export enum ActivityTypeEnum {
   changed_name = "changed_name",
   changed_description = "changed_description",
   added_version = "added_version",
-  started_log = "started_log"
+  started_log = "started_log",
 }
 
 export class ActivityLogEntry {

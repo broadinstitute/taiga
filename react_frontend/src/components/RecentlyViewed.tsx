@@ -7,7 +7,7 @@ import { Grid, Row } from "react-bootstrap";
 import {
   BootstrapTable,
   TableHeaderColumn,
-  SortOrder
+  SortOrder,
 } from "react-bootstrap-table";
 
 import { LeftNav } from "./LeftNav";
@@ -33,7 +33,7 @@ export class RecentlyViewed extends React.Component<
     super(props);
 
     this.state = {
-      accessLogs: []
+      accessLogs: [],
     };
   }
 
@@ -42,17 +42,19 @@ export class RecentlyViewed extends React.Component<
   }
 
   doFetch() {
-    return this.props.tapi.get_user_entry_access_log().then(userAccessLogs => {
-      // TODO: Think about not using it as State because it does not change during the page lifecycle
+    return this.props.tapi
+      .get_user_entry_access_log()
+      .then((userAccessLogs) => {
+        // TODO: Think about not using it as State because it does not change during the page lifecycle
 
-      let mappedAL = userAccessLogs.map(userAccessLog => {
-        return new AccessLog(userAccessLog);
-      });
+        let mappedAL = userAccessLogs.map((userAccessLog) => {
+          return new AccessLog(userAccessLog);
+        });
 
-      this.setState({
-        accessLogs: mappedAL
+        this.setState({
+          accessLogs: mappedAL,
+        });
       });
-    });
   }
 
   datasetFormatter(cell: any, row: any) {
@@ -68,7 +70,7 @@ export class RecentlyViewed extends React.Component<
       defaultSortName: "last_access",
       defaultSortOrder: "desc" as any,
       sizePerPageList: [25, 30, 50, 100],
-      sizePerPage: 50
+      sizePerPage: 50,
     };
 
     if (this.state.accessLogs.length != 0) {

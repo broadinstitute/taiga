@@ -32,7 +32,7 @@ export default class FigshareConnectionView extends React.Component<
     this.state = {
       status: "IN PROGRESS",
       oauthState: searchParams.get("state"),
-      code: searchParams.get("code")
+      code: searchParams.get("code"),
     };
   }
 

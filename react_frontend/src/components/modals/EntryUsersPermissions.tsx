@@ -30,7 +30,7 @@ export class EntryUsersPermissions extends React.Component<
 > {
   componentWillMount() {
     this.setState({
-      accessLogs: []
+      accessLogs: [],
     });
   }
 
@@ -48,21 +48,21 @@ export class EntryUsersPermissions extends React.Component<
     // Return access logs for this folder
     return this.props.tapi
       .get_entry_access_log(this.props.entry_id)
-      .then(usersAccessLogs => {
+      .then((usersAccessLogs) => {
         // TODO: Think about not using it as State because it does not change during the page lifecycle
-        let mappedAL = usersAccessLogs.map(userAccessLogs => {
+        let mappedAL = usersAccessLogs.map((userAccessLogs) => {
           return new AccessLog(userAccessLogs);
         });
 
         this.setState({
-          accessLogs: mappedAL
+          accessLogs: mappedAL,
         });
       });
   }
 
   handleDeletedRow(rowKeys: any) {
     let state_accessLogs = this.state.accessLogs;
-    let accessLogsToRemove = state_accessLogs.filter(accessLog => {
+    let accessLogsToRemove = state_accessLogs.filter((accessLog) => {
       // TODO: Optimize this to not loop through the accessLogs array for each item
       for (let user_id of rowKeys) {
         if (user_id == accessLog.user_id) {
@@ -80,13 +80,13 @@ export class EntryUsersPermissions extends React.Component<
   render() {
     const check_mode: any = "checkbox";
     const selectRowProp = {
-      mode: check_mode
+      mode: check_mode,
     };
 
     const options = {
       afterDeleteRow: (rowKeys: any) => {
         this.handleDeletedRow(rowKeys);
-      }
+      },
     };
 
     return (

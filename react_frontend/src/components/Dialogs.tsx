@@ -7,7 +7,7 @@ import {
   FormControl,
   FormGroup,
   HelpBlock,
-  Button
+  Button,
 } from "react-bootstrap";
 import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 
@@ -20,7 +20,7 @@ import {
   Folder,
   FolderEntries,
   Group,
-  User
+  User,
 } from "../models/models";
 import update from "immutability-helper";
 
@@ -61,8 +61,8 @@ export interface DialogState {}
 export const modalStyles: any = {
   content: {
     background: null,
-    border: null
-  }
+    border: null,
+  },
 };
 
 export function formSubmitSave(
@@ -101,7 +101,7 @@ export class EditName extends React.Component<EditStringProps, any> {
                   defaultValue={this.props.initialValue}
                   className="form-control"
                   id="nameInput"
-                  ref={c => {
+                  ref={(c) => {
                     this.textInput = c;
                   }}
                 />
@@ -118,7 +118,7 @@ export class EditName extends React.Component<EditStringProps, any> {
               <button
                 type="submit"
                 className="btn btn-primary"
-                onClick={e => {
+                onClick={(e) => {
                   formSubmitSave(this, e, this.textInput.value, null);
                 }}
               >
@@ -167,7 +167,7 @@ export class EditDescription extends React.Component<EditStringProps, any> {
                   defaultValue={this.props.initialValue}
                   className="form-control"
                   id="descriptionInput"
-                  ref={c => {
+                  ref={(c) => {
                     this.textArea = c;
                   }}
                 ></textarea>
@@ -184,7 +184,7 @@ export class EditDescription extends React.Component<EditStringProps, any> {
               <button
                 type="submit"
                 className="btn btn-primary"
-                onClick={e => {
+                onClick={(e) => {
                   formSubmitSave(this, e, this.textArea.value, null);
                 }}
               >
@@ -221,7 +221,7 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
                   placeholder="A name is required"
                   className="form-control"
                   id="nameInput"
-                  ref={c => {
+                  ref={(c) => {
                     this.textInput = c;
                   }}
                 />
@@ -232,7 +232,7 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
                   placeholder="No description given"
                   className="form-control"
                   id="descriptionInput"
-                  ref={c => {
+                  ref={(c) => {
                     this.textArea = c;
                   }}
                 />
@@ -249,7 +249,7 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
               <button
                 type="submit"
                 className="btn btn-primary"
-                onClick={e => {
+                onClick={(e) => {
                   formSubmitSave(
                     this,
                     e,
@@ -293,14 +293,14 @@ export class InputFolderId extends React.Component<
 
   componentWillMount() {
     this.setState({
-      folderId: this.props.initFolderId
+      folderId: this.props.initFolderId,
     });
   }
 
   componentWillReceiveProps(nextProps: any) {
     // When we open the component, we reset it
     this.setState({
-      folderId: nextProps.initFolderId
+      folderId: nextProps.initFolderId,
     });
     // if (nextProps.isVisible && this.props.isVisible != nextProps.isVisible) {
     //
@@ -309,7 +309,7 @@ export class InputFolderId extends React.Component<
 
   handleChange(e: any) {
     this.setState({
-      folderId: e.target.value
+      folderId: e.target.value,
     });
   }
 
@@ -342,7 +342,7 @@ export class InputFolderId extends React.Component<
                   type="text"
                   value={this.state.folderId}
                   placeholder={textPlaceHolder}
-                  onChange={e => this.handleChange(e)}
+                  onChange={(e) => this.handleChange(e)}
                 />
                 {this.props.help && <HelpBlock>{this.props.help}</HelpBlock>}
               </FormGroup>
@@ -359,7 +359,7 @@ export class InputFolderId extends React.Component<
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={e => {
+                onClick={(e) => {
                   formSubmitSave(this, e, this.state.folderId, null);
                 }}
               >
@@ -380,7 +380,7 @@ const exportErrorStyle: any = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.75)"
+    backgroundColor: "rgba(255, 255, 255, 0.75)",
   },
   content: {
     position: "absolute",
@@ -394,8 +394,8 @@ const exportErrorStyle: any = {
     WebkitOverflowScrolling: "touch",
     borderRadius: "4px",
     outline: "none",
-    padding: "20px"
-  }
+    padding: "20px",
+  },
 };
 
 // region Export Error section
@@ -505,7 +505,7 @@ export class DeprecationReason extends React.Component<
                 placeholder="Reason for deprecation"
                 className="form-control"
                 value={this.state.reason}
-                onChange={e => this.handleChange(e)}
+                onChange={(e) => this.handleChange(e)}
               />
             </div>
             <div className="modal-footer">
@@ -519,7 +519,7 @@ export class DeprecationReason extends React.Component<
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={e => this.save()}
+                onClick={(e) => this.save()}
               >
                 Save changes
               </button>
@@ -612,22 +612,22 @@ export class AddUsersToGroup extends React.Component<
     super(props);
 
     this.state = {
-      selection: []
+      selection: [],
     };
   }
 
   componentDidUpdate(prevProps: AddUsersToGroupProps) {
     if (prevProps.group.users != this.props.group.users) {
       this.setState({
-        selection: this.props.group.users.map(user => user.id)
+        selection: this.props.group.users.map((user) => user.id),
       });
     }
   }
 
   createCustomButtonGroup(_: BootstrapTableButtonGroup) {
-    const userIdSet = new Set(this.props.group.users.map(user => user.id));
+    const userIdSet = new Set(this.props.group.users.map((user) => user.id));
     const usersToAdd = this.state.selection.filter(
-      userId => !userIdSet.has(userId)
+      (userId) => !userIdSet.has(userId)
     );
     return (
       <Button
@@ -649,11 +649,11 @@ export class AddUsersToGroup extends React.Component<
     let index = original_selection.indexOf(select_key);
     if (index !== -1) {
       updated_selection = update(original_selection, {
-        $splice: [[index, 1]]
+        $splice: [[index, 1]],
       });
     } else {
       updated_selection = update(original_selection, {
-        $push: [select_key]
+        $push: [select_key],
       });
     }
 
@@ -666,17 +666,17 @@ export class AddUsersToGroup extends React.Component<
 
     let select_key = null;
     let index = null;
-    rows.forEach(row => {
+    rows.forEach((row) => {
       select_key = row.id;
       index = updated_selection.indexOf(select_key);
 
       if (index != -1) {
         updated_selection = update(updated_selection, {
-          $splice: [[index, 1]]
+          $splice: [[index, 1]],
         });
       } else {
         updated_selection = update(updated_selection, {
-          $push: [select_key]
+          $push: [select_key],
         });
       }
     });
@@ -686,12 +686,12 @@ export class AddUsersToGroup extends React.Component<
 
   render() {
     const options = {
-      btnGroup: this.createCustomButtonGroup.bind(this)
+      btnGroup: this.createCustomButtonGroup.bind(this),
     };
     const selectRow = {
       mode: "checkbox",
       selected: this.state.selection,
-      unselectable: this.props.group.users.map(user => user.id),
+      unselectable: this.props.group.users.map((user) => user.id),
       onSelect: (row: User, isSelected: Boolean, e: any) => {
         this.onRowSelect(row, isSelected, e);
         return true;
@@ -702,11 +702,11 @@ export class AddUsersToGroup extends React.Component<
       ) => {
         this.onAllRowsSelect(isSelected, currentSelectedAndDisplayData);
         return true;
-      }
+      },
     };
-    const userIdSet = new Set(this.props.group.users.map(user => user.id));
+    const userIdSet = new Set(this.props.group.users.map((user) => user.id));
     const usersToAdd = this.state.selection.filter(
-      userId => !userIdSet.has(userId)
+      (userId) => !userIdSet.has(userId)
     );
     return (
       <Modal
@@ -754,7 +754,7 @@ export class AddUsersToGroup extends React.Component<
                 ) {
                   this.props.cancel();
                   this.setState({
-                    selection: this.props.group.users.map(user => user.id)
+                    selection: this.props.group.users.map((user) => user.id),
                   });
                 }
               }}

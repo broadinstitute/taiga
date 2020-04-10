@@ -33,7 +33,7 @@ export interface SearchViewProps
 }
 
 const tableEntriesStyle: any = {
-  margin: "initial"
+  margin: "initial",
 };
 
 export interface SearchViewState {
@@ -105,7 +105,7 @@ export class SearchView extends React.Component<
       this.setState({
         folder: searchResult.current_folder,
         name: searchResult.name,
-        searchEntries: searchResult.entries
+        searchEntries: searchResult.entries,
       });
     });
   }
@@ -165,7 +165,7 @@ export class SearchView extends React.Component<
     let index = original_selection.indexOf(select_key);
     if (index !== -1) {
       updated_selection = _update(original_selection, {
-        $splice: [[index, 1]]
+        $splice: [[index, 1]],
       });
     } else {
       updated_selection = _update(original_selection, { $push: [select_key] });
@@ -180,13 +180,13 @@ export class SearchView extends React.Component<
 
     let select_key = null;
     let index = null;
-    rows.forEach(row => {
+    rows.forEach((row) => {
       select_key = row.id;
       index = updated_selection.indexOf(select_key);
 
       if (index !== -1) {
         updated_selection = _update(updated_selection, {
-          $splice: [[index, 1]]
+          $splice: [[index, 1]],
         });
       } else {
         updated_selection = _update(updated_selection, { $push: [select_key] });
@@ -272,14 +272,14 @@ export class SearchView extends React.Component<
       ) => {
         this.onAllRowsSelect(isSelected, currentSelectedAndDisplayData);
         return true;
-      }
+      },
     };
 
     const desc_sortOrder: any = "desc";
     const options: any = {
       noDataText: "Nothing created yet",
       defaultSortName: "creation_date", // default sort column name
-      defaultSortOrder: desc_sortOrder // default sort order
+      defaultSortOrder: desc_sortOrder, // default sort order
     };
 
     return (
@@ -293,7 +293,7 @@ export class SearchView extends React.Component<
               <Grid
                 fluid={true}
                 style={{
-                  padding: "0px 15px 0px 0px"
+                  padding: "0px 15px 0px 0px",
                 }}
               >
                 <Row className="show-grid">
@@ -303,7 +303,7 @@ export class SearchView extends React.Component<
                       onKeyPress={(event, searchQuery) =>
                         this.searchKeyPress(event, searchQuery)
                       }
-                      onClick={searchQuery => this.executeSearch(searchQuery)}
+                      onClick={(searchQuery) => this.executeSearch(searchQuery)}
                     />
                     <br />
                   </Col>

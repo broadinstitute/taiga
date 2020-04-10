@@ -20,7 +20,7 @@ export interface TokenState {
 }
 
 const antiPadding = {
-  paddingLeft: "0px"
+  paddingLeft: "0px",
 };
 
 const clipboardButtonStyle = {};
@@ -31,7 +31,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
 
     // TODO: How can we ensure we are not erasing/forgetting states defined in the interface?
     this.state = {
-      token: "Loading..."
+      token: "Loading...",
     };
   }
 
@@ -44,7 +44,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
       .get_user()
       .then((user: User) => {
         this.setState({
-          token: user.token
+          token: user.token,
         });
       })
       .catch((err: any) => {
@@ -55,7 +55,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
       .get_figshare_authorization_url()
       .then(({ figshare_auth_url }) => {
         this.setState({
-          figshareAuthUrl: figshare_auth_url
+          figshareAuthUrl: figshare_auth_url,
         });
       })
       .catch((err: any) => {
@@ -71,7 +71,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
         label: "Connect to Figshare",
         action: () => {
           window.location.assign(this.state.figshareAuthUrl);
-        }
+        },
       });
     }
 

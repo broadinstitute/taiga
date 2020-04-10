@@ -4,7 +4,7 @@ import {
   FormControl,
   FormGroup,
   OverlayTrigger,
-  Popover
+  Popover,
 } from "react-bootstrap";
 import * as Dropzone from "react-dropzone";
 import * as Modal from "react-modal";
@@ -13,7 +13,7 @@ import {
   UploadFileType,
   CreateVersionParams,
   CreateDatasetParams,
-  DatasetIdAndVersionId
+  DatasetIdAndVersionId,
 } from "../UploadTracker";
 import update from "immutability-helper";
 import { UploadTable, UploadFile, UploadController } from "./UploadTable";
@@ -62,7 +62,7 @@ const dropZoneStyle: any = {
   borderWidth: "2px",
   borderColor: "rgb(102, 102, 102)",
   borderStyle: "dashed",
-  borderRadius: "5px"
+  borderRadius: "5px",
 };
 
 import { DialogProps, DialogState } from "../Dialogs";
@@ -74,7 +74,7 @@ import {
   S3UploadedData,
   DatasetVersion,
   DatasetVersionDatafiles,
-  dropExtension
+  dropExtension,
 } from "../../models/models";
 import { TaigaApi } from "../../models/api";
 import { getTaigaPrefix } from "../../utilities/route";
@@ -83,8 +83,8 @@ import { getTaigaPrefix } from "../../utilities/route";
 const modalStyles: any = {
   content: {
     background: null,
-    border: null
-  }
+    border: null,
+  },
 };
 
 interface UploadDialogState {
@@ -187,7 +187,7 @@ class UploadDialog extends React.Component<
     let files: Array<UploadFile> = [];
     if (this.props.previousVersionFiles) {
       console.log("prev", this.props.previousVersionFiles);
-      files = this.props.previousVersionFiles.map(file => {
+      files = this.props.previousVersionFiles.map((file) => {
         let taigaId =
           this.props.datasetPermaname +
           "." +
@@ -199,7 +199,7 @@ class UploadDialog extends React.Component<
           computeNameFromTaigaId: false,
           size: file.short_summary,
           fileType: UploadFileType.TaigaPath,
-          existingTaigaId: taigaId
+          existingTaigaId: taigaId,
         };
       });
     }
@@ -215,7 +215,7 @@ class UploadDialog extends React.Component<
       datasetDescription: this.props.previousDescription,
       changesDescription: "",
       isProcessing: false,
-      error: null
+      error: null,
     };
   }
 
@@ -229,7 +229,7 @@ class UploadDialog extends React.Component<
     statuses.forEach((status, i) => {
       changes[i] = {
         progress: { $set: status.progress },
-        progressMessage: { $set: status.progressMessage }
+        progressMessage: { $set: status.progressMessage },
       };
     });
 
@@ -274,12 +274,12 @@ class UploadDialog extends React.Component<
         <button
           type="submit"
           className="btn btn-primary"
-          onClick={e => {
+          onClick={(e) => {
             e.preventDefault();
             this.setState({
               formDisabled: false,
               isProcessing: false,
-              error: null
+              error: null,
             });
           }}
         >
@@ -292,7 +292,7 @@ class UploadDialog extends React.Component<
           type="submit"
           className="btn btn-primary"
           disabled={this.state.formDisabled}
-          onClick={e => {
+          onClick={(e) => {
             e.preventDefault();
 
             let params: CreateDatasetParams | CreateVersionParams;
@@ -301,24 +301,24 @@ class UploadDialog extends React.Component<
               params = {
                 name: this.state.datasetName,
                 description: this.state.datasetDescription,
-                folderId: this.props.folderId
+                folderId: this.props.folderId,
               };
             } else {
               // create a new version
               params = {
                 datasetId: this.props.datasetId,
                 description: this.state.datasetDescription,
-                changesDescription: this.state.changesDescription
+                changesDescription: this.state.changesDescription,
               };
             }
             // console.log("Creating with params", params);
             // console.log("created from", this.state);
 
             this.props
-              .upload(this.state.uploadFiles, params, status =>
+              .upload(this.state.uploadFiles, params, (status) =>
                 this.uploadProgressCallback(status)
               )
-              .then(newDatasetVersion => {
+              .then((newDatasetVersion) => {
                 if (newDatasetVersion === null) {
                   this.setState({ error: "File conversion failed" });
                 } else {
@@ -326,14 +326,14 @@ class UploadDialog extends React.Component<
                   this.setState({ newDatasetVersion: newDatasetVersion });
                 }
               })
-              .catch(error => {
+              .catch((error) => {
                 this.setState({ error: "" + error });
               });
 
             this.setState({
               formDisabled: true,
               isProcessing: true,
-              error: null
+              error: null,
             });
             // console.log("isProcessing set to true");
           }}
@@ -380,7 +380,7 @@ class UploadDialog extends React.Component<
               <button
                 type="button"
                 className="btn btn-default"
-                onClick={e => {
+                onClick={(e) => {
                   this.requestClose();
                 }}
               >
@@ -413,7 +413,7 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
   }
 
   onDrop(acceptedFiles: Array<File>, rejectedFiles: Array<File>) {
-    acceptedFiles.forEach(file => this.props.controller.addUpload(file));
+    acceptedFiles.forEach((file) => this.props.controller.addUpload(file));
   }
 
   addTaigaReference() {
@@ -430,7 +430,7 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
     let inputName = (
       <FormControl
         value={this.props.name}
-        onChange={evt => {
+        onChange={(evt) => {
           this.props.onNameChange((evt.target as any).value);
         }}
         type="text"
@@ -441,7 +441,7 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
     let inputDescription = (
       <FormControl
         value={this.props.description}
-        onChange={evt => {
+        onChange={(evt) => {
           this.props.onDescriptionChange((evt.target as any).value);
         }}
         componentClass="textarea"
@@ -452,7 +452,7 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
     let inputChanges = (
       <FormControl
         value={this.props.changesDescription}
-        onChange={evt => {
+        onChange={(evt) => {
           this.props.onChangesDescriptionChange((evt.target as any).value);
         }}
         componentClass="textarea"
@@ -512,7 +512,7 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
               <button
                 className="btn btn-default"
                 style={{ marginTop: "15px" }}
-                onClick={e => {
+                onClick={(e) => {
                   e.preventDefault();
                   this.addTaigaReference();
                 }}
@@ -523,7 +523,7 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
               <button
                 className="btn btn-default"
                 style={{ marginTop: "15px" }}
-                onClick={e => {
+                onClick={(e) => {
                   e.preventDefault();
                   this.addGCSPointer();
                 }}

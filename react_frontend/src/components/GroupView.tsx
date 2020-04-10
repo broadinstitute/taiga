@@ -4,7 +4,7 @@ import { RouteComponentProps } from "react-router";
 import {
   BootstrapTable,
   TableHeaderColumn,
-  InsertButton
+  InsertButton,
 } from "react-bootstrap-table";
 
 import { LeftNav } from "./LeftNav";
@@ -41,10 +41,10 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
         name: null,
         id: null,
         users: [],
-        num_users: 0
+        num_users: 0,
       },
       selection: [],
-      showAddUsersDialog: false
+      showAddUsersDialog: false,
     };
   }
 
@@ -106,11 +106,11 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
     let index = original_selection.indexOf(select_key);
     if (index !== -1) {
       updated_selection = update(original_selection, {
-        $splice: [[index, 1]]
+        $splice: [[index, 1]],
       });
     } else {
       updated_selection = update(original_selection, {
-        $push: [select_key]
+        $push: [select_key],
       });
     }
 
@@ -123,17 +123,17 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
 
     let select_key = null;
     let index = null;
-    rows.forEach(row => {
+    rows.forEach((row) => {
       select_key = row.id;
       index = updated_selection.indexOf(select_key);
 
       if (index != -1) {
         updated_selection = update(updated_selection, {
-          $splice: [[index, 1]]
+          $splice: [[index, 1]],
         });
       } else {
         updated_selection = update(updated_selection, {
-          $push: [select_key]
+          $push: [select_key],
         });
       }
     });
@@ -147,7 +147,7 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
       .then((group: Group) => {
         this.setState({
           group: group,
-          showAddUsersDialog: false
+          showAddUsersDialog: false,
         });
       });
   }
@@ -174,7 +174,7 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
     const options = {
       deleteText: "Remove users",
       onDeleteRow: this.onDeleteRow.bind(this),
-      insertBtn: this.renderInsertButton.bind(this)
+      insertBtn: this.renderInsertButton.bind(this),
     };
     const check_mode: any = "checkbox";
     const selectRowProp: any = {
@@ -189,7 +189,7 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
       ) => {
         this.onAllRowsSelect(isSelected, currentSelectedAndDisplayData);
         return true;
-      }
+      },
     };
     return (
       <div>

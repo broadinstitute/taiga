@@ -6,7 +6,7 @@ import {
   FormGroup,
   ControlLabel,
   FormControl,
-  Button
+  Button,
 } from "react-bootstrap";
 
 interface SearchInputProps {
@@ -23,12 +23,12 @@ export class SearchInput extends React.Component<
   SearchInputState
 > {
   state = {
-    searchQuery: ""
+    searchQuery: "",
   };
 
   handleChangeSearchQuery(e: any) {
     this.setState({
-      searchQuery: e.target.value
+      searchQuery: e.target.value,
     });
   }
 
@@ -36,7 +36,7 @@ export class SearchInput extends React.Component<
     return (
       <Form
         inline
-        onSubmit={e => {
+        onSubmit={(e) => {
           e.preventDefault();
         }}
       >
@@ -45,8 +45,8 @@ export class SearchInput extends React.Component<
             type="text"
             placeholder="Search by name"
             value={this.state.searchQuery}
-            onChange={event => this.handleChangeSearchQuery(event)}
-            onKeyPress={event =>
+            onChange={(event) => this.handleChangeSearchQuery(event)}
+            onKeyPress={(event) =>
               this.props.onKeyPress(event, this.state.searchQuery)
             }
           />

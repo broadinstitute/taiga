@@ -47,7 +47,7 @@ class App extends React.Component<AppProps, AppState> {
       jumpToValue: "",
       show: false,
       target: null,
-      message: ""
+      message: "",
     };
   }
 
@@ -61,7 +61,7 @@ class App extends React.Component<AppProps, AppState> {
   jumpToHandleChange(e: any) {
     // if e is enter, then fetch result and change page
     this.setState({
-      jumpToValue: e.target.value
+      jumpToValue: e.target.value,
     });
   }
 
@@ -70,18 +70,18 @@ class App extends React.Component<AppProps, AppState> {
       let escaped_entry = e.target.value.replace(/\//g, "%2F");
       tapi
         .get_dataset_version_id(escaped_entry)
-        .then(dataset_version_id => {
+        .then((dataset_version_id) => {
           let url = relativePath(
             "/dataset/" + "placeholder" + "/" + dataset_version_id
           );
           location.replace(url);
         })
-        .catch(reason => {
+        .catch((reason) => {
           let error_message = undefined;
           // TODO: Find a better way to catch the error properly and not use a string
           if (reason.message === "NOT FOUND") {
             error_message = [
-              <p>This dataset or dataset version id was not found</p>
+              <p>This dataset or dataset version id was not found</p>,
             ];
           } else {
             error_message = [<p>Unknown error: + {reason.message}</p>];
@@ -107,7 +107,7 @@ class App extends React.Component<AppProps, AppState> {
           // error_message += "</p>";
           this.setState({
             show: true,
-            message: error_message
+            message: error_message,
           } as any);
         });
     }
@@ -152,15 +152,15 @@ class App extends React.Component<AppProps, AppState> {
             </Link>
 
             <FormControl
-              ref={button => {
+              ref={(button) => {
                 // FIXME: This is very wrong. State should never be updated like this
                 (this.state as any).target = button;
               }}
               type="text"
               value={this.state.jumpToValue}
               placeholder="Enter dataset and version (with . or / separator)"
-              onChange={event => this.jumpToHandleChange(event)}
-              onKeyPress={event => this.jumpToKeyPress(event)}
+              onChange={(event) => this.jumpToHandleChange(event)}
+              onKeyPress={(event) => this.jumpToKeyPress(event)}
               className="headerJumpTo"
             />
 
@@ -285,7 +285,7 @@ export function initPage(element: any) {
             <Route
               path={relativePath("")}
               exact
-              render={_ => {
+              render={(_) => {
                 return <Home user={user} />;
               }}
             />
@@ -294,38 +294,38 @@ export function initPage(element: any) {
                 path={relativePath(
                   "dataset/:datasetId.:datasetVersionId/:fileName"
                 )}
-                render={props => {
+                render={(props) => {
                   return <DatasetView {...props} tapi={tapi} user={user} />;
                 }}
               />
               <Route
                 path={relativePath("dataset/:datasetId/:datasetVersionId")}
-                render={props => {
+                render={(props) => {
                   return <DatasetView {...props} tapi={tapi} user={user} />;
                 }}
               />
               <Route
                 path={relativePath("dataset/:datasetId.:datasetVersionId")}
-                render={props => {
+                render={(props) => {
                   return <DatasetView {...props} tapi={tapi} user={user} />;
                 }}
               />
               <Route
                 path={relativePath("dataset/:datasetId")}
-                render={props => {
+                render={(props) => {
                   return <DatasetView {...props} tapi={tapi} user={user} />;
                 }}
               />
             </Switch>
             <Route
               path={relativePath("dataset_version/:datasetVersionId")}
-              render={props => {
+              render={(props) => {
                 return <DatasetView {...props} tapi={tapi} user={user} />;
               }}
             />
             <Route
               path={relativePath("folder/:folderId")}
-              render={props => {
+              render={(props) => {
                 return (
                   <FolderView
                     {...props}
@@ -338,37 +338,37 @@ export function initPage(element: any) {
             />
             <Route
               path={relativePath("search/:currentFolderId/:searchQuery")}
-              render={props => {
+              render={(props) => {
                 return <SearchView {...props} tapi={tapi} />;
               }}
             />
             <Route
               path={relativePath("token/")}
-              render={props => {
+              render={(props) => {
                 return <Token {...props} tapi={tapi} />;
               }}
             />
             <Route
               path={relativePath("recentlyViewed/")}
-              render={props => {
+              render={(props) => {
                 return <RecentlyViewed {...props} tapi={tapi} />;
               }}
             />
             <Route
               path={relativePath("groups/")}
-              render={props => {
+              render={(props) => {
                 return <GroupListView {...props} tapi={tapi} groups={groups} />;
               }}
             />
             <Route
               path={relativePath("group/:groupId")}
-              render={props => {
+              render={(props) => {
                 return <GroupView {...props} tapi={tapi} />;
               }}
             />
             <Route
               path={relativePath("figshare/")}
-              render={props => {
+              render={(props) => {
                 return <FigshareConnectionView {...props} tapi={tapi} />;
               }}
             />

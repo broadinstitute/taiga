@@ -24,7 +24,7 @@ import { Entry, NamedId } from "../models/models";
 import { DatasetVersion } from "../models/models";
 import {
   DatasetFullDatasetVersions,
-  BootstrapTableFolderEntry
+  BootstrapTableFolderEntry,
 } from "../models/models";
 import { User } from "../models/models";
 import { AccessLog } from "../models/models";
@@ -41,7 +41,7 @@ export interface FolderViewProps
 }
 
 const tableEntriesStyle: any = {
-  margin: "initial"
+  margin: "initial",
 };
 
 let _update: any = update;
@@ -133,7 +133,7 @@ export class FolderView extends React.Component<
     let tapi = this.getTapi();
 
     this.setState({
-      loading: true
+      loading: true,
     });
 
     // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
@@ -147,7 +147,7 @@ export class FolderView extends React.Component<
 
     return tapi
       .get_folder(this.props.match.params.folderId)
-      .then(folder => {
+      .then((folder) => {
         console.log("get_folder complete", folder);
         _folder = new Folder.Folder(folder);
         this.setState({ sharingEntries: [_folder] });
@@ -213,12 +213,12 @@ export class FolderView extends React.Component<
           selection: new Array<string>(),
           datasetLastDatasetVersion: datasetsLatestDv,
           datasetsVersion: datasetsVersion,
-          loading: false
+          loading: false,
         });
       })
-      .catch(error => {
+      .catch((error) => {
         this.setState({
-          error: error.message
+          error: error.message,
         });
         console.log("Error: " + error.stack);
       });
@@ -308,7 +308,7 @@ export class FolderView extends React.Component<
       inputFolderIdActionDescription: actionDescription,
       showInputFolderId: true,
       actionIntoFolderValidation: null,
-      actionIntoFolderHelp: null
+      actionIntoFolderHelp: null,
     });
   }
 
@@ -341,10 +341,10 @@ export class FolderView extends React.Component<
     this.doFetch()
       .then(() => {
         this.setState({
-          showInputFolderId: false
+          showInputFolderId: false,
         });
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
 
         // If we receive 422 error
@@ -353,7 +353,7 @@ export class FolderView extends React.Component<
             "Folder id is not valid. Please check it and retry :)";
           this.setState({
             actionIntoFolderValidation: "error",
-            actionIntoFolderHelp: err_message_user
+            actionIntoFolderHelp: err_message_user,
           });
         }
       });
@@ -375,11 +375,11 @@ export class FolderView extends React.Component<
         datasetDescription,
         this.state.folder.id
       )
-      .then(dataset_id => {
+      .then((dataset_id) => {
         // We fetch the datasetVersion of the newly created dataset and change the state of it
         return tapi
           .get_dataset_version_last(dataset_id)
-          .then(newDatasetVersion => {
+          .then((newDatasetVersion) => {
             this.doFetch();
             return Promise.resolve(newDatasetVersion);
           });
@@ -453,7 +453,7 @@ export class FolderView extends React.Component<
     let index = original_selection.indexOf(select_key);
     if (index !== -1) {
       updated_selection = _update(original_selection, {
-        $splice: [[index, 1]]
+        $splice: [[index, 1]],
       });
     } else {
       updated_selection = _update(original_selection, { $push: [select_key] });
@@ -468,13 +468,13 @@ export class FolderView extends React.Component<
 
     let select_key = null;
     let index = null;
-    rows.forEach(row => {
+    rows.forEach((row) => {
       select_key = row.id;
       index = updated_selection.indexOf(select_key);
 
       if (index != -1) {
         updated_selection = _update(updated_selection, {
-          $splice: [[index, 1]]
+          $splice: [[index, 1]],
         });
       } else {
         updated_selection = _update(updated_selection, { $push: [select_key] });
@@ -537,16 +537,16 @@ export class FolderView extends React.Component<
     // Process the selection into Folder | FolderEntries
     if (this.state.selection.length === 0) {
       this.setState({
-        sharingEntries: [this.state.folder]
+        sharingEntries: [this.state.folder],
       });
     } else {
       let selectedEntries = this.state.selection.map((entryID: any) => {
-        return this.state.folder.entries.find(folderEntry => {
+        return this.state.folder.entries.find((folderEntry) => {
           return folderEntry.id === entryID;
         });
       });
       this.setState({
-        sharingEntries: selectedEntries
+        sharingEntries: selectedEntries,
       });
     }
 
@@ -600,7 +600,7 @@ export class FolderView extends React.Component<
     if (this.state && this.state.folder) {
       var folder: Folder.Folder = this.state.folder;
 
-      let parent_public = folder.parents.some(parent => {
+      let parent_public = folder.parents.some((parent) => {
         return parent.id == "public";
       });
       let is_owner = folder.creator && folder.creator.id === user.id;
@@ -634,7 +634,7 @@ export class FolderView extends React.Component<
           label: "Share folder",
           action: () => {
             this.loadSelectionAndShare();
-          }
+          },
         });
 
         // If the user can edit, then it has access to the actions
@@ -644,45 +644,45 @@ export class FolderView extends React.Component<
               label: "Create a subfolder",
               action: () => {
                 this.setState({ showCreateFolder: true });
-              }
+              },
             },
             {
               label: "Upload dataset",
               action: () => {
                 this.setState({ showUploadDataset: true });
-              }
+              },
             }
           );
           navItems.push({
             label: "Edit name",
             action: () => {
               this.setState({ showEditName: true });
-            }
+            },
           });
           navItems.push({
             label: "Edit description",
             action: () => {
               this.setState({ showEditDescription: true });
-            }
+            },
           });
           navItems.push({
             label: "Edit permissions",
             action: () => {
               this.setState({ showEditPermissions: true });
-            }
+            },
           });
         }
         navItems.push({
           label: "Add to Home",
           action: () => {
             this.openActionTo("currentFolderLinkToHome");
-          }
+          },
         });
         navItems.push({
           label: "Add to a folder",
           action: () => {
             this.openActionTo("currentFolderLink");
-          }
+          },
         });
 
         navItems = navItems.concat(add_folder_items);
@@ -691,21 +691,21 @@ export class FolderView extends React.Component<
           label: "Share selected items",
           action: () => {
             this.loadSelectionAndShare();
-          }
+          },
         });
         if (folder.can_edit) {
           // Don't display this if we are in the trash of the user
           if (this.state.folder.folder_type !== Folder.TypeFolderEnum.Trash) {
             navItems.push({
               label: "Move to trash",
-              action: () => this.moveToTrash()
+              action: () => this.moveToTrash(),
             });
           }
           navItems.push({
             label: "Move to...",
             action: () => {
               this.openActionTo("move");
-            }
+            },
           });
         }
 
@@ -713,13 +713,13 @@ export class FolderView extends React.Component<
           label: "Add to Home",
           action: () => {
             this.openActionTo("linkToHome");
-          }
+          },
         });
         navItems.push({
           label: "Add to a folder",
           action: () => {
             this.openActionTo("link");
-          }
+          },
         });
       }
     }
@@ -738,14 +738,14 @@ export class FolderView extends React.Component<
       ) => {
         this.onAllRowsSelect(isSelected, currentSelectedAndDisplayData);
         return true;
-      }
+      },
     };
 
     const desc_sortOrder: any = "desc";
     const options: any = {
       noDataText: "Nothing created yet",
       defaultSortName: "creation_date", // default sort column name
-      defaultSortOrder: desc_sortOrder // default sort order
+      defaultSortOrder: desc_sortOrder, // default sort order
     };
 
     return (
@@ -814,7 +814,7 @@ export class FolderView extends React.Component<
                 cancel={() => {
                   this.setState({ showInputFolderId: false });
                 }}
-                save={folderId => {
+                save={(folderId) => {
                   this.state.callbackIntoFolderAction(folderId);
                 }}
                 initFolderId={this.state.initFolderId}
@@ -826,7 +826,7 @@ export class FolderView extends React.Component<
                   this.setState({ showEditPermissions: false });
                 }}
                 entry_id={this.state.folder.id}
-                handleDeletedRow={arrayAccessLogs => {
+                handleDeletedRow={(arrayAccessLogs) => {
                   return this.removeAccessLogs(arrayAccessLogs);
                 }}
                 tapi={this.props.tapi}
@@ -849,7 +849,7 @@ export class FolderView extends React.Component<
               <Grid
                 fluid={true}
                 style={{
-                  padding: "0px 15px 0px 0px"
+                  padding: "0px 15px 0px 0px",
                 }}
               >
                 <Row className="show-grid">
@@ -861,7 +861,7 @@ export class FolderView extends React.Component<
                       onKeyPress={(event, searchQuery) =>
                         this.searchKeyPress(event, searchQuery)
                       }
-                      onClick={searchQuery => this.executeSearch(searchQuery)}
+                      onClick={(searchQuery) => this.executeSearch(searchQuery)}
                     />
                     <br />
                   </Col>
