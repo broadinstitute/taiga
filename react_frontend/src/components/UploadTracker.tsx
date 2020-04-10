@@ -71,6 +71,11 @@ export interface DatasetIdAndVersionId {
   version_id: string;
 }
 
+interface ConversionStatus {
+  keepPolling: boolean;
+  isSuccessful?: boolean;
+}
+
 export class UploadTracker {
   tapi: TaigaApi;
   uploadStatus: Readonly<Array<UploadStatus>>;
@@ -128,7 +133,7 @@ export class UploadTracker {
     file: UploadFile,
     sid: string,
     uploadIndex: number
-  ): Promise<string> {
+  ): Promise<boolean> {
     let s3Key = s3_credentials.prefix + file.name;
     let params = {
       Bucket: s3_credentials.bucket,
@@ -170,15 +175,17 @@ export class UploadTracker {
         .then(taskStatusId => {
           return this.waitForConversion(uploadIndex, taskStatusId);
         })
-        .then(() => {
+        .then((success: boolean) => {
           // Get the file who received this progress notification
-          this.updateFileStatus(
-            uploadIndex,
-            "progressMessage",
-            "Conversion done"
-          );
+          if (success) {
+            this.updateFileStatus(
+              uploadIndex,
+              "progressMessage",
+              "Conversion done"
+            );
+          }
 
-          return Promise.resolve<string>(sid);
+          return Promise.resolve<boolean>(success);
         });
     });
   }
@@ -212,7 +219,7 @@ export class UploadTracker {
     });
 
     // Looping through all the files
-    let uploadPromises: Array<Promise<string>> = [];
+    let uploadPromises: Array<Promise<boolean>> = [];
     let uploadStatus: Array<UploadStatus> = [];
 
     datafiles.forEach((file: UploadFile, i: number) => {
@@ -227,14 +234,14 @@ export class UploadTracker {
           progressMessage: "Attempting to pointer to GCS object"
         };
         let p = this.addGCSPointer(file.name, file.gcsPath, sid)
-          .then(datafileId => {
+          .then(() => {
             this.displayStatusUpdate("Added pointer to GCS object", 100, i);
-            return datafileId;
+            return true;
           })
           .catch(reason => {
             console.log("failure", reason);
             this.displayStatusUpdate("" + reason, 0, i);
-            throw "Create dataset failed";
+            return false;
           });
         uploadPromises.push(p);
       } else {
@@ -246,15 +253,15 @@ export class UploadTracker {
 
         // perform the attach
         let p = this.associateExistingFile(file.name, file.existingTaigaId, sid)
-          .then(datafileId => {
+          .then(() => {
             this.displayStatusUpdate("Added existing file", 100, i);
             // update the status after successful adding to upload session
-            return datafileId;
+            return true;
           })
           .catch(reason => {
             console.log("failure", reason);
             this.displayStatusUpdate("" + reason, 0, i);
-            throw "Create dataset failed";
+            return false;
           });
         uploadPromises.push(p);
       }
@@ -266,7 +273,11 @@ export class UploadTracker {
     // console.log("kicking off upload of " + uploadPromises.length + " files");
 
     return Promise.all(uploadPromises).then(
-      (datafile_ids: string[]): Promise<DatasetIdAndVersionId> => {
+      (successes: Array<boolean>): Promise<DatasetIdAndVersionId> => {
+        if (!successes.every(Boolean)) {
+          return null;
+        }
+
         if ((params as any).datasetId) {
           let p = params as CreateVersionParams;
           return this.getTapi()
@@ -315,29 +326,38 @@ export class UploadTracker {
     this.uploadProgressCallback(this.uploadStatus);
   }
 
-  waitForConversion(fileIndex: number, taskId: string) {
+  waitForConversion(fileIndex: number, taskId: string): Promise<boolean> {
+    // returns a delayed boolean which indicates whether the conversion was successful or not
+    let isSuccessful = false;
+
     return pollFunction(1000, () => {
       return this.getTapi()
         .get_task_status(taskId)
         .then((new_status: TaskStatus) => {
-          return this.checkOrContinue(new_status, fileIndex);
+          let status = this.checkOrContinue(new_status, fileIndex);
+          if (!status.keepPolling) {
+            isSuccessful = status.isSuccessful;
+          }
+          return Promise.resolve(status.keepPolling);
         });
+    }).then((): boolean => {
+      return isSuccessful;
     });
   }
 
-  checkOrContinue(status: TaskStatus, fileIndex: number): Promise<boolean> {
+  checkOrContinue(status: TaskStatus, fileIndex: number): ConversionStatus {
     // If status == SUCCESS, return the last check
     // If status != SUCCESS, wait 1 sec and check again
     // TODO: Make an enum from the task state
 
     if (status.state == "SUCCESS") {
       this.displayStatusUpdate(status.message, 100, fileIndex);
-      return Promise.resolve(false);
+      return { keepPolling: false, isSuccessful: true };
     } else if (status.state == "FAILURE") {
       // TODO: Make an exception class to manage properly the message
       status.message = "FAILURE: " + status.message;
       this.displayStatusUpdate(status.message, 0, fileIndex);
-      return Promise.resolve(false);
+      return { keepPolling: false, isSuccessful: false };
     } else {
       let progress = (100 * status.current) / status.total;
       if (status.total === 0) {
@@ -345,7 +365,7 @@ export class UploadTracker {
       }
 
       this.displayStatusUpdate(status.message, progress, fileIndex);
-      return Promise.resolve(true);
+      return { keepPolling: true };
     }
   }
 

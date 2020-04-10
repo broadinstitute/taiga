@@ -319,8 +319,12 @@ class UploadDialog extends React.Component<
                 this.uploadProgressCallback(status)
               )
               .then(newDatasetVersion => {
-                // after a successful upload, set the newDatasetVersion which will give us a link to see it.
-                this.setState({ newDatasetVersion: newDatasetVersion });
+                if (newDatasetVersion === null) {
+                  this.setState({ error: "File conversion failed" });
+                } else {
+                  // after a successful upload, set the newDatasetVersion which will give us a link to see it.
+                  this.setState({ newDatasetVersion: newDatasetVersion });
+                }
               })
               .catch(error => {
                 this.setState({ error: "" + error });
