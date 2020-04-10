@@ -39,6 +39,10 @@ def _get_csv_dims(progress, filename, dialect, encoding):
             message += " Try using a different delimeter."
         progress.failed(message, None)
         raise Exception(message)
+    except StopIteration as e:
+        message = "This file appears to be empty."
+        progress.failed(message, None)
+        raise Exception(message)
     return row_count, len(first_row) - 1, sha256, md5
 
 
