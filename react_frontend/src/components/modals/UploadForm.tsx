@@ -238,6 +238,11 @@ class UploadDialog extends React.Component<
 
   render() {
     let validationError = null as string;
+
+    if (this.props.showChangesField && !this.state.changesDescription) {
+      validationError = "Description of changes cannot be empty";
+    }
+
     if (!this.props.datasetId && !isNonempty(this.state.datasetName)) {
       validationError = "Dataset name is required";
     } else if (this.state.uploadFiles.length == 0) {
