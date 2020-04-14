@@ -90,6 +90,8 @@ paths:
                       "$ref": "#/definitions/NamedId"
               acl:
                 "$ref": "#/definitions/Acl"
+        404:
+          description: No folder found with the id provided
 
   /folder/create:
     post:
