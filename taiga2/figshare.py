@@ -142,7 +142,7 @@ def complete_upload(article_id: int, file_id: str, token: str):
     )
 
 
-def get_public_article_information(article_id: int):
+def get_public_article_information(article_id: str):
     return issue_request("GET", "articles/{}".format(article_id), "")
 
 
@@ -171,3 +171,7 @@ def get_private_article_information(
             token,
         )
     return None
+
+
+def get_public_article_files(article_id: str):
+    return issue_request("GET", "articles/{}/files".format(article_id), "")

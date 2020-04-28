@@ -2142,4 +2142,19 @@ def add_figshare_datafile_link(
     return figshare_datafile_link
 
 
+def get_figshare_datafile_links_for_dataset_version_link(
+    figshare_dataset_version_link_id: str,
+) -> List[FigshareDataFileLink]:
+    figshare_datafile_links = (
+        db.session.query(FigshareDataFileLink)
+        .filter(
+            FigshareDataFileLink.figshare_dataset_version_link_id
+            == figshare_dataset_version_link_id
+        )
+        .all()
+    )
+
+    return figshare_datafile_links
+
+
 # </editor-fold

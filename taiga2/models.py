@@ -391,7 +391,7 @@ class DatasetVersion(Entry):
 
     dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
 
-    dataset = db.relationship(
+    dataset: Dataset = db.relationship(
         "Dataset",
         foreign_keys=[dataset_id],
         backref=db.backref(__tablename__),

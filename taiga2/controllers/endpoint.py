@@ -5,6 +5,7 @@ import sys
 import time
 import urllib
 import re
+from io import BytesIO
 from typing import List, Dict
 from typing_extensions import TypedDict
 
@@ -1294,7 +1295,7 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
 
 
 @validate
-def get_figshare_public_url(datasetVersionId):
+def get_figshare_url(datasetVersionId):
     dataset_version = models_controller.get_dataset_version(datasetVersionId)
     if not dataset_version.figshare_dataset_version_link:
         flask.abort(404)
@@ -1302,7 +1303,9 @@ def get_figshare_public_url(datasetVersionId):
         article_info = figshare.get_public_article_information(
             dataset_version.figshare_dataset_version_link.figshare_article_id
         )
-        return flask.jsonify({"figshare_public_url": article_info["url_public_html"]})
+        return flask.jsonify(
+            {"figshare_url": article_info["url_public_html"], "public": True}
+        )
     except HTTPError as error:
         print(error)
         try:
@@ -1312,7 +1315,54 @@ def get_figshare_public_url(datasetVersionId):
             if article_info is None:
                 flask.abort(404)
             return flask.jsonify(
-                {"figshare_public_url": article_info["url_private_html"]}
+                {"figshare_url": article_info["url_private_html"], "public": False}
             )
         except HTTPError as error:
-            return flask.abort(404)
+            return flask.jsonify({"figshare_url": None, "public": False})
+
+
+def get_figshare_links_for_client(datasetVersionId: str):
+    dataset_version = models_controller.get_dataset_version(datasetVersionId)
+    if not dataset_version.figshare_dataset_version_link:
+        flask.abort(404)
+
+    try:
+        article_files = figshare.get_public_article_files(
+            dataset_version.figshare_dataset_version_link.figshare_article_id
+        )
+
+        figshare_file_ids_to_download_url = {
+            f["id"]: f["download_url"] for f in article_files
+        }
+        figshare_datafile_links = models_controller.get_figshare_datafile_links_for_dataset_version_link(
+            dataset_version.figshare_dataset_version_link.id
+        )
+
+        taiga_figshare_map = {
+            "{}.{}/{}".format(
+                dataset_version.dataset.permaname,
+                dataset_version.version,
+                l.datafile.name,
+            ): {
+                "download_url": figshare_file_ids_to_download_url[l.figshare_file_id],
+                "encoding": l.datafile.encoding
+                if l.datafile.type == "s3"
+                else l.datafile.underlying_data_file.encoding,
+                "column_types": l.datafile.column_types_as_json
+                if l.datafile.type == "s3"
+                else l.datafile.underlying_data_file.column_types_as_json,
+            }
+            for l in figshare_datafile_links
+        }
+
+        buffer = BytesIO()
+        buffer.write(json.dumps(taiga_figshare_map).encode())
+        buffer.seek(0)
+        return flask.send_file(
+            buffer,
+            as_attachment=True,
+            attachment_filename="taiga_figshare_map.json",
+            mimetype="application/json",
+        )
+    except HTTPError as error:
+        flask.abort(404)

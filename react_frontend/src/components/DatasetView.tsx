@@ -13,7 +13,6 @@ import { TaigaApi } from "../models/api";
 
 import * as Dialogs from "./Dialogs";
 import { CreateDatasetDialog, CreateVersionDialog } from "./modals/UploadForm";
-import UploadToFigshare from "./modals/UploadToFigshare";
 
 import { toLocalDateString } from "../utilities/formats";
 import { LoadingOverlay } from "../utilities/loading";
@@ -39,6 +38,7 @@ import {
 } from "../models/models";
 import ClipboardButton from "../utilities/r-clipboard";
 import { UploadTracker } from "./UploadTracker";
+import FigshareSection from "./dataset_view/FigshareSection";
 
 interface DatasetViewMatchParams {
   datasetId: string;
@@ -85,8 +85,6 @@ export interface DatasetViewState {
   showUploadToFigshare?: boolean;
 
   activityLog?: Array<ActivityLogEntry>;
-
-  figshare_public_url?: string;
 }
 
 const buttonUploadNewVersionStyle = {
@@ -153,14 +151,9 @@ export class DatasetView extends React.Component<
 
         this.getActivityLog();
 
-        if (this.state.datasetVersion.figshare_linked) {
-          this.getFigshareUrl();
-        }
-
         // We close the modal
         this.setState({
           showUploadDataset: false,
-          showUploadToFigshare: false,
           loading: false,
           exportError: false,
         });
@@ -184,10 +177,6 @@ export class DatasetView extends React.Component<
         this.logAccess();
 
         this.getActivityLog();
-
-        if (this.state.datasetVersion.figshare_linked) {
-          this.getFigshareUrl();
-        }
 
         this.setLoading(false);
 
@@ -298,12 +287,6 @@ export class DatasetView extends React.Component<
       .then((r: Array<ActivityLogEntry>) => {
         this.setState({ activityLog: r });
       });
-  }
-
-  getFigshareUrl() {
-    this.getTapi()
-      .get_figshare_article_public_url(this.state.datasetVersion.id)
-      .then((v) => this.setState(v));
   }
 
   updateName(name: string) {
@@ -592,30 +575,6 @@ export class DatasetView extends React.Component<
           // Change the labels on the right. Remove deprecation and remove deletion
           this.doFetch();
         });
-    }
-  }
-
-  // Figshare
-  showUploadToFigshare() {
-    this.setState({ showUploadToFigshare: true });
-  }
-
-  handleCloseUploadToFigshare(
-    uploadComplete: boolean,
-    figsharePrivateUrl: string
-  ) {
-    if (uploadComplete) {
-      this.doFetch().then(() => {
-        this.setState({
-          showUploadToFigshare: false,
-          figshare_public_url: figsharePrivateUrl,
-        });
-      });
-    } else {
-      this.setState({
-        showUploadToFigshare: false,
-        figshare_public_url: figsharePrivateUrl,
-      });
     }
   }
 
@@ -1112,19 +1071,6 @@ export class DatasetView extends React.Component<
               />
             )}
 
-            <UploadToFigshare
-              tapi={this.props.tapi}
-              handleClose={(uploadComplete, figsharePrivateUrl) =>
-                this.handleCloseUploadToFigshare(
-                  uploadComplete,
-                  figsharePrivateUrl
-                )
-              }
-              show={this.state.showUploadToFigshare}
-              userFigshareLinked={this.props.user.figshare_linked}
-              datasetVersion={this.state.datasetVersion}
-            />
-
             <Dialogs.InputFolderId
               actionDescription="Link this dataset into the chosen folder"
               isVisible={this.state.showInputFolderId}
@@ -1212,32 +1158,6 @@ export class DatasetView extends React.Component<
                   </div>
                 )}
 
-                {this.state.datasetVersion.figshare_linked ? (
-                  this.state.figshare_public_url ? (
-                    <Button
-                      bsSize="xs"
-                      bsStyle="link"
-                      href={this.state.figshare_public_url}
-                      target="_blank"
-                    >
-                      See the Figshare article created from this dataset version{" "}
-                      <i className="fa fa-external-link" aria-hidden="true"></i>
-                    </Button>
-                  ) : (
-                    <Button bsSize="xs" bsStyle="link" disabled={true}>
-                      This dataset version is linked to a private article on
-                      Figshare.
-                    </Button>
-                  )
-                ) : (
-                  <Button
-                    bsSize="xs"
-                    onClick={() => this.showUploadToFigshare()}
-                  >
-                    Upload to Figshare
-                  </Button>
-                )}
-
                 {this.state.datasetVersion.description &&
                   Dialogs.renderDescription(
                     this.state.datasetVersion.description
@@ -1285,6 +1205,12 @@ export class DatasetView extends React.Component<
                 </h2>
                 <pre>{python_block}</pre>
 
+                <FigshareSection
+                  tapi={this.props.tapi}
+                  handleFigshareUploadComplete={this.doFetch.bind(this)}
+                  datasetVersion={this.state.datasetVersion}
+                  userFigshareAccountId={this.props.user.figshare_account_id}
+                />
                 {this.renderActivityLog()}
               </span>
             )}

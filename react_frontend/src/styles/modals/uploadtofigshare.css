@@ -9,3 +9,8 @@
 .textarea-lock-width {
   resize: vertical;
 }
+
+.update-figshare-body {
+  max-height: 75vh;
+  overflow-y: auto;
+}

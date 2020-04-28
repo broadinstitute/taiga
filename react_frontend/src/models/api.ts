@@ -418,9 +418,9 @@ export class TaigaApi {
     });
   }
 
-  get_figshare_article_public_url(
+  get_figshare_article_url(
     datasetVersionId: string
-  ): Promise<{ figshare_public_url: string }> {
+  ): Promise<{ figshare_url: string; public: boolean }> {
     return this._fetch(`/figshare/article/${datasetVersionId}`);
   }
 }

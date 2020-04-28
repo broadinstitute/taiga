@@ -1478,9 +1478,41 @@ paths:
 
   /figshare/article/{datasetVersionId}:
     get:
-      description: Return public url for figshare article associated with dataset version
+      description: Return a url for figshare article associated with dataset version
       x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_figshare_public_url
+      operationId: get_figshare_url
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetVersionId
+          in: path
+          type: string
+          description: dataset version ID
+          required: true
+      responses:
+        200:
+          description: Fig
+          schema:
+            type: object
+            required:
+              - figshare_url
+              - public
+            properties:
+              figshare_url:
+                type:
+                  - string
+                  - "null"
+                description: The public URL for the Figshare article if available, or the private URL if available
+              public:
+                type: boolean
+        404:
+          description: No article found
+
+  /figshare/download_mapping/{datasetVersionId}:
+    get:
+      description: Return a mapping of Taiga IDs to Figshare download URLs for a linked dataset version, to be consumed by Taiga clients
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_figshare_links_for_client
       consumes:
         - application/json
       parameters:
@@ -1512,7 +1544,7 @@ definitions:
       - home_folder_id
       - trash_folder_id
       - token
-      - figshare_linked
+      - figshare_account_id
     properties:
       id:
         type: string
@@ -1524,8 +1556,10 @@ definitions:
         type: string
       token:
         type: string
-      figshare_linked:
-        type: boolean
+      figshare_account_id:
+        type:
+          - integer
+          - "null"
 
   DatasetVersionSummary:
     title: DatasetVersionSummary

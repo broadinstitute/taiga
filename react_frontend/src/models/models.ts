@@ -93,7 +93,7 @@ export interface User {
   home_folder_id: string;
   trash_folder_id: string;
   token: string;
-  figshare_linked: boolean;
+  figshare_account_id: number;
 }
 
 export interface UserNamedId {
