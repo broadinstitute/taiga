@@ -744,16 +744,19 @@ class ThirdPartyDatasetVersionLink(db.Model):
 class FigshareDatasetVersionLink(ThirdPartyDatasetVersionLink):
     __tablename__ = "figshare_dataset_version_links"
 
-    id = db.Column(
+    id: str = db.Column(
         GUID, db.ForeignKey("third_party_dataset_version_links.id"), primary_key=True
     )
-    figshare_article_id = db.Column(db.Integer, nullable=False)
-    dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
-    dataset_version = db.relationship(
+    figshare_article_id: int = db.Column(db.Integer, nullable=False)
+    figshare_article_version: int = db.Column(db.Integer, nullable=False)
+    dataset_version_id: str = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
+    dataset_version: DatasetVersion = db.relationship(
         "DatasetVersion",
         backref=backref("figshare_dataset_version_link", uselist=False),
     )
-    figshare_datafile_links = db.relationship("FigshareDataFileLink")
+    figshare_datafile_links: List["FigshareDataFileLink"] = db.relationship(
+        "FigshareDataFileLink"
+    )
     __mapper_args__ = {"polymorphic_identity": "figshare"}
 
 

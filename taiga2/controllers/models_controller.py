@@ -2112,11 +2112,12 @@ def remove_figshare_token(figshare_authorization_id: str):
 
 
 def add_figshare_dataset_version_link(
-    dataset_version_id: str, figshare_article_id: int
+    dataset_version_id: str, figshare_article_id: int, figshare_article_version: int
 ):
     current_user = get_current_session_user()
     figshare_dataset_version_link = FigshareDatasetVersionLink(
         figshare_article_id=figshare_article_id,
+        figshare_article_version=figshare_article_version,
         dataset_version_id=dataset_version_id,
         creator_id=current_user.id,
     )

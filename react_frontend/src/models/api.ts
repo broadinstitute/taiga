@@ -418,6 +418,33 @@ export class TaigaApi {
     });
   }
 
+  update_figshare_article(
+    article_id: number,
+    current_article_version: number,
+    dataset_version_id: string,
+    files_to_upload: Array<{
+      figshare_file_id: number;
+      action: string;
+      datafile_id: string;
+      file_name: string;
+    }>
+  ): Promise<{
+    article_id: number;
+    files: Array<{
+      datafile_id: string;
+      file_name: string;
+      failure_reason?: string;
+      task_id?: string;
+    }>;
+  }> {
+    return this._post("/figshare/update_article", {
+      article_id,
+      current_article_version,
+      dataset_version_id,
+      files_to_upload,
+    });
+  }
+
   get_figshare_article_url(
     datasetVersionId: string
   ): Promise<{ figshare_url: string; public: boolean }> {

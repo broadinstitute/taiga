@@ -69,7 +69,7 @@ def create_article(dataset_version_id: str, title: str, description: str, token:
 
     result = raw_issue_request("GET", result["location"], token)
 
-    return mc.add_figshare_dataset_version_link(dataset_version_id, result["id"])
+    return mc.add_figshare_dataset_version_link(dataset_version_id, result["id"], 1)
 
 
 def get_file_check_data(download_dest: IO, compressed_s3_key: str, md5: Optional[str]):
@@ -142,8 +142,20 @@ def complete_upload(article_id: int, file_id: str, token: str):
     )
 
 
-def get_public_article_information(article_id: str):
-    return issue_request("GET", "articles/{}".format(article_id), "")
+def delete_file(article_id: int, file_id: int, token: str):
+    return issue_request(
+        "DELETE",
+        "account/articles/{article_id}/files/{file_id}".format(
+            article_id=article_id, file_id=file_id
+        ),
+        token,
+    )
+
+
+def get_public_article_information(article_id: str, article_version: int):
+    return issue_request(
+        "GET", "articles/{}/versions/{}".format(article_id, article_version), ""
+    )
 
 
 def get_private_article_information(

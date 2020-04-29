@@ -1448,7 +1448,88 @@ paths:
                       type: string
       responses:
         200:
-          description: An existing authorization was updated
+          description: Link created
+          schema:
+            type: object
+            required:
+              - article_id
+              - files
+            properties:
+              article_id:
+                type: integer
+              files:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - datafile_id
+                    - file_name
+                  properties:
+                    datafile_id:
+                      type: string
+                    file_name:
+                      type: string
+                    task_id:
+                      type: string
+                    failure_reason:
+                      type: string
+        401:
+          description: TODO (token does not work)
+
+  /figshare/update_article:
+    post:
+      description: Update a public article on Figshare with files from a dataset version
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: update_figshare_article_with_dataset_version
+      consumes:
+        - application/json
+      parameters:
+        - name: figshareDatasetVersionLink
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - dataset_version_id
+              - article_id
+              - current_article_version
+              - files_to_upload
+            properties:
+              dataset_version_id:
+                type: string
+              article_id:
+                type: integer
+              current_article_version:
+                type: integer
+              files_to_upload:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - figshare_file_id
+                    - action
+                    - datafile_id
+                    - file_name
+                  properties:
+                    figshare_file_id:
+                      description: If removing or replacing a file, the Figshare file id to update
+                      type:
+                        - string
+                        - "null"
+                    action:
+                      description: Whether to add, remove, or replace a file
+                      type: string
+                    datafile_id:
+                      description: If adding or replacing a file, the Taiga datafile id to upload
+                      type:
+                        - string
+                        - "null"
+                    file_name:
+                      description: If adding a file, the name to use in the article (replacing a file will keep old file name)
+                      type: string
+      responses:
+        200:
+          description: Link created
           schema:
             type: object
             required:

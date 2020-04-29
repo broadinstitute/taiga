@@ -7,7 +7,6 @@ import urllib
 import re
 from io import BytesIO
 from typing import List, Dict
-from typing_extensions import TypedDict
 
 from .endpoint_validation import validate
 
@@ -19,7 +18,12 @@ from requests.exceptions import HTTPError
 import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 import taiga2.conv as conversion
-from taiga2.models import DataFile, normalize_name, SearchResult
+from taiga2.models import (
+    DataFile,
+    normalize_name,
+    SearchResult,
+    FigshareDatasetVersionLink,
+)
 from taiga2.controllers.models_controller import DataFileAlias
 from taiga2.models import S3DataFile
 
@@ -1225,6 +1229,28 @@ def add_figshare_token(figshareOAuthRequest):
         return flask.abort(400)
 
 
+def _fetch_figshare_token() -> str:
+    """Validates, refreshes if necessary, and returns Figshare token for current user."""
+    figshare_authorization = (
+        models_controller.get_figshare_authorization_for_current_user()
+    )
+    if figshare_authorization is None:
+        return None
+
+    token, refresh_token = figshare.validate_token(
+        figshare_authorization.token, figshare_authorization.refresh_token
+    )
+    if token is None:
+        models_controller.remove_figshare_token(figshare_authorization.id)
+        return None
+
+    if token != figshare_authorization.token:
+        figshare_authorization = models_controller.update_figshare_token(
+            figshare_authorization.id, token, refresh_token
+        )
+    return token
+
+
 @validate
 def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
     dataset_version_id = figshareDatasetVersionLink["dataset_version_id"]
@@ -1232,23 +1258,9 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
     article_description = figshareDatasetVersionLink["article_description"]
     files_to_upload = figshareDatasetVersionLink["files_to_upload"]
 
-    figshare_authorization = (
-        models_controller.get_figshare_authorization_for_current_user()
-    )
-    if figshare_authorization is None:
-        flask.abort(401)
-
-    token, refresh_token = figshare.validate_token(
-        figshare_authorization.token, figshare_authorization.refresh_token
-    )
+    token = _fetch_figshare_token()
     if token is None:
-        models_controller.remove_figshare_token(figshare_authorization.id)
         flask.abort(401)
-
-    if token != figshare_authorization.token:
-        figshare_authorization = models_controller.update_figshare_token(
-            figshare_authorization.id, token, refresh_token
-        )
 
     dataset_version = models_controller.get_dataset_version(dataset_version_id)
     figshare_dataset_version_link = figshare.create_article(
@@ -1257,6 +1269,8 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
         article_description,
         figshare_authorization.token,
     )
+
+    from taiga2.tasks import upload_datafile_to_figshare
 
     for file_to_upload in files_to_upload:
         datafile = models_controller.get_datafile(file_to_upload["datafile_id"])
@@ -1271,8 +1285,6 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
                 "failure_reason"
             ] = "Cannot upload files without compressed S3 file"
             continue
-
-        from taiga2.tasks import upload_datafile_to_figshare
 
         task = upload_datafile_to_figshare.delay(
             figshare_dataset_version_link.figshare_article_id,
@@ -1295,22 +1307,81 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
 
 
 @validate
+def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
+    dataset_version_id = figshareDatasetVersionLink["dataset_version_id"]
+    article_id = figshareDatasetVersionLink["article_id"]
+    current_article_version = figshareDatasetVersionLink["current_article_version"]
+    files_to_update = figshareDatasetVersionLink["files_to_update"]
+
+    token = _fetch_figshare_token()
+    if token is None:
+        flask.abort(401)
+
+    dataset_version = models_controller.get_dataset_version(dataset_version_id)
+    figshare_dataset_version_link = models_controller.add_figshare_dataset_version_link(
+        dataset_version.id, article_id, current_article_version + 1
+    )
+
+    from taiga2.tasks import upload_datafile_to_figshare
+
+    for file_to_update in files_to_update:
+        datafile = models_controller.get_datafile(file_to_update["datafile_id"])
+        if datafile.type == "gcs":
+            file_to_update["failure_reason"] = "Cannot upload GCS pointer files"
+            continue
+        elif datafile.type == "virtual":
+            datafile = datafile.underlying_data_file
+
+        if datafile.compressed_s3_key is None:
+            file_to_update[
+                "failure_reason"
+            ] = "Cannot upload files without compressed S3 file"
+            continue
+
+        if file_to_update["action"] in {"Delete", "Replace"}:
+            figshare.delete_file(article_id, file_to_update["figshare_file_id"])
+
+        if file_to_update["action"] in {"Add", "Replace"}:
+            task = upload_datafile_to_figshare.delay(
+                figshare_dataset_version_link.figshare_article_id,
+                figshare_dataset_version_link.id,
+                file_to_update["file_name"],
+                file_to_update["datafile_id"],
+                datafile.compressed_s3_key,
+                datafile.original_file_md5,
+                figshare_authorization.token,
+            )
+
+            file_to_update["task_id"] = task.id
+
+    return flask.jsonify(
+        {
+            "article_id": figshare_dataset_version_link.figshare_article_id,
+            "files": files_to_update,
+        }
+    )
+
+
+@validate
 def get_figshare_url(datasetVersionId):
     dataset_version = models_controller.get_dataset_version(datasetVersionId)
-    if not dataset_version.figshare_dataset_version_link:
+    figshare_dataset_version_link = (
+        dataset_version.figshare_dataset_version_link
+    )  # type: FigshareDatasetVersionLink
+    if figshare_dataset_version_link is None:
         flask.abort(404)
     try:
         article_info = figshare.get_public_article_information(
-            dataset_version.figshare_dataset_version_link.figshare_article_id
+            figshare_dataset_version_link.figshare_article_id,
+            figshare_dataset_version_link.figshare_article_version,
         )
         return flask.jsonify(
             {"figshare_url": article_info["url_public_html"], "public": True}
         )
     except HTTPError as error:
-        print(error)
         try:
             article_info = figshare.get_private_article_information(
-                dataset_version.figshare_dataset_version_link
+                figshare_dataset_version_link
             )
             if article_info is None:
                 flask.abort(404)

@@ -22,11 +22,12 @@ import { TaigaApi } from "../../models/api";
 import { relativePath } from "../../utilities/route";
 
 import "../../styles/modals/uploadtofigshare.css";
-import { fdatasync } from "fs";
 
 type UpdateAction = "Keep" | "Replace" | "Delete" | "Add";
 
 type FigshareArticleResponse = {
+  id: number;
+  version: number;
   authors: Array<{
     full_name: string;
     id: number;
@@ -191,32 +192,54 @@ export default class UpdateFigshare extends React.Component<Props, State> {
   };
 
   handleUploadToFigshare() {
-    // this.props.tapi
-    //   .upload_dataset_version_to_figshare(
-    //     this.props.datasetVersion.id,
-    //     this.state.articleTitle,
-    //     this.state.articleDescription,
-    //     this.state.filesToUpload
-    //       .filter((fileToUpload) => fileToUpload.include)
-    //       .map((fileToUpload) => {
-    //         return {
-    //           datafile_id: fileToUpload.datafileId,
-    //           file_name: fileToUpload.figshareFileName,
-    //         };
-    //       })
-    //   )
-    //   .then((value) => {
-    //     this.setState({ uploadResults: value });
-    //     value.files.forEach((file, i) => {
-    //       if (file.task_id) {
-    //         this.pollUploadToFigshareFile(i, file.task_id);
-    //       }
-    //     });
-    //   })
-    //   .catch((value) => {
-    //     console.log("failure");
-    //     console.log(value);
-    //   });
+    this.props.tapi
+      .update_figshare_article(
+        this.state.figshareArticleInfo.id,
+        this.state.figshareArticleInfo.version,
+        this.props.datasetVersion.id,
+        this.state.filesToUpdate
+          .filter((f) => f.action != "Keep")
+          .map((f) => {
+            return {
+              figshare_file_id: f.figshareFileId,
+              action: f.action,
+              datafile_id: f.datafileId,
+              file_name: f.name,
+            };
+          })
+      )
+      .then((uploadResults) => {
+        this.setState({
+          uploadResults: {
+            article_id: uploadResults.article_id,
+            files: uploadResults.files.map((r) => {
+              if (!r.task_id && !r.failure_reason) {
+                return {
+                  ...r,
+                  taskStatus: {
+                    id: null,
+                    state: "SUCCESS",
+                    message: null,
+                    current: 1,
+                    total: 1,
+                    s3Key: null,
+                  },
+                };
+              }
+              return r;
+            }),
+          },
+        });
+        uploadResults.files.forEach((file, i) => {
+          if (file.task_id) {
+            this.pollUploadToFigshareFile(i, file.task_id);
+          }
+        });
+      })
+      .catch((value) => {
+        console.log("failure");
+        console.log(value);
+      });
   }
 
   pollUploadToFigshareFile(i: number, taskId: string) {
