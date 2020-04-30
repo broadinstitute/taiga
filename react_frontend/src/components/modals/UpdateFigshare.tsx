@@ -24,6 +24,12 @@ import { relativePath } from "../../utilities/route";
 import "../../styles/modals/uploadtofigshare.css";
 
 type UpdateAction = "Keep" | "Replace" | "Delete" | "Add";
+type FileToUpdate = {
+  figshareFileId: number;
+  name: string;
+  datafileId: string;
+  action: UpdateAction;
+};
 
 type FigshareArticleResponse = {
   id: number;
@@ -52,12 +58,7 @@ type State = {
   figshareArticleInfo: FigshareArticleResponse;
   fetchingArticle: boolean;
 
-  filesToUpdate: Array<{
-    figshareFileId: number;
-    name: string;
-    datafileId: string;
-    action: UpdateAction;
-  }>;
+  filesToUpdate: Array<FileToUpdate>;
 
   uploadResults?: {
     article_id: number;
@@ -120,8 +121,8 @@ export default class UpdateFigshare extends React.Component<Props, State> {
   }
 
   handleFileActionChange(i: number, action: UpdateAction) {
+    // @ts-ignore
     this.setState({
-      // @ts-ignore
       filesToUpdate: update(this.state.filesToUpdate, {
         [i]: { action: { $set: action }, datafileId: { $set: null } },
       }),
@@ -129,8 +130,8 @@ export default class UpdateFigshare extends React.Component<Props, State> {
   }
 
   handleFileReplaceDatafileChange(i: number, datafileId: string) {
+    // @ts-ignore
     this.setState({
-      // @ts-ignore
       filesToUpdate: update(this.state.filesToUpdate, {
         [i]: { datafileId: { $set: datafileId } },
       }),
@@ -138,8 +139,8 @@ export default class UpdateFigshare extends React.Component<Props, State> {
   }
 
   handleAddNewFile = () => {
+    // @ts-ignore
     this.setState({
-      // @ts-ignore
       filesToUpdate: update(this.state.filesToUpdate, {
         $push: [
           {
@@ -154,8 +155,8 @@ export default class UpdateFigshare extends React.Component<Props, State> {
   };
 
   handleNewFileNameChange(i: number, name: string) {
+    // @ts-ignore
     this.setState({
-      // @ts-ignore
       filesToUpdate: update(this.state.filesToUpdate, {
         [i]: { name: { $set: name } },
       }),
@@ -163,8 +164,8 @@ export default class UpdateFigshare extends React.Component<Props, State> {
   }
 
   handleRemoveNewFile(i: number) {
+    // @ts-ignore
     this.setState({
-      // @ts-ignore
       filesToUpdate: update(this.state.filesToUpdate, { $splice: [[i, 1]] }),
     });
   }
@@ -183,7 +184,7 @@ export default class UpdateFigshare extends React.Component<Props, State> {
                 name: file.name,
                 datafileId: null,
                 action: "Keep",
-              };
+              } as FileToUpdate;
             }),
           })
         )
@@ -247,7 +248,6 @@ export default class UpdateFigshare extends React.Component<Props, State> {
       .get_task_status(taskId)
       .then((newStatus: Models.TaskStatus) => {
         this.setState(
-          // @ts-ignore
           {
             uploadResults: update(this.state.uploadResults, {
               files: {
@@ -593,7 +593,11 @@ export default class UpdateFigshare extends React.Component<Props, State> {
         <Modal.Header closeButton>
           <Modal.Title>Update Figshare Article</Modal.Title>
         </Modal.Header>
-        <Modal.Body bsClass="modal-body update-figshare-body">
+
+        <Modal.Body
+          // @ts-ignore
+          bsClass="modal-body update-figshare-body"
+        >
           {this.renderModalBodyContent()}
         </Modal.Body>
         <Modal.Footer>
