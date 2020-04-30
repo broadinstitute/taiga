@@ -97,6 +97,21 @@ export class TaigaApi {
       });
   }
 
+  _delete<T>(url: string): Promise<T> {
+    return fetch(this.baseUrl + url, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: this.authHeaders.auth,
+      },
+    })
+      .then((response: Response) => this._checkResponse(response))
+      .then<T>((response: Response) => {
+        return response.json();
+      });
+  }
+
   get_user(): Promise<User> {
     return this._fetch<User>("/user");
   }
@@ -449,5 +464,13 @@ export class TaigaApi {
     datasetVersionId: string
   ): Promise<{ figshare_url: string; public: boolean }> {
     return this._fetch(`/figshare/article/${datasetVersionId}`);
+  }
+
+  add_subscription(dataset_id: string): Promise<string> {
+    return this._put(`/subscription`, dataset_id);
+  }
+
+  delete_subscription(dataset_id: string): Promise<boolean> {
+    return this._delete(`/subscription/${dataset_id}`);
   }
 }

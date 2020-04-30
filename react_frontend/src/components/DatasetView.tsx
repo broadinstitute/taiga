@@ -578,6 +578,30 @@ export class DatasetView extends React.Component<
     }
   }
 
+  handleSubscribe = () => {
+    this.props.tapi
+      .add_subscription(this.state.dataset.id)
+      .then((subscription_id) =>
+        this.setState({
+          dataset: update(this.state.dataset, {
+            subscription_id: { $set: subscription_id },
+          }),
+        })
+      );
+  };
+
+  handleUnsubscribe = () => {
+    this.props.tapi
+      .delete_subscription(this.state.dataset.subscription_id)
+      .then(() =>
+        this.setState({
+          dataset: update(this.state.dataset, {
+            subscription_id: { $set: null },
+          }),
+        })
+      );
+  };
+
   getCopyButton(datafile: Models.DatasetVersionDatafiles) {
     if (this.state.datasetVersion.state !== StatusEnum.Deleted) {
       let dataset = this.state.dataset;
@@ -910,6 +934,18 @@ export class DatasetView extends React.Component<
           this.setState({ showShareDatasetVersion: true });
         },
       });
+
+      if (!!dataset) {
+        dataset.subscription_id
+          ? navItems.push({
+              label: "Unsubscribe",
+              action: this.handleUnsubscribe,
+            })
+          : navItems.push({
+              label: "Subscribe",
+              action: this.handleSubscribe,
+            });
+      }
 
       // TODO: Look into why we are here despite the fact dataset is undefined
       if (dataset && dataset.can_edit) {

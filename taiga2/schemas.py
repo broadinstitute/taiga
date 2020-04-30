@@ -215,6 +215,9 @@ class DatasetSchema(ma.ModelSchema):
     # `Method` takes a method name (str), Function takes a callable
     can_edit = fields.fields.Method("check_edition")
     can_view = fields.fields.Method("check_view")
+    subscription_id = fields.fields.Function(
+        lambda _, context: context["subscription_id"]
+    )
 
     def check_edition(self, dataset):
         """Check with the context if we can edit"""

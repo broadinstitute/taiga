@@ -34,12 +34,14 @@ from taiga2.models import (
     FigshareAuthorization,
     FigshareDatasetVersionLink,
     FigshareDataFileLink,
+    DatasetSubscription,
 )
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
 from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
 from taiga2.models import Group, EntryRightsEnum, resolve_virtual_datafile
 from taiga2.models import SearchResult, SearchEntry, Breadcrumb
+from taiga2.dataset_subscriptions import send_emails_for_dataset
 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
@@ -333,6 +335,8 @@ def add_dataset_from_session(
     )
     db.session.add(activity)
     db.session.commit()
+
+    add_dataset_subscription(added_dataset.id)
 
     return added_dataset
 
@@ -765,6 +769,11 @@ def create_new_dataset_version_from_session(
     )
     db.session.add(activity)
     db.session.commit()
+
+    dataset_subscriptions = get_dataset_subscriptions_for_dataset(dataset_id)
+    if not any(ds.user_id == current_user.id for ds in dataset_subscriptions):
+        add_dataset_subscription(dataset_id)
+    send_emails_for_dataset(dataset_id, current_user.id)
 
     return new_dataset_version
 
@@ -2158,4 +2167,69 @@ def get_figshare_datafile_links_for_dataset_version_link(
     return figshare_datafile_links
 
 
-# </editor-fold
+def get_dataset_subscription(subscription_id: str) -> Optional[DatasetSubscription]:
+    return (
+        db.session.query(DatasetSubscription)
+        .filter(DatasetSubscription.id == subscription_id)
+        .one_or_none()
+    )
+
+
+def get_dataset_subscriptions_for_user(user_id: str) -> List[DatasetSubscription]:
+    return (
+        db.session.query(DatasetSubscription)
+        .filter(DatasetSubscription.user_id == user_id)
+        .all()
+    )
+
+
+def get_dataset_subscriptions_for_dataset(dataset_id: str) -> List[DatasetSubscription]:
+    return (
+        db.session.query(DatasetSubscription)
+        .filter(DatasetSubscription.dataset_id == dataset_id)
+        .all()
+    )
+
+
+def get_dataset_subscription_for_dataset_and_user(
+    dataset_id: str, user_id: Optional[str] = None
+) -> Optional[DatasetSubscription]:
+    if user_id is None:
+        current_user = get_current_session_user()
+        user_id = current_user.id
+
+    return (
+        db.session.query(DatasetSubscription)
+        .filter(DatasetSubscription.user_id == user_id)
+        .filter(DatasetSubscription.dataset_id == dataset_id)
+        .one_or_none()
+    )
+
+
+def add_dataset_subscription(dataset_id: str) -> Tuple[DatasetSubscription, bool]:
+    current_user = get_current_session_user()
+    subscription = get_dataset_subscription_for_dataset_and_user(
+        dataset_id, current_user.id
+    )
+    if subscription is not None:
+        return subscription, False
+
+    subscription = DatasetSubscription(user_id=current_user.id, dataset_id=dataset_id)
+    db.session.add(subscription)
+    db.session.commit()
+    return subscription, True
+
+
+def delete_dataset_subscription(subscription_id: str) -> bool:
+    current_user = get_current_session_user()
+    subscription = get_dataset_subscription(subscription_id)
+
+    if subscription is None:
+        return False
+
+    if subscription.user_id != current_user.id:
+        return False
+
+    db.session.delete(subscription)
+    db.session.commit()
+    return True

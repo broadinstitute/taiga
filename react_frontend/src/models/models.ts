@@ -171,6 +171,7 @@ export class Dataset extends Entry {
 
   can_edit: boolean;
   can_view: boolean;
+  subscription_id: string;
 
   getRelativeLink() {
     return relativePath("/dataset/" + this.permanames[0]);

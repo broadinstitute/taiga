@@ -77,6 +77,12 @@ def get_dataset(datasetId):
     dataset_schema = schemas.DatasetSchema()
     print("The right is: {}".format(right))
     dataset_schema.context["entry_user_right"] = right
+    subscription = models_controller.get_dataset_subscription_for_dataset_and_user(
+        dataset.id
+    )
+    dataset_schema.context["subscription_id"] = (
+        subscription.id if subscription is not None else None
+    )
     json_dataset_data = dataset_schema.dump(allowed_dataset).data
     return flask.jsonify(json_dataset_data)
 
@@ -366,6 +372,12 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
     dataset_schema = schemas.DatasetSchema()
     dataset_schema.context["entry_user_right"] = dataset_right
+    subscription = models_controller.get_dataset_subscription_for_dataset_and_user(
+        dataset_version.dataset_id
+    )
+    dataset_schema.context["subscription_id"] = (
+        subscription.id if subscription is not None else None
+    )
     json_dataset_data = dataset_schema.dump(dataset).data
 
     # Preparation of the dictonary to return both objects
@@ -1437,3 +1449,21 @@ def get_figshare_links_for_client(datasetVersionId: str):
         )
     except HTTPError as error:
         flask.abort(404)
+
+
+@validate
+def add_dataset_subscription(dataset_id: str):
+    """Subscribes the current user to dataset with id dataset_id"""
+    subscription, is_new = models_controller.add_dataset_subscription(dataset_id)
+    if is_new:
+        return flask.make_response(flask.jsonify(subscription.id), 201)
+    return flask.jsonify(subscription.id)
+
+
+@validate
+def delete_dataset_subscription(subscription_id: str):
+    """Unsubscribes the current user to dataset with id dataset_id"""
+    deleted = models_controller.delete_dataset_subscription(subscription_id)
+    if deleted:
+        return flask.jsonify(True)
+    flask.abort(404)

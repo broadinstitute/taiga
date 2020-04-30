@@ -72,19 +72,19 @@ def generate_permaname(name):
 class User(db.Model):
     __tablename__ = "users"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
-    name = db.Column(db.String(80), unique=True)
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
+    name: str = db.Column(db.String(80), unique=True)
 
-    email = db.Column(db.TEXT)
-    token = db.Column(db.String(50), unique=True, default=generate_str_uuid)
+    email: str = db.Column(db.TEXT)
+    token: str = db.Column(db.String(50), unique=True, default=generate_str_uuid)
 
-    home_folder_id = db.Column(GUID, db.ForeignKey("folders.id"))
-    home_folder = db.relationship(
+    home_folder_id: str = db.Column(GUID, db.ForeignKey("folders.id"))
+    home_folder: "Folder" = db.relationship(
         "Folder", foreign_keys="User.home_folder_id", backref="home_user"
     )
 
-    trash_folder_id = db.Column(GUID, db.ForeignKey("folders.id"))
-    trash_folder = db.relationship(
+    trash_folder_id: str = db.Column(GUID, db.ForeignKey("folders.id"))
+    trash_folder: "Folder" = db.relationship(
         "Folder", foreign_keys="User.trash_folder_id", backref="trash_user"
     )
 
@@ -786,4 +786,12 @@ class FigshareDataFileLink(ThirdPartyDataFileLink):
     __mapper_args__ = {"polymorphic_identity": "figshare"}
 
 
-# </editor-fold>
+class DatasetSubscription(db.Model):
+    __tablename__ = "dataset_subscriptions"
+
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
+    user: User = db.relationship("User", backref=__tablename__)
+    user_id = db.Column(GUID, db.ForeignKey("users.id"))
+
+    dataset: Dataset = db.relationship("Dataset", backref=__tablename__)
+    dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))

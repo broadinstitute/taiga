@@ -1615,6 +1615,48 @@ paths:
         404:
           description: No public article found
 
+  /subscription:
+    put:
+      description: Subscribes the user to the dataset with id dataset_id
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: add_dataset_subscription
+      consumes:
+        - application/json
+      parameters:
+        - name: dataset_id
+          in: body
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: An existing subscription was found
+          schema:
+            type: string
+        201:
+          description: A new subscription was created
+          schema:
+            type: string
+
+  /subscription/{subscription_id}:
+    delete:
+      description: Unsubscribes the user from the dataset with id dataset_id
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: delete_dataset_subscription
+      consumes:
+        - application/json
+      parameters:
+        - name: subscription_id
+          in: path
+          type: string
+          description: dataset ID
+          required: true
+      responses:
+        200:
+          description: A subscription was deleted
+        404:
+          description: No subscription found
+
 definitions:
   User:
     title: User
@@ -1677,12 +1719,24 @@ definitions:
           type: string
       description:
         type: string
-      versions:
+      dataset_versions:
         type: array
         items:
           "$ref": "#/definitions/DatasetVersionSummary"
       acl:
         "$ref": "#/definitions/Acl"
+      permaname:
+        type: string
+      parents:
+        type: array
+      can_edit:
+        type: boolean
+      can_view:
+        type: boolean
+      subscription_id:
+        type:
+          - string
+          - "null"
 
   DatasetVersion:
     type: object
