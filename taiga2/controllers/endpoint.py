@@ -1428,6 +1428,7 @@ def get_figshare_links_for_client(datasetVersionId: str):
                 l.datafile.name,
             ): {
                 "download_url": figshare_file_ids_to_download_url[l.figshare_file_id],
+                "format": l.datafile.format,
                 "encoding": l.datafile.encoding
                 if l.datafile.type == "s3"
                 else l.datafile.underlying_data_file.encoding,
