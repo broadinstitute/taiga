@@ -259,7 +259,7 @@ export class TaigaApi {
       datasetVersionId +
       "&" +
       "datafile_name=" +
-      datafileName +
+      encodeURIComponent(datafileName) +
       "&" +
       "format=" +
       format +
