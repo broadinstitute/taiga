@@ -1272,11 +1272,11 @@ def get_datafile(datafile_id) -> DataFile:
 
 
 class InvalidTaigaIdFormat(Exception):
-    def __init__(self, taiga_id):
+    def __init__(self, taiga_id: str):
         self.taiga_id = taiga_id
 
 
-def get_datafile_by_taiga_id(taiga_id, one_or_none=False) -> Optional[DataFile]:
+def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataFile]:
     m = re.match("([a-z0-9-]+)\\.(\\d+)/(.*)", taiga_id)
     if m is None:
         raise InvalidTaigaIdFormat(taiga_id)
@@ -1298,7 +1298,7 @@ def get_datafile_by_taiga_id(taiga_id, one_or_none=False) -> Optional[DataFile]:
     return resolve_virtual_datafile(datafile)
 
 
-def add_datafiles_from_session(session_id):
+def add_datafiles_from_session(session_id: str):
     # We retrieve all the upload_session_files related to the UploadSession
     added_files = get_upload_session_files_from_session(session_id)
 
@@ -1334,7 +1334,7 @@ def add_datafiles_from_session(session_id):
     return added_datafiles
 
 
-def copy_datafile(original_datafile_id):
+def copy_datafile(original_datafile_id: str) -> DataFile:
     original_datafile = get_datafile(original_datafile_id)
     # Creates a new object that has only the attributes of this very table. No foreign keys.
     make_transient(original_datafile)
@@ -1378,7 +1378,7 @@ def update_datafile_compressed_key_and_column_types(
     return datafile
 
 
-def add_new_upload_session():
+def add_new_upload_session() -> User:
     user = get_current_session_user()
     us = UploadSession(user_id=user.id)
     db.session.add(us)
@@ -1386,21 +1386,21 @@ def add_new_upload_session():
     return us
 
 
-def get_upload_session(session_id):
+def get_upload_session(session_id: str):
     upload_session = (
         db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
     )
     return upload_session
 
 
-def get_user_from_upload_session(session_id):
+def get_user_from_upload_session(session_id: str):
     session = (
         db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
     )
     return session.user
 
 
-def get_upload_session_files_from_session(session_id) -> List[UploadSessionFile]:
+def get_upload_session_files_from_session(session_id: str) -> List[UploadSessionFile]:
     # TODO: We could also fetch the datafiles with only one query
     upload_session = (
         db.session.query(UploadSession).filter(UploadSession.id == session_id).one()

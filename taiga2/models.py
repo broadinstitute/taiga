@@ -50,7 +50,7 @@ group_user_association_table = db.Table(
 # End Associations #
 
 
-def normalize_name(name):
+def normalize_name(name: str) -> str:
     permaname_prefix = name.casefold()  # str.casefold() is a more aggressive .lower()
     permaname_prefix = permaname_prefix.replace("\\", "-")  # Replace '\' by '-'
     # Replace all non alphanumeric by "-"
@@ -97,33 +97,39 @@ class User(db.Model):
 class UserLog(db.Model):
     __tablename__ = "user_logs"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
 
-    user_id = db.Column(GUID, db.ForeignKey("users.id"))
-    user = db.relationship("User", foreign_keys="UserLog.user_id", backref="user")
+    user_id: str = db.Column(GUID, db.ForeignKey("users.id"))
+    user: User = db.relationship("User", foreign_keys="UserLog.user_id", backref="user")
 
-    entry_id = db.Column(GUID, db.ForeignKey("entries.id"))
-    entry = db.relationship("Entry", foreign_keys="UserLog.entry_id", backref="entry")
+    entry_id: str = db.Column(GUID, db.ForeignKey("entries.id"))
+    entry: "Entry" = db.relationship(
+        "Entry", foreign_keys="UserLog.entry_id", backref="entry"
+    )
     # TODO: Setup the constraint of only having one (user, entry) row
 
-    last_access = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    last_access: datetime.datetime = db.Column(
+        db.DateTime, default=datetime.datetime.utcnow
+    )
 
 
 class Entry(db.Model):
     __tablename__ = "entries"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
-    name = db.Column(db.Text, nullable=False)
-    type = db.Column(db.String(50))
-    creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
+    name: str = db.Column(db.Text, nullable=False)
+    type: str = db.Column(db.String(50))
+    creation_date: datetime.datetime = db.Column(
+        db.DateTime, default=datetime.datetime.utcnow
+    )
 
-    creator_id = db.Column(GUID, db.ForeignKey("users.id"))
+    creator_id: str = db.Column(GUID, db.ForeignKey("users.id"))
 
-    creator = db.relationship(
+    creator: User = db.relationship(
         "User", foreign_keys="Entry.creator_id", backref=__tablename__
     )
 
-    description = db.Column(db.Text)
+    description: str = db.Column(db.Text)
 
     __mapper_args__ = {
         "polymorphic_identity": classmethod.__class__.__name__,
@@ -146,12 +152,12 @@ class Folder(Entry):
     __tablename__ = "folders"
 
     # TODO: Instead of using a string 'entry.id', can we use Entry.id?
-    id = db.Column(GUID, db.ForeignKey("entries.id"), primary_key=True)
+    id: str = db.Column(GUID, db.ForeignKey("entries.id"), primary_key=True)
 
-    folder_type = db.Column(db.Enum(FolderType))
+    folder_type: FolderType = db.Column(db.Enum(FolderType))
 
     # TODO: This should be a set, not a list.
-    entries = db.relationship(
+    entries: List[Entry] = db.relationship(
         "Entry", secondary=folder_entry_association_table, backref="parents"
     )
 
@@ -180,10 +186,10 @@ class Dataset(Entry):
     id = db.Column(GUID, db.ForeignKey("entries.id"), primary_key=True)
 
     # TODO: Use the name/key of the dataset and add behind the uuid?
-    permanames = db.relationship("DatasetPermaname")
+    permanames: List["DatasetPermaname"] = db.relationship("DatasetPermaname")
 
     @property
-    def permaname(self):
+    def permaname(self) -> str:
         if len(self.permanames) > 0:
             return max(
                 self.permanames, key=lambda permaname: permaname.creation_date
@@ -196,9 +202,11 @@ class Dataset(Entry):
 class DatasetPermaname(db.Model):
     __tablename__ = "dataset_permanames"
 
-    permaname = db.Column(db.Text, primary_key=True)
-    dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
-    creation_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    permaname: str = db.Column(db.Text, primary_key=True)
+    dataset_id: str = db.Column(GUID, db.ForeignKey("datasets.id"))
+    creation_date: datetime.datetime = db.Column(
+        db.DateTime, default=datetime.datetime.utcnow
+    )
 
 
 class InitialFileType(enum.Enum):
@@ -223,12 +231,12 @@ def resolve_virtual_datafile(datafile) -> "S3DataFile":
 class DataFile(db.Model):
     __tablename__ = "datafiles"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
-    name = db.Column(db.String(80))
-    type = db.Column(db.String(20))
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
+    name: str = db.Column(db.String(80))
+    type: str = db.Column(db.String(20))
 
-    dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
-    dataset_version = db.relationship(
+    dataset_version_id: str = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
+    dataset_version: "DatasetVersion" = db.relationship(
         "DatasetVersion",
         foreign_keys=[dataset_version_id],
         backref=db.backref(__tablename__, cascade="all, delete-orphan"),
@@ -326,15 +334,15 @@ class VirtualDataFile(DataFile):
 class GCSObjectDataFile(DataFile):
     __mapper_args__ = {"polymorphic_identity": "gcs"}
 
-    gcs_path = db.Column(db.Text)
-    generation_id = db.Column(db.Text)
+    gcs_path: str = db.Column(db.Text)
+    generation_id: str = db.Column(db.Text)
 
     @property
     def underlying_file_id(self):
         return None
 
 
-def get_allowed_conversion_type(datafile: S3DataFile):
+def get_allowed_conversion_type(datafile: S3DataFile) -> List[str]:
     if datafile.format == S3DataFile.DataFileFormat.HDF5:
         allowed_conversion_types = [
             conversion.CSV_FORMAT,
@@ -387,9 +395,9 @@ class DatasetVersion(Entry):
     # TODO: Missing the permaname of the DatasetVersion
     __tablename__ = "dataset_versions"
 
-    id = db.Column(GUID, db.ForeignKey("entries.id"), primary_key=True)
+    id: str = db.Column(GUID, db.ForeignKey("entries.id"), primary_key=True)
 
-    dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
+    dataset_id: str = db.Column(GUID, db.ForeignKey("datasets.id"))
 
     dataset: Dataset = db.relationship(
         "Dataset",
@@ -400,16 +408,16 @@ class DatasetVersion(Entry):
     )
 
     # Filled out by the server
-    version = db.Column(db.Integer)
+    version: int = db.Column(db.Integer)
 
     # State of the version
-    state = db.Column(
+    state: DatasetVersionState = db.Column(
         db.Enum(DatasetVersionState), default=DatasetVersionState.approved
     )
     # Reason for the state of the version. Should be empty if approved
-    reason_state = db.Column(db.Text)
+    reason_state: str = db.Column(db.Text)
 
-    changes_description = db.Column(db.Text)
+    changes_description: str = db.Column(db.Text)
 
     __table_args__ = (UniqueConstraint("dataset_id", "version"),)
 
@@ -431,22 +439,24 @@ class Activity(db.Model):
 
     __tablename__ = "activities"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
 
-    user_id = db.Column(GUID, db.ForeignKey("users.id"))
+    user_id: str = db.Column(GUID, db.ForeignKey("users.id"))
 
-    user = db.relationship("User", backref=__tablename__)
+    user: User = db.relationship("User", backref=__tablename__)
 
-    dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
+    dataset_id: str = db.Column(GUID, db.ForeignKey("datasets.id"))
 
-    dataset = db.relationship("Dataset", backref=__tablename__)
+    dataset: Dataset = db.relationship("Dataset", backref=__tablename__)
 
     # We would want the type of change and the comments associated
-    type = db.Column(db.Enum(ActivityType), nullable=False)
+    type: ActivityType = db.Column(db.Enum(ActivityType), nullable=False)
 
-    timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    timestamp: datetime.datetime = db.Column(
+        db.DateTime, default=datetime.datetime.utcnow
+    )
 
-    comments = db.Column(db.Text)
+    comments: str = db.Column(db.Text)
 
     __mapper_args__ = {"polymorphic_on": type}
 
@@ -455,11 +465,11 @@ class CreationActivity(Activity):
     __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.created}
 
     @declared_attr
-    def dataset_name(cls):
+    def dataset_name(cls) -> str:
         return Activity.__table__.c.get("dataset_name", db.Column(db.Text))
 
     @declared_attr
-    def dataset_description(cls):
+    def dataset_description(cls) -> str:
         return Activity.__table__.c.get("dataset_description", db.Column(db.Text))
 
 
@@ -467,7 +477,7 @@ class NameUpdateActivity(Activity):
     __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.changed_name}
 
     @declared_attr
-    def dataset_name(cls):
+    def dataset_name(cls) -> str:
         return Activity.__table__.c.get("dataset_name", db.Column(db.Text))
 
 
@@ -477,11 +487,11 @@ class DescriptionUpdateActivity(Activity):
     }
 
     @declared_attr
-    def dataset_description(cls):
+    def dataset_description(cls) -> str:
         return Activity.__table__.c.get("dataset_description", db.Column(db.Text))
 
     @declared_attr
-    def dataset_version(cls):
+    def dataset_version(cls) -> int:
         return Activity.__table__.c.get("dataset_version", db.Column(db.Integer))
 
 
@@ -489,11 +499,11 @@ class VersionAdditionActivity(Activity):
     __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.added_version}
 
     @declared_attr
-    def dataset_description(cls):
+    def dataset_description(cls) -> str:
         return Activity.__table__.c.get("dataset_description", db.Column(db.Text))
 
     @declared_attr
-    def dataset_version(cls):
+    def dataset_version(cls) -> str:
         return Activity.__table__.c.get("dataset_version", db.Column(db.Integer))
 
 
@@ -501,15 +511,15 @@ class LogStartActivity(Activity):
     __mapper_args__ = {"polymorphic_identity": Activity.ActivityType.started_log}
 
     @declared_attr
-    def dataset_name(cls):
+    def dataset_name(cls) -> str:
         return Activity.__table__.c.get("dataset_name", db.Column(db.Text))
 
     @declared_attr
-    def dataset_description(cls):
+    def dataset_description(cls) -> str:
         return Activity.__table__.c.get("dataset_description", db.Column(db.Text))
 
     @declared_attr
-    def dataset_version(cls):
+    def dataset_version(cls) -> str:
         return Activity.__table__.c.get("dataset_version", db.Column(db.Integer))
 
 
@@ -522,66 +532,68 @@ class ConversionEntryState(enum.Enum):
 class ConversionCache(db.Model):
     __tablename__ = "conversion_cache"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
 
-    dataset_version_id = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
+    dataset_version_id: str = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
 
-    datafile_name = db.Column(db.String(80))
+    datafile_name: str = db.Column(db.String(80))
 
-    format = db.Column(db.String(80))
+    format: str = db.Column(db.String(80))
 
-    status = db.Column(db.Text)
+    status: str = db.Column(db.Text)
 
-    task_id = db.Column(db.Text)
+    task_id: str = db.Column(db.Text)
 
-    urls_as_json = db.Column(db.Text)
+    urls_as_json: str = db.Column(db.Text)
 
-    state = db.Column(db.Enum(ConversionEntryState))
+    state: ConversionEntryState = db.Column(db.Enum(ConversionEntryState))
 
 
 class UploadSession(db.Model):
     __tablename__ = "upload_sessions"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
 
-    user_id = db.Column(GUID, db.ForeignKey("users.id"))
-    user = db.relationship("User", backref=__tablename__)
+    user_id: str = db.Column(GUID, db.ForeignKey("users.id"))
+    user: User = db.relationship("User", backref=__tablename__)
 
 
 class UploadSessionFile(db.Model):
     __tablename__ = "upload_session_files"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
 
-    session_id = db.Column(GUID, db.ForeignKey("upload_sessions.id"))
+    session_id: str = db.Column(GUID, db.ForeignKey("upload_sessions.id"))
 
-    session = db.relationship("UploadSession", backref=__tablename__)
+    session: UploadSession = db.relationship("UploadSession", backref=__tablename__)
 
     # filename submitted by user
-    filename = db.Column(db.Text)
-    encoding = db.Column(db.Text)
+    filename: str = db.Column(db.Text)
+    encoding: str = db.Column(db.Text)
 
-    initial_filetype = db.Column(db.Enum(InitialFileType))
-    initial_s3_key = db.Column(db.Text)
+    initial_filetype: InitialFileType = db.Column(db.Enum(InitialFileType))
+    initial_s3_key: str = db.Column(db.Text)
 
-    converted_filetype = db.Column(db.Enum(S3DataFile.DataFileFormat))
-    converted_s3_key = db.Column(db.Text)
+    converted_filetype: S3DataFile.DataFileFormat = db.Column(
+        db.Enum(S3DataFile.DataFileFormat)
+    )
+    converted_s3_key: str = db.Column(db.Text)
 
-    compressed_s3_key = db.Column(db.Text)
+    compressed_s3_key: str = db.Column(db.Text)
 
-    s3_bucket = db.Column(db.Text)
+    s3_bucket: str = db.Column(db.Text)
 
-    gcs_path = db.Column(db.Text)
-    generation_id = db.Column(db.Text)
+    gcs_path: str = db.Column(db.Text)
+    generation_id: str = db.Column(db.Text)
 
-    short_summary = db.Column(db.Text)
-    long_summary = db.Column(db.Text)
+    short_summary: str = db.Column(db.Text)
+    long_summary: str = db.Column(db.Text)
     column_types_as_json: Dict[str, str] = db.Column(db.JSON)
-    original_file_sha256 = db.Column(db.Text)
-    original_file_md5 = db.Column(db.Text)
+    original_file_sha256: str = db.Column(db.Text)
+    original_file_md5: str = db.Column(db.Text)
 
-    data_file_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
-    data_file = db.relationship(
+    data_file_id: str = db.Column(GUID, db.ForeignKey("datafiles.id"))
+    data_file: DataFile = db.relationship(
         "DataFile", uselist=False, foreign_keys="UploadSessionFile.data_file_id"
     )
 
@@ -651,11 +663,11 @@ class ProvenanceNode(db.Model):
 class Group(db.Model):
     __tablename__ = "groups"
 
-    id = db.Column(db.INTEGER, primary_key=True, autoincrement=True)
+    id: str = db.Column(db.INTEGER, primary_key=True, autoincrement=True)
 
-    name = db.Column(db.String(80))
+    name: str = db.Column(db.String(80))
 
-    users = db.relationship(
+    users: List[User] = db.relationship(
         User.__name__, secondary=group_user_association_table, backref=__tablename__
     )
 
@@ -713,26 +725,26 @@ class SearchResult:
 
 class FigshareAuthorization(db.Model):
     __tablename__ = "figshare_authorizations"
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
 
-    user_id = db.Column(GUID, db.ForeignKey("users.id"))
-    user = db.relationship(
+    user_id: str = db.Column(GUID, db.ForeignKey("users.id"))
+    user: User = db.relationship(
         "User", backref=backref("figshare_authorization", uselist=False)
     )
 
-    figshare_account_id = db.Column(db.Integer)
-    token = db.Column(db.Text, nullable=False)
-    refresh_token = db.Column(db.Text, nullable=False)
+    figshare_account_id: int = db.Column(db.Integer)
+    token: str = db.Column(db.Text, nullable=False)
+    refresh_token: str = db.Column(db.Text, nullable=False)
 
 
 class ThirdPartyDatasetVersionLink(db.Model):
     __tablename__ = "third_party_dataset_version_links"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
-    type = db.Column(db.String(50))
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
+    type: str = db.Column(db.String(50))
 
-    creator_id = db.Column(GUID, db.ForeignKey("users.id"))
-    creator = db.relationship(
+    creator_id: str = db.Column(GUID, db.ForeignKey("users.id"))
+    creator: User = db.relationship(
         "User",
         foreign_keys="ThirdPartyDatasetVersionLink.creator_id",
         backref=__tablename__,
@@ -763,23 +775,23 @@ class FigshareDatasetVersionLink(ThirdPartyDatasetVersionLink):
 class ThirdPartyDataFileLink(db.Model):
     __tablename__ = "third_party_datafile_links"
 
-    id = db.Column(GUID, primary_key=True, default=generate_uuid)
-    type = db.Column(db.String(50))
+    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
+    type: str = db.Column(db.String(50))
     __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "abstract"}
 
 
 class FigshareDataFileLink(ThirdPartyDataFileLink):
     __tablename__ = "figshare_datafile_links"
 
-    id = db.Column(
+    id: str = db.Column(
         GUID, db.ForeignKey("third_party_datafile_links.id"), primary_key=True
     )
-    figshare_file_id = db.Column(db.Integer, nullable=False)
-    datafile_id = db.Column(GUID, db.ForeignKey("datafiles.id"))
-    datafile = db.relationship(
+    figshare_file_id: int = db.Column(db.Integer, nullable=False)
+    datafile_id: str = db.Column(GUID, db.ForeignKey("datafiles.id"))
+    datafile: DataFile = db.relationship(
         "DataFile", backref=backref("figshare_datafile_link", uselist=False)
     )
-    figshare_dataset_version_link_id = db.Column(
+    figshare_dataset_version_link_id: str = db.Column(
         GUID, db.ForeignKey("figshare_dataset_version_links.id")
     )
 
@@ -791,7 +803,7 @@ class DatasetSubscription(db.Model):
 
     id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
     user: User = db.relationship("User", backref=__tablename__)
-    user_id = db.Column(GUID, db.ForeignKey("users.id"))
+    user_id: str = db.Column(GUID, db.ForeignKey("users.id"))
 
     dataset: Dataset = db.relationship("Dataset", backref=__tablename__)
-    dataset_id = db.Column(GUID, db.ForeignKey("datasets.id"))
+    dataset_id: str = db.Column(GUID, db.ForeignKey("datasets.id"))
