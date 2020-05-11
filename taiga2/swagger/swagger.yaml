@@ -1498,7 +1498,9 @@ paths:
       operationId: get_figshare_article_creation_options
       consumes:
         - application/json
-      responses: 200
+      responses:
+        200:
+          description: "Category and license options from Figshare"
 
   /figshare/article_for_user/{article_id}:
     get:
