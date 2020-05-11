@@ -28,6 +28,8 @@ type Props = {
 type State = {
   articleTitle: string;
   articleDescription: string;
+  categories?: Array<any>;
+  licenses?: Array<any>;
   filesToUpload: Array<{
     datafileId: string;
     datafileName: string;
@@ -55,6 +57,13 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     this.populateDatafileIdToNameMap(props);
 
     this.state = this.getDefaultStateFromProps(props);
+  }
+
+  componentDidMount() {
+    console.log("sup");
+    this.props.tapi
+      .get_figshare_article_creation_parameters()
+      .then((r) => this.setState(r));
   }
 
   populateDatafileIdToNameMap(props: Props) {

@@ -416,6 +416,13 @@ export class TaigaApi {
     return this._fetch(`/figshare/article_for_user/${article_id}`);
   }
 
+  get_figshare_article_creation_parameters(): Promise<{
+    categories: Array<any>;
+    licenses: Array<any>;
+  }> {
+    return this._fetch("/figshare/article_creation_parameters");
+  }
+
   upload_dataset_version_to_figshare(
     dataset_version_id: string,
     article_name: string,

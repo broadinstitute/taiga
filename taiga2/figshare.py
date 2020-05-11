@@ -89,9 +89,9 @@ def create_article(
     dataset_version_id: str,
     title: str,
     description: str,
-    article_license: int,
     token: str,
-    figshare_user_id: int,
+    article_license: int = 0,
+    authors: List[str] = None,
     categories: Optional[List[int]] = None,
     keywords: Optional[List[str]] = None,
     references: Optional[List[str]] = None,
@@ -99,11 +99,11 @@ def create_article(
     data = {
         "title": title,
         "description": description,
-        "authors": [{"id": figshare_user_id}],
         "defined_type": "dataset",
         "license": article_license,
     }
-
+    if authors is not None:
+        data["authors"] = [{"name": author} for author in authors]
     if categories is not None:
         data["categories"] = categories
     if keywords is not None:

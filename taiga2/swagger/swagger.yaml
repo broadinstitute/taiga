@@ -1446,6 +1446,22 @@ paths:
                       type: string
                     file_name:
                       type: string
+              authors:
+                type: array
+                items:
+                  type: string
+              license:
+                type: integer
+              categories:
+                type:
+                  - array
+                  - "null"
+                items:
+                  type: integer
+              references:
+                type: array
+                items:
+                  type: string
       responses:
         200:
           description: Link created
@@ -1475,6 +1491,14 @@ paths:
                       type: string
         401:
           description: TODO (token does not work)
+
+  /figshare/article_creation_parameters:
+    get:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_figshare_article_creation_options
+      consumes:
+        - application/json
+      responses: 200
 
   /figshare/article_for_user/{article_id}:
     get:

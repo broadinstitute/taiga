@@ -1263,13 +1263,18 @@ def _fetch_figshare_token() -> str:
     return token
 
 
+def get_figshare_article_creation_options():
+    categories = figshare.get_public_categories()
+    licenses = figshare.get_public_licenses()
+    return flask.jsonify({"categories": categories, "licenses": licenses})
+
+
 @validate
 def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
     dataset_version_id = figshareDatasetVersionLink["dataset_version_id"]
     article_name = figshareDatasetVersionLink["article_name"]
     article_description = figshareDatasetVersionLink["article_description"]
     article_license = figshareDatasetVersionLink.get("article_license", None)
-    author = figshareDatasetVersionLink.get("author", None)
     files_to_upload = figshareDatasetVersionLink["files_to_upload"]
 
     token = _fetch_figshare_token()
@@ -1278,12 +1283,7 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
 
     dataset_version = models_controller.get_dataset_version(dataset_version_id)
     figshare_dataset_version_link = figshare.create_article(
-        dataset_version_id,
-        article_name,
-        article_description,
-        article_license,
-        author,
-        token,
+        dataset_version_id, article_name, article_description, token
     )
 
     from taiga2.tasks import upload_datafile_to_figshare
