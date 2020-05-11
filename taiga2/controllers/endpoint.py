@@ -1340,42 +1340,52 @@ def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
 
     from taiga2.tasks import upload_datafile_to_figshare
 
-    for file_to_update in files_to_update:
-        datafile = models_controller.get_datafile(file_to_update["datafile_id"])
-        if datafile.type == "gcs":
-            file_to_update["failure_reason"] = "Cannot upload GCS pointer files"
-            continue
-        elif datafile.type == "virtual":
-            datafile = datafile.underlying_data_file
+    try:
+        for file_to_update in files_to_update:
+            datafile = models_controller.get_datafile(file_to_update["datafile_id"])
+            if datafile.type == "gcs":
+                file_to_update["failure_reason"] = "Cannot upload GCS pointer files"
+                continue
+            elif datafile.type == "virtual":
+                datafile = datafile.underlying_data_file
 
-        if datafile.compressed_s3_key is None:
-            file_to_update[
-                "failure_reason"
-            ] = "Cannot upload files without compressed S3 file"
-            continue
+            if datafile.compressed_s3_key is None:
+                file_to_update[
+                    "failure_reason"
+                ] = "Cannot upload files without compressed S3 file"
+                continue
 
-        if file_to_update["action"] in {"Delete", "Replace"}:
-            figshare.delete_file(article_id, file_to_update["figshare_file_id"], token)
+            if file_to_update["action"] in {"Delete", "Replace"}:
+                figshare.delete_file(
+                    article_id, file_to_update["figshare_file_id"], token
+                )
 
-        if file_to_update["action"] in {"Add", "Replace"}:
-            task = upload_datafile_to_figshare.delay(
-                figshare_dataset_version_link.figshare_article_id,
-                figshare_dataset_version_link.id,
-                file_to_update["file_name"],
-                file_to_update["datafile_id"],
-                datafile.compressed_s3_key,
-                datafile.original_file_md5,
-                token,
-            )
+            if file_to_update["action"] in {"Add", "Replace"}:
+                task = upload_datafile_to_figshare.delay(
+                    figshare_dataset_version_link.figshare_article_id,
+                    figshare_dataset_version_link.id,
+                    file_to_update["file_name"],
+                    file_to_update["datafile_id"],
+                    datafile.compressed_s3_key,
+                    datafile.original_file_md5,
+                    token,
+                )
 
-            file_to_update["task_id"] = task.id
+                file_to_update["task_id"] = task.id
 
-    return flask.jsonify(
-        {
-            "article_id": figshare_dataset_version_link.figshare_article_id,
-            "files": files_to_update,
-        }
-    )
+        r = figshare.update_article(article_id, token)
+
+        return flask.jsonify(
+            {
+                "article_id": figshare_dataset_version_link.figshare_article_id,
+                "files": files_to_update,
+            }
+        )
+    except HTTPError as error:
+        models_controller.delete_figshare_dataset_version_and_datafiles(
+            figshare_dataset_version_link.id
+        )
+        return flask.abort(error.code, error.reason)
 
 
 @validate

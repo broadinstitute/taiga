@@ -2167,6 +2167,27 @@ def get_figshare_datafile_links_for_dataset_version_link(
     return figshare_datafile_links
 
 
+def delete_figshare_dataset_version_and_datafiles(
+    figshare_dataset_version_link_id: str,
+):
+    dataset_version_link = (
+        db.session.query(FigshareDatasetVersionLink)
+        .filter(FigshareDatasetVersionLink.id == figshare_dataset_version_link_id)
+        .one_or_none()
+    )
+    datafile_links = get_figshare_datafile_links_for_dataset_version_link(
+        figshare_dataset_version_link_id
+    )
+    for datafile_link in datafile_links:
+        db.session.delete(datafile_link)
+
+    if dataset_version_link is not None:
+        db.session.delete(dataset_version_link)
+
+    db.session.commit()
+    return True
+
+
 def get_dataset_subscription(subscription_id: str) -> Optional[DatasetSubscription]:
     return (
         db.session.query(DatasetSubscription)
