@@ -12,6 +12,8 @@ import {
 } from "react-bootstrap";
 import update from "immutability-helper";
 
+import Select from "react-select";
+
 import * as Models from "../../models/models";
 import { TaigaApi } from "../../models/api";
 import { relativePath } from "../../utilities/route";
@@ -28,8 +30,8 @@ type Props = {
 type State = {
   articleTitle: string;
   articleDescription: string;
-  categories?: Array<any>;
-  licenses?: Array<any>;
+  categories?: Array<{ value: any; label: any }>;
+  licenses?: Array<{ value: any; label: any }>;
   filesToUpload: Array<{
     datafileId: string;
     datafileName: string;
@@ -63,7 +65,16 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     console.log("sup");
     this.props.tapi
       .get_figshare_article_creation_parameters()
-      .then((r) => this.setState(r));
+      .then(({ licenses, categories }) =>
+        this.setState({
+          licenses: licenses.map((license) => {
+            return { value: license.value, label: license.name };
+          }),
+          categories: categories.map((category) => {
+            return { value: category.id, label: category.title };
+          }),
+        })
+      );
   }
 
   populateDatafileIdToNameMap(props: Props) {
@@ -292,6 +303,23 @@ export default class UploadToFigshare extends React.Component<Props, State> {
             disabled={isUploading}
           />
         </FormGroup>
+
+        {this.state.licenses && (
+          <FormGroup controlId="formArticleLicense">
+            <ControlLabel>Figshare article license</ControlLabel>
+            <Select
+              className="basic-single"
+              classNamePrefix="select"
+              defaultValue={this.state.licenses[0]}
+              isDisabled={!this.state.licenses}
+              isLoading={!this.state.licenses}
+              isSearchable={true}
+              name="article-license"
+              options={this.state.licenses ? this.state.licenses : []}
+            />
+          </FormGroup>
+        )}
+
         {isUploading
           ? this.renderUploadingStatusTable()
           : this.renderUploadTable()}

@@ -1355,7 +1355,7 @@ def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
             continue
 
         if file_to_update["action"] in {"Delete", "Replace"}:
-            figshare.delete_file(article_id, file_to_update["figshare_file_id"])
+            figshare.delete_file(article_id, file_to_update["figshare_file_id"], token)
 
         if file_to_update["action"] in {"Add", "Replace"}:
             task = upload_datafile_to_figshare.delay(

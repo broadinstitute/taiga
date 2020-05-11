@@ -265,6 +265,7 @@ class S3DataFileSchema(DataFileBaseSchema):
     s3_key = fields.fields.String()
     short_summary = fields.fields.String()
     original_file_sha256 = fields.fields.String()
+    encoding = fields.fields.String()
 
     # rename format -> type because that's what the existing client api expects
     type = fields.fields.Method("_get_type")

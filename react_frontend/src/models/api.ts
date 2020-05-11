@@ -417,8 +417,16 @@ export class TaigaApi {
   }
 
   get_figshare_article_creation_parameters(): Promise<{
-    categories: Array<any>;
-    licenses: Array<any>;
+    categories: Array<{
+      parent_id: number;
+      id: number;
+      title: string;
+    }>;
+    licenses: Array<{
+      value: number;
+      name: string;
+      url: string;
+    }>;
   }> {
     return this._fetch("/figshare/article_creation_parameters");
   }
