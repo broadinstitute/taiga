@@ -1476,6 +1476,23 @@ paths:
         401:
           description: TODO (token does not work)
 
+  /figshare/article_for_user/{article_id}:
+    get:
+      description: Returns whether the author is under the current user's figshare account
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_public_article_information_for_user
+      consumes:
+        - application/json
+      parameters:
+        - name: article_id
+          in: path
+          type: integer
+          description: Figshare article ID
+          required: true
+      responses:
+        200:
+          description: "Article found and is published by user"
+
   /figshare/update_article:
     post:
       description: Update a public article on Figshare with files from a dataset version
@@ -1557,7 +1574,7 @@ paths:
         401:
           description: TODO (token does not work)
 
-  /figshare/article/{datasetVersionId}:
+  /figshare/article_for_dataset_version/{datasetVersionId}:
     get:
       description: Return a url for figshare article associated with dataset version
       x-swagger-router-controller: taiga2.controllers.endpoint

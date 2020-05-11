@@ -15,6 +15,7 @@ import {
   DatafileUrl,
   SearchResult,
   ActivityLogEntry,
+  FigshareArticleInfo,
   Group,
 } from "./models";
 
@@ -411,6 +412,10 @@ export class TaigaApi {
     return this._put("/figshare", { state, code });
   }
 
+  get_figshare_article(article_id: number): Promise<FigshareArticleInfo> {
+    return this._fetch(`/figshare/article_for_user/${article_id}`);
+  }
+
   upload_dataset_version_to_figshare(
     dataset_version_id: string,
     article_name: string,
@@ -463,7 +468,9 @@ export class TaigaApi {
   get_figshare_article_url(
     datasetVersionId: string
   ): Promise<{ figshare_url: string; public: boolean }> {
-    return this._fetch(`/figshare/article/${datasetVersionId}`);
+    return this._fetch(
+      `/figshare/article_for_dataset_version/${datasetVersionId}`
+    );
   }
 
   add_subscription(dataset_id: string): Promise<string> {

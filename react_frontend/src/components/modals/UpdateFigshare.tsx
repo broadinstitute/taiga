@@ -31,20 +31,6 @@ type FileToUpdate = {
   action: UpdateAction;
 };
 
-type FigshareArticleResponse = {
-  id: number;
-  version: number;
-  authors: Array<{
-    full_name: string;
-    id: number;
-    is_active: boolean;
-  }>;
-  files: Array<{
-    id: number;
-    is_link_only: boolean;
-    name: string;
-  }>;
-};
 type Props = {
   tapi: TaigaApi;
   handleClose: (uploadComplete: boolean, figsharePrivateUrl: string) => void;
@@ -55,8 +41,10 @@ type Props = {
 
 type State = {
   articleId: string;
-  figshareArticleInfo: FigshareArticleResponse;
+  figshareArticleInfo: Models.FigshareArticleInfo;
   fetchingArticle: boolean;
+  articleDoesNotExists: boolean;
+  articleAuthorsDoNotMatch: boolean;
 
   filesToUpdate: Array<FileToUpdate>;
 
@@ -94,6 +82,8 @@ export default class UpdateFigshare extends React.Component<Props, State> {
       articleId: "",
       figshareArticleInfo: null,
       fetchingArticle: false,
+      articleDoesNotExists: false,
+      articleAuthorsDoNotMatch: false,
       filesToUpdate: [],
       uploadResults: undefined,
     };
@@ -106,10 +96,17 @@ export default class UpdateFigshare extends React.Component<Props, State> {
     }
   }
 
-  handleClose = () => {
+  handleClose = (uploadComplete: boolean, figsharePrivateUrl: string) => {
     this.setState(
-      { articleId: "", figshareArticleInfo: null, fetchingArticle: false },
-      () => this.props.handleClose(false, null)
+      {
+        articleId: "",
+        figshareArticleInfo: null,
+        fetchingArticle: false,
+        articleDoesNotExists: false,
+        articleAuthorsDoNotMatch: false,
+        filesToUpdate: [],
+      },
+      () => this.props.handleClose(uploadComplete, figsharePrivateUrl)
     );
   };
 
@@ -172,9 +169,9 @@ export default class UpdateFigshare extends React.Component<Props, State> {
 
   handleFetchFigshareArticle = () => {
     this.setState({ fetchingArticle: true }, () => {
-      fetch(`https://api.figshare.com/v2/articles/${this.state.articleId}`)
-        .then((r) => r.json())
-        .then((figshareArticleInfo: FigshareArticleResponse) =>
+      this.props.tapi
+        .get_figshare_article(parseInt(this.state.articleId))
+        .then((figshareArticleInfo) => {
           this.setState({
             figshareArticleInfo,
             fetchingArticle: false,
@@ -186,9 +183,17 @@ export default class UpdateFigshare extends React.Component<Props, State> {
                 action: "Keep",
               } as FileToUpdate;
             }),
-          })
-        )
-        .catch((r) => alert(r));
+          });
+        })
+        .catch((reason) => {
+          if ("Not Found" in reason) {
+            this.setState({ articleDoesNotExists: true });
+          } else if ("Forbidden" in reason) {
+            this.setState({ articleAuthorsDoNotMatch: true });
+          } else {
+            console.log(reason);
+          }
+        });
     });
   };
 
@@ -469,34 +474,41 @@ export default class UpdateFigshare extends React.Component<Props, State> {
       );
     }
 
-    const authorDifferent =
-      this.state.figshareArticleInfo !== null &&
-      !this.state.figshareArticleInfo.authors.some(
-        (author) => author.id == this.props.userFigshareAccountId
-      );
+    const {
+      figshareArticleInfo,
+      articleDoesNotExists,
+      articleAuthorsDoNotMatch,
+      articleId,
+      fetchingArticle,
+    } = this.state;
 
-    if (this.state.figshareArticleInfo === null || authorDifferent) {
+    if (figshareArticleInfo === null) {
       return (
         <FormGroup
           controlId="publicArticleId"
-          validationState={authorDifferent ? "error" : null}
+          validationState={
+            articleDoesNotExists || articleAuthorsDoNotMatch ? "error" : null
+          }
         >
           <ControlLabel>Figshare article ID</ControlLabel>
           <FormControl
             type="text"
-            value={this.state.articleId}
+            value={articleId}
             onChange={(e: React.FormEvent<FormControl & FormControlProps>) =>
               this.handleArticleIdChange(e)
             }
-            disabled={this.state.fetchingArticle}
+            disabled={fetchingArticle}
           />
           <FormControl.Feedback />
-          {authorDifferent && (
+          {articleAuthorsDoNotMatch && (
             <HelpBlock>
               This article was published under a different Figshare account.
               Please connect your Taiga account with that Figshare account, or
               try a different article.
             </HelpBlock>
+          )}
+          {articleDoesNotExists && (
+            <HelpBlock>No public article was found for this ID</HelpBlock>
           )}
           <HelpBlock>
             The number after the article name in the public Figshare URL. For
@@ -556,7 +568,12 @@ export default class UpdateFigshare extends React.Component<Props, State> {
       primaryAction = (
         <Button
           onClick={() =>
-            this.setState({ figshareArticleInfo: null, articleId: "" })
+            this.setState({
+              figshareArticleInfo: null,
+              articleId: "",
+              articleDoesNotExists: false,
+              articleAuthorsDoNotMatch: false,
+            })
           }
           bsStyle="primary"
         >
@@ -585,9 +602,7 @@ export default class UpdateFigshare extends React.Component<Props, State> {
     return (
       <Modal
         show={this.props.show}
-        onHide={() =>
-          this.props.handleClose(uploadComplete, figsharePrivateUrl)
-        }
+        onHide={() => this.handleClose(uploadComplete, figsharePrivateUrl)}
         dialogClassName="upload-to-figshare-modal"
       >
         <Modal.Header closeButton>
@@ -602,9 +617,7 @@ export default class UpdateFigshare extends React.Component<Props, State> {
         </Modal.Body>
         <Modal.Footer>
           <Button
-            onClick={() =>
-              this.props.handleClose(uploadComplete, figsharePrivateUrl)
-            }
+            onClick={() => this.handleClose(uploadComplete, figsharePrivateUrl)}
           >
             Close
           </Button>

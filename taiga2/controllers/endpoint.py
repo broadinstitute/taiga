@@ -6,7 +6,7 @@ import time
 import urllib
 import re
 from io import BytesIO
-from typing import List, Dict
+from typing import Dict, List, Tuple
 
 from .endpoint_validation import validate
 
@@ -1268,6 +1268,8 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
     dataset_version_id = figshareDatasetVersionLink["dataset_version_id"]
     article_name = figshareDatasetVersionLink["article_name"]
     article_description = figshareDatasetVersionLink["article_description"]
+    article_license = figshareDatasetVersionLink.get("article_license", None)
+    author = figshareDatasetVersionLink.get("author", None)
     files_to_upload = figshareDatasetVersionLink["files_to_upload"]
 
     token = _fetch_figshare_token()
@@ -1276,7 +1278,12 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
 
     dataset_version = models_controller.get_dataset_version(dataset_version_id)
     figshare_dataset_version_link = figshare.create_article(
-        dataset_version_id, article_name, article_description, token
+        dataset_version_id,
+        article_name,
+        article_description,
+        article_license,
+        author,
+        token,
     )
 
     from taiga2.tasks import upload_datafile_to_figshare
@@ -1399,6 +1406,22 @@ def get_figshare_url(datasetVersionId):
             )
         except HTTPError as error:
             return flask.jsonify({"figshare_url": None, "public": False})
+
+
+def get_public_article_information_for_user(article_id: int):
+    try:
+        article_info = figshare.get_public_article_information(article_id, 1)
+        token = _fetch_figshare_token()
+        if token is None:
+            flask.abort(404)
+        if not any(
+            figshare.get_author(author["id"], token)
+            for author in article_info["authors"]
+        ):
+            flask.abort(403)
+        return flask.jsonify(article_info)
+    except HTTPError as error:
+        flask.abort(404)
 
 
 def get_figshare_links_for_client(datasetVersionId: str):

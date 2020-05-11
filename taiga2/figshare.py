@@ -8,7 +8,7 @@ import requests
 import shutil
 import tempfile
 from requests.exceptions import HTTPError
-from typing import Any, Dict, IO, Optional, Tuple, Union
+from typing import Any, Dict, IO, List, Optional, Tuple, Union
 from typing_extensions import Literal, TypedDict
 
 from flask import current_app
@@ -63,8 +63,54 @@ def validate_token(token: str, refresh_token: str) -> Tuple[str, str]:
             return None, None
 
 
-def create_article(dataset_version_id: str, title: str, description: str, token: str):
-    data = {"title": title, "description": description}
+FigshareCategory = TypedDict(
+    "FigshareCategory", {"parent_id": int, "id": int, "title": str}
+)
+
+
+def get_public_categories() -> List[FigshareCategory]:
+    r = issue_request("GET", "categories", "")
+    return r
+
+
+FigshareLicense = TypedDict("FigshareLicense", {"value": int, "name": str, "url": str})
+
+
+def get_public_licenses() -> List[FigshareLicense]:
+    r = issue_request("GET", "licenses", "")
+    return r
+
+
+def get_author(author_id: int, token: str):
+    return issue_request("GET", "account/authors/{}".format(author_id), token)
+
+
+def create_article(
+    dataset_version_id: str,
+    title: str,
+    description: str,
+    article_license: int,
+    token: str,
+    figshare_user_id: int,
+    categories: Optional[List[int]] = None,
+    keywords: Optional[List[str]] = None,
+    references: Optional[List[str]] = None,
+):
+    data = {
+        "title": title,
+        "description": description,
+        "authors": [{"id": figshare_user_id}],
+        "defined_type": "dataset",
+        "license": article_license,
+    }
+
+    if categories is not None:
+        data["categories"] = categories
+    if keywords is not None:
+        data["keywords"] = keywords
+    if references is not None:
+        data["references"] = references
+
     result = issue_request("POST", "account/articles", token, data=data)
 
     result = raw_issue_request("GET", result["location"], token)
@@ -152,7 +198,7 @@ def delete_file(article_id: int, file_id: int, token: str):
     )
 
 
-def get_public_article_information(article_id: str, article_version: int):
+def get_public_article_information(article_id: int, article_version: int):
     return issue_request(
         "GET", "articles/{}/versions/{}".format(article_id, article_version), ""
     )

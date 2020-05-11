@@ -571,6 +571,21 @@ export class LogStartActivity extends ActivityLogEntry {
   dataset_version: number;
 }
 
+export type FigshareArticleInfo = {
+  id: number;
+  version: number;
+  authors: Array<{
+    full_name: string;
+    id: number;
+    is_active: boolean;
+  }>;
+  files: Array<{
+    id: number;
+    is_link_only: boolean;
+    name: string;
+  }>;
+};
+
 export class Group {
   id: number;
   name: string;
