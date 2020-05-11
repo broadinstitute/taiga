@@ -1557,7 +1557,7 @@ paths:
                     figshare_file_id:
                       description: If removing or replacing a file, the Figshare file id to update
                       type:
-                        - string
+                        - integer
                         - "null"
                     action:
                       description: Whether to add, remove, or replace a file
