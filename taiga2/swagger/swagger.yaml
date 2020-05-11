@@ -1536,7 +1536,7 @@ paths:
               - dataset_version_id
               - article_id
               - current_article_version
-              - files_to_upload
+              - files_to_update
             properties:
               dataset_version_id:
                 type: string

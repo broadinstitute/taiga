@@ -449,7 +449,7 @@ export class TaigaApi {
     article_id: number,
     current_article_version: number,
     dataset_version_id: string,
-    files_to_upload: Array<{
+    files_to_update: Array<{
       figshare_file_id: number;
       action: string;
       datafile_id: string;
@@ -468,7 +468,7 @@ export class TaigaApi {
       article_id,
       current_article_version,
       dataset_version_id,
-      files_to_upload,
+      files_to_update,
     });
   }
 
