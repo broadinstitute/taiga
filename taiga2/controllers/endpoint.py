@@ -1276,10 +1276,7 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
 
     dataset_version = models_controller.get_dataset_version(dataset_version_id)
     figshare_dataset_version_link = figshare.create_article(
-        dataset_version_id,
-        article_name,
-        article_description,
-        figshare_authorization.token,
+        dataset_version_id, article_name, article_description, token
     )
 
     from taiga2.tasks import upload_datafile_to_figshare
@@ -1305,7 +1302,7 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
             file_to_upload["datafile_id"],
             datafile.compressed_s3_key,
             datafile.original_file_md5,
-            figshare_authorization.token,
+            token,
         )
 
         file_to_upload["task_id"] = task.id
@@ -1361,7 +1358,7 @@ def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
                 file_to_update["datafile_id"],
                 datafile.compressed_s3_key,
                 datafile.original_file_md5,
-                figshare_authorization.token,
+                token,
             )
 
             file_to_update["task_id"] = task.id
