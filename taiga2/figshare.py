@@ -89,12 +89,11 @@ def create_article(
     dataset_version_id: str,
     title: str,
     description: str,
+    article_license: int,
+    categories: List[int],
+    keywords: List[str],
+    references: List[str],
     token: str,
-    article_license: int = 0,
-    authors: List[str] = None,
-    categories: Optional[List[int]] = None,
-    keywords: Optional[List[str]] = None,
-    references: Optional[List[str]] = None,
 ):
     data = {
         "title": title,
@@ -102,15 +101,12 @@ def create_article(
         "defined_type": "dataset",
         "license": article_license,
     }
-    if authors is not None:
-        data["authors"] = [{"name": author} for author in authors]
-    if categories is not None:
+    if categories is not None and len(categories) > 0:
         data["categories"] = categories
-    if keywords is not None:
+    if keywords is not None and len(keywords) > 0:
         data["keywords"] = keywords
-    if references is not None:
+    if references is not None and len(references) > 0:
         data["references"] = references
-
     result = issue_request("POST", "account/articles", token, data=data)
 
     result = raw_issue_request("GET", result["location"], token)

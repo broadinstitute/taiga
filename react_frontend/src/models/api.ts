@@ -435,7 +435,11 @@ export class TaigaApi {
     dataset_version_id: string,
     article_name: string,
     article_description: string,
-    files_to_upload: Array<{ datafile_id: string; file_name: string }>
+    files_to_upload: Array<{ datafile_id: string; file_name: string }>,
+    license: number,
+    categories: Array<number>,
+    keywords: Array<string>,
+    references: Array<string>
   ): Promise<{
     article_id: number;
     files: Array<{
@@ -450,6 +454,10 @@ export class TaigaApi {
       article_name,
       article_description,
       files_to_upload,
+      license,
+      categories,
+      keywords,
+      references,
     });
   }
 

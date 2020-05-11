@@ -10,7 +10,7 @@
   resize: vertical;
 }
 
-.update-figshare-body {
-  max-height: 75vh;
+.figshare-modal-body {
+  max-height: 66vh;
   overflow-y: auto;
 }

@@ -610,7 +610,7 @@ export default class UpdateFigshare extends React.Component<Props, State> {
 
         <Modal.Body
           // @ts-ignore
-          bsClass="modal-body update-figshare-body"
+          bsClass="modal-body figshare-modal-body"
         >
           {this.renderModalBodyContent()}
         </Modal.Body>

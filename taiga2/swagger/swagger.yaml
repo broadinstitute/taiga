@@ -1446,18 +1446,16 @@ paths:
                       type: string
                     file_name:
                       type: string
-              authors:
-                type: array
-                items:
-                  type: string
               license:
                 type: integer
               categories:
-                type:
-                  - array
-                  - "null"
+                type: array
                 items:
                   type: integer
+              keywords:
+                type: array
+                items:
+                  type: string
               references:
                 type: array
                 items:

@@ -7,6 +7,7 @@ import {
   FormControl,
   FormControlProps,
   ControlLabel,
+  HelpBlock,
   Table,
   ProgressBar,
 } from "react-bootstrap";
@@ -30,6 +31,10 @@ type Props = {
 type State = {
   articleTitle: string;
   articleDescription: string;
+  articleLicense: number;
+  articleCategories: Array<number>;
+  articleKeywords: Array<string>;
+  articleReferences: Array<string>;
   categories?: Array<{ value: any; label: any }>;
   licenses?: Array<{ value: any; label: any }>;
   filesToUpload: Array<{
@@ -62,7 +67,6 @@ export default class UploadToFigshare extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    console.log("sup");
     this.props.tapi
       .get_figshare_article_creation_parameters()
       .then(({ licenses, categories }) =>
@@ -87,6 +91,10 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     return {
       articleTitle: props.datasetVersion.dataset.name,
       articleDescription: "",
+      articleLicense: 0,
+      articleCategories: [],
+      articleKeywords: [],
+      articleReferences: [],
       filesToUpload: props.datasetVersion.datafiles.map((datafile) => {
         return {
           datafileId: datafile.id,
@@ -107,22 +115,59 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     }
   }
 
-  handleArticleTitleChange(e: React.FormEvent<FormControlProps>) {
+  handleArticleTitleChange = (
+    e: React.FormEvent<FormControl & FormControlProps>
+  ) => {
     this.setState({ articleTitle: e.currentTarget.value as string });
-  }
+  };
 
-  handleArticleDescriptionChange(e: React.FormEvent<FormControlProps>) {
+  handleArticleDescriptionChange = (
+    e: React.FormEvent<FormControl & FormControlProps>
+  ) => {
     this.setState({ articleDescription: e.currentTarget.value as string });
-  }
+  };
 
-  handleFileNameChange(e: React.FormEvent<FormControlProps>, i: number) {
+  handleArticleCategoriesChange = (
+    categories: Array<{ value: number; label: string }>
+  ) => {
+    this.setState({ articleCategories: categories.map((c) => c.value) });
+  };
+
+  handleArticleKeywordChange = (
+    e: React.FormEvent<FormControl & FormControlProps>
+  ) => {
+    let keywords = (e.currentTarget.value as string)
+      .split(",")
+      .map((kw) => kw.trim())
+      .filter((kw) => kw.length > 1);
+    this.setState({ articleKeywords: keywords });
+  };
+
+  handleArticleReferencesChange = (
+    e: React.FormEvent<FormControl & FormControlProps>
+  ) => {
+    let keywords = (e.currentTarget.value as string)
+      .split(",")
+      .map((kw) => kw.trim())
+      .filter((kw) => kw.length > 0);
+    this.setState({ articleReferences: keywords });
+  };
+
+  handleArticleLicenseChange = (v: { value: number; label: string }) => {
+    this.setState({ articleLicense: v.value });
+  };
+
+  handleFileNameChange = (
+    e: React.FormEvent<FormControl & FormControlProps>,
+    i: number
+  ) => {
     // @ts-ignore
     this.setState({
       filesToUpload: update(this.state.filesToUpload, {
         [i]: { figshareFileName: { $set: e.currentTarget.value } },
       }),
     });
-  }
+  };
 
   toggleIncludeFile(currentVal: boolean, i: number) {
     // @ts-ignore
@@ -146,7 +191,11 @@ export default class UploadToFigshare extends React.Component<Props, State> {
               datafile_id: fileToUpload.datafileId,
               file_name: fileToUpload.figshareFileName,
             };
-          })
+          }),
+        this.state.articleLicense,
+        this.state.articleCategories,
+        this.state.articleKeywords,
+        this.state.articleReferences
       )
       .then((value) => {
         this.setState({ uploadResults: value });
@@ -281,41 +330,76 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     return (
       <form>
         <FormGroup controlId="formArticleTitle">
-          <ControlLabel>Figshare article title</ControlLabel>
+          <ControlLabel>Title</ControlLabel>
           <FormControl
             type="text"
-            onChange={(e: React.FormEvent<FormControl & FormControlProps>) =>
-              this.handleArticleTitleChange(e)
-            }
-            value={this.state.articleTitle}
+            onChange={this.handleArticleTitleChange}
+            defaultValue={this.state.articleTitle}
             disabled={isUploading}
           />
         </FormGroup>
-        <FormGroup controlId="formArticleDescription">
-          <ControlLabel>Figshare article description</ControlLabel>
+
+        {this.state.categories && (
+          <FormGroup controlId="formArticleLicense">
+            <ControlLabel>Categories</ControlLabel>
+            <Select
+              isMulti
+              isDisabled={!this.state.categories}
+              isLoading={!this.state.categories}
+              isSearchable={true}
+              name="article-categories"
+              options={this.state.categories ? this.state.categories : []}
+              onChange={this.handleArticleCategoriesChange}
+            />
+          </FormGroup>
+        )}
+
+        <FormGroup controlId="formArticleKeywords">
+          <ControlLabel>Keyword(s)</ControlLabel>
           <FormControl
             componentClass="textarea"
-            onChange={(e: React.FormEvent<FormControl & FormControlProps>) =>
-              this.handleArticleDescriptionChange(e)
-            }
-            value={this.state.articleDescription}
+            onChange={this.handleArticleKeywordChange}
+            defaultValue={""}
+            bsClass="form-control textarea-lock-width"
+            disabled={isUploading}
+          />
+          <HelpBlock>Keywords separated by commas</HelpBlock>
+        </FormGroup>
+
+        <FormGroup controlId="formArticleDescription">
+          <ControlLabel>Description</ControlLabel>
+          <FormControl
+            componentClass="textarea"
+            onChange={this.handleArticleDescriptionChange}
+            defaultValue={""}
             bsClass="form-control textarea-lock-width"
             disabled={isUploading}
           />
         </FormGroup>
 
+        <FormGroup controlId="formArticleReferences">
+          <ControlLabel>References</ControlLabel>
+          <FormControl
+            componentClass="textarea"
+            onChange={this.handleArticleReferencesChange}
+            defaultValue={""}
+            bsClass="form-control textarea-lock-width"
+            disabled={isUploading}
+          />
+          <HelpBlock>References separated by commas</HelpBlock>
+        </FormGroup>
+
         {this.state.licenses && (
           <FormGroup controlId="formArticleLicense">
-            <ControlLabel>Figshare article license</ControlLabel>
+            <ControlLabel>License</ControlLabel>
             <Select
-              className="basic-single"
-              classNamePrefix="select"
               defaultValue={this.state.licenses[0]}
               isDisabled={!this.state.licenses}
               isLoading={!this.state.licenses}
               isSearchable={true}
               name="article-license"
               options={this.state.licenses ? this.state.licenses : []}
+              onChange={this.handleArticleLicenseChange}
             />
           </FormGroup>
         )}
@@ -391,7 +475,12 @@ export default class UploadToFigshare extends React.Component<Props, State> {
         <Modal.Header closeButton>
           <Modal.Title>Upload to Figshare</Modal.Title>
         </Modal.Header>
-        <Modal.Body>{this.renderModalBodyContent()}</Modal.Body>
+        <Modal.Body
+          // @ts-ignore
+          bsClass="modal-body figshare-modal-body"
+        >
+          {this.renderModalBodyContent()}
+        </Modal.Body>
         <Modal.Footer>
           <Button
             onClick={() =>
