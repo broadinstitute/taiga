@@ -202,7 +202,11 @@ def delete_file(article_id: int, file_id: int, token: str):
     )
 
 
-def get_public_article_information(article_id: int, article_version: int):
+def get_public_article_information(
+    article_id: int, article_version: Optional[int] = None
+):
+    if article_version is None:
+        return issue_request("GET", "articles/{}".format(article_id), "")
     return issue_request(
         "GET", "articles/{}/versions/{}".format(article_id, article_version), ""
     )

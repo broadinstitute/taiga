@@ -1420,7 +1420,7 @@ def get_figshare_url(datasetVersionId):
 
 def get_public_article_information_for_user(article_id: int):
     try:
-        article_info = figshare.get_public_article_information(article_id, 1)
+        article_info = figshare.get_public_article_information(article_id)
         token = _fetch_figshare_token()
         if token is None:
             flask.abort(404)
