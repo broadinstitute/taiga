@@ -1544,7 +1544,7 @@ paths:
                 type: integer
               current_article_version:
                 type: integer
-              files_to_upload:
+              files_to_update:
                 type: array
                 items:
                   type: object
