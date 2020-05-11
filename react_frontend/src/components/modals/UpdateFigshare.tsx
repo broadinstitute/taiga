@@ -561,9 +561,8 @@ export default class UpdateFigshare extends React.Component<Props, State> {
         </Button>
       );
     } else if (
-      !this.state.figshareArticleInfo.authors.some(
-        (author) => author.id == this.props.userFigshareAccountId
-      )
+      this.state.articleDoesNotExists ||
+      this.state.articleAuthorsDoNotMatch
     ) {
       primaryAction = (
         <Button
