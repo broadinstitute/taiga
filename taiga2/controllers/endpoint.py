@@ -1336,6 +1336,7 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
 @validate
 def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
     dataset_version_id = figshareDatasetVersionLink["dataset_version_id"]
+    description = figshareDatasetVersionLink["description"]
     article_id = figshareDatasetVersionLink["article_id"]
     current_article_version = figshareDatasetVersionLink["current_article_version"]
     files_to_update = figshareDatasetVersionLink["files_to_update"]
@@ -1384,7 +1385,7 @@ def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
 
                 file_to_update["task_id"] = task.id
 
-        r = figshare.update_article(article_id, token)
+        r = figshare.update_article(article_id, description, token)
 
         return flask.jsonify(
             {

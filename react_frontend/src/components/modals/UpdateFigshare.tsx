@@ -17,6 +17,7 @@ import {
 } from "react-bootstrap";
 import update from "immutability-helper";
 
+import FigshareWYSIWYGEditor from "./FigshareWYSIWYGEditor";
 import * as Models from "../../models/models";
 import { TaigaApi } from "../../models/api";
 import { relativePath } from "../../utilities/route";
@@ -41,6 +42,7 @@ type Props = {
 
 type State = {
   articleId: string;
+  description: string;
   figshareArticleInfo: Models.FigshareArticleInfo;
   fetchingArticle: boolean;
   articleDoesNotExists: boolean;
@@ -80,6 +82,7 @@ export default class UpdateFigshare extends React.Component<Props, State> {
   getDefaultStateFromProps(props: Props): State {
     return {
       articleId: "",
+      description: "",
       figshareArticleInfo: null,
       fetchingArticle: false,
       articleDoesNotExists: false,
@@ -97,16 +100,8 @@ export default class UpdateFigshare extends React.Component<Props, State> {
   }
 
   handleClose = (uploadComplete: boolean, figsharePrivateUrl: string) => {
-    this.setState(
-      {
-        articleId: "",
-        figshareArticleInfo: null,
-        fetchingArticle: false,
-        articleDoesNotExists: false,
-        articleAuthorsDoNotMatch: false,
-        filesToUpdate: [],
-      },
-      () => this.props.handleClose(uploadComplete, figsharePrivateUrl)
+    this.setState(this.getDefaultStateFromProps(this.props), () =>
+      this.props.handleClose(uploadComplete, figsharePrivateUrl)
     );
   };
 
@@ -116,6 +111,10 @@ export default class UpdateFigshare extends React.Component<Props, State> {
       figshareArticleInfo: null,
     });
   }
+
+  handleDescriptionChange = (description: string) => {
+    this.setState({ description });
+  };
 
   handleFileActionChange(i: number, action: UpdateAction) {
     // @ts-ignore
@@ -173,6 +172,7 @@ export default class UpdateFigshare extends React.Component<Props, State> {
         .get_figshare_article(parseInt(this.state.articleId))
         .then((figshareArticleInfo) => {
           this.setState({
+            description: figshareArticleInfo.description,
             figshareArticleInfo,
             fetchingArticle: false,
             filesToUpdate: figshareArticleInfo.files.map((file) => {
@@ -201,6 +201,7 @@ export default class UpdateFigshare extends React.Component<Props, State> {
     this.props.tapi
       .update_figshare_article(
         this.state.figshareArticleInfo.id,
+        this.state.description,
         this.state.figshareArticleInfo.version,
         this.props.datasetVersion.id,
         this.state.filesToUpdate
@@ -456,9 +457,20 @@ export default class UpdateFigshare extends React.Component<Props, State> {
     const isUploading = !!this.state.uploadResults;
     return (
       <form>
-        {isUploading
-          ? this.renderUploadingStatusTable()
-          : this.renderUploadTable()}
+        {isUploading ? (
+          this.renderUploadingStatusTable()
+        ) : (
+          <>
+            <FormGroup controlId="formArticleDescription">
+              <ControlLabel>Description</ControlLabel>
+              <FigshareWYSIWYGEditor
+                value={this.state.description}
+                onChange={this.handleDescriptionChange}
+              />
+            </FormGroup>
+            {this.renderUploadTable()}
+          </>
+        )}
       </form>
     );
   }
@@ -591,7 +603,8 @@ export default class UpdateFigshare extends React.Component<Props, State> {
                 ((f.action == "Replace" || f.action == "Add") &&
                   f.datafileId === null) ||
                 (f.action == "Add" && !f.name)
-            )
+            ) ||
+            this.state.filesToUpdate.every((f) => f.action == "Keep")
           }
         >
           Upload to Figshare

@@ -1532,11 +1532,14 @@ paths:
             type: object
             required:
               - dataset_version_id
+              - description
               - article_id
               - current_article_version
               - files_to_update
             properties:
               dataset_version_id:
+                type: string
+              description:
                 type: string
               article_id:
                 type: integer

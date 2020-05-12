@@ -12,14 +12,15 @@ import {
   ProgressBar,
 } from "react-bootstrap";
 import update from "immutability-helper";
-
 import Select from "react-select";
 
+import FigshareWYSIWYGEditor from "./FigshareWYSIWYGEditor";
 import * as Models from "../../models/models";
 import { TaigaApi } from "../../models/api";
 import { relativePath } from "../../utilities/route";
 
 import "../../styles/modals/uploadtofigshare.css";
+
 type Props = {
   tapi: TaigaApi;
   handleClose: (uploadComplete: boolean, figsharePrivateUrl: string) => void;
@@ -121,10 +122,8 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     this.setState({ articleTitle: e.currentTarget.value as string });
   };
 
-  handleArticleDescriptionChange = (
-    e: React.FormEvent<FormControl & FormControlProps>
-  ) => {
-    this.setState({ articleDescription: e.currentTarget.value as string });
+  handleArticleDescriptionChange = (articleDescription: string) => {
+    this.setState({ articleDescription });
   };
 
   handleArticleCategoriesChange = (
@@ -368,12 +367,9 @@ export default class UploadToFigshare extends React.Component<Props, State> {
 
         <FormGroup controlId="formArticleDescription">
           <ControlLabel>Description</ControlLabel>
-          <FormControl
-            componentClass="textarea"
+          <FigshareWYSIWYGEditor
+            value={this.state.articleDescription}
             onChange={this.handleArticleDescriptionChange}
-            defaultValue={""}
-            bsClass="form-control textarea-lock-width"
-            disabled={isUploading}
           />
         </FormGroup>
 

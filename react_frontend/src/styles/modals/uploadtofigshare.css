@@ -14,3 +14,7 @@
   max-height: 66vh;
   overflow-y: auto;
 }
+
+.ql-editor {
+  height: 200px;
+}

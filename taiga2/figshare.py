@@ -114,8 +114,13 @@ def create_article(
     return mc.add_figshare_dataset_version_link(dataset_version_id, result["id"], 1)
 
 
-def update_article(article_id: int, token: str):
-    return issue_request("PUT", "/account/articles/{}".format(article_id), token)
+def update_article(article_id: int, description: str, token: str):
+    return issue_request(
+        "PUT",
+        "/account/articles/{}".format(article_id),
+        token,
+        data={"description": description},
+    )
 
 
 def get_file_check_data(download_dest: IO, compressed_s3_key: str, md5: Optional[str]):

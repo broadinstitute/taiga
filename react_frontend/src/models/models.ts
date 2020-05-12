@@ -579,6 +579,7 @@ export type FigshareArticleInfo = {
     id: number;
     is_active: boolean;
   }>;
+  description: string;
   files: Array<{
     id: number;
     is_link_only: boolean;

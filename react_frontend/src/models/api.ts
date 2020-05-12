@@ -463,6 +463,7 @@ export class TaigaApi {
 
   update_figshare_article(
     article_id: number,
+    description: string,
     current_article_version: number,
     dataset_version_id: string,
     files_to_update: Array<{
@@ -482,6 +483,7 @@ export class TaigaApi {
   }> {
     return this._post("/figshare/update_article", {
       article_id,
+      description,
       current_article_version,
       dataset_version_id,
       files_to_update,
