@@ -4,7 +4,6 @@ from taiga2.conv import (
     csv_to_hdf5,
     csv_to_columnar,
     columnar_to_csv,
-    gct_to_hdf5,
     hdf5_to_gct,
     columnar_to_rds,
 )
@@ -27,17 +26,6 @@ tall_gct_filename = "tall_matrix.gct"
 tall_gct_file_path = os.path.join(
     os.path.dirname(sys.modules[__name__].__file__), "test_files", tall_gct_filename
 )
-
-
-def test_gct_to_hdf5(tmpdir):
-    dst_hdf5_file = str(tmpdir.join("out.hdf5"))
-    dest_gct = str(tmpdir.join("dest.gct"))
-
-    # convert to hdf5 and back, two rows at a time
-    gct_to_hdf5(StubProgress(), tall_gct_file_path, dst_hdf5_file, rows_per_block=2)
-    hdf5_to_gct(StubProgress(), dst_hdf5_file, lambda: dest_gct)
-
-    assert open(tall_gct_file_path, "rt").read() == open(dest_gct, "rt").read()
 
 
 def test_csv_to_hdf5(tmpdir):

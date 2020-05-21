@@ -439,9 +439,7 @@ export class BootstrapTableSearchEntry {
 // IMPORTANT: Need to sync with backend for each changes
 export enum InitialFileType {
   NumericMatrixCSV = "NumericMatrixCSV",
-  NumericMatrixTSV = "NumericMatrixTSV",
   TableCSV = "TableCSV",
-  TableTSV = "TableTSV",
   GCT = "GCT",
   Raw = "Raw",
 }

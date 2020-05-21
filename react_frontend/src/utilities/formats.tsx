@@ -23,8 +23,6 @@ export function getInitialFileTypeFromMimeType(
   } else {
     if (mimeTypeOrEnum == "text/csv") {
       formattedType = InitialFileType.NumericMatrixCSV;
-    } else if (mimeTypeOrEnum == "text/tab-separated-values") {
-      formattedType = InitialFileType.NumericMatrixTSV;
     } else {
       formattedType = InitialFileType.Raw;
     }

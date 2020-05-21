@@ -108,10 +108,7 @@ def test_upload_session_file(
     updated_upload_session_file = models_controller.get_upload_session_file(
         upload_session_file.id
     )
-    if (
-        initial_file_type == InitialFileType.TableCSV.value
-        or initial_file_type == InitialFileType.TableTSV.value
-    ):
+    if initial_file_type == InitialFileType.TableCSV.value:
         assert updated_upload_session_file.column_types_as_json is not None
     else:
         assert updated_upload_session_file.column_types_as_json is None

@@ -181,14 +181,8 @@ def background_process_new_upload_session_file(
     else:
         if file_type == models.InitialFileType.NumericMatrixCSV.value:
             converter = conversion.csv_to_hdf5
-        elif file_type == models.InitialFileType.NumericMatrixTSV.value:
-            converter = conversion.tsv_to_hdf5
         elif file_type == models.InitialFileType.TableCSV.value:
             converter = conversion.csv_to_columnar
-        elif file_type == models.InitialFileType.TableTSV.value:
-            converter = conversion.tsv_to_columnar
-        elif file_type == models.InitialFileType.GCT.value:
-            converter = conversion.gct_to_hdf5
         else:
             raise Exception("unimplemented: {}".format(file_type))
 
@@ -207,9 +201,8 @@ def background_process_new_upload_session_file(
                     else:
                         mime_type = "text/tab-separated-values"
 
-                    calculate_column_types = bool(
+                    calculate_column_types = (
                         file_type == models.InitialFileType.TableCSV.value
-                        or file_type == models.InitialFileType.TableTSV.value
                     )
 
                     import_result, column_types = _from_s3_convert_to_s3(

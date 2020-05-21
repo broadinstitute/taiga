@@ -50,66 +50,6 @@ def csv_to_hdf5(progress, src_csv_file, dst_hdf5_file, **kwargs):
     return tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, csv.excel, **kwargs)
 
 
-def tsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, **kwargs):
-    return tcsv_to_hdf5(progress, src_csv_file, dst_hdf5_file, csv.excel_tab, **kwargs)
-
-
-def gct_to_hdf5(
-    progress,
-    src_gct_file,
-    dst_hdf5_file,
-    rows_per_block=None,
-    max_size_per_block=DEFAULT_MAX_ELEMENTS_PER_BLOCK,
-):
-    sha256, md5 = get_file_hashes(src_gct_file)
-
-    with open(src_gct_file, "rb") as gct:
-        line = gct.readline().strip()
-        # TODO: Check line is still #1.2 + Exception message
-        # assert line == "#1.2"
-
-        # Wrapping the tcsv file into TextIOWrapper to avoid disabling .tell() function on the file
-        textIO_gct = io.TextIOWrapper(io.BufferedReader(gct))  # type: ignore
-
-        r = csv.reader(textIO_gct, csv.excel_tab)
-
-        dimline = next(r)
-        row_count = int(dimline[0])
-        col_count = int(dimline[1])
-
-        col_header = next(r)
-        # drop the id/description header column names
-        col_header = col_header[2:]
-
-        _validate_columns(progress, col_header)
-
-        description_column = []
-
-        def rows_without_description():
-            while True:
-                row = next(r)
-                description_column.append(row[1])
-                yield [row[0]] + row[2:]
-
-        na_count, row_header = _convert_to_hdf5_file(
-            row_count,
-            col_count,
-            col_header,
-            csv.excel_tab,
-            dst_hdf5_file,
-            progress,
-            rows_without_description(),
-            rows_per_block,
-            max_size_per_block,
-            description_column=description_column,
-            file=gct,
-        )
-
-    return _make_import_result(
-        col_count, col_header, na_count, row_count, row_header, sha256, md5
-    )
-
-
 def _validate_columns(progress, col_header):
     # validate to make sure no other column headers are blank.  We should communicate this to the submitted, but
     # doing it as a hard assertion for the time being.
