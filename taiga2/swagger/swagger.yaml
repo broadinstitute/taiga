@@ -1863,6 +1863,11 @@ definitions:
         type:
           - string
           - "null"
+      original_file_md5:
+        description: the md5 of the uploaded file
+        type:
+          - string
+          - "null"
       gcs_path:
         description: GCS path of the datafile or file's underlying datafile
         type:
