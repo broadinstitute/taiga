@@ -183,6 +183,10 @@ def background_process_new_upload_session_file(
             converter = conversion.csv_to_hdf5
         elif file_type == models.InitialFileType.TableCSV.value:
             converter = conversion.csv_to_columnar
+        elif file_type in {"NumericMatrixTSV", "TableTSV"}:
+            raise Exception(
+                "TSV files are no longer supported. Please use CSV format instead."
+            )
         else:
             raise Exception("unimplemented: {}".format(file_type))
 
