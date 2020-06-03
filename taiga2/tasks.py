@@ -15,8 +15,7 @@ from urllib.parse import urlparse
 
 from taiga2.aws import aws
 import taiga2.conv as conversion
-from taiga2.conv.util import Progress
-from taiga2.conv.util import make_temp_file_generator
+from taiga2.conv.util import Progress, make_temp_file_generator, get_file_hashes
 from taiga2.controllers import models_controller
 from taiga2.conv.imp import ImportResult
 from taiga2.models import S3DataFile
@@ -155,12 +154,12 @@ def background_process_new_upload_session_file(
         b = s3.Bucket(bucket_name)
         existing_obj = b.Object(initial_s3_key)
         b.copy(copy_source, converted_s3_key)
-
         compressed_s3_object = s3.Object(bucket_name, compressed_s3_key)
         with tempfile.NamedTemporaryFile("w+b") as download_dest:
             with tempfile.NamedTemporaryFile("w+b") as compressed_dest:
                 existing_obj.download_fileobj(download_dest)
                 download_dest.flush()
+                sha256, md5 = get_file_hashes(download_dest.name)
 
                 _compress_and_upload_to_s3(
                     existing_obj,
@@ -172,8 +171,8 @@ def background_process_new_upload_session_file(
                 )
 
         import_result = ImportResult(
-            sha256=None,
-            md5=None,
+            sha256=sha256,
+            md5=md5,
             long_summary=None,
             short_summary=humanize.naturalsize(existing_obj.content_length),
         )
