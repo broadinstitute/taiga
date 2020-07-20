@@ -1470,7 +1470,7 @@ def get_figshare_links_for_client(datasetVersionId: str):
                 l.datafile.name,
             ): {
                 "download_url": figshare_file_ids_to_download_url[l.figshare_file_id],
-                "format": l.datafile.format,
+                "format": l.datafile.format.value,
                 "encoding": l.datafile.encoding
                 if l.datafile.type == "s3"
                 else l.datafile.underlying_data_file.encoding,
@@ -1484,12 +1484,7 @@ def get_figshare_links_for_client(datasetVersionId: str):
         buffer = BytesIO()
         buffer.write(json.dumps(taiga_figshare_map).encode())
         buffer.seek(0)
-        return flask.send_file(
-            buffer,
-            as_attachment=True,
-            attachment_filename="taiga_figshare_map.json",
-            mimetype="application/json",
-        )
+        return flask.jsonify({"content": json.dumps(taiga_figshare_map)})
     except HTTPError as error:
         flask.abort(404)
 

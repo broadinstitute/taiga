@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { saveAs } from "file-saver";
 
 import { DatasetVersion } from "../../models/models";
 import { relativePath } from "../../utilities/route";
@@ -138,12 +139,22 @@ export default class FigshareSection extends React.Component<Props, State> {
       <React.Fragment>
         {articleLink}
         <span>
-          <a
-            href={`${this.props.tapi.baseUrl}/figshare/download_mapping/${this.props.datasetVersion.id}`}
+          <Button
+            bsStyle="link"
+            onClick={() => {
+              this.props.tapi
+                .get_figshare_mapping(this.props.datasetVersion.id)
+                .then((response) => {
+                  const blob = new Blob([response.content], {
+                    type: "application/json;charset=utf-8",
+                  });
+                  saveAs(blob, "taiga_figshare_map.json");
+                });
+            }}
           >
             Download Figshare link mapping for taigapy{" "}
             <i className="fa fa-download" aria-hidden="true"></i>
-          </a>
+          </Button>
         </span>
       </React.Fragment>
     );

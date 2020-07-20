@@ -498,6 +498,10 @@ export class TaigaApi {
     );
   }
 
+  get_figshare_mapping(datasetVersionId: string): Promise<{ content: string }> {
+    return this._fetch(`/figshare/download_mapping/${datasetVersionId}`);
+  }
+
   add_subscription(dataset_id: string): Promise<string> {
     return this._put(`/subscription`, dataset_id);
   }
