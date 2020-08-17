@@ -14,6 +14,14 @@ type Props = {
   datasetVersion: DatasetVersion;
   handleFigshareUploadComplete: () => Promise<any>;
   userFigshareAccountId: number;
+  figshareLinkedFiles: Map<
+    string,
+    {
+      downloadLink: string;
+      currentTaigaId: string;
+      readableTaigaId?: string;
+    }
+  >;
 };
 
 type State = {
@@ -33,56 +41,20 @@ export default class FigshareSection extends React.Component<Props, State> {
       showUploadToFigshare: false,
       showUpdateFigshare: false,
     };
-
-    this.showUploadToFigshare = this.showUploadToFigshare.bind(this);
-    this.handleCloseUploadToFigshare = this.handleCloseUploadToFigshare.bind(
-      this
-    );
-    this.showUpdateFigshare = this.showUpdateFigshare.bind(this);
-    this.handleCloseUpdateFigshare = this.handleCloseUpdateFigshare.bind(this);
   }
 
-  componentDidMount() {
-    if (this.props.datasetVersion.figshare_linked) {
-      this.getFigshareUrl();
-    } else {
-      this.setState({ figshareUrl: null });
-    }
-  }
-
-  componentDidUpdate(prevProps: Props) {
-    if (prevProps.datasetVersion.id != this.props.datasetVersion.id) {
-      if (this.props.datasetVersion.figshare_linked) {
-        this.getFigshareUrl();
-      } else {
-        this.setState({ figshareUrl: null });
-      }
-    }
-  }
-
-  getFigshareUrl() {
-    this.props.tapi
-      .get_figshare_article_url(this.props.datasetVersion.id)
-      .then((v) =>
-        this.setState({
-          figshareUrl: v.figshare_url,
-          figshareUrlPublic: v.public,
-        })
-      );
-  }
-
-  showUploadToFigshare() {
+  showUploadToFigshare = () => {
     this.setState({ showUploadToFigshare: true });
-  }
+  };
 
-  showUpdateFigshare() {
+  showUpdateFigshare = () => {
     this.setState({ showUpdateFigshare: true });
-  }
+  };
 
-  handleCloseUploadToFigshare(
+  handleCloseUploadToFigshare = (
     uploadComplete: boolean,
     figsharePrivateUrl: string
-  ) {
+  ) => {
     if (uploadComplete) {
       this.props.handleFigshareUploadComplete().then(() => {
         this.setState({
@@ -97,12 +69,12 @@ export default class FigshareSection extends React.Component<Props, State> {
         figshareUrl: figsharePrivateUrl,
       });
     }
-  }
+  };
 
-  handleCloseUpdateFigshare(
+  handleCloseUpdateFigshare = (
     uploadComplete: boolean,
     figsharePrivateUrl: string
-  ) {
+  ) => {
     if (uploadComplete) {
       this.props.handleFigshareUploadComplete().then(() => {
         this.setState({
@@ -117,10 +89,13 @@ export default class FigshareSection extends React.Component<Props, State> {
         figshareUrl: figsharePrivateUrl,
       });
     }
-  }
+  };
 
   renderFigshareLinkedContent() {
-    if (!this.state.figshareUrl && !this.state.figshareUrlPublic) {
+    if (
+      !this.props.datasetVersion.figshare.is_public &&
+      !this.props.datasetVersion.figshare.url_private_html
+    ) {
       return (
         <p>This dataset version is linked to a private article on Figshare.</p>
       );
@@ -130,7 +105,8 @@ export default class FigshareSection extends React.Component<Props, State> {
       <p>
         This dataset version is linked to a{" "}
         <a href={this.state.figshareUrl} target="_blank" rel="noopener">
-          {this.state.figshareUrlPublic ? "public" : "private"} Figshare article
+          {this.props.datasetVersion.figshare.is_public ? "public" : "private"}{" "}
+          Figshare article
         </a>
         .
       </p>
@@ -142,14 +118,14 @@ export default class FigshareSection extends React.Component<Props, State> {
           <Button
             bsStyle="link"
             onClick={() => {
-              this.props.tapi
-                .get_figshare_mapping(this.props.datasetVersion.id)
-                .then((response) => {
-                  const blob = new Blob([response.content], {
-                    type: "application/json;charset=utf-8",
-                  });
-                  saveAs(blob, "taiga_figshare_map.json");
-                });
+              const map: { [taigaId: string]: string } = {};
+              this.props.figshareLinkedFiles.forEach((value) => {
+                map[value.currentTaigaId] = value.downloadLink;
+              });
+              const blob = new Blob([JSON.stringify(map, null, 2)], {
+                type: "application/json;charset=utf-8",
+              });
+              saveAs(blob, "taiga_figshare_map.json");
             }}
           >
             Download Figshare link mapping for taigapy{" "}
@@ -194,7 +170,7 @@ export default class FigshareSection extends React.Component<Props, State> {
         <h2>Link with Figshare</h2>
         {this.props.datasetVersion && (
           <React.Fragment>
-            {this.props.datasetVersion.figshare_linked
+            {this.props.datasetVersion.figshare
               ? this.renderFigshareLinkedContent()
               : this.renderFigshareNotLinkedContent()}
             <UploadToFigshare

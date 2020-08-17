@@ -119,7 +119,29 @@ export class DatasetVersion extends Entry {
   folders: Array<NamedId>;
   can_edit: boolean;
   can_view: boolean;
-  figshare_linked: boolean;
+  figshare: {
+    is_public: boolean;
+    description?: string;
+    files?: Array<{
+      computed_md5: string;
+      download_url: string;
+      id: number;
+      is_link_only: boolean;
+      name: string;
+      size: number;
+      supplied_md5: string;
+      taiga_datafile_id?: string;
+      taiga_datafile_readable_id: string;
+      underlying_file_id?: string;
+    }>;
+    id?: number;
+    status?: string;
+    title?: string;
+    url?: string;
+    url_private_html?: string;
+    url_public_html?: string;
+    version?: number;
+  };
 
   constructor(data: any, dataset: Dataset) {
     super(data);
@@ -152,7 +174,6 @@ export interface DatasetVersionDatafiles {
   allowed_conversion_type: Array<string>;
   short_summary: string;
   gcs_path: string;
-  figshare_linked: boolean;
 }
 
 export interface DatasetVersions {

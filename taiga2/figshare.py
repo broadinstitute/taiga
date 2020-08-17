@@ -16,7 +16,7 @@ from flask import current_app
 import taiga2.controllers.models_controller as mc
 from taiga2.aws import aws
 from taiga2.conv.util import Progress
-from taiga2.models import FigshareDatasetVersionLink
+from taiga2.models import DatasetVersion, FigshareDatasetVersionLink
 
 AUTH_URL = "https://figshare.com/account/applications/authorize{}"
 BASE_URL = "https://api.figshare.com/v2/{}"
@@ -242,3 +242,69 @@ def get_private_article_information(
 
 def get_public_article_files(article_id: str):
     return issue_request("GET", "articles/{}/files".format(article_id), "")
+
+
+def _update_article_information(figshare_article_info, dataset_version: DatasetVersion):
+    figshare_article_info = {
+        k: figshare_article_info[k]
+        for k in (
+            "description",
+            "files",
+            "id",
+            "is_public",
+            "status",
+            "title",
+            "url",
+            "url_private_html",
+            "url_public_html",
+            "version",
+        )
+        if k in figshare_article_info
+    }
+
+    for i, file in enumerate(figshare_article_info["files"]):
+        link = mc.get_figshare_datafile_link_by_figshare_id(file["id"])
+        if link is not None:
+            datafile = link.datafile
+            if (
+                datafile.dataset_version.dataset.id == dataset_version.dataset.id
+                and datafile.dataset_version.version <= dataset_version.version
+            ):
+                figshare_article_info["files"][i]["taiga_datafile_id"] = datafile.id
+                figshare_article_info["files"][i][
+                    "taiga_datafile_readable_id"
+                ] = "{}.{}/{}".format(
+                    datafile.dataset_version.dataset.permaname,
+                    datafile.dataset_version.version,
+                    datafile.name,
+                )
+                figshare_article_info["files"][i][
+                    "underlying_file_id"
+                ] = datafile.underlying_file_id
+
+    return figshare_article_info
+
+
+def get_article_information(figshare_dataset_version_link: FigshareDatasetVersionLink):
+    try:
+        article_info = get_public_article_information(
+            figshare_dataset_version_link.figshare_article_id,
+            figshare_dataset_version_link.figshare_article_version,
+        )
+        return _update_article_information(
+            article_info, figshare_dataset_version_link.dataset_version
+        )
+
+    except HTTPError as error:
+        try:
+            article_info = get_private_article_information(
+                figshare_dataset_version_link
+            )
+            if article_info is None:
+                raise error
+            return _update_article_information(
+                article_info, figshare_dataset_version_link.dataset_version
+            )
+
+        except HTTPError as error:
+            return {"is_public": False}

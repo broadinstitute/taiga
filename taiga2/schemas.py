@@ -353,7 +353,9 @@ class DatasetVersionSchema(ma.ModelSchema):
     version = fields.fields.Method("version_as_str")
     reason_state = fields.fields.Method("reason_state_str")
     description = fields.fields.Method("description_str")
-    figshare_linked = fields.fields.Method("figshare_link_exists")
+    figshare = fields.fields.Function(
+        lambda dataset_version, context: context.get("figshare", None)
+    )
 
     def description_str(self, dataset_version):
         if dataset_version.description is None:
@@ -382,11 +384,6 @@ class DatasetVersionSchema(ma.ModelSchema):
             return ""
         else:
             return reason_state
-
-    def figshare_link_exists(self, dataset_version):
-        if dataset_version.figshare_dataset_version_link is not None:
-            return True
-        return False
 
 
 class DatasetFullSchema(ma.ModelSchema):

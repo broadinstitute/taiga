@@ -2167,6 +2167,18 @@ def get_figshare_datafile_links_for_dataset_version_link(
     return figshare_datafile_links
 
 
+def get_figshare_datafile_link_by_figshare_id(
+    figshare_id: str,
+) -> FigshareDataFileLink:
+    figshare_datafile_link = (
+        db.session.query(FigshareDataFileLink)
+        .filter(FigshareDataFileLink.figshare_file_id == figshare_id)
+        .one_or_none()
+    )
+
+    return figshare_datafile_link
+
+
 def delete_figshare_dataset_version_and_datafiles(
     figshare_dataset_version_link_id: str,
 ):

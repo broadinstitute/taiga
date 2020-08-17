@@ -85,6 +85,15 @@ export interface DatasetViewState {
   showUploadToFigshare?: boolean;
 
   activityLog?: Array<ActivityLogEntry>;
+
+  figshareLinkedFiles?: Map<
+    string,
+    {
+      downloadLink: string;
+      currentTaigaId: string;
+      readableTaigaId?: string;
+    }
+  >;
 }
 
 const buttonUploadNewVersionStyle = {
@@ -151,6 +160,8 @@ export class DatasetView extends React.Component<
 
         this.getActivityLog();
 
+        this.updateFigshareMap();
+
         // We close the modal
         this.setState({
           showUploadDataset: false,
@@ -177,6 +188,8 @@ export class DatasetView extends React.Component<
         this.logAccess();
 
         this.getActivityLog();
+
+        this.updateFigshareMap();
 
         this.setLoading(false);
 
@@ -287,6 +300,51 @@ export class DatasetView extends React.Component<
       .then((r: Array<ActivityLogEntry>) => {
         this.setState({ activityLog: r });
       });
+  }
+
+  updateFigshareMap() {
+    const { datafiles, figshare } = this.state.datasetVersion;
+    if (!figshare || !figshare.files) {
+      this.setState({ figshareLinkedFiles: null });
+      return;
+    }
+    const figshareLinkedFiles = new Map<
+      string,
+      {
+        downloadLink: string;
+        currentTaigaId: string;
+        readableTaigaId?: string;
+      }
+    >();
+
+    datafiles.forEach((datafile) => {
+      const file = figshare.files.find(
+        (file) =>
+          file.taiga_datafile_id == datafile.id ||
+          file.underlying_file_id == datafile.underlying_file_id
+      );
+
+      if (file) {
+        const currentTaigaId = `${
+          this.state.dataset.permanames[
+            this.state.dataset.permanames.length - 1
+          ]
+        }.${this.state.datasetVersion.version}/${datafile.name}`;
+        if (file.taiga_datafile_id == datafile.id) {
+          figshareLinkedFiles.set(datafile.id, {
+            downloadLink: file.download_url,
+            currentTaigaId,
+          });
+        } else {
+          figshareLinkedFiles.set(datafile.id, {
+            downloadLink: file.download_url,
+            currentTaigaId,
+            readableTaigaId: file.taiga_datafile_readable_id,
+          });
+        }
+      }
+    });
+    this.setState({ figshareLinkedFiles });
   }
 
   updateName(name: string) {
@@ -904,6 +962,50 @@ export class DatasetView extends React.Component<
               gsPath = <div>({"gs://" + df.gcs_path})</div>;
             }
 
+            let figshareLinked = null;
+
+            if (
+              this.state.figshareLinkedFiles &&
+              this.state.figshareLinkedFiles.has(df.id)
+            ) {
+              const figshareFileInfo = this.state.figshareLinkedFiles.get(
+                df.id
+              );
+              if (figshareFileInfo.readableTaigaId) {
+                let m = figshareFileInfo.readableTaigaId.match(
+                  /([^.]+)\.([^/]+)\/.+/
+                );
+
+                let figshareDatasetPermaname = m[1];
+                let figshareDatasetVersion = m[2];
+                figshareLinked = (
+                  <OverlayTrigger
+                    placement="top"
+                    overlay={
+                      <Tooltip id="tooltip">
+                        {figshareFileInfo.readableTaigaId}
+                      </Tooltip>
+                    }
+                  >
+                    <Link
+                      to={relativePath(
+                        "dataset/" +
+                          figshareDatasetPermaname +
+                          "/" +
+                          figshareDatasetVersion
+                      )}
+                    >
+                      <i className="fa fa-check" aria-label="yes"></i>
+                    </Link>
+                  </OverlayTrigger>
+                );
+              } else {
+                figshareLinked = (
+                  <i className="fa fa-check" aria-label="yes"></i>
+                );
+              }
+            }
+
             return (
               <tr key={index}>
                 <td>
@@ -912,13 +1014,7 @@ export class DatasetView extends React.Component<
                   {gsPath}
                 </td>
                 <td>{df.short_summary}</td>
-                {this.state.datasetVersion.figshare_linked && (
-                  <td>
-                    {df.figshare_linked && (
-                      <i className="fa fa-check" aria-label="yes"></i>
-                    )}
-                  </td>
-                )}
+                {this.state.figshareLinkedFiles && <td>{figshareLinked}</td>}
                 <td>{conversionTypesOutput}</td>
                 <td>{copy_button}</td>
               </tr>
@@ -1208,7 +1304,7 @@ export class DatasetView extends React.Component<
                       <th>Name</th>
                       {/*<th>Description</th>*/}
                       <th>Summary</th>
-                      {this.state.datasetVersion.figshare_linked && (
+                      {this.state.figshareLinkedFiles && (
                         <th>Uploaded to Figshare</th>
                       )}
                       <th>Download</th>
@@ -1246,6 +1342,7 @@ export class DatasetView extends React.Component<
                   handleFigshareUploadComplete={this.doFetch.bind(this)}
                   datasetVersion={this.state.datasetVersion}
                   userFigshareAccountId={this.props.user.figshare_account_id}
+                  figshareLinkedFiles={this.state.figshareLinkedFiles}
                 />
                 {this.renderActivityLog()}
               </span>

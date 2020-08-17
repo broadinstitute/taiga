@@ -368,6 +368,16 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
     dataset_version_schema = schemas.DatasetVersionSchema()
     dataset_version_schema.context["entry_user_right"] = dataset_version_right
+
+    if dataset_version.figshare_dataset_version_link is not None:
+        try:
+            figshare_article_info = figshare.get_article_information(
+                dataset_version.figshare_dataset_version_link
+            )
+            dataset_version_schema.context["figshare"] = figshare_article_info
+        except:
+            pass
+
     json_dv_data = dataset_version_schema.dump(dataset_version).data
 
     dataset_schema = schemas.DatasetSchema()
@@ -1398,36 +1408,6 @@ def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
             figshare_dataset_version_link.id
         )
         return flask.abort(error.code, error.reason)
-
-
-@validate
-def get_figshare_url(datasetVersionId):
-    dataset_version = models_controller.get_dataset_version(datasetVersionId)
-    figshare_dataset_version_link = (
-        dataset_version.figshare_dataset_version_link
-    )  # type: FigshareDatasetVersionLink
-    if figshare_dataset_version_link is None:
-        flask.abort(404)
-    try:
-        article_info = figshare.get_public_article_information(
-            figshare_dataset_version_link.figshare_article_id,
-            figshare_dataset_version_link.figshare_article_version,
-        )
-        return flask.jsonify(
-            {"figshare_url": article_info["url_public_html"], "public": True}
-        )
-    except HTTPError as error:
-        try:
-            article_info = figshare.get_private_article_information(
-                figshare_dataset_version_link
-            )
-            if article_info is None:
-                flask.abort(404)
-            return flask.jsonify(
-                {"figshare_url": article_info["url_private_html"], "public": False}
-            )
-        except HTTPError as error:
-            return flask.jsonify({"figshare_url": None, "public": False})
 
 
 def get_public_article_information_for_user(article_id: int):

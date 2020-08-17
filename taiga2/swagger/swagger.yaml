@@ -1601,64 +1601,6 @@ paths:
         401:
           description: TODO (token does not work)
 
-  /figshare/article_for_dataset_version/{datasetVersionId}:
-    get:
-      description: Return a url for figshare article associated with dataset version
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_figshare_url
-      consumes:
-        - application/json
-      parameters:
-        - name: datasetVersionId
-          in: path
-          type: string
-          description: dataset version ID
-          required: true
-      responses:
-        200:
-          description: Fig
-          schema:
-            type: object
-            required:
-              - figshare_url
-              - public
-            properties:
-              figshare_url:
-                type:
-                  - string
-                  - "null"
-                description: The public URL for the Figshare article if available, or the private URL if available
-              public:
-                type: boolean
-        404:
-          description: No article found
-
-  /figshare/download_mapping/{datasetVersionId}:
-    get:
-      description: Return a mapping of Taiga IDs to Figshare download URLs for a linked dataset version, to be consumed by Taiga clients
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_figshare_links_for_client
-      consumes:
-        - application/json
-      parameters:
-        - name: datasetVersionId
-          in: path
-          type: string
-          description: dataset version ID
-          required: true
-      responses:
-        200:
-          description: Fig
-          schema:
-            type: object
-            required:
-              - figshare_public_url
-            properties:
-              figshare_public_url:
-                type: string
-        404:
-          description: No public article found
-
   /subscription:
     put:
       description: Subscribes the user to the dataset with id dataset_id
