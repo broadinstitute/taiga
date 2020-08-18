@@ -25,8 +25,6 @@ type Props = {
 };
 
 type State = {
-  figshareUrl: string;
-  figshareUrlPublic: boolean;
   showUploadToFigshare: boolean;
   showUpdateFigshare: boolean;
 };
@@ -36,8 +34,6 @@ export default class FigshareSection extends React.Component<Props, State> {
     super(props);
 
     this.state = {
-      figshareUrl: null,
-      figshareUrlPublic: false,
       showUploadToFigshare: false,
       showUpdateFigshare: false,
     };
@@ -51,42 +47,30 @@ export default class FigshareSection extends React.Component<Props, State> {
     this.setState({ showUpdateFigshare: true });
   };
 
-  handleCloseUploadToFigshare = (
-    uploadComplete: boolean,
-    figsharePrivateUrl: string
-  ) => {
+  handleCloseUploadToFigshare = (uploadComplete: boolean) => {
     if (uploadComplete) {
       this.props.handleFigshareUploadComplete().then(() => {
         this.setState({
           showUploadToFigshare: false,
-          figshareUrl: figsharePrivateUrl,
-          figshareUrlPublic: false,
         });
       });
     } else {
       this.setState({
         showUploadToFigshare: false,
-        figshareUrl: figsharePrivateUrl,
       });
     }
   };
 
-  handleCloseUpdateFigshare = (
-    uploadComplete: boolean,
-    figsharePrivateUrl: string
-  ) => {
+  handleCloseUpdateFigshare = (uploadComplete: boolean) => {
     if (uploadComplete) {
       this.props.handleFigshareUploadComplete().then(() => {
         this.setState({
           showUpdateFigshare: false,
-          figshareUrl: figsharePrivateUrl,
-          figshareUrlPublic: false,
         });
       });
     } else {
       this.setState({
         showUpdateFigshare: false,
-        figshareUrl: figsharePrivateUrl,
       });
     }
   };
@@ -104,7 +88,15 @@ export default class FigshareSection extends React.Component<Props, State> {
     const articleLink = (
       <p>
         This dataset version is linked to a{" "}
-        <a href={this.state.figshareUrl} target="_blank" rel="noopener">
+        <a
+          href={
+            this.props.datasetVersion.figshare.is_public
+              ? this.props.datasetVersion.figshare.url_public_html
+              : this.props.datasetVersion.figshare.url_private_html
+          }
+          target="_blank"
+          rel="noopener"
+        >
           {this.props.datasetVersion.figshare.is_public ? "public" : "private"}{" "}
           Figshare article
         </a>

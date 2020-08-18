@@ -1339,7 +1339,9 @@ export class DatasetView extends React.Component<
 
                 <FigshareSection
                   tapi={this.props.tapi}
-                  handleFigshareUploadComplete={this.doFetch.bind(this)}
+                  handleFigshareUploadComplete={() =>
+                    this.doFetch().then(() => this.updateFigshareMap())
+                  }
                   datasetVersion={this.state.datasetVersion}
                   userFigshareAccountId={this.props.user.figshare_account_id}
                   figshareLinkedFiles={this.state.figshareLinkedFiles}
