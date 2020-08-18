@@ -278,9 +278,14 @@ def _update_article_information(figshare_article_info, dataset_version: DatasetV
                     datafile.dataset_version.version,
                     datafile.name,
                 )
-                figshare_article_info["files"][i][
-                    "underlying_file_id"
-                ] = datafile.underlying_file_id
+                if datafile.type == "virtual":
+                    figshare_article_info["files"][i][
+                        "underlying_file_id"
+                    ] = datafile.underlying_file_id
+                else:
+                    figshare_article_info["files"][i][
+                        "underlying_file_id"
+                    ] = figshare_article_info["files"][i]["taiga_datafile_readable_id"]
 
     return figshare_article_info
 
