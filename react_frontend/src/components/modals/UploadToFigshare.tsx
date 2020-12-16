@@ -9,12 +9,12 @@ import {
   ControlLabel,
   HelpBlock,
   Table,
-  ProgressBar,
 } from "react-bootstrap";
 import update from "immutability-helper";
 import Select from "react-select";
 
 import FigshareWYSIWYGEditor from "./FigshareWYSIWYGEditor";
+import FigshareUploadStatusTable from "./FigshareUploadStatusTable";
 import * as Models from "../../models/models";
 import { TaigaApi } from "../../models/api";
 import { relativePath } from "../../utilities/route";
@@ -232,59 +232,6 @@ export default class UploadToFigshare extends React.Component<Props, State> {
       });
   }
 
-  renderUploadingStatusTable() {
-    return (
-      <Table responsive striped bsClass="table figshare-upload-files-table">
-        <thead>
-          <tr>
-            <th>Datafile</th>
-            <th>Upload status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {this.state.uploadResults.files.map((file, i) => {
-            let progressIndicator = null;
-
-            const state = file.taskStatus ? file.taskStatus.state : null;
-            if (file.failure_reason) {
-              progressIndicator = (
-                <ProgressBar
-                  now={0}
-                  label={`Failed to upload: ${file.failure_reason}`}
-                  bsStyle="danger"
-                />
-              );
-            } else if (state == "PROGRESS") {
-              progressIndicator = (
-                <ProgressBar
-                  now={file.taskStatus.current * 100}
-                  label="Uploading"
-                />
-              );
-            } else if (state == "SUCCESS") {
-              progressIndicator = <ProgressBar now={100} label="Uploaded" />;
-            } else if (state == "FAILURE") {
-              progressIndicator = (
-                <ProgressBar
-                  now={file.taskStatus.current * 100}
-                  label={"Failed to upload"}
-                  bsStyle="danger"
-                />
-              );
-            }
-
-            return (
-              <tr key={file.datafile_id}>
-                <td>{this.datafileIdToName.get(file.datafile_id)}</td>
-                <td>{progressIndicator}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
-    );
-  }
-
   renderUploadTable() {
     return (
       <Table responsive striped bsClass="table figshare-upload-files-table">
@@ -400,9 +347,14 @@ export default class UploadToFigshare extends React.Component<Props, State> {
           </FormGroup>
         )}
 
-        {isUploading
-          ? this.renderUploadingStatusTable()
-          : this.renderUploadTable()}
+        {isUploading ? (
+          <FigshareUploadStatusTable
+            datafileIdToName={this.datafileIdToName}
+            uploadResults={this.state.uploadResults}
+          />
+        ) : (
+          this.renderUploadTable()
+        )}
       </form>
     );
   }

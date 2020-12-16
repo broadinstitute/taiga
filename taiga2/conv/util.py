@@ -33,12 +33,12 @@ class Progress:
             meta={"current": 0, "total": "0", "message": message, "fileName": filename},
         )
 
-    def progress(self, message, filename=None, current=0):
+    def progress(self, message, filename=None, current=0, total=1):
         self.celery_instance.update_state(
             state="PROGRESS",
             meta={
                 "current": current,
-                "total": "0",
+                "total": total,
                 "message": message,
                 "fileName": filename,
             },
