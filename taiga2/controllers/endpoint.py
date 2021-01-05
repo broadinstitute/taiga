@@ -1199,77 +1199,30 @@ def remove_group_user_associations(groupId, groupUserAssociationMetadata):
 
 
 @validate
-def get_figshare_auth_url():
-    config = flask.current_app.config
-    return flask.jsonify(
-        {
-            "figshare_auth_url": figshare.AUTH_URL.format(
-                "?client_id={}".format(
-                    (config["FIGSHARE_CLIENT_ID"])
-                    + "&response_type=code"
-                    + "&scope=all"
-                    + "&redirect_uri%3Dhttps%3A%2F%2Fcds.team%2Ftaiga"
-                )
-            )
-        }
-    )
+def add_figshare_token(token: str):
+    if not figshare.is_token_valid(token):
+        flask.abort(401)
 
-
-@validate
-def add_figshare_token(figshareOAuthRequest):
-    config = flask.current_app.config
-    code = figshareOAuthRequest["code"]
-    state = figshareOAuthRequest["state"]
-
-    response = requests.post(
-        figshare.BASE_URL.format(
-            "token"
-            + "?client_id={}".format(config["FIGSHARE_CLIENT_ID"])
-            + "&client_secret={}".format(config["FIGSHARE_CLIENT_SECRET"])
-            + "&grant_type=authorization_code"
-            + "&code={}".format(code)
-            + "&state={}".format(state)
-        )
-    )
-
-    try:
-        response.raise_for_status()
-        data = response.json()
-        token = data["token"]
-        refresh_token = data["refresh_token"]
-
-        account_data = figshare.issue_request("GET", "account", token)
-
-        figshare_authorization, is_new = models_controller.add_figshare_token(
-            account_data["id"], token, refresh_token
-        )
-        if is_new:
-            return flask.make_response(flask.jsonify({}), 201)
-        else:
-            return flask.jsonify({})
-    except HTTPError as error:
-        return flask.abort(400)
+    is_new = models_controller.add_figshare_token(token)
+    if is_new:
+        return flask.make_response(flask.jsonify({}), 201)
+    else:
+        return flask.jsonify({})
 
 
 def _fetch_figshare_token() -> str:
-    """Validates, refreshes if necessary, and returns Figshare token for current user."""
-    figshare_authorization = (
-        models_controller.get_figshare_authorization_for_current_user()
-    )
-    if figshare_authorization is None:
-        return None
-
-    token, refresh_token = figshare.validate_token(
-        figshare_authorization.token, figshare_authorization.refresh_token
-    )
+    """Validates and returns token for current user.
+    
+    Also removes invalid tokens.
+    """
+    token = models_controller.get_figshare_personal_token_for_current_user()
     if token is None:
-        models_controller.remove_figshare_token(figshare_authorization.id)
         return None
 
-    if token != figshare_authorization.token:
-        figshare_authorization = models_controller.update_figshare_token(
-            figshare_authorization.id, token, refresh_token
-        )
+    if not figshare.is_token_valid(token):
+        models_controller.remove_figshare_token_for_current_user()
+        return None
+
     return token
 
 

@@ -404,12 +404,8 @@ export class TaigaApi {
     return this._post<Group>("/group/" + groupId + "/remove", { userIds });
   }
 
-  get_figshare_authorization_url(): Promise<{ figshare_auth_url: string }> {
-    return this._fetch("/figshare/auth_url");
-  }
-
-  authorize_figshare(state: string, code: string): Promise<{}> {
-    return this._put("/figshare", { state, code });
+  authorize_figshare(token: string): Promise<{}> {
+    return this._put("/figshare/token", token);
   }
 
   get_figshare_article(article_id: number): Promise<FigshareArticleInfo> {

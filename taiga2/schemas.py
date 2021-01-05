@@ -34,15 +34,13 @@ class UserSchema(ma.ModelSchema):
             "home_folder_id",
             "trash_folder_id",
             "token",
-            "figshare_account_id",
+            "figshare_account_linked",
         )
 
-    figshare_account_id = fields.fields.Method("get_figshare_account_id")
+    figshare_account_linked = fields.fields.Method("get_figshare_account_linked")
 
-    def get_figshare_account_id(self, user: User):
-        if user.figshare_authorization is None:
-            return None
-        return user.figshare_authorization.figshare_account_id
+    def get_figshare_account_linked(self, user: User):
+        return user.figshare_personal_token is not None
 
 
 class UserNamedIdSchema(ma.ModelSchema):

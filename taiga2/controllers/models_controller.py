@@ -31,7 +31,6 @@ from taiga2.models import (
     NameUpdateActivity,
     DescriptionUpdateActivity,
     VersionAdditionActivity,
-    FigshareAuthorization,
     FigshareDatasetVersionLink,
     FigshareDataFileLink,
     DatasetSubscription,
@@ -2055,68 +2054,25 @@ def get_activity_for_dataset_id(dataset_id):
     )
 
 
-def get_figshare_authorization(
-    figshare_authorization_id: str,
-) -> Optional[FigshareAuthorization]:
-    return (
-        db.session.query(FigshareAuthorization)
-        .filter(FigshareAuthorization.id == figshare_authorization_id)
-        .one_or_none()
-    )
-
-
-def get_figshare_authorization_for_current_user() -> Optional[FigshareAuthorization]:
+def get_figshare_personal_token_for_current_user() -> Optional[str]:
     current_user = get_current_session_user()
-    return (
-        db.session.query(FigshareAuthorization)
-        .filter(FigshareAuthorization.user_id == current_user.id)
-        .one_or_none()
-    )
+    return current_user.figshare_personal_token
 
 
-def add_figshare_token(
-    figshare_account_id: int, token: str, refresh_token: str
-) -> Tuple[FigshareAuthorization, bool]:
+def add_figshare_token(token: str) -> bool:
     current_user = get_current_session_user()
-    figshare_authorization = get_figshare_authorization_for_current_user()
+    is_new = current_user.figshare_personal_token != token
+    current_user.figshare_personal_token = token
 
-    if figshare_authorization is not None:
-        is_new = False
-        figshare_authorization.token = token
-        figshare_authorization.refresh_token = refresh_token
-    else:
-        is_new = True
-        figshare_authorization = FigshareAuthorization(
-            user_id=current_user.id,
-            figshare_account_id=figshare_account_id,
-            token=token,
-            refresh_token=refresh_token,
-        )
-
-    current_user.figshare_authorization_id = figshare_authorization.id
-
-    db.session.add(figshare_authorization)
     db.session.add(current_user)
     db.session.commit()
-    return figshare_authorization, is_new
+    return is_new
 
 
-def update_figshare_token(
-    figshare_authorization_id: str, token: str, refresh_token: str
-):
-    figshare_authorization = get_figshare_authorization(figshare_authorization_id)
-
-    figshare_authorization.token = token
-    figshare_authorization.refresh_token = refresh_token
-    db.session.add(figshare_authorization)
-    db.session.commit()
-
-    return figshare_authorization
-
-
-def remove_figshare_token(figshare_authorization_id: str):
-    figshare_authorization = get_figshare_authorization(figshare_authorization_id)
-    db.session.delete(figshare_authorization)
+def remove_figshare_token_for_current_user():
+    current_user = get_current_session_user()
+    current_user.figshare_personal_token = None
+    db.session.add(current_user)
     db.session.commit()
 
 

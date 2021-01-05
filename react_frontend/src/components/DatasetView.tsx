@@ -1343,7 +1343,9 @@ export class DatasetView extends React.Component<
                     this.doFetch().then(() => this.updateFigshareMap())
                   }
                   datasetVersion={this.state.datasetVersion}
-                  userFigshareAccountId={this.props.user.figshare_account_id}
+                  userFigshareAccountLinked={
+                    this.props.user.figshare_account_linked
+                  }
                   figshareLinkedFiles={this.state.figshareLinkedFiles}
                 />
                 {this.renderActivityLog()}

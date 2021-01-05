@@ -36,7 +36,7 @@ type Props = {
   tapi: TaigaApi;
   handleClose: (uploadComplete: boolean, figsharePrivateUrl: string) => void;
   show: boolean;
-  userFigshareAccountId: number;
+  userFigshareLinked: boolean;
   datasetVersion: Models.DatasetVersion;
 };
 
@@ -426,7 +426,7 @@ export default class UpdateFigshare extends React.Component<Props, State> {
   }
 
   renderModalBodyContent() {
-    if (this.props.userFigshareAccountId === null) {
+    if (!this.props.userFigshareLinked) {
       return (
         <p>
           You are not connected to Figshare. You can connect to Figshare via the
@@ -547,7 +547,7 @@ export default class UpdateFigshare extends React.Component<Props, State> {
           onClick={() => this.handleUploadToFigshare()}
           bsStyle="primary"
           disabled={
-            this.props.userFigshareAccountId === null ||
+            !this.props.userFigshareLinked ||
             this.state.filesToUpdate.some(
               (f) =>
                 ((f.action == "Replace" || f.action == "Add") &&

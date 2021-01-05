@@ -484,7 +484,7 @@ paths:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_activity_log_for_dataset_id
-      description: TODO
+      description: Get the activity log for a dataset (list of updates)
       consumes:
         - application/json
       parameters:
@@ -1365,50 +1365,26 @@ paths:
         404:
           description: No group with id groupId
 
-  /figshare/auth_url:
-    get:
-      description: Get the endpoint to authorize the Figshare Taiga app
-      x-swagger-router-controller: taiga2.controllers.endpoint
-      operationId: get_figshare_auth_url
-      responses:
-        200:
-          description: The Figshare endpoint
-          schema:
-            type: object
-            required:
-              - figshare_auth_url
-            properties:
-              figshare_auth_url:
-                type: string
-
-  /figshare:
+  /figshare/token:
     put:
-      description: After receiving Figshare authorization code, request and save token
+      description: Add a personal Figshare token to a user's account
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: add_figshare_token
       consumes:
         - application/json
       parameters:
-        - name: figshareOAuthRequest
+        - name: token
           in: body
           required: true
           schema:
-            type: object
-            required:
-              - code
-              - state
-            properties:
-              code:
-                type: string
-              state:
-                type: string
+            type: string
       responses:
         200:
           description: An existing authorization was updated
         201:
           description: A new authorization was created
-        400:
-          description: Figshare API request failed
+        401:
+          description: Token is invalid
 
   /figshare/link:
     post:
@@ -1488,7 +1464,7 @@ paths:
                     failure_reason:
                       type: string
         401:
-          description: TODO (token does not work)
+          description: Token does not work
 
   /figshare/article_creation_parameters:
     get:
@@ -1599,7 +1575,7 @@ paths:
                     failure_reason:
                       type: string
         401:
-          description: TODO (token does not work)
+          description: Token does not work
 
   /subscription:
     put:
@@ -1653,7 +1629,7 @@ definitions:
       - home_folder_id
       - trash_folder_id
       - token
-      - figshare_account_id
+      - figshare_account_linked
     properties:
       id:
         type: string
@@ -1665,10 +1641,8 @@ definitions:
         type: string
       token:
         type: string
-      figshare_account_id:
-        type:
-          - integer
-          - "null"
+      figshare_account_linked:
+        type: boolean
 
   DatasetVersionSummary:
     title: DatasetVersionSummary
