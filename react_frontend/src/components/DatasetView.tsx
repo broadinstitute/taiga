@@ -922,17 +922,11 @@ export class DatasetView extends React.Component<
       let entries = null;
       if (datasetVersion) {
         entries = datasetVersion.datafiles
-          .sort((datafile_one, datafile_two) => {
-            let datafile_one_upper = datafile_one.name.toUpperCase();
-            let datafile_two_upper = datafile_two.name.toUpperCase();
-            if (datafile_one_upper === datafile_two_upper) {
-              return 0;
-            } else if (datafile_one_upper > datafile_two_upper) {
-              return 1;
-            } else {
-              return -1;
-            }
-          })
+          .sort((datafile_one, datafile_two) =>
+            datafile_one.name.localeCompare(datafile_two.name, "en", {
+              sensitivity: "base",
+            })
+          )
           .map((df, index) => {
             let conversionTypesOutput = this.getConversionTypesOutput(df);
             let copy_button = this.getCopyButton(df);
