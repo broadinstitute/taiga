@@ -31,6 +31,8 @@ from taiga2.aws import aws
 from taiga2.aws import create_signed_get_obj
 from taiga2.aws import create_s3_url as aws_create_s3_url
 
+from taiga2.gcs import get_blob, parse_gcs_path
+
 import taiga2.figshare as figshare
 
 log = logging.getLogger(__name__)
@@ -518,24 +520,11 @@ def create_upload_session_file(uploadMetadata, sid):
         if gcs_path is None:
             api_error("No GCS path given")
 
-        if "/" not in gcs_path:
-            api_error("Invalid GCS path: {}".format(gcs_path))
-
-        bucket_name, object_name = gcs_path.split("/", 1)
-        client = storage.Client()
-
         try:
-            bucket = client.get_bucket(bucket_name)
-        except gcs_exceptions.Forbidden as e:
-            api_error(
-                "taiga-892@cds-logging.iam.gserviceaccount.com does not have storage.buckets.get access to bucket: {}".format(
-                    bucket_name
-                )
-            )
-        except gcs_exceptions.NotFound as e:
-            api_error("No GCS bucket found: {}".format(bucket_name))
-
-        blob = bucket.get_blob(object_name)
+            bucket_name, object_name = parse_gcs_path(gcs_path)
+            blob = get_blob(bucket_name, object_name)
+        except ValueError as e:
+            api_error(str(e))
 
         if not blob:
             api_error("No object found: {}".format(object_name))
@@ -891,6 +880,43 @@ def _backfill_compressed_file(datafile_id: str, delay=True):
             task = backfill_compressed_file.delay(datafile_id, entry.id)
 
     return flask.make_response(flask.jsonify(task.id), 202)
+
+
+@validate
+def copy_datafile_to_google_bucket(datafileGCSCopy):
+    # NOTE: This currently only works with datafiles that are s3 (or virtual s3) files
+    # that have a compressed_s3_key (i.e. files that were created after the
+    # introduction of compressed_s3_key or files that have been backfilled).
+
+    datafile_id = datafileGCSCopy["datafile_id"]
+    gcs_path = datafileGCSCopy["gcs_path"]
+
+    datafile = models_controller.get_datafile(datafile_id)
+    if datafile.type == "virtual":
+        datafile = datafile.underlying_data_file
+
+    if datafile.type == "gcs":
+        api_error("Cannot copy GCS pointer files")
+
+    if datafile.compressed_s3_key is None:
+        # TODO: backfill?
+        api_error("Copying datafiles is only available for new files.")
+
+    try:
+        dest_bucket, dest_gcs_path = parse_gcs_path(gcs_path)
+    except ValueError as e:
+        api_error(str(e))
+
+    # kick off task to download and upload
+    from taiga2.tasks import (
+        copy_datafile_to_google_bucket as _copy_datafile_to_google_bucket,
+    )
+
+    task = _copy_datafile_to_google_bucket.delay(
+        datafile_id, dest_bucket, dest_gcs_path
+    )
+
+    return flask.jsonify(task.id)
 
 
 def entry_is_valid(entry):

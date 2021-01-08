@@ -894,6 +894,36 @@ paths:
         403:
           description: Feature not accessible to non-admin users
 
+  /datafile/copy_to_google_bucket:
+    post:
+      description: Copy a datafile to a specified path in a Google
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: copy_datafile_to_google_bucket
+      consumes:
+        - application/json
+      parameters:
+        - name: datafileGCSCopy
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              datafile_id:
+                type: string
+              gcs_path:
+                type: string
+            required:
+              - datafile_id
+              - gcs_path
+      responses:
+        200:
+          description: Started task to copy file
+          schema:
+            title: task_id
+            type: string
+        400:
+          description: File could not be copied
+
   /task_status/{taskStatusId}:
     get:
       x-swagger-router-controller: taiga2.controllers.endpoint

@@ -20,6 +20,7 @@ from taiga2.controllers import models_controller
 from taiga2.conv.imp import ImportResult
 from taiga2.models import S3DataFile
 from taiga2.figshare import initiate_new_upload, upload_parts, complete_upload
+from taiga2.gcs import upload_from_file
 import humanize
 
 celery = Celery("taiga2")
@@ -469,6 +470,25 @@ def backfill_compressed_file(self, datafile_id: str, cache_entry_id: Optional[st
         mime_type = "text/csv"
 
     _download_and_compress_s3_backfill(datafile_id, s3_key, mime_type)
+
+
+@celery.task(bind=True)
+def copy_datafile_to_google_bucket(
+    self, datafile_id: str, dest_bucket: str, dest_gcs_path: str
+):
+    s3 = aws.s3
+    datafile = models_controller.get_datafile(datafile_id)
+    compressed_s3_object = s3.Object(datafile.s3_bucket, datafile.compressed_s3_key)
+    with tempfile.NamedTemporaryFile() as download_dest:
+        compressed_s3_object.download_fileobj(download_dest)
+        download_dest.seek(0)
+        upload_from_file(
+            download_dest,
+            dest_bucket,
+            dest_gcs_path,
+            compressed_s3_object.content_type,
+            compressed_s3_object.content_encoding,
+        )
 
 
 @celery.task(bind=True)
