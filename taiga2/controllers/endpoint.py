@@ -19,6 +19,7 @@ import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import (
+    DatasetVersion,
     DataFile,
     normalize_name,
     SearchResult,
@@ -212,17 +213,35 @@ def get_s3_credentials():
     return flask.jsonify(model_frontend_credentials)
 
 
+# TODO: Use for every DatasetVersionSchema?
+def _get_dataset_version_schema_json(
+    dataset_version: DatasetVersion,
+    dataset_version_right: models_controller.EntryRightsEnum,
+):
+    dataset_version_schema = schemas.DatasetVersionSchema()
+    dataset_version_schema.context["entry_user_right"] = dataset_version_right
+
+    if dataset_version.figshare_dataset_version_link is not None:
+        try:
+            figshare_article_info = figshare.get_article_information(
+                dataset_version.figshare_dataset_version_link
+            )
+            dataset_version_schema.context["figshare"] = figshare_article_info
+        except:
+            pass
+
+    return dataset_version_schema.dump(dataset_version).data
+
+
 @validate
 def get_dataset_last(dataset_id):
     last_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
 
     right = models_controller.get_rights(last_dataset_version.id)
 
-    dataset_version_schema = schemas.DatasetVersionSchema()
-    dataset_version_schema.context["entry_user_right"] = right
-    json_data_first_dataset_version = dataset_version_schema.dump(
-        last_dataset_version
-    ).data
+    json_data_first_dataset_version = _get_dataset_version_schema_json(
+        last_dataset_version, right
+    )
     return flask.jsonify(json_data_first_dataset_version)
 
 
@@ -368,19 +387,9 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     dataset.parents = filter_allowed_parents(dataset.parents)
     dataset.description = dataset_version.description
 
-    dataset_version_schema = schemas.DatasetVersionSchema()
-    dataset_version_schema.context["entry_user_right"] = dataset_version_right
-
-    if dataset_version.figshare_dataset_version_link is not None:
-        try:
-            figshare_article_info = figshare.get_article_information(
-                dataset_version.figshare_dataset_version_link
-            )
-            dataset_version_schema.context["figshare"] = figshare_article_info
-        except:
-            pass
-
-    json_dv_data = dataset_version_schema.dump(dataset_version).data
+    json_dv_data = _get_dataset_version_schema_json(
+        dataset_version, dataset_version_right
+    )
 
     dataset_schema = schemas.DatasetSchema()
     dataset_schema.context["entry_user_right"] = dataset_right
