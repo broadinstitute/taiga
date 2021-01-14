@@ -860,7 +860,9 @@ paths:
           description: Will return the short summary computed when the datafile was created
           schema:
             title: column_types
-            type: object
+            type:
+              - object
+              - "null"
             additionalProperties:
               type: string
         400:
