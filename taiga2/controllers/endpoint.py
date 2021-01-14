@@ -846,16 +846,7 @@ def get_datafile_column_types(
         flask.abort(400)
 
     real_datafile: S3DataFile
-    if real_datafile.column_types_as_json is not None:
-        return flask.jsonify(real_datafile.column_types_as_json)
-
-    r = aws.s3_client.get_object(
-        Bucket=real_datafile.s3_bucket, Key=real_datafile.s3_key
-    )
-
-    table_info = conversion.read_column_definitions(r["Body"])
-
-    return flask.jsonify({c.name: c.persister.type_name for c in table_info})
+    return flask.jsonify(real_datafile.column_types_as_json)
 
 
 @validate
