@@ -174,6 +174,8 @@ export interface DatasetVersionDatafiles {
   allowed_conversion_type: Array<string>;
   short_summary: string;
   gcs_path: string;
+  original_file_md5?: string;
+  original_file_sha256?: string;
 }
 
 export interface DatasetVersions {
@@ -589,22 +591,6 @@ export class LogStartActivity extends ActivityLogEntry {
   dataset_description: string | null;
   dataset_version: number;
 }
-
-export type FigshareArticleInfo = {
-  id: number;
-  version: number;
-  authors: Array<{
-    full_name: string;
-    id: number;
-    is_active: boolean;
-  }>;
-  description: string;
-  files: Array<{
-    id: number;
-    is_link_only: boolean;
-    name: string;
-  }>;
-};
 
 export class Group {
   id: number;

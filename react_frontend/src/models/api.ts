@@ -15,9 +15,13 @@ import {
   DatafileUrl,
   SearchResult,
   ActivityLogEntry,
-  FigshareArticleInfo,
   Group,
 } from "./models";
+import {
+  ArticleInfo as FigshareArticleInfo,
+  FileToUpdate as FigshareFileToUpdate,
+  UpdateArticleResponse as FigshareUpdateArticleResponse,
+} from "./figshare";
 
 // import { getUserToken } from '../utilities/route';
 import { isUndefined } from "util";
@@ -462,21 +466,8 @@ export class TaigaApi {
     description: string,
     current_article_version: number,
     dataset_version_id: string,
-    files_to_update: Array<{
-      figshare_file_id: number;
-      action: string;
-      datafile_id: string;
-      file_name: string;
-    }>
-  ): Promise<{
-    article_id: number;
-    files: Array<{
-      datafile_id: string;
-      file_name: string;
-      failure_reason?: string;
-      task_id?: string;
-    }>;
-  }> {
+    files_to_update: Array<FigshareFileToUpdate>
+  ): Promise<FigshareUpdateArticleResponse> {
     return this._post("/figshare/update_article", {
       article_id,
       description,

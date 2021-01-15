@@ -178,7 +178,6 @@ export default class FigshareSection extends React.Component<Props, State> {
               tapi={this.props.tapi}
               handleClose={this.handleCloseUpdateFigshare}
               show={this.state.showUpdateFigshare}
-              userFigshareLinked={userFigshareAccountLinked}
               datasetVersion={this.props.datasetVersion}
             />
           </React.Fragment>

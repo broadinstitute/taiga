@@ -82,8 +82,6 @@ export interface DatasetViewState {
   showShareDatasetVersion?: boolean;
   sharingEntries?: Array<Entry>;
 
-  showUploadToFigshare?: boolean;
-
   activityLog?: Array<ActivityLogEntry>;
 
   figshareLinkedFiles?: Map<

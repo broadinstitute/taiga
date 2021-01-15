@@ -1,20 +1,11 @@
 import * as React from "react";
 import { Table, ProgressBar } from "react-bootstrap";
 
-import * as Models from "../../models/models";
+import { UploadFileStatus } from "../../models/figshare";
 
 interface Props {
   datafileIdToName: Map<string, string>;
-  uploadResults: {
-    article_id: number;
-    files: Array<{
-      datafile_id: string;
-      file_name: string;
-      task_id?: string;
-      failure_reason?: string;
-      taskStatus?: Models.TaskStatus;
-    }>;
-  };
+  uploadResults: ReadonlyArray<UploadFileStatus>;
 }
 export default class FigshareUploadTable extends React.Component<Props> {
   render() {
@@ -27,7 +18,7 @@ export default class FigshareUploadTable extends React.Component<Props> {
           </tr>
         </thead>
         <tbody>
-          {this.props.uploadResults.files.map((file, i) => {
+          {this.props.uploadResults.map((file, i) => {
             let progressIndicator = null;
 
             const state = file.taskStatus ? file.taskStatus.state : null;
