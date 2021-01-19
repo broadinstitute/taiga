@@ -28,13 +28,14 @@ from taiga2.models import (
 from taiga2.controllers.models_controller import DataFileAlias
 from taiga2.models import S3DataFile
 
-from taiga2.aws import aws
-from taiga2.aws import create_signed_get_obj
-from taiga2.aws import create_s3_url as aws_create_s3_url
+from taiga2.third_party_clients.aws import (
+    aws,
+    create_signed_get_obj,
+    create_s3_url as aws_create_s3_url,
+)
 
-from taiga2.gcs import get_blob, parse_gcs_path
-
-import taiga2.figshare as figshare
+from taiga2.third_party_clients.gcs import get_blob, parse_gcs_path
+import taiga2.third_party_clients.figshare as figshare
 
 log = logging.getLogger(__name__)
 

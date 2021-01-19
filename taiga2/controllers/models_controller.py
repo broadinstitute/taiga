@@ -13,7 +13,7 @@ from sqlalchemy import and_, update
 
 import taiga2.models as models
 from taiga2.models import db
-from taiga2 import aws
+from taiga2.third_party_clients import aws
 from taiga2.models import (
     User,
     Folder,

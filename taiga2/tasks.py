@@ -13,14 +13,18 @@ from requests.exceptions import HTTPError
 from typing import IO, Optional
 from urllib.parse import urlparse
 
-from taiga2.aws import aws
 import taiga2.conv as conversion
 from taiga2.conv.util import Progress, make_temp_file_generator, get_file_hashes
 from taiga2.controllers import models_controller
 from taiga2.conv.imp import ImportResult
 from taiga2.models import S3DataFile
-from taiga2.figshare import initiate_new_upload, upload_parts, complete_upload
-from taiga2.gcs import upload_from_file
+from taiga2.third_party_clients.aws import aws
+from taiga2.third_party_clients.gcs import upload_from_file
+from taiga2.third_party_clients.figshare import (
+    initiate_new_upload,
+    upload_parts,
+    complete_upload,
+)
 import humanize
 
 celery = Celery("taiga2")
