@@ -443,11 +443,6 @@
   resolved "https://registry.yarnpkg.com/@types/immutability-helper/-/immutability-helper-2.0.15.tgz#1bd2d11e850791267a6302ab86107c0b0ad01bfa"
   integrity sha1-G9LRHoUHkSZ6YwKrhhB8CwrQG/o=
 
-"@types/isomorphic-fetch@^0.0.34":
-  version "0.0.34"
-  resolved "https://registry.yarnpkg.com/@types/isomorphic-fetch/-/isomorphic-fetch-0.0.34.tgz#3c3483e606c041378438e951464f00e4e60706d6"
-  integrity sha1-PDSD5gbAQTeEOOlRRk8A5OYHBtY=
-
 "@types/json-schema@^7.0.6":
   version "7.0.7"
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.7.tgz#98a993516c859eb0d5c4c8f098317a9ea68db9ad"
@@ -541,13 +536,6 @@
   version "6.7.3"
   resolved "https://registry.yarnpkg.com/@types/react-table/-/react-table-6.7.3.tgz#c594eefb0a749f0a0304894139bf712faa0fea1b"
   integrity sha512-a1LyAHhQ8UrMvv+q/17XT9SJtfgvRXuZqJwc+vGhLk1WYeeU/6vLf5RXLvCP0BtTz9Rop2zWjA3cTLjkacwF/A==
-  dependencies:
-    "@types/react" "*"
-
-"@types/react-test-renderer@16.0.2":
-  version "16.0.2"
-  resolved "https://registry.yarnpkg.com/@types/react-test-renderer/-/react-test-renderer-16.0.2.tgz#2715eae40df08f80b3620c498598c8615693b6c6"
-  integrity sha512-lK+a393eI42Bz47pLJ9g9XSy45BdAOtHjY8OYbvePw0T7zJc1kgnlVovu+D31dINpB5cKgkYVNq65A/EQWz6jQ==
   dependencies:
     "@types/react" "*"
 
