@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Frontend Taiga dependencies",
   "main": "../taiga2/static/frontend.js",
-  "scripts": {
-    "cosmos": "cosmos",
-    "cosmos:export": "cosmos-export"
-  },
   "author": "CDS Team <cds@broadinstitute.org>",
   "license": "MIT",
   "_comments": "",
@@ -82,7 +78,6 @@
     "file-loader": "^3.0.1",
     "html-webpack-plugin": "^3.2.0",
     "invariant": "^2.2.4",
-    "react-cosmos": "^4.7.0",
     "react-error-overlay": "^5.1.2",
     "source-map-loader": "^0.2.3",
     "ts-loader": "^8.0.14",
