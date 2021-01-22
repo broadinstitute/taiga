@@ -481,7 +481,7 @@ def copy_datafile_to_google_bucket(
     self, datafile_id: str, dest_bucket: str, dest_gcs_path: str
 ):
     s3 = aws.s3
-    datafile = models_controller.get_datafile(datafile_id)
+    datafile = models_controller.get_datafile_by_taiga_id(datafile_id)
     compressed_s3_object = s3.Object(datafile.s3_bucket, datafile.compressed_s3_key)
     with tempfile.NamedTemporaryFile() as download_dest:
         compressed_s3_object.download_fileobj(download_dest)
