@@ -1,19 +1,16 @@
-import enum
-import uuid
-import re
 import datetime
-from .extensions import metadata
+import enum
+import re
+from typing import Dict, List
+import uuid
 
 from flask_migrate import Migrate
-
 from sqlalchemy import event, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import backref
 from sqlalchemy.ext.declarative import declared_attr
 
-from typing import Dict, List
-
 import taiga2.conv as conversion
-from taiga2.extensions import db
+from taiga2.extensions import db, metadata
 
 migrate = Migrate()
 

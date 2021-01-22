@@ -1,15 +1,17 @@
+from collections import namedtuple
 from datetime import datetime
 import enum
 import flask
+import json
+from typing import List, Dict, Tuple, Optional
 import uuid
 import os
 import re
 
-from typing import List, Dict, Tuple, Optional
-
-import json
-
 from sqlalchemy import and_, update
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy.orm.session import make_transient
+from sqlalchemy.sql.expression import func
 
 import taiga2.models as models
 from taiga2.models import db
@@ -42,10 +44,6 @@ from taiga2.models import SearchResult, SearchEntry, Breadcrumb
 from taiga2.subscriptions.models import DatasetSubscription
 from taiga2.subscriptions.utils import send_emails_for_dataset
 
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-from sqlalchemy.orm.session import make_transient
-from sqlalchemy.sql.expression import func
-from collections import namedtuple
 
 DataFileAlias = namedtuple("DataFileAlias", "name data_file_id")
 

@@ -1,18 +1,20 @@
-import flask
+from io import BytesIO
+import json
 import logging
-import requests
+import re
 import sys
 import time
-import urllib
-import re
-from io import BytesIO
 from typing import Dict, List, Tuple
 
-from .endpoint_validation import validate
-
-from sqlalchemy.orm.exc import NoResultFound
+from connexion.exceptions import ProblemException
+import flask
 from google.cloud import storage, exceptions as gcs_exceptions
+import requests
 from requests.exceptions import HTTPError
+from sqlalchemy.orm.exc import NoResultFound
+import urllib
+
+from taiga2.controllers.endpoint_validation import validate
 
 # TODO: Change the app containing db to api_app => current_app
 import taiga2.controllers.models_controller as models_controller
@@ -41,11 +43,6 @@ from taiga2.extensions import db
 
 log = logging.getLogger(__name__)
 
-# Handle URL upload
-from flask import render_template, request, redirect, url_for
-import os, json
-
-from connexion.exceptions import ProblemException
 
 ADMIN_USER_ID = "admin"
 
