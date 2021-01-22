@@ -1612,7 +1612,7 @@ paths:
   /subscription:
     put:
       description: Subscribes the user to the dataset with id dataset_id
-      x-swagger-router-controller: taiga2.controllers.endpoint
+      x-swagger-router-controller: taiga2.subscriptions.endpoints
       operationId: add_dataset_subscription
       consumes:
         - application/json
@@ -1635,7 +1635,7 @@ paths:
   /subscription/{subscription_id}:
     delete:
       description: Unsubscribes the user from the dataset with id dataset_id
-      x-swagger-router-controller: taiga2.controllers.endpoint
+      x-swagger-router-controller: taiga2.subscriptions.endpoints
       operationId: delete_dataset_subscription
       consumes:
         - application/json
