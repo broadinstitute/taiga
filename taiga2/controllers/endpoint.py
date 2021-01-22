@@ -36,6 +36,8 @@ from taiga2.third_party_clients.aws import (
 
 from taiga2.third_party_clients.gcs import get_blob, parse_gcs_path
 import taiga2.third_party_clients.figshare as figshare
+from taiga2.subscriptions.models import DatasetSubscription
+from taiga2.extensions import db
 
 log = logging.getLogger(__name__)
 
@@ -81,9 +83,7 @@ def get_dataset(datasetId):
     dataset_schema = schemas.DatasetSchema()
     print("The right is: {}".format(right))
     dataset_schema.context["entry_user_right"] = right
-    subscription = models_controller.get_dataset_subscription_for_dataset_and_user(
-        dataset.id
-    )
+    subscription = DatasetSubscription.get_for_dataset_and_current_user(dataset)
     dataset_schema.context["subscription_id"] = (
         subscription.id if subscription is not None else None
     )
@@ -394,9 +394,7 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
     dataset_schema = schemas.DatasetSchema()
     dataset_schema.context["entry_user_right"] = dataset_right
-    subscription = models_controller.get_dataset_subscription_for_dataset_and_user(
-        dataset_version.dataset_id
-    )
+    subscription = DatasetSubscription.get_for_dataset_and_current_user(dataset)
     dataset_schema.context["subscription_id"] = (
         subscription.id if subscription is not None else None
     )
@@ -1452,8 +1450,12 @@ def get_figshare_links_for_client(datasetVersionId: str):
 @validate
 def add_dataset_subscription(dataset_id: str):
     """Subscribes the current user to dataset with id dataset_id"""
-    subscription, is_new = models_controller.add_dataset_subscription(dataset_id)
+    current_user = models_controller.get_current_session_user()
+    subscription, is_new = DatasetSubscription.get_or_create(
+        dataset_id=dataset_id, user_id=current_user.id
+    )
     if is_new:
+        db.session.commit()
         return flask.make_response(flask.jsonify(subscription.id), 201)
     return flask.jsonify(subscription.id)
 
@@ -1461,7 +1463,13 @@ def add_dataset_subscription(dataset_id: str):
 @validate
 def delete_dataset_subscription(subscription_id: str):
     """Unsubscribes the current user to dataset with id dataset_id"""
-    deleted = models_controller.delete_dataset_subscription(subscription_id)
-    if deleted:
-        return flask.jsonify(True)
-    flask.abort(404)
+    current_user = models_controller.get_current_session_user()
+    subscription = DatasetSubscription.get(subscription_id)
+
+    if subscription is None:
+        flask.abort(404)
+
+    subscription.delete()
+    db.session.commit()
+
+    return flask.jsonify(True)

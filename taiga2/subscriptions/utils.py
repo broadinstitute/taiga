@@ -4,14 +4,11 @@ from flask import current_app, url_for
 from mailjet_rest import Client
 
 from taiga2.controllers import models_controller
-from taiga2.models import DatasetSubscription
+from taiga2.subscriptions.models import DatasetSubscription
 
 
 def send_emails_for_dataset(dataset_id: str, version_author_id: str):
-    dataset = models_controller.get_dataset(dataset_id, True)
-    dataset_subscriptions = (
-        dataset.dataset_subscriptions
-    )  # type: List[DatasetSubscription]
+    dataset_subscriptions = DatasetSubscription.get_all_by(dataset_id=dataset_id)
 
     # Don't email the person who just updated the dataset
     dataset_subscribers = [
@@ -48,6 +45,5 @@ def send_emails_for_dataset(dataset_id: str, version_author_id: str):
         ]
     }
     result = mailjet.send.create(data=data)
-    print(result.status_code)
-    print(result.json())
+
     return result

@@ -784,14 +784,3 @@ class FigshareDataFileLink(ThirdPartyDataFileLink):
     )
 
     __mapper_args__ = {"polymorphic_identity": "figshare"}
-
-
-class DatasetSubscription(db.Model):
-    __tablename__ = "dataset_subscriptions"
-
-    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
-    user: User = db.relationship("User", backref=__tablename__)
-    user_id: str = db.Column(GUID, db.ForeignKey("users.id"))
-
-    dataset: Dataset = db.relationship("Dataset", backref=__tablename__)
-    dataset_id: str = db.Column(GUID, db.ForeignKey("datasets.id"))
