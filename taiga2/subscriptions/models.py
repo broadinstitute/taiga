@@ -38,13 +38,3 @@ class DatasetSubscription(db.Model, BaseMixin):
         current_user = get_current_session_user()
 
         return cls.get_by(dataset_id=dataset.id, user_id=current_user.id)
-
-    @classmethod
-    def create_for_dataset_and_current_user(
-        cls, dataset: Dataset
-    ) -> "DatasetSubscription":
-        from taiga2.controllers.models_controller import get_current_session_user
-
-        current_user = get_current_session_user()
-
-        return cls.create(dataset_id=dataset.id, user_id=current_user.id)

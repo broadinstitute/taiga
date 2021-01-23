@@ -482,7 +482,7 @@ paths:
 
   /dataset/{datasetId}/activityLog:
     get:
-      x-swagger-router-controller: taiga2.controllers.endpoint
+      x-swagger-router-controller: taiga2.activities.endpoints
       operationId: get_activity_log_for_dataset_id
       description: Get the activity log for a dataset (list of updates)
       consumes:

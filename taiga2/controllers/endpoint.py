@@ -986,16 +986,6 @@ def copy_to_folder(copyMetadata):
     return flask.jsonify(return_data)
 
 
-@validate
-def get_activity_log_for_dataset_id(datasetId):
-    array_activity_log = models_controller.get_activity_for_dataset_id(datasetId)
-
-    activity_log_schema = schemas.ActivityLogSchema(many=True)
-    json_data_access_logs_entry = activity_log_schema.dump(array_activity_log).data
-
-    return flask.jsonify(json_data_access_logs_entry)
-
-
 def get_provenance_graph(gid):
     print("We received the graph Id: {}!".format(gid))
     provenance_full_graph_schema = schemas.ProvenanceGraphFullSchema()

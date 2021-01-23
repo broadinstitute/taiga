@@ -13,12 +13,6 @@ from taiga2.models import (
     S3DataFile,
     get_allowed_conversion_type,
     resolve_virtual_datafile,
-    Activity,
-    CreationActivity,
-    NameUpdateActivity,
-    DescriptionUpdateActivity,
-    VersionAdditionActivity,
-    LogStartActivity,
 )
 from taiga2.models import ProvenanceEdge, ProvenanceNode, ProvenanceGraph
 from taiga2.models import Group, EntryRightsEnum
@@ -442,54 +436,6 @@ class SearchResultSchema(ma.ModelSchema):
 
     current_folder = ma.Nested(FolderNamedIdSchema)
     entries = ma.Nested(SearchEntrySchema, many=True)
-
-
-class ActivityLogBaseSchema(ma.ModelSchema):
-    class Meta:
-        additional = ("id", "timestamp", "comments")
-
-    user_name = fields.fields.Method("get_user_name")
-
-    def get_user_name(self, obj):
-        return obj.user.name
-
-
-class CreationActivityLogSchema(ActivityLogBaseSchema):
-    dataset_name = fields.fields.String()
-    dataset_description = fields.fields.String()
-
-
-class NameUpdateActivityLogSchema(ActivityLogBaseSchema):
-    dataset_name = fields.fields.String()
-
-
-class DescriptionUpdateActivityLogSchema(ActivityLogBaseSchema):
-    dataset_description = fields.fields.String()
-    dataset_version = fields.fields.Integer()
-
-
-class VersionAdditionActivityLogSchema(ActivityLogBaseSchema):
-    dataset_description = fields.fields.String()
-    dataset_version = fields.fields.Integer()
-
-
-class LogStartActivityLogSchema(ActivityLogBaseSchema):
-    dataset_name = fields.fields.String()
-    dataset_description = fields.fields.String()
-    dataset_version = fields.fields.Integer()
-
-
-class ActivityLogSchema(OneOfSchema):
-    type_schemas = {
-        Activity.ActivityType.created.name: CreationActivityLogSchema,
-        Activity.ActivityType.changed_name.name: NameUpdateActivityLogSchema,
-        Activity.ActivityType.changed_description.name: DescriptionUpdateActivityLogSchema,
-        Activity.ActivityType.added_version.name: VersionAdditionActivityLogSchema,
-        Activity.ActivityType.started_log.name: LogStartActivityLogSchema,
-    }
-
-    def get_obj_type(self, obj):
-        return obj.type.name
 
 
 class GroupSchema(ma.ModelSchema):

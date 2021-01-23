@@ -28,11 +28,6 @@ from taiga2.models import (
     Group,
     VirtualDataFile,
     GCSObjectDataFile,
-    Activity,
-    CreationActivity,
-    NameUpdateActivity,
-    DescriptionUpdateActivity,
-    VersionAdditionActivity,
     FigshareDatasetVersionLink,
     FigshareDataFileLink,
 )
@@ -41,6 +36,13 @@ from taiga2.models import UserLog
 from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
 from taiga2.models import Group, EntryRightsEnum, resolve_virtual_datafile
 from taiga2.models import SearchResult, SearchEntry, Breadcrumb
+from taiga2.activities.models import (
+    Activity,
+    CreationActivity,
+    NameUpdateActivity,
+    DescriptionUpdateActivity,
+    VersionAdditionActivity,
+)
 from taiga2.subscriptions.models import DatasetSubscription
 from taiga2.subscriptions.utils import send_emails_for_dataset
 
@@ -323,17 +325,16 @@ def add_dataset_from_session(
     )
     add_folder_entry(current_folder_id, added_dataset.id)
 
-    activity = CreationActivity(
+    activity = CreationActivity.create(
         user_id=current_user.id,
         dataset_id=added_dataset.id,
         type=Activity.ActivityType.created,
         dataset_name=dataset_name,
         dataset_description=dataset_description,
     )
-    db.session.add(activity)
-    db.session.commit()
 
-    DatasetSubscription.create_for_dataset_and_current_user(added_dataset)
+    DatasetSubscription.create(dataset_id=added_dataset.id, user_id=current_user.id)
+    db.session.commit()
 
     return added_dataset
 
@@ -402,13 +403,12 @@ def update_dataset_name(dataset_id, name) -> Dataset:
     db.session.add(dataset)
     db.session.add(new_permaname_record)
 
-    activity = NameUpdateActivity(
+    activity = NameUpdateActivity.create(
         user_id=current_user.id,
         dataset_id=dataset.id,
         type=Activity.ActivityType.changed_name,
         dataset_name=name,
     )
-    db.session.add(activity)
 
     db.session.commit()
 
@@ -754,7 +754,7 @@ def create_new_dataset_version_from_session(
         changes_description=changes_description,
     )
 
-    activity = VersionAdditionActivity(
+    activity = VersionAdditionActivity.create(
         user_id=current_user.id,
         dataset_id=new_dataset_version.dataset_id,
         type=Activity.ActivityType.added_version,
@@ -764,14 +764,12 @@ def create_new_dataset_version_from_session(
         dataset_version=new_dataset_version.version,
         comments=comments,
     )
-    db.session.add(activity)
-    db.session.commit()
 
-    dataset_subscriptions, is_new = DatasetSubscription.get_or_create(
+    dataset_subscriptions, _ = DatasetSubscription.get_or_create(
         dataset_id=dataset_id, user_id=current_user.id
     )
-    if is_new:
-        db.session.commit()
+
+    db.session.commit()
     send_emails_for_dataset(dataset_id, current_user.id)
 
     return new_dataset_version
@@ -882,7 +880,7 @@ def update_dataset_version_description(dataset_version_id, new_description):
 
     dataset_version.description = new_description
 
-    activity = DescriptionUpdateActivity(
+    activity = DescriptionUpdateActivity.create(
         user_id=current_user.id,
         dataset_id=dataset_version.dataset_id,
         type=Activity.ActivityType.changed_description,
@@ -891,7 +889,6 @@ def update_dataset_version_description(dataset_version_id, new_description):
     )
 
     db.session.add(dataset_version)
-    db.session.add(activity)
     db.session.commit()
 
     return dataset_version
@@ -2044,14 +2041,6 @@ def find_matching_name(root_folder, breadcrumbs, search_query) -> List[SearchEnt
                 )
 
     return matching_entries
-
-
-def get_activity_for_dataset_id(dataset_id):
-    return (
-        db.session.query(Activity).filter(Activity.dataset_id == dataset_id)
-        # .order_by(Activity.timestamp.desc())
-        .all()
-    )
 
 
 def get_figshare_personal_token_for_current_user() -> Optional[str]:
