@@ -25,7 +25,6 @@ from taiga2.models import (
     DatasetVersion,
     DataFile,
     normalize_name,
-    SearchResult,
     FigshareDatasetVersionLink,
 )
 from taiga2.controllers.models_controller import DataFileAlias
@@ -1078,92 +1077,6 @@ def get_dataset_version_id_by_user_entry(entry_submitted_by_user: str):
         flask.abort(404, "No entry found matching this submission")
 
     return flask.jsonify(dataset_version_id)
-
-
-# Search
-@validate
-def search_within_folder(current_folder_id, search_query):
-    """Given a folder id and a search query (string), will return all the datasets and folders that are matching the query inside the folder
-
-    Example of json output:
-    {
-        'current_folder': {
-            "name": folder.name,
-            "id": folder.id
-        },
-        'name': "Search results for " + search_query + " within " + folder.name,
-        'entries': [
-            {
-                "type": "folder",
-                "id": "de0fbbfe942f4734b9aa3bf0e31f5595",
-                "name": "Test_admin",
-                "creation_date": "06/06/2017",
-                "creator": {
-                    "name": "rmarenco",
-                    "id": "f54bc68c8619403eab4a6a0e768c9721"
-                },
-                "breadcrumbs": [
-                    {
-                        "order": 1,
-                        "name": "Public",
-                        "id": "public"
-                    }
-                ]
-            },
-            {
-                "type": "dataset_version",
-                "id": "6f16a4a01a89487e9f6f7b7a9913df58",
-                "name": "Dataset admin",
-                "creation_date": "06/06/2017",
-                "creator": {
-                    "name": "rmarenco",
-                    "id": "f54bc68c8619403eab4a6a0e768c9721"
-                },
-                "breadcrumbs": [
-                    {
-                        "order": 1,
-                        "name": "Public",
-                        "id": "public"
-                    },
-                    {
-                        "order": 2,
-                        "name": "Test_admin",
-                        "id": "de0fbbfe942f4734b9aa3bf0e31f5595"
-                    }
-                ]
-            }
-        ]
-    }
-    """
-    # Get the folder
-    folder = models_controller.get_folder(current_folder_id, one_or_none=True)
-    if folder is None:
-        flask.abort(404)
-
-    # Search inside the folder
-    breadcrumbs = []
-    all_matching_entries = models_controller.find_matching_name(
-        root_folder=folder, breadcrumbs=breadcrumbs, search_query=search_query
-    )
-
-    # TODO: Should also encapsulate this search to return a SearchResult we ask Marshmallow to jsonify
-    search_name = "Search results for " + search_query + " within " + folder.name
-    search_result = SearchResult(
-        current_folder=folder, name=search_name, entries=all_matching_entries
-    )
-
-    # Jsonify through Marshmallow
-    search_result_schema = schemas.SearchResultSchema()
-    result = search_result_schema.dump(search_result).data
-
-    return_response = {
-        "current_folder": {"name": folder.name, "id": folder.id},
-        "name": "Search results for " + search_query + " within " + folder.name,
-        # 'entries': all_matching_entries
-        "entries": [],
-    }
-
-    return flask.jsonify(result)
 
 
 @validate

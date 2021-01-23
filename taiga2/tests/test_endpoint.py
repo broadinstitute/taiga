@@ -722,7 +722,6 @@ def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
             datafile_name=vdatafile_name,
         )
     )
-    get_data_from_flask_jsonify(endpoint.search_within_folder(folder_id, "description"))
 
     folder2 = models_controller.add_folder(
         "folder2", models_controller.Folder.FolderType.folder, "folder desc"
@@ -828,18 +827,6 @@ def test_create_virtual_dataset_endpoint(session: SessionBase):
     entry = version.datafiles[0]
     assert entry.name == "alias"
     assert entry.underlying_file_id != data_file_id_1
-
-
-def test_search_within_folder(session: SessionBase, new_dataset_in_new_folder_in_home):
-    current_user = models_controller.get_current_session_user()
-    home_folder_id = current_user.home_folder_id
-    search_query = "New Dataset in a folder"
-    r = get_data_from_flask_jsonify(
-        endpoint.search_within_folder(home_folder_id, search_query)
-    )
-    assert r["current_folder"]["id"] == home_folder_id
-    assert len(r["entries"]) == 1
-    assert r["entries"][0]["entry"]["id"] == new_dataset_in_new_folder_in_home.id
 
 
 # <editor-fold desc="User">

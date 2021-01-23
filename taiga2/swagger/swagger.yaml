@@ -1246,7 +1246,7 @@ paths:
 
   /search/{current_folder_id}/{search_query}:
     get:
-      x-swagger-router-controller: taiga2.controllers.endpoint
+      x-swagger-router-controller: taiga2.search.endpoints
       operationId: search_within_folder
       description: With current folder id and a search query, will return a list of SearchResult that contains datasets and folders
       parameters:
