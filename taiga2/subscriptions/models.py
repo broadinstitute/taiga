@@ -22,14 +22,6 @@ class DatasetSubscription(db.Model, BaseMixin):
     dataset_id: str = db.Column(GUID, db.ForeignKey("datasets.id"))
 
     @classmethod
-    def get_all_for_current_user(cls, user: User) -> List["DatasetSubscription"]:
-        from taiga2.controllers.models_controller import get_current_session_user
-
-        current_user = get_current_session_user()
-
-        return cls.get_all_by(user_id=current_user.id)
-
-    @classmethod
     def get_for_dataset_and_current_user(
         cls, dataset: Dataset
     ) -> Optional["DatasetSubscription"]:
