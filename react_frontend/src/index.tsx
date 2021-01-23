@@ -280,14 +280,14 @@ export function initPage(element: any) {
       ReactDOM.render(
         <BrowserRouter>
           <App tapi={tapi} user={user} showGroupLink={groups.length > 0}>
-            <Route
-              path={relativePath("")}
-              exact
-              render={(_) => {
-                return <Home user={user} />;
-              }}
-            />
             <Switch>
+              <Route
+                path={relativePath("")}
+                exact
+                render={(_) => {
+                  return <Home user={user} />;
+                }}
+              />
               <Route
                 path={relativePath(
                   "dataset/:datasetId.:datasetVersionId/:fileName"
@@ -314,58 +314,59 @@ export function initPage(element: any) {
                   return <DatasetView {...props} tapi={tapi} user={user} />;
                 }}
               />
+              <Route
+                path={relativePath("dataset_version/:datasetVersionId")}
+                render={(props) => {
+                  return <DatasetView {...props} tapi={tapi} user={user} />;
+                }}
+              />
+              <Route
+                path={relativePath("folder/:folderId")}
+                render={(props) => {
+                  return (
+                    <FolderView
+                      {...props}
+                      tapi={tapi}
+                      user={user}
+                      currentUser={user.id}
+                    />
+                  );
+                }}
+              />
+              <Route
+                path={relativePath("search/:currentFolderId/:searchQuery")}
+                render={(props) => {
+                  return <SearchView {...props} tapi={tapi} />;
+                }}
+              />
+              <Route
+                path={relativePath("token/")}
+                render={(props) => {
+                  return <Token {...props} tapi={tapi} />;
+                }}
+              />
+              <Route
+                path={relativePath("recentlyViewed/")}
+                render={(props) => {
+                  return <RecentlyViewed {...props} tapi={tapi} />;
+                }}
+              />
+              <Route
+                path={relativePath("groups/")}
+                render={(props) => {
+                  return (
+                    <GroupListView {...props} tapi={tapi} groups={groups} />
+                  );
+                }}
+              />
+              <Route
+                path={relativePath("group/:groupId")}
+                render={(props) => {
+                  return <GroupView {...props} tapi={tapi} />;
+                }}
+              />
+              <Route path="*" component={NoMatch} />
             </Switch>
-            <Route
-              path={relativePath("dataset_version/:datasetVersionId")}
-              render={(props) => {
-                return <DatasetView {...props} tapi={tapi} user={user} />;
-              }}
-            />
-            <Route
-              path={relativePath("folder/:folderId")}
-              render={(props) => {
-                return (
-                  <FolderView
-                    {...props}
-                    tapi={tapi}
-                    user={user}
-                    currentUser={user.id}
-                  />
-                );
-              }}
-            />
-            <Route
-              path={relativePath("search/:currentFolderId/:searchQuery")}
-              render={(props) => {
-                return <SearchView {...props} tapi={tapi} />;
-              }}
-            />
-            <Route
-              path={relativePath("token/")}
-              render={(props) => {
-                return <Token {...props} tapi={tapi} />;
-              }}
-            />
-            <Route
-              path={relativePath("recentlyViewed/")}
-              render={(props) => {
-                return <RecentlyViewed {...props} tapi={tapi} />;
-              }}
-            />
-            <Route
-              path={relativePath("groups/")}
-              render={(props) => {
-                return <GroupListView {...props} tapi={tapi} groups={groups} />;
-              }}
-            />
-            <Route
-              path={relativePath("group/:groupId")}
-              render={(props) => {
-                return <GroupView {...props} tapi={tapi} />;
-              }}
-            />
-
-            <Route path="*" component={NoMatch} />
           </App>
         </BrowserRouter>,
         element
