@@ -21,6 +21,7 @@ import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import (
+    Dataset,
     DatasetVersion,
     DataFile,
     normalize_name,
@@ -50,6 +51,23 @@ def api_error(msg):
     raise ProblemException(detail=msg)
 
 
+def _get_dataset_schema_json(
+    dataset: Dataset, dataset_right: models_controller.EntryRightsEnum
+):
+    current_user = models_controller.get_current_session_user()
+    subscription = DatasetSubscription.get_by(
+        dataset_id=dataset.id, user_id=current_user.id
+    )
+
+    dataset_schema = schemas.DatasetSchema()
+    dataset_schema.context["entry_user_right"] = dataset_right
+    dataset_schema.context["subscription_id"] = (
+        subscription.id if subscription is not None else None
+    )
+    json_dataset_data = dataset_schema.dump(dataset).data
+    return json_dataset_data
+
+
 @validate
 def get_dataset(datasetId):
     # TODO: We could receive a datasetId being a permaname. This is not good as our function is not respecting the atomicity. Should handle the usage of a different function if permaname
@@ -77,13 +95,7 @@ def get_dataset(datasetId):
     # Get the rights of the user over the folder
     right = models_controller.get_rights(dataset.id)
     dataset_schema = schemas.DatasetSchema()
-    print("The right is: {}".format(right))
-    dataset_schema.context["entry_user_right"] = right
-    subscription = DatasetSubscription.get_for_dataset_and_current_user(dataset)
-    dataset_schema.context["subscription_id"] = (
-        subscription.id if subscription is not None else None
-    )
-    json_dataset_data = dataset_schema.dump(allowed_dataset).data
+    json_dataset_data = _get_dataset_schema_json(allowed_dataset, right)
     return flask.jsonify(json_dataset_data)
 
 
@@ -388,13 +400,7 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
         dataset_version, dataset_version_right
     )
 
-    dataset_schema = schemas.DatasetSchema()
-    dataset_schema.context["entry_user_right"] = dataset_right
-    subscription = DatasetSubscription.get_for_dataset_and_current_user(dataset)
-    dataset_schema.context["subscription_id"] = (
-        subscription.id if subscription is not None else None
-    )
-    json_dataset_data = dataset_schema.dump(dataset).data
+    json_dataset_data = _get_dataset_schema_json(dataset, dataset_right)
 
     # Preparation of the dictonary to return both objects
     json_dv_and_dataset_data = {
