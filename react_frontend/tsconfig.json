@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "baseUrl": "./",
         "outDir": "../taiga2/static/",
         "sourceMap": true,
         "noImplicitAny": true,

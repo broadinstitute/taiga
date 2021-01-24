@@ -1,6 +1,7 @@
 var webpack = require("webpack");
 var ManifestPlugin = require("webpack-manifest-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const path = require("path");
 
 module.exports = {
@@ -16,6 +17,7 @@ module.exports = {
   devtool: "source-map",
 
   resolve: {
+    plugins: [new TsconfigPathsPlugin()],
     // Add '.ts' and '.tsx' as resolvable extensions.
     extensions: [".ts", ".tsx", ".js", ".json"],
   },
