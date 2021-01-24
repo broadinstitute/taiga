@@ -6,6 +6,10 @@
   "author": "CDS Team <cds@broadinstitute.org>",
   "license": "MIT",
   "_comments": "",
+  "scripts": {
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
+  },
   "dependencies": {
     "aws-sdk": "^2.7.17",
     "bootstrap": "^3.3.7",
@@ -32,6 +36,10 @@
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.55",
+    "@storybook/addon-actions": "^6.1.15",
+    "@storybook/addon-essentials": "^6.1.15",
+    "@storybook/addon-links": "^6.1.15",
+    "@storybook/react": "^6.1.15",
     "@types/clipboard": "^1.5.31",
     "@types/file-saver": "^2.0.1",
     "@types/immutability-helper": "2.0.15",
@@ -46,11 +54,13 @@
     "@types/react-select": "2.0.3",
     "@types/react-table": "6.7.3",
     "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.5",
     "file-loader": "^3.0.1",
     "html-webpack-plugin": "^3.2.0",
     "source-map-loader": "^0.2.3",
     "style-loader": "^2.0.0",
     "ts-loader": "^8.0.14",
+    "tsconfig-paths-webpack-plugin": "^3.3.0",
     "typescript": "^4.1.0",
     "url-loader": "^1.1.2",
     "webpack": "^4.16.5",
