@@ -1,0 +1,18 @@
+.editable {
+  border: none;
+  background: none;
+  border-bottom: dashed 1px;
+  cursor: pointer;
+}
+.editable:hover {
+  text-decoration: none;
+}
+
+.form-control.input-fixed-width {
+  width: 150px;
+}
+
+.spacer-xs {
+  display: inline-block;
+  width: 4px;
+}

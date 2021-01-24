@@ -1,0 +1,82 @@
+import * as React from "react";
+import { useState, useRef } from "react";
+import {
+  Button,
+  Glyphicon,
+  OverlayTrigger,
+  Popover,
+  Form,
+  FormControl,
+} from "react-bootstrap";
+
+import "src/common/styles/editable.css";
+
+interface Props {
+  id: string;
+  title: string;
+  initialValue: string;
+  disabled?: boolean;
+  placement?: "top" | "bottom" | "left" | "right";
+  onConfirm: (newValue: string) => void;
+}
+const TextEditable = (props: Props) => {
+  const { id, title, initialValue, disabled, placement, onConfirm } = props;
+  const [value, setValue] = useState(initialValue);
+  const overlayRef = useRef<OverlayTrigger>();
+  const buttonRef = useRef<HTMLAnchorElement>();
+  const inputRef = useRef<FormControl & HTMLInputElement>();
+
+  if (disabled) {
+    return <span>{initialValue}</span>;
+  }
+
+  const hideOverlay = () => {
+    overlayRef.current.setState({ show: false });
+  };
+
+  const popover = (
+    <Popover id={id} title={title}>
+      <Form inline>
+        <FormControl
+          type="text"
+          defaultValue={value}
+          ref={inputRef}
+          bsClass="form-control input-fixed-width"
+        />
+        <span className="spacer-xs" />
+        <Button
+          bsStyle="primary"
+          onClick={() => {
+            onConfirm(inputRef.current.value as string);
+            setValue(inputRef.current.value);
+            hideOverlay();
+          }}
+          bsClass="btn btn-primary "
+        >
+          <Glyphicon glyph="ok" />
+        </Button>
+        <span className="spacer-xs" />
+
+        <Button onClick={hideOverlay}>
+          <Glyphicon glyph="ban-circle" />
+        </Button>
+      </Form>
+    </Popover>
+  );
+
+  return (
+    <OverlayTrigger
+      trigger="click"
+      placement={placement || "top"}
+      rootClose={true}
+      overlay={popover}
+      ref={overlayRef}
+    >
+      <a ref={buttonRef} aria-label={title} title={title} className="editable">
+        {value}
+      </a>
+    </OverlayTrigger>
+  );
+};
+
+export default TextEditable;
