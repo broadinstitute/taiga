@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useState, useRef } from "react";
+import * as ReactDOM from "react-dom";
 import {
   Button,
   Glyphicon,
@@ -24,7 +25,7 @@ const TextEditable = (props: Props) => {
   const [value, setValue] = useState(initialValue);
   const overlayRef = useRef<OverlayTrigger>();
   const buttonRef = useRef<HTMLAnchorElement>();
-  const inputRef = useRef<FormControl & HTMLInputElement>();
+  const inputRef = useRef<FormControl>();
 
   if (disabled) {
     return <span>{initialValue}</span>;
@@ -47,8 +48,11 @@ const TextEditable = (props: Props) => {
         <Button
           bsStyle="primary"
           onClick={() => {
-            onConfirm(inputRef.current.value as string);
-            setValue(inputRef.current.value);
+            const newValue = (ReactDOM.findDOMNode(
+              inputRef.current
+            ) as HTMLInputElement).value;
+            onConfirm(newValue);
+            setValue(newValue);
             hideOverlay();
           }}
           bsClass="btn btn-primary "
