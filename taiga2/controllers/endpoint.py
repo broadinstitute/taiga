@@ -892,7 +892,10 @@ def copy_datafile_to_google_bucket(datafileGCSCopy):
     datafile_id = datafileGCSCopy["datafile_id"]
     gcs_path = datafileGCSCopy["gcs_path"]
 
-    datafile = models_controller.get_datafile(datafile_id)
+    datafile = models_controller.get_datafile_by_taiga_id(datafile_id)
+    if datafile is None:
+        raise flask.abort(404)
+
     if datafile.type == "virtual":
         datafile = datafile.underlying_data_file
 
@@ -914,7 +917,7 @@ def copy_datafile_to_google_bucket(datafileGCSCopy):
     )
 
     task = _copy_datafile_to_google_bucket.delay(
-        datafile_id, dest_bucket, dest_gcs_path
+        datafile.id, dest_bucket, dest_gcs_path
     )
 
     return flask.jsonify(task.id)
