@@ -925,6 +925,8 @@ paths:
             type: string
         400:
           description: File could not be copied
+        404:
+          description: No matching datafile
 
   /task_status/{taskStatusId}:
     get:
