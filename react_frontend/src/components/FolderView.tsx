@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import * as update from "immutability-helper";
 
 import { LeftNav, MenuItem } from "./LeftNav";
-import * as Folder from "../models/models";
 import { TaigaApi } from "../models/api";
 
 import * as Dialogs from "./Dialogs";
@@ -20,7 +19,13 @@ import { UploadTracker } from "./UploadTracker";
 import { Glyphicon } from "react-bootstrap";
 import { Grid, Row, Col } from "react-bootstrap";
 import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
-import { Entry, NamedId } from "../models/models";
+import {
+  Entry,
+  EntryTypeEnum,
+  Folder,
+  FolderTypeEnum,
+  NamedId,
+} from "../models/models";
 import { DatasetVersion } from "../models/models";
 import {
   DatasetFullDatasetVersions,
@@ -47,9 +52,9 @@ const tableEntriesStyle: any = {
 let _update: any = update;
 
 export interface FolderViewState {
-  folder?: Folder.Folder;
-  datasetLastDatasetVersion?: { [dataset_id: string]: Folder.DatasetVersion };
-  datasetsVersion?: { [datasetVersion_id: string]: Folder.DatasetVersion };
+  folder?: Folder;
+  datasetLastDatasetVersion?: { [dataset_id: string]: DatasetVersion };
+  datasetsVersion?: { [datasetVersion_id: string]: DatasetVersion };
 
   showEditName?: boolean;
   showEditDescription?: boolean;
@@ -137,11 +142,11 @@ export class FolderView extends React.Component<
     });
 
     // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
-    let datasetsLatestDv: { [dataset_id: string]: Folder.DatasetVersion } = {};
+    let datasetsLatestDv: { [dataset_id: string]: DatasetVersion } = {};
     let datasetsVersion: {
-      [datasetVersion_id: string]: Folder.DatasetVersion;
+      [datasetVersion_id: string]: DatasetVersion;
     } = {};
-    let _folder: Folder.Folder = null;
+    let _folder: Folder = null;
 
     console.log("get_folder fetch", this.props);
 
@@ -149,32 +154,25 @@ export class FolderView extends React.Component<
       .get_folder(this.props.match.params.folderId)
       .then((folder) => {
         console.log("get_folder complete", folder);
-        _folder = new Folder.Folder(folder);
-        this.setState({ sharingEntries: [_folder] });
+        this.setState({ sharingEntries: [folder] });
         return folder.entries;
       })
-      .then((entries: Array<Folder.FolderEntries>) => {
+      .then((entries: Array<Entry>) => {
         console.log("get_folder entries", entries);
 
         // We want to ask the server a bulk of the datasets and the datasetVersions
         let datasetIds = entries
-          .filter((entry: Folder.FolderEntries) => {
-            return (
-              entry.type === Folder.FolderEntriesTypeEnum.Dataset ||
-              entry.type === Folder.FolderEntriesTypeEnum.VirtualDataset
-            );
+          .filter((entry: Entry) => {
+            return entry.type === EntryTypeEnum.Dataset;
           })
-          .map((datasetEntry: Folder.FolderEntries) => {
+          .map((datasetEntry: Entry) => {
             return datasetEntry.id;
           });
         let datasetVersionIds = entries
-          .filter((entry: Folder.FolderEntries) => {
-            return (
-              entry.type === Folder.FolderEntriesTypeEnum.DatasetVersion ||
-              entry.type === Folder.FolderEntriesTypeEnum.VirtualDatasetVersion
-            );
+          .filter((entry: Entry) => {
+            return entry.type === EntryTypeEnum.DatasetVersion;
           })
-          .map((datasetVersionEntry: Folder.FolderEntries) => {
+          .map((datasetVersionEntry: Entry) => {
             return datasetVersionEntry.id;
           });
 
@@ -390,17 +388,14 @@ export class FolderView extends React.Component<
       });
   }
 
-  getMostRecentDateEntry(entry: Folder.FolderEntries) {
+  getMostRecentDateEntry(entry: Entry) {
     // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
-    if (entry.type === Folder.FolderEntriesTypeEnum.Folder) {
+    if (entry.type === EntryTypeEnum.Folder) {
       return entry.creation_date;
-    } else if (
-      entry.type === Folder.FolderEntriesTypeEnum.Dataset ||
-      entry.type == Folder.FolderEntriesTypeEnum.VirtualDataset
-    ) {
+    } else if (entry.type === EntryTypeEnum.Dataset) {
       let latestDatasetVersion = this.state.datasetLastDatasetVersion[entry.id];
       return latestDatasetVersion.creation_date;
-    } else if (entry.type === Folder.FolderEntriesTypeEnum.DatasetVersion) {
+    } else if (entry.type === EntryTypeEnum.DatasetVersion) {
       return entry.creation_date;
     }
   }
@@ -409,14 +404,12 @@ export class FolderView extends React.Component<
   nameUrlFormatter(cell: any, row: BootstrapTableFolderEntry) {
     // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
     let glyphicon = null;
-    if (row.type === Folder.FolderEntriesTypeEnum.Folder) {
+    if (row.type === EntryTypeEnum.Folder) {
       glyphicon = <Glyphicon glyph="glyphicon glyphicon-folder-close" />;
-    } else if (row.type === Folder.FolderEntriesTypeEnum.Dataset) {
+    } else if (row.type === EntryTypeEnum.Dataset) {
       glyphicon = <Glyphicon glyph="glyphicon glyphicon-inbox" />;
-    } else if (row.type === Folder.FolderEntriesTypeEnum.DatasetVersion) {
+    } else if (row.type === EntryTypeEnum.DatasetVersion) {
       glyphicon = <Glyphicon glyph="glyphicon glyphicon-file" />;
-    } else if (row.type === Folder.FolderEntriesTypeEnum.VirtualDataset) {
-      glyphicon = <Glyphicon glyph="glyphicon glyphicon-flash" />;
     } else {
       console.log("unknown type:", row.type);
     }
@@ -534,7 +527,7 @@ export class FolderView extends React.Component<
   // region Sharing
 
   loadSelectionAndShare() {
-    // Process the selection into Folder | FolderEntries
+    // Process the selection into Folder | Entry
     if (this.state.selection.length === 0) {
       this.setState({
         sharingEntries: [this.state.folder],
@@ -598,7 +591,7 @@ export class FolderView extends React.Component<
     }
 
     if (this.state && this.state.folder) {
-      var folder: Folder.Folder = this.state.folder;
+      var folder: Folder = this.state.folder;
 
       let parent_public = folder.parents.some((parent) => {
         return parent.id == "public";
@@ -611,12 +604,13 @@ export class FolderView extends React.Component<
       );
 
       folderEntriesTableFormatted = folder.entries.map(
-        (entry: Folder.FolderEntries, index: number) => {
+        (entry: Entry, index: number) => {
           let latestDatasetVersion = this.state.datasetLastDatasetVersion[
             entry.id
           ];
-          let full_datasetVersion: Folder.DatasetVersion = this.state
-            .datasetsVersion[entry.id];
+          let full_datasetVersion: DatasetVersion = this.state.datasetsVersion[
+            entry.id
+          ];
           return new BootstrapTableFolderEntry(
             entry,
             latestDatasetVersion,
@@ -695,7 +689,7 @@ export class FolderView extends React.Component<
         });
         if (folder.can_edit) {
           // Don't display this if we are in the trash of the user
-          if (this.state.folder.folder_type !== Folder.TypeFolderEnum.Trash) {
+          if (this.state.folder.folder_type !== FolderTypeEnum.Trash) {
             navItems.push({
               label: "Move to trash",
               action: () => this.moveToTrash(),

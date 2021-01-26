@@ -5,7 +5,6 @@ import { OverlayTrigger, Tooltip, Button } from "react-bootstrap";
 import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 import update from "immutability-helper";
 
-import { LeftNav } from "./LeftNav";
 import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";
 
 import * as Models from "../models/models";
@@ -23,7 +22,7 @@ import {
   StatusEnum,
   Entry,
 } from "../models/models";
-import { DatasetVersion } from "../models/models";
+import { DatasetVersion } from "src/models/models";
 import { NotFound } from "./NotFound";
 import { NamedId } from "../models/models";
 import { FolderEntries } from "../models/models";
@@ -38,7 +37,8 @@ import {
 } from "../models/models";
 import ClipboardButton from "../utilities/r-clipboard";
 import { UploadTracker } from "./UploadTracker";
-import FigshareSection from "./dataset_view/FigshareSection";
+import FigshareSection from "../dataset/components/FigshareSection";
+import DatasetMetadataSection from "src/dataset/components/DatasetMetadataSection";
 
 interface DatasetViewMatchParams {
   datasetId: string;
@@ -863,7 +863,6 @@ export class DatasetView extends React.Component<
     if (!this.state) {
       return (
         <div>
-          <LeftNav items={[]} />
           <div id="main-content">Loading...</div>
         </div>
       );
@@ -875,7 +874,6 @@ export class DatasetView extends React.Component<
         "is correct. We are also available via the feedback button.";
       return (
         <div>
-          <LeftNav items={[]} />
           <div id="main-content">
             <NotFound message={message} />
           </div>
@@ -1231,63 +1229,14 @@ export class DatasetView extends React.Component<
 
       return (
         <div>
-          <LeftNav items={navItems} />
           <div id="main-content">
             {dataset && datasetVersion && (
               <span>
+                <DatasetMetadataSection
+                  dataset={dataset}
+                  datasetVersion={datasetVersion}
+                />
                 {leftNavsDialogs}
-
-                <h1>
-                  {dataset.name}
-                  &nbsp;
-                  <small>{permaname}</small>
-                  {this.state.datasetVersion.state ===
-                    StatusEnum.Deprecated && (
-                    <span>
-                      &nbsp;
-                      <small
-                        className="glyphicon glyphicon-warning-sign"
-                        style={deprecationTitle}
-                      >
-                        Deprecated
-                      </small>
-                    </span>
-                  )}
-                  {this.state.datasetVersion.state === StatusEnum.Deleted && (
-                    <span>
-                      &nbsp;
-                      <small
-                        className="glyphicon glyphicon-exclamation-sign"
-                        style={deletionTitle}
-                      >
-                        Deleted
-                      </small>
-                    </span>
-                  )}
-                </h1>
-                <p>
-                  Version {datasetVersion.version} created by{" "}
-                  {datasetVersion.creator.name}
-                  &nbsp;on the {toLocalDateString(datasetVersion.creation_date)}
-                </p>
-                <p>Versions: {versions} </p>
-
-                {folders.length > 0 && <p>Contained within {folders}</p>}
-
-                {this.state.datasetVersion.state === StatusEnum.Deprecated && (
-                  <div className="well well-sm" style={deprecationStyle}>
-                    <i>Deprecation reason:</i>
-                    <br />
-                    <span>&emsp;{this.state.datasetVersion.reason_state}</span>
-                  </div>
-                )}
-
-                {this.state.datasetVersion.description &&
-                  Dialogs.renderDescription(
-                    this.state.datasetVersion.description
-                  )}
-
-                {this.renderChangesDescription()}
 
                 <h2>Contents</h2>
                 <table className="table">

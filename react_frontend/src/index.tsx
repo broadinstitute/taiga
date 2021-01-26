@@ -1,11 +1,11 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import { Route, Redirect, Switch } from "react-router";
+import { Route, Redirect, Switch, RouteComponentProps } from "react-router";
 import { Link, BrowserRouter } from "react-router-dom";
 
 import { FolderView } from "./components/FolderView";
-import { DatasetView } from "./components/DatasetView";
+import DatasetViewWrapper from "src/dataset/components/DatasetViewWrapper";
 import { SearchView } from "./components/SearchView";
 
 import { TaigaApi } from "./models/api";
@@ -18,8 +18,10 @@ import { GroupListView } from "./components/GroupListView";
 import { GroupView } from "./components/GroupView";
 
 import { relativePath } from "./utilities/route";
-import { FormControl, Overlay, Popover, Tooltip } from "react-bootstrap";
+import { FormControl, Overlay, Popover } from "react-bootstrap";
 import { SHA } from "./version";
+
+import "src/common/styles/base.css";
 
 interface AppProps {
   route?: any;
@@ -89,15 +91,19 @@ class App extends React.Component<AppProps, AppState> {
           error_message.push(
             <p>
               Usage:
-              <br /> - dataset_permaname
-              <br /> - dataset_permaname.version
-              <br /> - dataset_permaname/version
-              <br />
-              <br /> - dataset_id
-              <br /> - dataset_id.version
-              <br /> - dataset_id/version
-              <br />
-              <br /> - dataset_version_id
+              <ul>
+                <li>dataset_permaname</li>
+                <li>dataset_permaname.version</li>
+                <li>dataset_permaname/version</li>
+              </ul>
+              <ul>
+                <li>dataset_id</li>
+                <li>dataset_id.version</li>
+                <li>dataset_id/version</li>
+              </ul>
+              <ul>
+                <li>dataset_version_id</li>
+              </ul>
             </p>
           );
           // error_message += "</br>  - {dataset_id}.{version}";
@@ -120,12 +126,6 @@ class App extends React.Component<AppProps, AppState> {
       >
         Trash
       </Link>
-    );
-
-    const tooltip = (
-      <Tooltip placement="right" className="in">
-        Hi
-      </Tooltip>
     );
 
     return (
@@ -170,7 +170,9 @@ class App extends React.Component<AppProps, AppState> {
               container={this}
               target={() => ReactDOM.findDOMNode(this.state.target)}
             >
-              <Popover>{this.state.message}</Popover>
+              <Popover id="global-search-help-message">
+                {this.state.message}
+              </Popover>
             </Overlay>
           </div>
 
@@ -293,31 +295,72 @@ export function initPage(element: any) {
                   "dataset/:datasetId.:datasetVersionId/:fileName"
                 )}
                 render={(props) => {
-                  return <DatasetView {...props} tapi={tapi} user={user} />;
+                  const { datasetId, datasetVersionId } = props.match.params;
+                  return (
+                    <Redirect
+                      to={relativePath(
+                        `dataset/${datasetId}/${datasetVersionId}`
+                      )}
+                    />
+                  );
                 }}
               />
               <Route
                 path={relativePath("dataset/:datasetId/:datasetVersionId")}
                 render={(props) => {
-                  return <DatasetView {...props} tapi={tapi} user={user} />;
+                  const { datasetId, datasetVersionId } = props.match.params;
+
+                  return (
+                    <DatasetViewWrapper
+                      key={`dataset/${datasetId}/${datasetVersionId}`}
+                      {...props}
+                      tapi={tapi}
+                      user={user}
+                    />
+                  );
                 }}
               />
               <Route
                 path={relativePath("dataset/:datasetId.:datasetVersionId")}
                 render={(props) => {
-                  return <DatasetView {...props} tapi={tapi} user={user} />;
+                  const { datasetId, datasetVersionId } = props.match.params;
+                  return (
+                    <Redirect
+                      to={relativePath(
+                        `dataset/${datasetId}/${datasetVersionId}`
+                      )}
+                    />
+                  );
                 }}
               />
               <Route
                 path={relativePath("dataset/:datasetId")}
                 render={(props) => {
-                  return <DatasetView {...props} tapi={tapi} user={user} />;
+                  const { datasetId } = props.match.params;
+
+                  return (
+                    <DatasetViewWrapper
+                      key={`dataset/${datasetId}`}
+                      {...props}
+                      tapi={tapi}
+                      user={user}
+                    />
+                  );
                 }}
               />
               <Route
                 path={relativePath("dataset_version/:datasetVersionId")}
                 render={(props) => {
-                  return <DatasetView {...props} tapi={tapi} user={user} />;
+                  const { datasetVersionId } = props.match.params;
+
+                  return (
+                    <DatasetViewWrapper
+                      key={`dataset_version/${datasetVersionId}`}
+                      {...props}
+                      tapi={tapi}
+                      user={user}
+                    />
+                  );
                 }}
               />
               <Route

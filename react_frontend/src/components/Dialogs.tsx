@@ -11,17 +11,7 @@ import {
 } from "react-bootstrap";
 import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 
-import { isUndefined } from "util";
-import { isNullOrUndefined } from "util";
-import { relativePath } from "../utilities/route";
-import {
-  Dataset,
-  Entry,
-  Folder,
-  FolderEntries,
-  Group,
-  User,
-} from "../models/models";
+import { Entry, Group, User } from "src/models/models";
 import update from "immutability-helper";
 
 interface InputFolderIdProps extends DialogProps {
@@ -534,7 +524,7 @@ export class DeprecationReason extends React.Component<
 
 // region Sharing
 export interface ShareEntriesProps extends DialogProps {
-  entries: Array<Entry>;
+  entries: Array<{ name: string; url: string }>;
 }
 
 export interface ShareEntriesState extends DialogState {}
@@ -558,13 +548,13 @@ export class ShareEntries extends React.Component<
             <p>Share easily these urls with your collaborators</p>
           </div>
           <div className="modal-body">
-            {this.props.entries.map((entry: Entry) => {
+            {this.props.entries.map((entry, i) => {
               // TODO: Could add the relativePath as a function of an entry in models.ts
-              let entryUrl = entry.getFullUrl();
+              let entryUrl = entry.url;
 
               return (
-                <p key={entry.id}>
-                  {entry.getName()}:{" "}
+                <p key={i}>
+                  {entry.name}:{" "}
                   <a href={entryUrl} target="_blank">
                     {entryUrl}
                   </a>

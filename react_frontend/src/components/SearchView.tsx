@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import * as update from "immutability-helper";
 
 import { LeftNav, MenuItem } from "./LeftNav";
-import * as Models from "../models/models";
 import { TaigaApi } from "../models/api";
 
 import { NotFound } from "./NotFound";
@@ -17,7 +16,14 @@ import { LoadingOverlay } from "../utilities/loading";
 import { Glyphicon } from "react-bootstrap";
 import { Grid, Row, Col } from "react-bootstrap";
 import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
-import { BootstrapTableSearchEntry } from "../models/models";
+import {
+  EntryTypeEnum,
+  DatasetVersion,
+  NamedId,
+  SearchEntry,
+  SearchResult,
+  BootstrapTableSearchEntry,
+} from "src/models/models";
 
 let _update: any = update;
 
@@ -38,8 +44,8 @@ const tableEntriesStyle: any = {
 
 export interface SearchViewState {
   // TODO: To Clean/Old
-  datasetLastDatasetVersion?: { [dataset_id: string]: Models.DatasetVersion };
-  datasetsVersion?: { [datasetVersion_id: string]: Models.DatasetVersion };
+  datasetLastDatasetVersion?: { [dataset_id: string]: DatasetVersion };
+  datasetsVersion?: { [datasetVersion_id: string]: DatasetVersion };
 
   showEditName?: boolean;
   showEditDescription?: boolean;
@@ -63,9 +69,9 @@ export interface SearchViewState {
   loading?: boolean;
 
   // New
-  folder?: Models.NamedId;
+  folder?: NamedId;
   name?: string;
-  searchEntries?: Array<Models.SearchEntry>;
+  searchEntries?: Array<SearchEntry>;
 
   searchQuery?: string;
 }
@@ -98,7 +104,7 @@ export class SearchView extends React.Component<
     // });
 
     // Get the datasets from query + current_folder
-    this.doFetchSearch().then((searchResult: Models.SearchResult) => {
+    this.doFetchSearch().then((searchResult: SearchResult) => {
       console.log("Received the search results!");
       console.log("=> " + searchResult);
 
@@ -123,13 +129,11 @@ export class SearchView extends React.Component<
   nameUrlFormatter(cell: any, row: BootstrapTableSearchEntry) {
     // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
     let glyphicon = null;
-    if (row.type === Models.FolderEntriesTypeEnum.Folder) {
+    if (row.type === EntryTypeEnum.Folder) {
       glyphicon = <Glyphicon glyph="glyphicon glyphicon-folder-close" />;
-    } else if (row.type === Models.FolderEntriesTypeEnum.Dataset) {
+    } else if (row.type === EntryTypeEnum.Dataset) {
       glyphicon = <Glyphicon glyph="glyphicon glyphicon-inbox" />;
-    } else if (row.type === Models.FolderEntriesTypeEnum.VirtualDataset) {
-      glyphicon = <Glyphicon glyph="glyphicon glyphicon-flash" />;
-    } else if (row.type === Models.FolderEntriesTypeEnum.DatasetVersion) {
+    } else if (row.type === EntryTypeEnum.DatasetVersion) {
       glyphicon = <Glyphicon glyph="glyphicon glyphicon-file" />;
     }
 
@@ -248,11 +252,11 @@ export class SearchView extends React.Component<
       );
     }
 
-    let folder: Models.NamedId = null;
+    let folder: NamedId = null;
     if (this.state && this.state.folder) {
       folder = this.state.folder;
       folderEntriesTableFormatted = this.state.searchEntries.map(
-        (entry: Models.SearchEntry) => {
+        (entry: SearchEntry) => {
           return new BootstrapTableSearchEntry(entry);
         }
       );

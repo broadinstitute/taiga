@@ -15,20 +15,20 @@ import "src/common/styles/editable.css";
 interface Props {
   id: string;
   title: string;
-  initialValue: string;
+  value: string;
   disabled?: boolean;
   placement?: "top" | "bottom" | "left" | "right";
   onConfirm: (newValue: string) => void;
 }
 const TextEditable = (props: Props) => {
-  const { id, title, initialValue, disabled, placement, onConfirm } = props;
-  const [value, setValue] = useState(initialValue);
+  const { id, title, value, disabled, placement, onConfirm } = props;
+
   const overlayRef = useRef<OverlayTrigger>();
   const buttonRef = useRef<HTMLAnchorElement>();
   const inputRef = useRef<FormControl>();
 
   if (disabled) {
-    return <span>{initialValue}</span>;
+    return <span>{value}</span>;
   }
 
   const hideOverlay = () => {
@@ -52,7 +52,6 @@ const TextEditable = (props: Props) => {
               inputRef.current
             ) as HTMLInputElement).value;
             onConfirm(newValue);
-            setValue(newValue);
             hideOverlay();
           }}
           bsClass="btn btn-primary "

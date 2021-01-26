@@ -4,82 +4,33 @@ import {
 } from "../utilities/formats";
 import { relativePath } from "../utilities/route";
 
-export abstract class Entry {
-  type: FolderEntriesTypeEnum;
+export enum EntryTypeEnum {
+  Folder = "folder",
+  Dataset = "dataset",
+  DatasetVersion = "dataset_version",
+}
+export interface Entry {
+  type: EntryTypeEnum;
   id: string;
   name: string;
   creation_date: string;
   creator: NamedId;
-
-  constructor(data: any) {
-    let t: any = this;
-    for (let key in data) {
-      t[key] = data[key];
-    }
-  }
-
-  abstract getRelativeLink(): string;
-
-  getFullUrl() {
-    return window.location.origin + this.getRelativeLink();
-  }
-
-  getName() {
-    return this.name;
-  }
 }
 
-export class Folder extends Entry {
-  folder_type: TypeFolderEnum;
+export enum FolderTypeEnum {
+  Folder = "folder",
+  Trash = "trash",
+  Home = "home",
+}
+export interface Folder extends Entry {
+  type: EntryTypeEnum.Folder;
+  folder_type: FolderTypeEnum;
   parents: Array<NamedId>;
-  entries: Array<FolderEntries>;
+  entries: Array<Entry>;
   description: string;
   acl: Acl;
   can_view: boolean;
   can_edit: boolean;
-
-  constructor(data: any) {
-    super(data);
-
-    this.entries.forEach((entry, index) => {
-      this.entries[index] = new FolderEntries(entry);
-    });
-  }
-
-  getRelativeLink() {
-    return relativePath("/folder/" + this.id);
-  }
-}
-
-export enum TypeFolderEnum {
-  Folder = <any>"folder",
-  Trash = <any>"trash",
-  Home = <any>"home",
-}
-
-// TODO: Remove to instead use Entry and DatasetVersion/Dataset(/Folder) extending Entry
-export class FolderEntries extends Entry {
-  constructor(data: any) {
-    super(data);
-  }
-
-  getRelativeLink() {
-    if (this.type === FolderEntriesTypeEnum.Dataset) {
-      return relativePath("/dataset/" + this.id);
-    } else if (this.type === FolderEntriesTypeEnum.Folder) {
-      return relativePath("/folder/" + this.id);
-    } else {
-      return "Not Implemented yet";
-    }
-  }
-}
-
-export enum FolderEntriesTypeEnum {
-  Folder = <any>"folder",
-  Dataset = <any>"dataset",
-  DatasetVersion = <any>"dataset_version",
-  VirtualDataset = <any>"virtual_dataset",
-  VirtualDatasetVersion = <any>"virtual_dataset_version",
 }
 
 export class NamedId {
@@ -107,9 +58,8 @@ export enum StatusEnum {
   Deprecated = "deprecated",
 }
 
-export class DatasetVersion extends Entry {
+export interface DatasetVersion extends Entry {
   dataset_id: string;
-  dataset: Dataset;
   state: StatusEnum;
   reason_state: string;
   version: string;
@@ -142,22 +92,6 @@ export class DatasetVersion extends Entry {
     url_public_html?: string;
     version?: number;
   };
-
-  constructor(data: any, dataset: Dataset) {
-    super(data);
-    this.dataset = dataset;
-  }
-
-  getRelativeLink() {
-    return relativePath(
-      "/dataset/" + this.dataset.permanames[0] + "/" + this.version
-    );
-  }
-
-  getName() {
-    // TODO: Retrieve the dataset to be able to print dataset name + version
-    return "Version " + this.version;
-  }
 }
 
 export interface DatasetAndDatasetVersion {
@@ -178,27 +112,22 @@ export interface DatasetVersionDatafiles {
   original_file_sha256?: string;
 }
 
-export interface DatasetVersions {
+export interface DatasetVersionSummary {
   name: string;
   id: string;
   status: StatusEnum;
 }
 
-export class Dataset extends Entry {
-  permanames: Array<string>;
-  description: string;
-  // TODO: Rename this and rework it, since it is "DatasetVersionNamedId" and not a true DatasetVersion(s)
-  versions: Array<DatasetVersions>;
-  acl: Acl;
-  folders: Array<NamedId>;
-
+export interface Dataset {
   can_edit: boolean;
   can_view: boolean;
+  description: string;
+  folders: Array<NamedId>;
+  id: string;
+  name: string;
+  permanames: Array<string>;
   subscription_id: string;
-
-  getRelativeLink() {
-    return relativePath("/dataset/" + this.permanames[0]);
-  }
+  versions: Array<DatasetVersionSummary>;
 }
 
 export interface DatasetFullDatasetVersions {
@@ -320,24 +249,21 @@ export class BootstrapTableFolderEntry {
   creation_date: Date;
   creator_name: string;
 
-  type: FolderEntriesTypeEnum;
+  type: EntryTypeEnum;
 
   processFolderEntryUrl(
-    entry: FolderEntries,
+    entry: Entry,
     latestDatasetVersion?: DatasetVersion,
     full_datasetVersion?: DatasetVersion
   ) {
     let processedUrl = null;
-    if (entry.type === FolderEntriesTypeEnum.Folder) {
+    if (entry.type === EntryTypeEnum.Folder) {
       processedUrl = relativePath("folder/" + entry.id);
-    } else if (entry.type === FolderEntriesTypeEnum.DatasetVersion) {
+    } else if (entry.type === EntryTypeEnum.DatasetVersion) {
       processedUrl = relativePath(
         "dataset/" + full_datasetVersion.id + "/" + entry.id
       );
-    } else if (
-      entry.type === FolderEntriesTypeEnum.Dataset ||
-      entry.type === FolderEntriesTypeEnum.VirtualDataset
-    ) {
+    } else if (entry.type === EntryTypeEnum.Dataset) {
       processedUrl = relativePath(
         "dataset/" + entry.id + "/" + latestDatasetVersion.id
       );
@@ -346,13 +272,10 @@ export class BootstrapTableFolderEntry {
     return processedUrl;
   }
 
-  processCreationDate(
-    entry: FolderEntries,
-    latestDatasetVersion?: DatasetVersion
-  ) {
+  processCreationDate(entry: Entry, latestDatasetVersion?: DatasetVersion) {
     let processedCreationDate: Date = new Date();
 
-    if (entry.type === FolderEntriesTypeEnum.Dataset) {
+    if (entry.type === EntryTypeEnum.Dataset) {
       processedCreationDate.setTime(
         Date.parse(latestDatasetVersion.creation_date)
       );
@@ -366,7 +289,7 @@ export class BootstrapTableFolderEntry {
   }
 
   constructor(
-    entry: FolderEntries,
+    entry: Entry,
     latestDatasetVersion?: DatasetVersion,
     fullDatasetVersion?: DatasetVersion
   ) {
@@ -399,7 +322,7 @@ export class BootstrapTableSearchEntry {
   creation_date: Date;
   creator_name: string;
 
-  type: FolderEntriesTypeEnum;
+  type: EntryTypeEnum;
 
   processBreadCrumbName(searchEntry: SearchEntry) {
     let breadcrumbedName = "";
@@ -422,9 +345,9 @@ export class BootstrapTableSearchEntry {
 
   processFolderEntryUrl(searchEntry: SearchEntry) {
     let processedUrl = null;
-    if (searchEntry.entry.type === FolderEntriesTypeEnum.Folder) {
+    if (searchEntry.entry.type === EntryTypeEnum.Folder) {
       processedUrl = relativePath("folder/" + searchEntry.entry.id);
-    } else if (searchEntry.entry.type === FolderEntriesTypeEnum.Dataset) {
+    } else if (searchEntry.entry.type === EntryTypeEnum.Dataset) {
       processedUrl = relativePath("dataset/" + searchEntry.entry.id);
     }
 
@@ -498,7 +421,7 @@ export class AccessLog {
   // Used for presentation BootstrapTable
   entry_id: string;
   entry_name: string;
-  type: FolderEntriesTypeEnum;
+  type: EntryTypeEnum;
 
   url: string;
 
@@ -507,9 +430,7 @@ export class AccessLog {
   processAccessLogEntryUrl(serverAccessLog: any) {
     let processedUrl = null;
     // TODO: Fix this toLowerCase workaround to compare types
-    if (
-      serverAccessLog.entry.type.toLowerCase() === FolderEntriesTypeEnum.Folder
-    ) {
+    if (serverAccessLog.entry.type.toLowerCase() === EntryTypeEnum.Folder) {
       processedUrl = relativePath("folder/" + serverAccessLog.entry.id);
     } else {
       processedUrl = relativePath("dataset/" + serverAccessLog.entry.id);
@@ -562,37 +483,37 @@ export class ActivityLogEntry {
   comments: string | null;
 }
 
-export class CreationActivityLogEntry extends ActivityLogEntry {
+export interface CreationActivityLogEntry extends ActivityLogEntry {
   type: ActivityTypeEnum.created;
   dataset_name: string;
   dataset_description: string | null;
 }
 
-export class NameUpdateActivity extends ActivityLogEntry {
+export interface NameUpdateActivity extends ActivityLogEntry {
   type: ActivityTypeEnum.changed_name;
   dataset_name: string;
 }
 
-export class DescriptionUpdateActivity extends ActivityLogEntry {
+export interface DescriptionUpdateActivity extends ActivityLogEntry {
   type: ActivityTypeEnum.changed_description;
   dataset_description: string;
   dataset_version: number;
 }
 
-export class VersionAdditionActivity extends ActivityLogEntry {
+export interface VersionAdditionActivity extends ActivityLogEntry {
   type: ActivityTypeEnum.added_version;
   dataset_description: string | null;
   dataset_version: number;
 }
 
-export class LogStartActivity extends ActivityLogEntry {
+export interface LogStartActivity extends ActivityLogEntry {
   type: ActivityTypeEnum.started_log;
   dataset_name: string;
   dataset_description: string | null;
   dataset_version: number;
 }
 
-export class Group {
+export interface Group {
   id: number;
   name: string;
   users: Array<UserNamedId>;

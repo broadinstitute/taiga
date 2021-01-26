@@ -479,7 +479,7 @@ export class TaigaApi {
     return this._put(`/subscription`, dataset_id);
   }
 
-  delete_subscription(dataset_id: string): Promise<boolean> {
-    return this._delete(`/subscription/${dataset_id}`);
+  delete_subscription(subscriptionId: string): Promise<boolean> {
+    return this._delete(`/subscription/${subscriptionId}`);
   }
 }

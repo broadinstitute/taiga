@@ -111,8 +111,6 @@ export class Token extends React.Component<TokenProps, TokenState> {
                           rootClose={true}
                         >
                           <ClipboardButton
-                            className="btn btn-default"
-                            style={clipboardButtonStyle}
                             data-clipboard-text={this.state.token}
                           >
                             {/*TODO: Clipboard Button breaks Glyphicon by not adding ::before...find a way to counter this*/}

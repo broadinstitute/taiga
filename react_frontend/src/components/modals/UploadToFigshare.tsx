@@ -28,6 +28,7 @@ type Props = {
   handleClose: (uploadComplete: boolean, figsharePrivateUrl: string) => void;
   show: boolean;
   userFigshareLinked: boolean;
+  datasetName: string;
   datasetVersion: DatasetVersion;
 };
 
@@ -85,7 +86,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
 
   getDefaultStateFromProps(props: Props): State {
     return {
-      articleTitle: props.datasetVersion.dataset.name,
+      articleTitle: props.datasetName,
       articleDescription: "",
       articleLicense: 0,
       articleCategories: [],

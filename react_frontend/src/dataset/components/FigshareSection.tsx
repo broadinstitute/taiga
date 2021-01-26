@@ -1,27 +1,22 @@
 import * as React from "react";
-import { Button } from "react-bootstrap";
+import { Row, Col, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { saveAs } from "file-saver";
 
+import { FigshareLinkedFiles } from "src/dataset/models/models";
 import { DatasetVersion } from "../../models/models";
 import { relativePath } from "../../utilities/route";
 import { TaigaApi } from "../../models/api";
-import UpdateFigshare from "../modals/UpdateFigshare";
-import UploadToFigshare from "../modals/UploadToFigshare";
+import UpdateFigshare from "../../components/modals/UpdateFigshare";
+import UploadToFigshare from "../../components/modals/UploadToFigshare";
 
 type Props = {
   tapi: TaigaApi;
+  datasetName: string;
   datasetVersion: DatasetVersion;
   handleFigshareUploadComplete: () => Promise<any>;
   userFigshareAccountLinked: boolean;
-  figshareLinkedFiles: Map<
-    string,
-    {
-      downloadLink: string;
-      currentTaigaId: string;
-      readableTaigaId?: string;
-    }
-  >;
+  figshareLinkedFiles: FigshareLinkedFiles;
 };
 
 type State = {
@@ -160,29 +155,32 @@ export default class FigshareSection extends React.Component<Props, State> {
     const { userFigshareAccountLinked } = this.props;
 
     return (
-      <section>
-        <h2>Link with Figshare</h2>
-        {this.props.datasetVersion && (
-          <React.Fragment>
-            {this.props.datasetVersion.figshare
-              ? this.renderFigshareLinkedContent()
-              : this.renderFigshareNotLinkedContent()}
-            <UploadToFigshare
-              tapi={this.props.tapi}
-              handleClose={this.handleCloseUploadToFigshare}
-              show={this.state.showUploadToFigshare}
-              userFigshareLinked={userFigshareAccountLinked}
-              datasetVersion={this.props.datasetVersion}
-            />
-            <UpdateFigshare
-              tapi={this.props.tapi}
-              handleClose={this.handleCloseUpdateFigshare}
-              show={this.state.showUpdateFigshare}
-              datasetVersion={this.props.datasetVersion}
-            />
-          </React.Fragment>
-        )}
-      </section>
+      <Row componentClass="section">
+        <Col md={12}>
+          <h2>Link with Figshare</h2>
+          {this.props.datasetVersion && (
+            <React.Fragment>
+              {this.props.datasetVersion.figshare
+                ? this.renderFigshareLinkedContent()
+                : this.renderFigshareNotLinkedContent()}
+              <UploadToFigshare
+                tapi={this.props.tapi}
+                handleClose={this.handleCloseUploadToFigshare}
+                show={this.state.showUploadToFigshare}
+                userFigshareLinked={userFigshareAccountLinked}
+                datasetName={this.props.datasetName}
+                datasetVersion={this.props.datasetVersion}
+              />
+              <UpdateFigshare
+                tapi={this.props.tapi}
+                handleClose={this.handleCloseUpdateFigshare}
+                show={this.state.showUpdateFigshare}
+                datasetVersion={this.props.datasetVersion}
+              />
+            </React.Fragment>
+          )}
+        </Col>
+      </Row>
     );
   }
 }

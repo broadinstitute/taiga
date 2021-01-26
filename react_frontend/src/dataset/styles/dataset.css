@@ -1,0 +1,8 @@
+.dataset-view .dataset-heading {
+  display: flex;
+  align-items: flex-end;
+}
+
+.select-text {
+  user-select: all;
+}

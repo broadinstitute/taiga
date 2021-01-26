@@ -1,8 +1,10 @@
 import { sortByName } from "./common";
 
+import { FigshareLinkedFiles } from "src/dataset/models/models";
 import {
   DatasetVersionDatafiles as Datafile,
   DataFileType,
+  DatasetVersion,
 } from "../models/models";
 import {
   File,
@@ -97,4 +99,45 @@ export const getDefaultFilesToUpdate = (
     additionalTaigaDatafiles,
     unchangedFiles,
   };
+};
+
+export const getFigshareLinkedFiles = (
+  datasetPermaname: string,
+  datasetVersion: DatasetVersion
+): FigshareLinkedFiles => {
+  if (
+    !datasetVersion.figshare ||
+    !datasetVersion.figshare.files ||
+    datasetVersion.figshare.files.length == 0
+  ) {
+    return null;
+  }
+
+  const figshareLinkedFiles: FigshareLinkedFiles = new Map();
+
+  datasetVersion.datafiles.forEach((datafile) => {
+    const file = datasetVersion.figshare.files.find(
+      (file) =>
+        file.taiga_datafile_id == datafile.id ||
+        file.underlying_file_id == datafile.underlying_file_id
+    );
+
+    if (file) {
+      const currentTaigaId = `${datasetPermaname}.${datasetVersion.version}/${datafile.name}`;
+      if (file.taiga_datafile_id == datafile.id) {
+        figshareLinkedFiles.set(datafile.id, {
+          downloadLink: file.download_url,
+          currentTaigaId,
+        });
+      } else {
+        figshareLinkedFiles.set(datafile.id, {
+          downloadLink: file.download_url,
+          currentTaigaId,
+          readableTaigaId: file.taiga_datafile_readable_id,
+        });
+      }
+    }
+  });
+
+  return figshareLinkedFiles;
 };
