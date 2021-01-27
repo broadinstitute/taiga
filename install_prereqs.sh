@@ -1,6 +1,5 @@
 set -ex
-pip install -r requirements.txt
+pip install -r dev-requirements.txt
 python setup.py develop
 pre-commit install
-yarn install
-cd react_frontend/ && yarn install && cd ..
+yarn install --cwd react_frontend
