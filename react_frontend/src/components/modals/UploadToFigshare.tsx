@@ -54,6 +54,7 @@ type State = {
 
 export default class UploadToFigshare extends React.Component<Props, State> {
   datafileIdToName: Map<string, string>;
+
   constructor(props: Props) {
     super(props);
 
@@ -97,7 +98,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
           datafileId: datafile.id,
           datafileName: datafile.name,
           figshareFileName:
-            datafile.type == "Raw" ? datafile.name : datafile.name + ".csv",
+            datafile.type == "Raw" ? datafile.name : `${datafile.name}.csv`,
           include: true,
         };
       }),
@@ -132,7 +133,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
   handleArticleKeywordChange = (
     e: React.FormEvent<FormControl & FormControlProps>
   ) => {
-    let keywords = (e.currentTarget.value as string)
+    const keywords = (e.currentTarget.value as string)
       .split(",")
       .map((kw) => kw.trim())
       .filter((kw) => kw.length > 1);
@@ -142,7 +143,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
   handleArticleReferencesChange = (
     e: React.FormEvent<FormControl & FormControlProps>
   ) => {
-    let keywords = (e.currentTarget.value as string)
+    const keywords = (e.currentTarget.value as string)
       .split(",")
       .map((kw) => kw.trim())
       .filter((kw) => kw.length > 0);
@@ -285,7 +286,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
               isMulti
               isDisabled={!this.state.categories}
               isLoading={!this.state.categories}
-              isSearchable={true}
+              isSearchable
               name="article-categories"
               options={this.state.categories ? this.state.categories : []}
               onChange={this.handleArticleCategoriesChange}
@@ -298,7 +299,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
           <FormControl
             componentClass="textarea"
             onChange={this.handleArticleKeywordChange}
-            defaultValue={""}
+            defaultValue=""
             bsClass="form-control textarea-lock-width"
             disabled={isUploading}
           />
@@ -318,7 +319,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
           <FormControl
             componentClass="textarea"
             onChange={this.handleArticleReferencesChange}
-            defaultValue={""}
+            defaultValue=""
             bsClass="form-control textarea-lock-width"
             disabled={isUploading}
           />
@@ -332,7 +333,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
               defaultValue={this.state.licenses[0]}
               isDisabled={!this.state.licenses}
               isLoading={!this.state.licenses}
-              isSearchable={true}
+              isSearchable
               name="article-license"
               options={this.state.licenses ? this.state.licenses : []}
               onChange={this.handleArticleLicenseChange}
@@ -390,7 +391,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
       );
     } else if (isUploading) {
       primaryAction = (
-        <Button bsStyle="primary" disabled={true}>
+        <Button bsStyle="primary" disabled>
           Uploading to Figshare...
         </Button>
       );

@@ -53,15 +53,17 @@ const activityLogTypeFormatter = (
         )}
       </div>
     );
-  } else if (cell == ActivityTypeEnum.changed_name) {
+  }
+  if (cell == ActivityTypeEnum.changed_name) {
     return (
       <span>
         Changed name to{" "}
         <strong>{(row as NameUpdateActivity).dataset_name}</strong>
       </span>
     );
-  } else if (cell == ActivityTypeEnum.changed_description) {
-    const changeDescriptionAction = !!(row as DescriptionUpdateActivity)
+  }
+  if (cell == ActivityTypeEnum.changed_description) {
+    const changeDescriptionAction = (row as DescriptionUpdateActivity)
       .dataset_description
       ? "Changed"
       : "Deleted";
@@ -76,7 +78,8 @@ const activityLogTypeFormatter = (
         )}
       </div>
     );
-  } else if (cell == ActivityTypeEnum.added_version) {
+  }
+  if (cell == ActivityTypeEnum.added_version) {
     return (
       <div>
         <div>
@@ -89,7 +92,8 @@ const activityLogTypeFormatter = (
         )}
       </div>
     );
-  } else if (cell == ActivityTypeEnum.started_log) {
+  }
+  if (cell == ActivityTypeEnum.started_log) {
     return (
       <div>
         <div>

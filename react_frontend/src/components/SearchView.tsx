@@ -3,6 +3,16 @@ import { RouteComponentProps } from "react-router";
 import { Link } from "react-router-dom";
 import * as update from "immutability-helper";
 
+import { Glyphicon, Grid, Row, Col } from "react-bootstrap";
+import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
+import {
+  EntryTypeEnum,
+  DatasetVersion,
+  NamedId,
+  SearchEntry,
+  SearchResult,
+  BootstrapTableSearchEntry,
+} from "src/models/models";
 import { LeftNav, MenuItem } from "./LeftNav";
 import { TaigaApi } from "../models/api";
 
@@ -13,19 +23,7 @@ import { toLocalDateString } from "../utilities/formats";
 import { relativePath } from "../utilities/route";
 import { LoadingOverlay } from "../utilities/loading";
 
-import { Glyphicon } from "react-bootstrap";
-import { Grid, Row, Col } from "react-bootstrap";
-import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
-import {
-  EntryTypeEnum,
-  DatasetVersion,
-  NamedId,
-  SearchEntry,
-  SearchResult,
-  BootstrapTableSearchEntry,
-} from "src/models/models";
-
-let _update: any = update;
+const _update: any = update;
 
 interface SearchViewMatchParams {
   currentFolderId: string;
@@ -80,9 +78,8 @@ export class Conditional extends React.Component<any, any> {
   render() {
     if (this.props.show) {
       return <div>{this.props.children}</div>;
-    } else {
-      return null;
     }
+    return null;
   }
 }
 
@@ -106,7 +103,7 @@ export class SearchView extends React.Component<
     // Get the datasets from query + current_folder
     this.doFetchSearch().then((searchResult: SearchResult) => {
       console.log("Received the search results!");
-      console.log("=> " + searchResult);
+      console.log(`=> ${searchResult}`);
 
       this.setState({
         folder: searchResult.current_folder,
@@ -151,9 +148,8 @@ export class SearchView extends React.Component<
   typeFormatter(cell: string, row: BootstrapTableSearchEntry) {
     if (cell) {
       return cell[0].toUpperCase() + cell.slice(1, cell.length);
-    } else {
-      return "";
     }
+    return "";
   }
 
   dataFormatter(cell: Date, row: BootstrapTableSearchEntry) {
@@ -161,12 +157,12 @@ export class SearchView extends React.Component<
   }
 
   onRowSelect(row: BootstrapTableSearchEntry, isSelected: Boolean, e: any) {
-    let select_key = row.id;
+    const select_key = row.id;
     const original_selection: any = this.state.selection;
 
     let updated_selection: Array<string>;
 
-    let index = original_selection.indexOf(select_key);
+    const index = original_selection.indexOf(select_key);
     if (index !== -1) {
       updated_selection = _update(original_selection, {
         $splice: [[index, 1]],
@@ -202,9 +198,7 @@ export class SearchView extends React.Component<
 
   // Search
   executeSearch(searchQuery: any) {
-    let url = relativePath(
-      "search/" + this.state.folder.id + "/" + searchQuery
-    );
+    const url = relativePath(`search/${this.state.folder.id}/${searchQuery}`);
     window.location.href = url;
   }
 
@@ -215,8 +209,8 @@ export class SearchView extends React.Component<
   }
 
   render() {
-    let entriesOutput: Array<any> = [];
-    let navItems: MenuItem[] = [];
+    const entriesOutput: Array<any> = [];
+    const navItems: MenuItem[] = [];
     let folderEntriesTableFormatted: Array<BootstrapTableSearchEntry> = [];
 
     if (!this.state) {
@@ -226,15 +220,14 @@ export class SearchView extends React.Component<
           <div id="main-content" />
         </div>
       );
-    } else if (
+    }
+    if (
       this.state.error &&
       this.state.error.toUpperCase() === "NOT FOUND".toUpperCase()
     ) {
-      let message =
-        "The folder " +
-        this.props.match.params.folderId +
-        " does not exist. Please check this id " +
-        "is correct. We are also available via the feedback button.";
+      const message =
+        `The folder ${this.props.match.params.folderId} does not exist. Please check this id ` +
+        `is correct. We are also available via the feedback button.`;
       return (
         <div>
           <LeftNav items={[]} />
@@ -243,7 +236,8 @@ export class SearchView extends React.Component<
           </div>
         </div>
       );
-    } else if (this.state.error) {
+    }
+    if (this.state.error) {
       return (
         <div>
           <LeftNav items={[]} />
@@ -295,13 +289,13 @@ export class SearchView extends React.Component<
               <h1>{this.state.name}</h1>
 
               <Grid
-                fluid={true}
+                fluid
                 style={{
                   padding: "0px 15px 0px 0px",
                 }}
               >
                 <Row className="show-grid">
-                  <Col md={8}></Col>
+                  <Col md={8} />
                   <Col md={4}>
                     <SearchInput
                       onKeyPress={(event, searchQuery) =>
@@ -360,7 +354,7 @@ export class SearchView extends React.Component<
                 </TableHeaderColumn>
               </BootstrapTable>
 
-              {this.state.loading && <LoadingOverlay></LoadingOverlay>}
+              {this.state.loading && <LoadingOverlay />}
             </span>
           )}
         </div>

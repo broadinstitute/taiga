@@ -37,15 +37,15 @@ const ContentSection = (props: Props) => {
       let linkToUnderlying = null;
       let gsPath = null;
       if (df.underlying_file_id) {
-        let m = df.underlying_file_id.match(/([^.]+)\.([^/]+)\/.+/);
+        const m = df.underlying_file_id.match(/([^.]+)\.([^/]+)\/.+/);
 
-        let permaname = m[1];
-        let version = m[2];
+        const permaname = m[1];
+        const version = m[2];
 
         linkToUnderlying = (
           <div>
             (
-            <Link to={relativePath("dataset/" + permaname + "/" + version)}>
+            <Link to={relativePath(`dataset/${permaname}/${version}`)}>
               {df.underlying_file_id}
             </Link>
             )
@@ -53,7 +53,7 @@ const ContentSection = (props: Props) => {
         );
       }
       if (df.gcs_path) {
-        gsPath = <div>({"gs://" + df.gcs_path})</div>;
+        gsPath = <div>({`gs://${df.gcs_path}`})</div>;
       }
 
       let figshareLinked = null;
@@ -61,12 +61,12 @@ const ContentSection = (props: Props) => {
       if (figshareLinkedFiles && figshareLinkedFiles.has(df.id)) {
         const figshareFileInfo = figshareLinkedFiles.get(df.id);
         if (figshareFileInfo.readableTaigaId) {
-          let m = figshareFileInfo.readableTaigaId.match(
+          const m = figshareFileInfo.readableTaigaId.match(
             /([^.]+)\.([^/]+)\/.+/
           );
 
-          let figshareDatasetPermaname = m[1];
-          let figshareDatasetVersion = m[2];
+          const figshareDatasetPermaname = m[1];
+          const figshareDatasetVersion = m[2];
           figshareLinked = (
             <OverlayTrigger
               placement="top"

@@ -181,7 +181,7 @@ const DatasetMetadataSection = (props: Props) => {
                 {dataset.folders.map((f, index) => {
                   return (
                     <span key={index}>
-                      <Link to={relativePath("folder/" + f.id)}>{f.name}</Link>
+                      <Link to={relativePath(`folder/${f.id}`)}>{f.name}</Link>
                       {dataset.folders.length !== index + 1 && ", "}
                     </span>
                   );
@@ -232,9 +232,7 @@ const DatasetMetadataSection = (props: Props) => {
           </Button>
         </h3>
         {datasetVersion.changes_description ? (
-          <React.Fragment>
-            {renderDescription(datasetVersion.changes_description)}
-          </React.Fragment>
+          <>{renderDescription(datasetVersion.changes_description)}</>
         ) : (
           <div>No description of changes</div>
         )}

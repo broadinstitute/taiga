@@ -8,6 +8,8 @@ import {
 } from "react-bootstrap";
 import * as Dropzone from "react-dropzone";
 import * as Modal from "react-modal";
+import update from "immutability-helper";
+import { Link } from "react-router-dom";
 import {
   UploadStatus,
   UploadFileType,
@@ -15,11 +17,22 @@ import {
   CreateDatasetParams,
   DatasetIdAndVersionId,
 } from "../UploadTracker";
-import update from "immutability-helper";
 import { UploadTable, UploadFile, UploadController } from "./UploadTable";
 
-import { Link } from "react-router-dom";
-import { relativePath } from "../../utilities/route";
+import { relativePath, getTaigaPrefix } from "../../utilities/route";
+
+import { DialogProps, DialogState } from "../Dialogs";
+import {
+  S3Credentials,
+  FileUploadStatus,
+  TaskStatus,
+  InitialFileType,
+  S3UploadedData,
+  DatasetVersion,
+  DatasetVersionDatafiles,
+  dropExtension,
+} from "../../models/models";
+import { TaigaApi } from "../../models/api";
 
 interface UploadFormProps {
   help?: string;
@@ -64,20 +77,6 @@ const dropZoneStyle: any = {
   borderStyle: "dashed",
   borderRadius: "5px",
 };
-
-import { DialogProps, DialogState } from "../Dialogs";
-import {
-  S3Credentials,
-  FileUploadStatus,
-  TaskStatus,
-  InitialFileType,
-  S3UploadedData,
-  DatasetVersion,
-  DatasetVersionDatafiles,
-  dropExtension,
-} from "../../models/models";
-import { TaigaApi } from "../../models/api";
-import { getTaigaPrefix } from "../../utilities/route";
 
 // TODO: Duplication of modalStyles in Dialogs.tsx => Find a way to fix this
 const modalStyles: any = {
@@ -145,7 +144,7 @@ export class CreateDatasetDialog extends React.Component<
       <UploadDialog
         title="Create new Dataset"
         help="help text"
-        showNameField={true}
+        showNameField
         showChangesField={false}
         {...this.props}
       />
@@ -163,7 +162,7 @@ export class CreateVersionDialog extends React.Component<
         title="Create new Dataset version"
         help="help text"
         showNameField={false}
-        showChangesField={true}
+        showChangesField
         {...this.props}
       />
     );
@@ -188,12 +187,7 @@ class UploadDialog extends React.Component<
     if (this.props.previousVersionFiles) {
       console.log("prev", this.props.previousVersionFiles);
       files = this.props.previousVersionFiles.map((file) => {
-        let taigaId =
-          this.props.datasetPermaname +
-          "." +
-          this.props.previousVersionNumber +
-          "/" +
-          file.name;
+        const taigaId = `${this.props.datasetPermaname}.${this.props.previousVersionNumber}/${file.name}`;
         return {
           name: file.name,
           computeNameFromTaigaId: false,
@@ -224,7 +218,7 @@ class UploadDialog extends React.Component<
   }
 
   uploadProgressCallback(statuses: Array<UploadStatus>) {
-    let changes = {} as any;
+    const changes = {} as any;
 
     statuses.forEach((status, i) => {
       changes[i] = {
@@ -259,10 +253,7 @@ class UploadDialog extends React.Component<
           className="btn btn-success"
           role="submit"
           to={relativePath(
-            "dataset/" +
-              this.state.newDatasetVersion.dataset_id +
-              "/" +
-              this.state.newDatasetVersion.version_id
+            `dataset/${this.state.newDatasetVersion.dataset_id}/${this.state.newDatasetVersion.version_id}`
           )}
         >
           See my new Dataset
@@ -270,7 +261,7 @@ class UploadDialog extends React.Component<
       );
     } else if (validationError) {
       submitButton = (
-        <button type="submit" className="btn btn-primary" disabled={true}>
+        <button type="submit" className="btn btn-primary" disabled>
           {validationError}
         </button>
       );
@@ -328,11 +319,11 @@ class UploadDialog extends React.Component<
                   this.setState({ error: "File conversion failed" });
                 } else {
                   // after a successful upload, set the newDatasetVersion which will give us a link to see it.
-                  this.setState({ newDatasetVersion: newDatasetVersion });
+                  this.setState({ newDatasetVersion });
                 }
               })
               .catch((error) => {
-                this.setState({ error: "" + error });
+                this.setState({ error: `${error}` });
               });
 
             this.setState({
@@ -430,9 +421,9 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
   }
 
   render() {
-    let help = this.props.help;
+    const { help } = this.props;
 
-    let inputName = (
+    const inputName = (
       <FormControl
         value={this.props.name}
         onChange={(evt) => {
@@ -443,7 +434,7 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
       />
     );
 
-    let inputDescription = (
+    const inputDescription = (
       <FormControl
         value={this.props.description}
         onChange={(evt) => {
@@ -454,7 +445,7 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
         rows={10}
       />
     );
-    let inputChanges = (
+    const inputChanges = (
       <FormControl
         value={this.props.changesDescription}
         onChange={(evt) => {
@@ -548,7 +539,7 @@ class UploadForm extends React.Component<UploadFormProps, Readonly<{}>> {
             </div>
           </div>
           <div className="row">
-            <div className="col-md-12"></div>
+            <div className="col-md-12" />
           </div>
         </div>
       </div>

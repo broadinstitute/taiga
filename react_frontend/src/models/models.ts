@@ -35,6 +35,7 @@ export interface Folder extends Entry {
 
 export class NamedId {
   name: string;
+
   id: string;
 }
 
@@ -189,7 +190,7 @@ export interface UploadedFileMetadata {
 }
 
 export function dropExtension(filename: string): string {
-  var i = filename.lastIndexOf(".");
+  const i = filename.lastIndexOf(".");
   if (i > 0) {
     filename = filename.substring(0, i);
   }
@@ -202,13 +203,17 @@ export class FileUploadStatus {
 
   // These exist because of special needs for react-bootstrap-table. See https://github.com/AllenFang/react-bootstrap-table/issues/50
   fileName: string;
+
   mimeType: string;
+
   fileType: InitialFileType;
+
   fileSize: number;
 
   s3Key: string;
 
   progress: number;
+
   conversionProgress: string;
 
   constructor(file: File, s3Prefix: string) {
@@ -233,10 +238,15 @@ export class FileUploadStatus {
 
 export class TaskStatus {
   id: string;
+
   state: string;
+
   message: string;
+
   current: number;
+
   total: number;
+
   s3Key: string;
 }
 
@@ -244,9 +254,13 @@ export class TaskStatus {
 // Class to manage the items in the bootstrap table of FolderView
 export class BootstrapTableFolderEntry {
   id: string;
+
   name: string;
+
   url: string;
+
   creation_date: Date;
+
   creator_name: string;
 
   type: EntryTypeEnum;
@@ -258,14 +272,14 @@ export class BootstrapTableFolderEntry {
   ) {
     let processedUrl = null;
     if (entry.type === EntryTypeEnum.Folder) {
-      processedUrl = relativePath("folder/" + entry.id);
+      processedUrl = relativePath(`folder/${entry.id}`);
     } else if (entry.type === EntryTypeEnum.DatasetVersion) {
       processedUrl = relativePath(
-        "dataset/" + full_datasetVersion.id + "/" + entry.id
+        `dataset/${full_datasetVersion.id}/${entry.id}`
       );
     } else if (entry.type === EntryTypeEnum.Dataset) {
       processedUrl = relativePath(
-        "dataset/" + entry.id + "/" + latestDatasetVersion.id
+        `dataset/${entry.id}/${latestDatasetVersion.id}`
       );
     }
 
@@ -273,7 +287,7 @@ export class BootstrapTableFolderEntry {
   }
 
   processCreationDate(entry: Entry, latestDatasetVersion?: DatasetVersion) {
-    let processedCreationDate: Date = new Date();
+    const processedCreationDate: Date = new Date();
 
     if (entry.type === EntryTypeEnum.Dataset) {
       processedCreationDate.setTime(
@@ -317,9 +331,13 @@ export class BootstrapTableFolderEntry {
 
 export class BootstrapTableSearchEntry {
   id: string;
+
   name: string;
+
   url: string;
+
   creation_date: Date;
+
   creator_name: string;
 
   type: EntryTypeEnum;
@@ -330,10 +348,11 @@ export class BootstrapTableSearchEntry {
     // Fetch per order the names while current_order != length of the breadcrumb list
     let current_order = 0;
     while (current_order !== searchEntry.breadcrumbs.length) {
-      breadcrumbedName +=
+      breadcrumbedName += `${
         searchEntry.breadcrumbs.find((breadcrumb: OrderedNamedId) => {
           return breadcrumb.order === current_order + 1;
-        }).folder.name + " > ";
+        }).folder.name
+      } > `;
       current_order += 1;
     }
 
@@ -346,16 +365,16 @@ export class BootstrapTableSearchEntry {
   processFolderEntryUrl(searchEntry: SearchEntry) {
     let processedUrl = null;
     if (searchEntry.entry.type === EntryTypeEnum.Folder) {
-      processedUrl = relativePath("folder/" + searchEntry.entry.id);
+      processedUrl = relativePath(`folder/${searchEntry.entry.id}`);
     } else if (searchEntry.entry.type === EntryTypeEnum.Dataset) {
-      processedUrl = relativePath("dataset/" + searchEntry.entry.id);
+      processedUrl = relativePath(`dataset/${searchEntry.entry.id}`);
     }
 
     return processedUrl;
   }
 
   processCreationDate(searchEntry: SearchEntry) {
-    let processedCreationDate: Date = new Date();
+    const processedCreationDate: Date = new Date();
 
     processedCreationDate.setTime(Date.parse(searchEntry.entry.creation_date));
     // processedCreationDate = toLocalDateString(entry.creation_date);
@@ -416,11 +435,14 @@ export enum ConversionStatusEnum {
 
 export class AccessLog {
   user_id: string;
+
   user_name: string;
 
   // Used for presentation BootstrapTable
   entry_id: string;
+
   entry_name: string;
+
   type: EntryTypeEnum;
 
   url: string;
@@ -431,9 +453,9 @@ export class AccessLog {
     let processedUrl = null;
     // TODO: Fix this toLowerCase workaround to compare types
     if (serverAccessLog.entry.type.toLowerCase() === EntryTypeEnum.Folder) {
-      processedUrl = relativePath("folder/" + serverAccessLog.entry.id);
+      processedUrl = relativePath(`folder/${serverAccessLog.entry.id}`);
     } else {
-      processedUrl = relativePath("dataset/" + serverAccessLog.entry.id);
+      processedUrl = relativePath(`dataset/${serverAccessLog.entry.id}`);
     }
 
     return processedUrl;
@@ -453,17 +475,21 @@ export class AccessLog {
 // Search
 export class SearchResult {
   current_folder: NamedId; // Id and name of the folder where search was originated from
+
   name: string; // Name of the search
+
   entries: Array<SearchEntry>;
 }
 
 export class SearchEntry {
   entry: Entry;
+
   breadcrumbs: Array<OrderedNamedId>; // Array of folders
 }
 
 export class OrderedNamedId {
   folder: NamedId;
+
   order: Number; // Order in which the breadcrumb should appear
 }
 
@@ -477,9 +503,13 @@ export enum ActivityTypeEnum {
 
 export class ActivityLogEntry {
   id: string;
+
   user_name: string;
+
   timestamp: string;
+
   type: ActivityTypeEnum;
+
   comments: string | null;
 }
 

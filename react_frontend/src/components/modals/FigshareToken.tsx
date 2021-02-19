@@ -45,7 +45,7 @@ export default class FigshareToken extends React.Component<Props, State> {
 
   renderForm() {
     return (
-      <React.Fragment>
+      <>
         {" "}
         <Modal.Body>
           <p>
@@ -89,13 +89,13 @@ export default class FigshareToken extends React.Component<Props, State> {
             Connect
           </Button>
         </Modal.Footer>
-      </React.Fragment>
+      </>
     );
   }
 
   renderSuccess() {
     return (
-      <React.Fragment>
+      <>
         <Modal.Body>
           <p>Figshare personal token successfully added.</p>
         </Modal.Body>
@@ -116,7 +116,7 @@ export default class FigshareToken extends React.Component<Props, State> {
             Close
           </Button>
         </Modal.Footer>
-      </React.Fragment>
+      </>
     );
   }
 

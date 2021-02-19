@@ -71,7 +71,7 @@ const TextEditable = (props: Props) => {
     <OverlayTrigger
       trigger="click"
       placement={placement || "top"}
-      rootClose={true}
+      rootClose
       overlay={popover}
       ref={overlayRef}
     >

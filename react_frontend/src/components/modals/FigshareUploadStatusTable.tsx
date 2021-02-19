@@ -43,7 +43,7 @@ export default class FigshareUploadTable extends React.Component<Props> {
               progressIndicator = (
                 <ProgressBar
                   now={file.taskStatus.current * 100}
-                  label={"Failed to upload"}
+                  label="Failed to upload"
                   bsStyle="danger"
                 />
               );

@@ -50,7 +50,7 @@ export class EntryUsersPermissions extends React.Component<
       .get_entry_access_log(this.props.entry_id)
       .then((usersAccessLogs) => {
         // TODO: Think about not using it as State because it does not change during the page lifecycle
-        let mappedAL = usersAccessLogs.map((userAccessLogs) => {
+        const mappedAL = usersAccessLogs.map((userAccessLogs) => {
           return new AccessLog(userAccessLogs);
         });
 
@@ -61,10 +61,10 @@ export class EntryUsersPermissions extends React.Component<
   }
 
   handleDeletedRow(rowKeys: any) {
-    let state_accessLogs = this.state.accessLogs;
-    let accessLogsToRemove = state_accessLogs.filter((accessLog) => {
+    const state_accessLogs = this.state.accessLogs;
+    const accessLogsToRemove = state_accessLogs.filter((accessLog) => {
       // TODO: Optimize this to not loop through the accessLogs array for each item
-      for (let user_id of rowKeys) {
+      for (const user_id of rowKeys) {
         if (user_id == accessLog.user_id) {
           return true;
         }

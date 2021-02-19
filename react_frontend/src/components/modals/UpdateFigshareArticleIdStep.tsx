@@ -76,7 +76,7 @@ export default class ArticleIdStep extends React.Component<
 
   render() {
     return (
-      <React.Fragment>
+      <>
         <Modal.Body
           // @ts-expect-error
           bsClass="modal-body figshare-modal-body"
@@ -120,7 +120,7 @@ export default class ArticleIdStep extends React.Component<
             Next
           </Button>
         </Modal.Footer>
-      </React.Fragment>
+      </>
     );
   }
 }

@@ -1,8 +1,8 @@
 import { InitialFileType } from "../models/models";
 
 export function toLocalDateString(stringDate: string) {
-  let _date = new Date(stringDate);
-  var options = {
+  const _date = new Date(stringDate);
+  const options = {
     month: "2-digit",
     day: "2-digit",
     year: "2-digit",
@@ -20,20 +20,18 @@ export function getInitialFileTypeFromMimeType(
   let formattedType: InitialFileType = InitialFileType.Raw;
   if (mimeTypeOrEnum in InitialFileType) {
     formattedType = mimeTypeOrEnum as InitialFileType;
+  } else if (mimeTypeOrEnum == "text/csv") {
+    formattedType = InitialFileType.NumericMatrixCSV;
   } else {
-    if (mimeTypeOrEnum == "text/csv") {
-      formattedType = InitialFileType.NumericMatrixCSV;
-    } else {
-      formattedType = InitialFileType.Raw;
-    }
+    formattedType = InitialFileType.Raw;
   }
   return formattedType;
 }
 
 export function lastAccessFormatter(cell: any, row: any) {
   // Formatter for Table Bootstrap
-  let _date = new Date(cell);
-  var options = {
+  const _date = new Date(cell);
+  const options = {
     month: "2-digit",
     day: "2-digit",
     year: "2-digit",

@@ -26,6 +26,7 @@ export default class UpdateFigsharePollResultsStep extends React.Component<
   State
 > {
   datafileIdToName: Map<string, string>;
+
   constructor(props: Props) {
     super(props);
 
@@ -59,10 +60,8 @@ export default class UpdateFigsharePollResultsStep extends React.Component<
         () => {
           if (newStatus.state != "SUCCESS" && newStatus.state != "FAILURE") {
             setTimeout(() => this.pollUploadToFigshareFile(i, taskId), 1000);
-          } else {
-            if (this.isUploadComplete(this.state.uploadResults)) {
-              this.props.onUploadComplete();
-            }
+          } else if (this.isUploadComplete(this.state.uploadResults)) {
+            this.props.onUploadComplete();
           }
         }
       );

@@ -99,7 +99,7 @@ export default class FigshareSection extends React.Component<Props, State> {
       </p>
     );
     return (
-      <React.Fragment>
+      <>
         {articleLink}
         <span>
           <Button
@@ -116,17 +116,17 @@ export default class FigshareSection extends React.Component<Props, State> {
             }}
           >
             Download Figshare link mapping for taigapy{" "}
-            <i className="fa fa-download" aria-hidden="true"></i>
+            <i className="fa fa-download" aria-hidden="true" />
           </Button>
         </span>
-      </React.Fragment>
+      </>
     );
   }
 
   renderFigshareNotLinkedContent() {
     const { userFigshareAccountLinked } = this.props;
     return (
-      <React.Fragment>
+      <>
         <p>This dataset version is not linked with any Figshare article.</p>
         {!userFigshareAccountLinked && (
           <p>
@@ -147,7 +147,7 @@ export default class FigshareSection extends React.Component<Props, State> {
         >
           Upload to Figshare as a new version of an existing article
         </Button>
-      </React.Fragment>
+      </>
     );
   }
 
@@ -159,7 +159,7 @@ export default class FigshareSection extends React.Component<Props, State> {
         <Col md={12}>
           <h2>Link with Figshare</h2>
           {this.props.datasetVersion && (
-            <React.Fragment>
+            <>
               {this.props.datasetVersion.figshare
                 ? this.renderFigshareLinkedContent()
                 : this.renderFigshareNotLinkedContent()}
@@ -177,7 +177,7 @@ export default class FigshareSection extends React.Component<Props, State> {
                 show={this.state.showUpdateFigshare}
                 datasetVersion={this.props.datasetVersion}
               />
-            </React.Fragment>
+            </>
           )}
         </Col>
       </Row>

@@ -5,9 +5,8 @@ export function getTaigaPrefix() {
   // If taigaPrefix exists in the global scope
   if (taigaPrefix) {
     return taigaPrefix;
-  } else {
-    return undefined;
   }
+  return undefined;
 }
 
 export function getUserToken() {
@@ -15,8 +14,8 @@ export function getUserToken() {
 }
 
 function pathJoin(parts: Array<string>, sep?: string) {
-  var separator = sep || "/";
-  var replace = new RegExp(separator + "{1,}", "g");
+  const separator = sep || "/";
+  const replace = new RegExp(`${separator}{1,}`, "g");
   return parts.join(separator).replace(replace, separator);
 }
 

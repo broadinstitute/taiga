@@ -1,3 +1,9 @@
+import update from "immutability-helper";
+
+import * as AWS from "aws-sdk";
+import { randomLogNormal } from "d3";
+import { version } from "punycode";
+import { TaigaApi } from "../models/api";
 import {
   S3Credentials,
   TaskStatus,
@@ -6,12 +12,6 @@ import {
   InitialFileType,
   DatasetVersion,
 } from "../models/models";
-import update from "immutability-helper";
-
-import { TaigaApi } from "../models/api";
-import * as AWS from "aws-sdk";
-import { randomLogNormal } from "d3";
-import { version } from "punycode";
 
 export interface CreateDatasetParams {
   name: string;
@@ -60,9 +60,8 @@ export function pollFunction(
   return fn().then((continueFlag: boolean) => {
     if (continueFlag) {
       return delay(milliseconds).then(() => pollFunction(milliseconds, fn));
-    } else {
-      return Promise.resolve();
     }
+    return Promise.resolve();
   });
 }
 
@@ -78,7 +77,9 @@ interface ConversionStatus {
 
 export class UploadTracker {
   tapi: TaigaApi;
+
   uploadStatus: Readonly<Array<UploadStatus>>;
+
   uploadProgressCallback: (status: Readonly<Array<UploadStatus>>) => void;
 
   constructor(tapi: TaigaApi) {
@@ -103,8 +104,8 @@ export class UploadTracker {
       this.getTapi().get_upload_session(),
     ])
       .then((values: Array<any>) => {
-        let credentials = values[0] as S3Credentials;
-        let sid = values[1] as string;
+        const credentials = values[0] as S3Credentials;
+        const sid = values[1] as string;
         return this.submitCreateDataset(credentials, uploadFiles, sid, params);
       })
       .then((datasetId) => {
@@ -118,7 +119,7 @@ export class UploadTracker {
     taigaId: string,
     sid: string
   ): Promise<any> {
-    let fileMetadata = {
+    const fileMetadata = {
       filename: name,
       filetype: "virtual",
       existingTaigaId: taigaId,
@@ -134,22 +135,22 @@ export class UploadTracker {
     sid: string,
     uploadIndex: number
   ): Promise<boolean> {
-    let s3Key = s3_credentials.prefix + file.name;
-    let params = {
+    const s3Key = s3_credentials.prefix + file.name;
+    const params = {
       Bucket: s3_credentials.bucket,
       Key: s3Key,
       Body: file.uploadFile,
     };
 
-    let upload = new AWS.S3.ManagedUpload({
-      params: params,
+    const upload = new AWS.S3.ManagedUpload({
+      params,
       service: s3,
     });
 
     // Subscribe to measure progress
     upload.on("httpUploadProgress", (evt: any) => {
       // TODO: evt.key is not recognized in the DefinitelyType AWS, but it works. Raise an issue in Git
-      let progressPercentage = Math.floor((evt.loaded / evt.total) * 100);
+      const progressPercentage = Math.floor((evt.loaded / evt.total) * 100);
       this.updateFileStatus(uploadIndex, "progress", progressPercentage);
     });
 
@@ -191,10 +192,10 @@ export class UploadTracker {
   }
 
   addGCSPointer(name: string, gcsPath: string, sid: string): Promise<any> {
-    let fileMetadata = {
+    const fileMetadata = {
       filename: name,
       filetype: "gcs",
-      gcsPath: gcsPath,
+      gcsPath,
     };
 
     return this.getTapi().create_datafile(sid, fileMetadata);
@@ -209,7 +210,7 @@ export class UploadTracker {
   ): Promise<DatasetIdAndVersionId> {
     // TODO: If we change the page, we lose the download
     // Configure the AWS S3 object with the received credentials
-    let s3 = new AWS.S3({
+    const s3 = new AWS.S3({
       apiVersion: "2006-03-01",
       credentials: {
         accessKeyId: s3_credentials.accessKeyId,
@@ -219,28 +220,28 @@ export class UploadTracker {
     });
 
     // Looping through all the files
-    let uploadPromises: Array<Promise<boolean>> = [];
-    let uploadStatus: Array<UploadStatus> = [];
+    const uploadPromises: Array<Promise<boolean>> = [];
+    const uploadStatus: Array<UploadStatus> = [];
 
     datafiles.forEach((file: UploadFile, i: number) => {
       let status: UploadStatus;
       if (file.fileType === UploadFileType.Upload) {
         status = { progress: 0, progressMessage: "Upload starting" };
-        let p = this.uploadAndConvert(s3, s3_credentials, file, sid, i);
+        const p = this.uploadAndConvert(s3, s3_credentials, file, sid, i);
         uploadPromises.push(p);
       } else if (file.fileType === UploadFileType.GCSPath) {
         status = {
           progress: 0,
           progressMessage: "Attempting to pointer to GCS object",
         };
-        let p = this.addGCSPointer(file.name, file.gcsPath, sid)
+        const p = this.addGCSPointer(file.name, file.gcsPath, sid)
           .then(() => {
             this.displayStatusUpdate("Added pointer to GCS object", 100, i);
             return true;
           })
           .catch((reason) => {
             console.log("failure", reason);
-            this.displayStatusUpdate("" + reason, 0, i);
+            this.displayStatusUpdate(`${reason}`, 0, i);
             return false;
           });
         uploadPromises.push(p);
@@ -252,7 +253,11 @@ export class UploadTracker {
         };
 
         // perform the attach
-        let p = this.associateExistingFile(file.name, file.existingTaigaId, sid)
+        const p = this.associateExistingFile(
+          file.name,
+          file.existingTaigaId,
+          sid
+        )
           .then(() => {
             this.displayStatusUpdate("Added existing file", 100, i);
             // update the status after successful adding to upload session
@@ -260,7 +265,7 @@ export class UploadTracker {
           })
           .catch((reason) => {
             console.log("failure", reason);
-            this.displayStatusUpdate("" + reason, 0, i);
+            this.displayStatusUpdate(`${reason}`, 0, i);
             return false;
           });
         uploadPromises.push(p);
@@ -279,7 +284,7 @@ export class UploadTracker {
         }
 
         if ((params as any).datasetId) {
-          let p = params as CreateVersionParams;
+          const p = params as CreateVersionParams;
           return this.getTapi()
             .create_new_dataset_version(
               sid,
@@ -297,29 +302,28 @@ export class UploadTracker {
                   };
                 });
             });
-        } else {
-          let p = params as CreateDatasetParams;
-          return this.getTapi()
-            .create_dataset(sid, p.name, p.description, p.folderId)
-            .then(
-              (dataset_id: string): Promise<DatasetIdAndVersionId> => {
-                return this.getTapi()
-                  .get_dataset_version_last(dataset_id)
-                  .then((version: DatasetVersion) => {
-                    return {
-                      dataset_id: version.dataset_id,
-                      version_id: version.id,
-                    };
-                  });
-              }
-            );
         }
+        const p = params as CreateDatasetParams;
+        return this.getTapi()
+          .create_dataset(sid, p.name, p.description, p.folderId)
+          .then(
+            (dataset_id: string): Promise<DatasetIdAndVersionId> => {
+              return this.getTapi()
+                .get_dataset_version_last(dataset_id)
+                .then((version: DatasetVersion) => {
+                  return {
+                    dataset_id: version.dataset_id,
+                    version_id: version.id,
+                  };
+                });
+            }
+          );
       }
     );
   }
 
   updateFileStatus(index: number, property: string, value: any) {
-    let change = {} as any;
+    const change = {} as any;
     change[property] = { $set: value };
 
     this.uploadStatus = update(this.uploadStatus, { [index]: change });
@@ -334,7 +338,7 @@ export class UploadTracker {
       return this.getTapi()
         .get_task_status(taskId)
         .then((new_status: TaskStatus) => {
-          let status = this.checkOrContinue(new_status, fileIndex);
+          const status = this.checkOrContinue(new_status, fileIndex);
           if (!status.keepPolling) {
             isSuccessful = status.isSuccessful;
           }
@@ -353,20 +357,20 @@ export class UploadTracker {
     if (status.state == "SUCCESS") {
       this.displayStatusUpdate(status.message, 100, fileIndex);
       return { keepPolling: false, isSuccessful: true };
-    } else if (status.state == "FAILURE") {
+    }
+    if (status.state == "FAILURE") {
       // TODO: Make an exception class to manage properly the message
-      status.message = "FAILURE: " + status.message;
+      status.message = `FAILURE: ${status.message}`;
       this.displayStatusUpdate(status.message, 0, fileIndex);
       return { keepPolling: false, isSuccessful: false };
-    } else {
-      let progress = (100 * status.current) / status.total;
-      if (status.total === 0) {
-        progress = 0;
-      }
-
-      this.displayStatusUpdate(status.message, progress, fileIndex);
-      return { keepPolling: true };
     }
+    let progress = (100 * status.current) / status.total;
+    if (status.total === 0) {
+      progress = 0;
+    }
+
+    this.displayStatusUpdate(status.message, progress, fileIndex);
+    return { keepPolling: true };
   }
 
   displayStatusUpdate(message: string, progress: number, fileIndex: number) {

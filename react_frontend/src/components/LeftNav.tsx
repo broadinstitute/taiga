@@ -11,7 +11,7 @@ export interface LeftNavProps {
 
 export class LeftNav extends React.Component<LeftNavProps, {}> {
   render() {
-    let items = this.props.items.map((element, index) => {
+    const items = this.props.items.map((element, index) => {
       return (
         <li key={index} onClick={element.action}>
           {element.label}

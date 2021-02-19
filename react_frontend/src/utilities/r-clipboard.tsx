@@ -18,7 +18,7 @@ export default class ClipboardButton extends React.Component<
   ClipboardButtonState
 > {
   static defaultProps = {
-    onClick: function () {},
+    onClick() {},
   };
 
   constructor(props: any) {
@@ -52,7 +52,7 @@ export default class ClipboardButton extends React.Component<
    * this.propsWith(data-*); // returns {data-foobar: 1, data-baz: 4}
    */
   propsWith(regexp: any, remove = false): Object {
-    let object: any = Object;
+    const object: any = Object;
 
     Object.keys(this.props).forEach(function (key) {
       if (key.search(regexp) !== -1) {
@@ -79,7 +79,7 @@ export default class ClipboardButton extends React.Component<
 
     const callbacks = this.propsWith(/^on/, true);
     Object.keys(callbacks).forEach(function (callback) {
-      this.clipboard.on(callback.toLowerCase(), this.props["on" + callback]);
+      this.clipboard.on(callback.toLowerCase(), this.props[`on${callback}`]);
     }, this);
   }
 
@@ -107,9 +107,8 @@ export default class ClipboardButton extends React.Component<
   getType() {
     if (this.getComponent() === "button" || this.getComponent() === "input") {
       return this.props.type || "button";
-    } else {
-      return undefined;
     }
+    return undefined;
   }
 
   getComponent() {

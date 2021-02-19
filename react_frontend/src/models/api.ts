@@ -1,3 +1,5 @@
+import { isUndefined, isNullOrUndefined } from "util";
+
 import {
   User,
   Folder,
@@ -22,14 +24,15 @@ import {
 } from "./figshare";
 
 // import { getUserToken } from '../utilities/route';
-import { isUndefined } from "util";
 // import { Token } from "../components/Token";
-import { isNullOrUndefined } from "util";
 
 export class TaigaApi {
   baseUrl: string;
+
   authHeaders: any;
+
   loading: boolean;
+
   userToken: string;
 
   constructor(baseUrl: string, userToken: string) {
@@ -37,7 +40,7 @@ export class TaigaApi {
     this.userToken = userToken;
 
     this.authHeaders = {
-      auth: "Bearer " + this.userToken,
+      auth: `Bearer ${this.userToken}`,
     };
     this.loading = false;
   }
@@ -45,15 +48,15 @@ export class TaigaApi {
   _checkResponse(response: Response): Promise<Response> {
     if (response.status >= 200 && response.status < 300) {
       return Promise.resolve(response);
-    } else if (response.status === 400) {
+    }
+    if (response.status === 400) {
       console.log("response status 400");
       return response.json().then((errorDetail) => {
         console.log("reponse error text", errorDetail);
         return Promise.reject<Response>(new Error(errorDetail.detail));
       });
-    } else {
-      return Promise.reject<Response>(new Error(response.statusText));
     }
+    return Promise.reject<Response>(new Error(response.statusText));
   }
 
   _fetch<T>(url: string): Promise<T> {
@@ -125,11 +128,11 @@ export class TaigaApi {
 
   // TODO: Replace with FolderFullDatasetVersions
   get_folder(folderId: string): Promise<Folder> {
-    return this._fetch<Folder>("/folder/" + folderId);
+    return this._fetch<Folder>(`/folder/${folderId}`);
   }
 
   get_dataset(dataset_id: string): Promise<Dataset> {
-    return this._fetch<Dataset>("/dataset/" + dataset_id);
+    return this._fetch<Dataset>(`/dataset/${dataset_id}`);
   }
 
   get_user_entry_access_log(): Promise<Array<AccessLog>> {
@@ -139,7 +142,7 @@ export class TaigaApi {
 
   get_entry_access_log(entry_id: string): Promise<Array<AccessLog>> {
     // We fetch all the AccessLog for a specific entry
-    return this._fetch<Array<AccessLog>>("/entry/" + entry_id + "/logAccess");
+    return this._fetch<Array<AccessLog>>(`/entry/${entry_id}/logAccess`);
   }
 
   remove_entry_access_log(accessLogsToRemove: Array<AccessLog>) {
@@ -151,19 +154,19 @@ export class TaigaApi {
   ): Promise<Array<DatasetFullDatasetVersions>> {
     // TODO: We should not use a post method for a get
     return this._post<Array<DatasetFullDatasetVersions>>("/datasets", {
-      datasetIds: datasetIds,
+      datasetIds,
     });
   }
 
   get_dataset_version(dataset_version_id: string): Promise<DatasetVersion> {
-    return this._fetch<DatasetVersion>("/datasetVersion/" + dataset_version_id);
+    return this._fetch<DatasetVersion>(`/datasetVersion/${dataset_version_id}`);
   }
 
   get_datasetVersions(
     datasetVersionIds: Array<string>
   ): Promise<Array<DatasetVersion>> {
     return this._post<Array<DatasetVersion>>("/datasetVersions", {
-      datasetVersionIds: datasetVersionIds,
+      datasetVersionIds,
     });
   }
 
@@ -175,10 +178,10 @@ export class TaigaApi {
     let dsAndDv: Promise<DatasetAndDatasetVersion>;
     if (isUndefined(datasetVersionId)) {
       // TODO: This should not call the /dataset/{datasetId} api but a specific one to get the dataset and the last datasetVersion
-      dsAndDv = this._fetch<DatasetAndDatasetVersion>("/dataset/" + datasetId);
+      dsAndDv = this._fetch<DatasetAndDatasetVersion>(`/dataset/${datasetId}`);
     } else {
       dsAndDv = this._fetch<DatasetAndDatasetVersion>(
-        "/dataset/" + datasetId + "/" + datasetVersionId
+        `/dataset/${datasetId}/${datasetVersionId}`
       );
     }
 
@@ -186,7 +189,7 @@ export class TaigaApi {
   }
 
   get_dataset_version_last(dataset_id: string): Promise<DatasetVersion> {
-    return this._fetch<DatasetVersion>("/dataset/" + dataset_id + "/last");
+    return this._fetch<DatasetVersion>(`/dataset/${dataset_id}/last`);
   }
 
   get_s3_credentials(): Promise<S3Credentials> {
@@ -198,12 +201,12 @@ export class TaigaApi {
   }
 
   update_dataset_name(dataset_id: string, name: string) {
-    return this._post<void>("/dataset/" + dataset_id + "/name", { name: name });
+    return this._post<void>(`/dataset/${dataset_id}/name`, { name });
   }
 
   update_dataset_description(dataset_id: string, description: string) {
-    return this._post<void>("/dataset/" + dataset_id + "/description", {
-      description: description,
+    return this._post<void>(`/dataset/${dataset_id}/description`, {
+      description,
     });
   }
 
@@ -212,8 +215,8 @@ export class TaigaApi {
     description: string
   ) {
     return this._post<void>(
-      "/datasetVersion/" + dataset_version_id + "/description",
-      { description: description }
+      `/datasetVersion/${dataset_version_id}/description`,
+      { description }
     );
   }
 
@@ -226,23 +229,23 @@ export class TaigaApi {
     return this._post<NamedId>("/folder/create", {
       creatorId: current_user_id,
       parentId: current_folder_id,
-      name: name,
-      description: description,
+      name,
+      description,
     });
   }
 
   update_folder_name(folder_id: string, name: string) {
-    return this._post<void>("/folder/" + folder_id + "/name", { name: name });
+    return this._post<void>(`/folder/${folder_id}/name`, { name });
   }
 
   update_folder_description(folder_id: string, description: string) {
-    return this._post<void>("/folder/" + folder_id + "/description", {
-      description: description,
+    return this._post<void>(`/folder/${folder_id}/description`, {
+      description,
     });
   }
 
   create_datafile(sid: string, S3UploadedFileMetadata: UploadedFileMetadata) {
-    return this._post<string>("/datafile/" + sid, S3UploadedFileMetadata);
+    return this._post<string>(`/datafile/${sid}`, S3UploadedFileMetadata);
   }
 
   get_datafile(
@@ -256,25 +259,17 @@ export class TaigaApi {
     // Returns the url to launch/get status/retrieve the datafile
     // (datasetPermaname with datasetVersion OR datasetVersionId) and datafileName + format [+ force]
     // TODO: Support Permaname+Version. Currently only datasetVersionId
-    let url =
-      "/datafile?" +
-      "dataset_version_id=" +
-      datasetVersionId +
-      "&" +
-      "datafile_name=" +
-      encodeURIComponent(datafileName) +
-      "&" +
-      "format=" +
-      format +
-      "&" +
-      "force=" +
-      force;
+    const url =
+      `${"/datafile?" + "dataset_version_id="}${datasetVersionId}&` +
+      `datafile_name=${encodeURIComponent(datafileName)}&` +
+      `format=${format}&` +
+      `force=${force}`;
 
     return this._fetch<DatafileUrl>(url);
   }
 
   get_task_status(taskStatusId: string) {
-    return this._fetch<TaskStatus>("/task_status/" + taskStatusId);
+    return this._fetch<TaskStatus>(`/task_status/${taskStatusId}`);
   }
 
   create_dataset(
@@ -285,9 +280,9 @@ export class TaigaApi {
   ) {
     return this._post<string>("/dataset", {
       sessionId: sid,
-      datasetName: datasetName,
-      datasetDescription: datasetDescription,
-      currentFolderId: currentFolderId,
+      datasetName,
+      datasetDescription,
+      currentFolderId,
     });
   }
 
@@ -301,16 +296,16 @@ export class TaigaApi {
     }
 
     return this._post<void>("/move", {
-      entryIds: entryIds,
-      currentFolderId: currentFolderId,
-      targetFolderId: targetFolderId,
+      entryIds,
+      currentFolderId,
+      targetFolderId,
     });
   }
 
   copy_to_folder(entryIds: Array<string>, folderId: string) {
     return this._post<void>("/copy", {
-      entryIds: entryIds,
-      folderId: folderId,
+      entryIds,
+      folderId,
     });
   }
 
@@ -329,7 +324,7 @@ export class TaigaApi {
   }
 
   create_or_update_entry_access_log(entry_id: string): Promise<void> {
-    return this._post<void>("/entry/" + entry_id + "/logAccess", {});
+    return this._post<void>(`/entry/${entry_id}/logAccess`, {});
   }
 
   // Search
@@ -338,7 +333,7 @@ export class TaigaApi {
     search_query: string
   ): Promise<SearchResult> {
     return this._fetch<SearchResult>(
-      "/search/" + current_folder_id + "/" + search_query
+      `/search/${current_folder_id}/${search_query}`
     );
   }
 
@@ -348,36 +343,32 @@ export class TaigaApi {
     dataset_version_id: string,
     reason: string
   ): Promise<void> {
-    return this._post<void>(
-      "/datasetVersion/" + dataset_version_id + "/deprecate",
-      { deprecationReason: reason }
-    );
+    return this._post<void>(`/datasetVersion/${dataset_version_id}/deprecate`, {
+      deprecationReason: reason,
+    });
   }
 
   de_deprecate_dataset_version(dataset_version_id: string): Promise<void> {
     return this._post<void>(
-      "/datasetVersion/" + dataset_version_id + "/de-deprecate",
+      `/datasetVersion/${dataset_version_id}/de-deprecate`,
       {}
     );
   }
 
   delete_dataset_version(dataset_version_id: string): Promise<void> {
-    return this._post<void>(
-      "/datasetVersion/" + dataset_version_id + "/delete",
-      {}
-    );
+    return this._post<void>(`/datasetVersion/${dataset_version_id}/delete`, {});
   }
 
   get_dataset_version_id(any_entry_identifier: string): Promise<string> {
     return this._fetch(
-      "/datasetVersion/id/find?entry_submitted_by_user=" + any_entry_identifier
+      `/datasetVersion/id/find?entry_submitted_by_user=${any_entry_identifier}`
     );
   }
 
   get_activity_log_for_dataset_id(
     dataset_id: string
   ): Promise<Array<ActivityLogEntry>> {
-    return this._fetch("/dataset/" + dataset_id + "/activityLog");
+    return this._fetch(`/dataset/${dataset_id}/activityLog`);
   }
 
   get_all_groups_for_current_user(): Promise<
@@ -387,14 +378,14 @@ export class TaigaApi {
   }
 
   get_group(groupId: string): Promise<Group> {
-    return this._fetch("/group/" + groupId);
+    return this._fetch(`/group/${groupId}`);
   }
 
   add_group_user_associations(
     groupId: string,
     userIds: Array<string>
   ): Promise<Group> {
-    return this._post<Group>("/group/" + groupId + "/add", {
+    return this._post<Group>(`/group/${groupId}/add`, {
       userIds,
     });
   }
@@ -403,7 +394,7 @@ export class TaigaApi {
     groupId: string,
     userIds: Array<string>
   ): Promise<Group> {
-    return this._post<Group>("/group/" + groupId + "/remove", { userIds });
+    return this._post<Group>(`/group/${groupId}/remove`, { userIds });
   }
 
   authorize_figshare(token: string): Promise<{}> {

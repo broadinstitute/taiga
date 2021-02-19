@@ -48,6 +48,7 @@ interface UploadTableState {}
 
 export class UploadController {
   files: Readonly<Array<UploadFile>>;
+
   listener: (x: any) => void;
 
   constructor(files: Readonly<Array<UploadFile>>, listener: (x: any) => void) {
@@ -57,12 +58,12 @@ export class UploadController {
   }
 
   getDefaultName(path: string) {
-    let lastSlash = path.lastIndexOf("/");
+    const lastSlash = path.lastIndexOf("/");
     if (lastSlash >= 0) {
       path = path.substring(lastSlash + 1);
     }
 
-    let lastDot = path.lastIndexOf(".");
+    const lastDot = path.lastIndexOf(".");
     if (lastDot >= 0) {
       path = path.substring(0, lastDot);
     }
@@ -71,20 +72,20 @@ export class UploadController {
   }
 
   addGCS(gcsPath: string) {
-    let name = this.getDefaultName(gcsPath);
+    const name = this.getDefaultName(gcsPath);
     this.addFile({
-      name: name,
+      name,
       computeNameFromTaigaId: false,
       fileType: UploadFileType.GCSPath,
       size: "unknown",
-      gcsPath: gcsPath,
+      gcsPath,
     });
   }
 
   addUpload(file: File) {
-    let name = this.getDefaultName(file.name);
+    const name = this.getDefaultName(file.name);
     this.addFile({
-      name: name,
+      name,
       computeNameFromTaigaId: false,
       fileType: UploadFileType.Upload,
       size: filesize(file.size),
@@ -95,13 +96,13 @@ export class UploadController {
   }
 
   addTaiga(existingTaigaId: string, size: string) {
-    let name = this.getDefaultName(existingTaigaId);
+    const name = this.getDefaultName(existingTaigaId);
     this.addFile({
-      name: name,
+      name,
       computeNameFromTaigaId: true,
       fileType: UploadFileType.TaigaPath,
-      size: size,
-      existingTaigaId: existingTaigaId,
+      size,
+      existingTaigaId,
     });
   }
 
@@ -124,7 +125,7 @@ export class UploadController {
   }
 
   onTaigaIdChange(index: number, newValue: string) {
-    let changes = { existingTaigaId: { $set: newValue } } as any;
+    const changes = { existingTaigaId: { $set: newValue } } as any;
     if (this.files[index].computeNameFromTaigaId) {
       changes.name = { $set: this.getDefaultName(newValue) };
     }
@@ -133,7 +134,7 @@ export class UploadController {
   }
 
   onGCSPathChange(index: number, newValue: string) {
-    let changes = { gcsPath: { $set: newValue } } as any;
+    const changes = { gcsPath: { $set: newValue } } as any;
     if (this.files[index].computeNameFromTaigaId) {
       changes.name = { $set: this.getDefaultName(newValue) };
     }
@@ -168,8 +169,8 @@ export class UploadTable extends React.Component<
   }
 
   renderProcessingTable() {
-    let rows = this.props.files.map((file, i) => {
-      let name = file.name;
+    const rows = this.props.files.map((file, i) => {
+      const { name } = file;
       let progressBar = file.progressMessage as any;
 
       if (file.progress) {
@@ -177,7 +178,7 @@ export class UploadTable extends React.Component<
           <div className="progress">
             <div
               className="progress-bar"
-              style={{ width: file.progress + "%" }}
+              style={{ width: `${file.progress}%` }}
             >
               {file.progressMessage}
             </div>
@@ -186,7 +187,7 @@ export class UploadTable extends React.Component<
       }
 
       return (
-        <tr key={"r" + i}>
+        <tr key={`r${i}`}>
           <td>{name}</td>
           <td>{progressBar}</td>
         </tr>
@@ -209,15 +210,14 @@ export class UploadTable extends React.Component<
   render() {
     if (this.props.isProcessing) {
       return this.renderProcessingTable();
-    } else {
-      return this.renderInputForm();
     }
+    return this.renderInputForm();
   }
 
   renderInputForm() {
     const requestEncoding = this.props.files.some((file) => !!file.uploadFile);
-    let rows = this.props.files.map((file, i) => {
-      let name = file.name;
+    const rows = this.props.files.map((file, i) => {
+      const { name } = file;
       let source: any = "";
       let typeLabel: any = "";
       let encodingInput: any = null;
@@ -295,7 +295,7 @@ export class UploadTable extends React.Component<
       }
 
       return (
-        <tr key={"r" + i}>
+        <tr key={`r${i}`}>
           <td>
             <input
               type="text"
@@ -317,10 +317,7 @@ export class UploadTable extends React.Component<
               aria-label="Left Align"
               onClick={(event) => this.props.controller.onDelete(i)}
             >
-              <span
-                className="glyphicon glyphicon-trash"
-                aria-hidden="true"
-              ></span>
+              <span className="glyphicon glyphicon-trash" aria-hidden="true" />
             </button>
           </td>
         </tr>

@@ -26,11 +26,11 @@ export class GroupListView extends React.Component<
     cell: string,
     row: Pick<Group, Exclude<keyof Group, "users">>
   ) {
-    return <Link to={relativePath("group/" + row.id)}>{cell}</Link>;
+    return <Link to={relativePath(`group/${row.id}`)}>{cell}</Link>;
   }
 
   render() {
-    let navItems: Array<any> = [];
+    const navItems: Array<any> = [];
     return (
       <div>
         <LeftNav items={navItems} />

@@ -1,6 +1,6 @@
+import { FigshareLinkedFiles } from "src/dataset/models/models";
 import { sortByName } from "./common";
 
-import { FigshareLinkedFiles } from "src/dataset/models/models";
 import {
   DatasetVersionDatafiles as Datafile,
   DataFileType,

@@ -1,8 +1,16 @@
 import * as React from "react";
 import { RouteComponentProps } from "react-router";
 
-import { Col, Grid, Row, OverlayTrigger, Tooltip } from "react-bootstrap";
-import { InputGroup, FormGroup, FormControl } from "react-bootstrap";
+import {
+  Col,
+  Grid,
+  Row,
+  OverlayTrigger,
+  Tooltip,
+  InputGroup,
+  FormGroup,
+  FormControl,
+} from "react-bootstrap";
 
 import ClipboardButton from "../utilities/r-clipboard";
 import { LeftNav, MenuItem } from "./LeftNav";
@@ -54,7 +62,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
   }
 
   render() {
-    let navItems: Array<MenuItem> = [];
+    const navItems: Array<MenuItem> = [];
 
     navItems.push({
       label: "Connect to Figshare",
@@ -99,7 +107,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
                     <InputGroup>
                       <FormControl
                         type="text"
-                        readOnly={true}
+                        readOnly
                         value={this.state.token}
                         style={{ cursor: "text" }}
                       />
@@ -108,12 +116,12 @@ export class Token extends React.Component<TokenProps, TokenState> {
                           trigger="click"
                           placement="right"
                           overlay={tooltipToken}
-                          rootClose={true}
+                          rootClose
                         >
                           <ClipboardButton
                             data-clipboard-text={this.state.token}
                           >
-                            {/*TODO: Clipboard Button breaks Glyphicon by not adding ::before...find a way to counter this*/}
+                            {/* TODO: Clipboard Button breaks Glyphicon by not adding ::before...find a way to counter this */}
                             <span>Copy</span>
                           </ClipboardButton>
                         </OverlayTrigger>

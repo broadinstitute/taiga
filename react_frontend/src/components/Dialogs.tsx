@@ -126,7 +126,7 @@ export class EditDescription extends React.Component<EditStringProps, any> {
   textArea: any;
 
   render() {
-    //className="Modal__Bootstrap modal-dialog"
+    // className="Modal__Bootstrap modal-dialog"
     return (
       <Modal
         style={modalStyles}
@@ -160,7 +160,7 @@ export class EditDescription extends React.Component<EditStringProps, any> {
                   ref={(c) => {
                     this.textArea = c;
                   }}
-                ></textarea>
+                />
               </div>
             </div>
             <div className="modal-footer">
@@ -190,6 +190,7 @@ export class EditDescription extends React.Component<EditStringProps, any> {
 
 export class CreateFolder extends React.Component<CreateFolderProps, any> {
   textInput: any;
+
   textArea: any;
 
   render() {
@@ -258,13 +259,13 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
   }
 }
 
-let converter = new Showdown.Converter();
+const converter = new Showdown.Converter();
 
 export function renderDescription(description: string) {
   let description_section: any = null;
 
   if (description) {
-    let desc_as_html = { __html: converter.makeHtml(description) };
+    const desc_as_html = { __html: converter.makeHtml(description) };
     description_section = (
       <div className="well well-sm" dangerouslySetInnerHTML={desc_as_html} />
     );
@@ -304,8 +305,7 @@ export class InputFolderId extends React.Component<
   }
 
   render() {
-    let textPlaceHolder =
-      "Enter here the id of the folder to " + this.props.actionDescription;
+    const textPlaceHolder = `Enter here the id of the folder to ${this.props.actionDescription}`;
 
     return (
       <Modal
@@ -550,7 +550,7 @@ export class ShareEntries extends React.Component<
           <div className="modal-body">
             {this.props.entries.map((entry, i) => {
               // TODO: Could add the relativePath as a function of an entry in models.ts
-              let entryUrl = entry.url;
+              const entryUrl = entry.url;
 
               return (
                 <p key={i}>
@@ -631,12 +631,12 @@ export class AddUsersToGroup extends React.Component<
   }
 
   onRowSelect(row: User, isSelected: Boolean, e: any) {
-    let select_key = row.id;
+    const select_key = row.id;
     const original_selection: any = this.state.selection;
 
     let updated_selection: Array<string>;
 
-    let index = original_selection.indexOf(select_key);
+    const index = original_selection.indexOf(select_key);
     if (index !== -1) {
       updated_selection = update(original_selection, {
         $splice: [[index, 1]],

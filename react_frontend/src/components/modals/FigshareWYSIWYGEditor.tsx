@@ -1,7 +1,8 @@
 import * as React from "react";
 
 import ReactQuill, { Quill } from "react-quill";
-let Inline = Quill.import("blots/inline");
+
+const Inline = Quill.import("blots/inline");
 
 class BoldBlot extends Inline {}
 BoldBlot.blotName = "bold";

@@ -4,8 +4,9 @@ import * as ReactDOM from "react-dom";
 import { Route, Redirect, Switch, RouteComponentProps } from "react-router";
 import { Link, BrowserRouter } from "react-router-dom";
 
-import { FolderView } from "./components/FolderView";
 import DatasetViewWrapper from "src/dataset/components/DatasetViewWrapper";
+import { FormControl, Overlay, Popover } from "react-bootstrap";
+import { FolderView } from "./components/FolderView";
 import { SearchView } from "./components/SearchView";
 
 import { TaigaApi } from "./models/api";
@@ -18,7 +19,6 @@ import { GroupListView } from "./components/GroupListView";
 import { GroupView } from "./components/GroupView";
 
 import { relativePath } from "./utilities/route";
-import { FormControl, Overlay, Popover } from "react-bootstrap";
 import { SHA } from "./version";
 
 import "src/common/styles/base.css";
@@ -67,17 +67,17 @@ class App extends React.Component<AppProps, AppState> {
 
   jumpToKeyPress(e: any) {
     if (e.nativeEvent.key === "Enter") {
-      let escaped_entry = e.target.value.replace(/\//g, "%2F");
+      const escaped_entry = e.target.value.replace(/\//g, "%2F");
       tapi
         .get_dataset_version_id(escaped_entry)
         .then((dataset_version_id) => {
-          let url = relativePath(
-            "/dataset/" + "placeholder" + "/" + dataset_version_id
+          const url = relativePath(
+            `${"/dataset/" + "placeholder" + "/"}${dataset_version_id}`
           );
           location.replace(url);
         })
         .catch((reason) => {
-          let error_message = undefined;
+          let error_message;
           // TODO: Find a better way to catch the error properly and not use a string
           if (reason.message === "NOT FOUND") {
             error_message = [
@@ -121,7 +121,7 @@ class App extends React.Component<AppProps, AppState> {
     // TODO: Get the revision from package.json?
     const trash_link: any = this.props.user && (
       <Link
-        to={relativePath("folder/" + this.props.user.trash_folder_id)}
+        to={relativePath(`folder/${this.props.user.trash_folder_id}`)}
         className="headerTitle"
       >
         Trash
@@ -133,18 +133,18 @@ class App extends React.Component<AppProps, AppState> {
         <div id="header">
           <div className="top-page-menu">
             <img id="taiga_logo" />
-            {/*TODO: Change the way we manage spaces*/}
+            {/* TODO: Change the way we manage spaces */}
             <span className="headerSpan softwareAppName">Taiga</span>
             <Link to={relativePath("")} className="headerTitle">
               Home
             </Link>
-            <span className="headerSpan"></span>
+            <span className="headerSpan" />
             <Link to={relativePath("folder/public")} className="headerTitle">
               Public
             </Link>
-            <span className="headerSpan"></span>
+            <span className="headerSpan" />
             {trash_link}
-            <span className="headerSpan"></span>
+            <span className="headerSpan" />
             <Link className="headerTitle" to={relativePath("recentlyViewed/")}>
               Recently Viewed
             </Link>
@@ -164,7 +164,7 @@ class App extends React.Component<AppProps, AppState> {
 
             <Overlay
               show={this.state.show}
-              rootClose={true}
+              rootClose
               onHide={() => this.setState({ show: false })}
               placement="bottom"
               container={this}
@@ -180,11 +180,11 @@ class App extends React.Component<AppProps, AppState> {
             <Link className="tokenLink headerTitle" to={relativePath("token/")}>
               My Token
             </Link>
-            {/*TODO: Change this a proper logout behavior*/}
-            {/*<Link className="logoutLink" to={relativePath('')}>Logout</Link>*/}
-            <span className="headerSpan"></span>
+            {/* TODO: Change this a proper logout behavior */}
+            {/* <Link className="logoutLink" to={relativePath('')}>Logout</Link> */}
+            <span className="headerSpan" />
             {this.props.showGroupLink && (
-              <React.Fragment>
+              <>
                 <Link
                   className="tokenLink headerTitle"
                   to={relativePath("groups/")}
@@ -192,7 +192,7 @@ class App extends React.Component<AppProps, AppState> {
                   My Groups
                 </Link>
                 <span className="headerSpan" />
-              </React.Fragment>
+              </>
             )}
             <a
               href="https://docs.google.com/forms/d/e/1FAIpQLSe_byA04iJsZq9WPqwNfPkEOej8KXg0XVimr6NURMJ_x3ND9w/viewform"
@@ -238,7 +238,7 @@ export class Home extends React.Component<HomeProps, any> {
 
   render() {
     return (
-      <Redirect to={relativePath("folder/" + this.props.user.home_folder_id)} />
+      <Redirect to={relativePath(`folder/${this.props.user.home_folder_id}`)} />
     );
   }
 }

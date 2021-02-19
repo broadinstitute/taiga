@@ -132,7 +132,7 @@ export default class UpdateFigshareUpdateArticleStep extends React.Component<
   renderRemovedFiles() {
     const { removedFigshareFiles, additionalTaigaDatafiles } = this.state;
     return (
-      <React.Fragment>
+      <>
         <h5>
           Removed Figshare files
           <InfoIcon
@@ -177,7 +177,7 @@ export default class UpdateFigshareUpdateArticleStep extends React.Component<
             </tbody>
           </Table>
         )}
-      </React.Fragment>
+      </>
     );
   }
 
@@ -188,7 +188,7 @@ export default class UpdateFigshareUpdateArticleStep extends React.Component<
       unchangedFiles,
     } = this.state;
     return (
-      <React.Fragment>
+      <>
         <h5>
           <span>Additional Taiga datafiles</span>
           <InfoIcon
@@ -272,14 +272,14 @@ export default class UpdateFigshareUpdateArticleStep extends React.Component<
             })}
           </tbody>
         </Table>
-      </React.Fragment>
+      </>
     );
   }
 
   renderUnchangedFiles() {
     const { unchangedFiles } = this.state;
     return (
-      <React.Fragment>
+      <>
         <h5>Unchanged files</h5>
         {unchangedFiles.length == 0 ? (
           <p>None</p>
@@ -307,7 +307,7 @@ export default class UpdateFigshareUpdateArticleStep extends React.Component<
             </Table>
           </details>
         )}
-      </React.Fragment>
+      </>
     );
   }
 
@@ -327,7 +327,7 @@ export default class UpdateFigshareUpdateArticleStep extends React.Component<
         additionalTaigaDatafiles.every((file) => !file.addFile));
 
     return (
-      <React.Fragment>
+      <>
         <Modal.Body
           // @ts-expect-error
           bsClass="modal-body figshare-modal-body"
@@ -351,7 +351,7 @@ export default class UpdateFigshareUpdateArticleStep extends React.Component<
             Upload
           </Button>
         </Modal.Footer>
-      </React.Fragment>
+      </>
     );
   }
 }

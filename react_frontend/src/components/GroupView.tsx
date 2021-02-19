@@ -7,13 +7,13 @@ import {
   InsertButton,
 } from "react-bootstrap-table";
 
+import update from "immutability-helper";
 import { LeftNav } from "./LeftNav";
 import * as Dialogs from "./Dialogs";
 import { NotFound } from "./NotFound";
 
 import { TaigaApi } from "../models/api";
 import { Group, User, UserNamedId } from "../models/models";
-import update from "immutability-helper";
 
 interface GroupViewMatchProps {
   groupId: string;
@@ -98,12 +98,12 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
   }
 
   onRowSelect(row: UserNamedId, isSelected: Boolean, e: any) {
-    let select_key = row.id;
+    const select_key = row.id;
     const original_selection: any = this.state.selection;
 
     let updated_selection: Array<string>;
 
-    let index = original_selection.indexOf(select_key);
+    const index = original_selection.indexOf(select_key);
     if (index !== -1) {
       updated_selection = update(original_selection, {
         $splice: [[index, 1]],
@@ -146,21 +146,19 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
       .add_group_user_associations(this.state.group.id.toString(), userIds)
       .then((group: Group) => {
         this.setState({
-          group: group,
+          group,
           showAddUsersDialog: false,
         });
       });
   }
 
   render() {
-    let navItems: Array<any> = [];
+    const navItems: Array<any> = [];
 
-    if (!!this.state.errorMessage) {
+    if (this.state.errorMessage) {
       const message =
-        "Group ID " +
-        this.props.match.params.groupId +
-        " does not exist. Please check this id " +
-        "is correct. We are also available via the feedback button.";
+        `Group ID ${this.props.match.params.groupId} does not exist. Please check this id ` +
+        `is correct. We are also available via the feedback button.`;
       return (
         <div>
           <LeftNav items={navItems} />

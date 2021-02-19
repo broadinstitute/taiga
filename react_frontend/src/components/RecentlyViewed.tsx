@@ -47,7 +47,7 @@ export class RecentlyViewed extends React.Component<
       .then((userAccessLogs) => {
         // TODO: Think about not using it as State because it does not change during the page lifecycle
 
-        let mappedAL = userAccessLogs.map((userAccessLog) => {
+        const mappedAL = userAccessLogs.map((userAccessLog) => {
           return new AccessLog(userAccessLog);
         });
 
@@ -62,7 +62,7 @@ export class RecentlyViewed extends React.Component<
   }
 
   render() {
-    let navItems: Array<any> = [];
+    const navItems: Array<any> = [];
 
     let displayAccessLogs = null;
 

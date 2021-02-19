@@ -3,6 +3,7 @@ import { RouteComponentProps } from "react-router";
 import { Link } from "react-router-dom";
 import * as update from "immutability-helper";
 
+import { Glyphicon } from "react-bootstrap";
 import { LeftNav, MenuItem } from "./LeftNav";
 import { TaigaApi } from "../models/api";
 
@@ -16,7 +17,6 @@ import { relativePath } from "../utilities/route";
 import { LoadingOverlay } from "../utilities/loading";
 import { UploadTracker } from "./UploadTracker";
 
-import { Glyphicon } from "react-bootstrap";
 import { Grid, Row, Col } from "react-bootstrap";
 import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 import {
@@ -25,14 +25,12 @@ import {
   Folder,
   FolderTypeEnum,
   NamedId,
-} from "../models/models";
-import { DatasetVersion } from "../models/models";
-import {
+  DatasetVersion,
   DatasetFullDatasetVersions,
   BootstrapTableFolderEntry,
+  User,
+  AccessLog,
 } from "../models/models";
-import { User } from "../models/models";
-import { AccessLog } from "../models/models";
 
 interface FolderViewMatchParams {
   folderId: string;
@@ -49,7 +47,7 @@ const tableEntriesStyle: any = {
   margin: "initial",
 };
 
-let _update: any = update;
+const _update: any = update;
 
 export interface FolderViewState {
   folder?: Folder;
@@ -87,9 +85,8 @@ export class Conditional extends React.Component<any, any> {
   render() {
     if (this.props.show) {
       return <div>{this.props.children}</div>;
-    } else {
-      return null;
     }
+    return null;
   }
 }
 
@@ -102,12 +99,13 @@ export class FolderView extends React.Component<
   }
 
   private bootstrapTable: any;
+
   uploadTracker: UploadTracker;
 
   componentDidUpdate(prevProps: FolderViewProps) {
     // respond to parameter change in scenario 3
-    let oldId = prevProps.match.params.folderId;
-    let newId = this.props.match.params.folderId;
+    const oldId = prevProps.match.params.folderId;
+    const newId = this.props.match.params.folderId;
     console.log("componentDidUpdate");
     if (newId !== oldId) {
       console.log("doFetch");
@@ -135,18 +133,18 @@ export class FolderView extends React.Component<
   }
 
   doFetch() {
-    let tapi = this.getTapi();
+    const tapi = this.getTapi();
 
     this.setState({
       loading: true,
     });
 
     // TODO: Revisit the way we handle the Dataset/DatasetVersion throughout this View
-    let datasetsLatestDv: { [dataset_id: string]: DatasetVersion } = {};
-    let datasetsVersion: {
+    const datasetsLatestDv: { [dataset_id: string]: DatasetVersion } = {};
+    const datasetsVersion: {
       [datasetVersion_id: string]: DatasetVersion;
     } = {};
-    let _folder: Folder = null;
+    const _folder: Folder = null;
 
     console.log("get_folder fetch", this.props);
 
@@ -161,14 +159,14 @@ export class FolderView extends React.Component<
         console.log("get_folder entries", entries);
 
         // We want to ask the server a bulk of the datasets and the datasetVersions
-        let datasetIds = entries
+        const datasetIds = entries
           .filter((entry: Entry) => {
             return entry.type === EntryTypeEnum.Dataset;
           })
           .map((datasetEntry: Entry) => {
             return datasetEntry.id;
           });
-        let datasetVersionIds = entries
+        const datasetVersionIds = entries
           .filter((entry: Entry) => {
             return entry.type === EntryTypeEnum.DatasetVersion;
           })
@@ -210,7 +208,7 @@ export class FolderView extends React.Component<
           folder: _folder,
           selection: new Array<string>(),
           datasetLastDatasetVersion: datasetsLatestDv,
-          datasetsVersion: datasetsVersion,
+          datasetsVersion,
           loading: false,
         });
       })
@@ -218,7 +216,7 @@ export class FolderView extends React.Component<
         this.setState({
           error: error.message,
         });
-        console.log("Error: " + error.stack);
+        console.log(`Error: ${error.stack}`);
       });
   }
 
@@ -272,7 +270,7 @@ export class FolderView extends React.Component<
         return this.doFetch();
       })
       .catch((err: any) => {
-        console.log("Error when moving to trash :/ : " + err);
+        console.log(`Error when moving to trash :/ : ${err}`);
       });
   }
 
@@ -302,7 +300,7 @@ export class FolderView extends React.Component<
     this.setState({
       callbackIntoFolderAction: (folderId: string) =>
         this.actionIntoFolder(folderId),
-      actionName: actionName,
+      actionName,
       inputFolderIdActionDescription: actionDescription,
       showInputFolderId: true,
       actionIntoFolderValidation: null,
@@ -347,7 +345,7 @@ export class FolderView extends React.Component<
 
         // If we receive 422 error
         if (err.message == "UNPROCESSABLE ENTITY") {
-          let err_message_user =
+          const err_message_user =
             "Folder id is not valid. Please check it and retry :)";
           this.setState({
             actionIntoFolderValidation: "error",
@@ -392,7 +390,8 @@ export class FolderView extends React.Component<
     // TODO: Think about Command Pattern instead of repeating this dangerous check here and in models.ts
     if (entry.type === EntryTypeEnum.Folder) {
       return entry.creation_date;
-    } else if (entry.type === EntryTypeEnum.Dataset) {
+    }
+    if (entry.type === EntryTypeEnum.Dataset) {
       let latestDatasetVersion = this.state.datasetLastDatasetVersion[entry.id];
       return latestDatasetVersion.creation_date;
     } else if (entry.type === EntryTypeEnum.DatasetVersion) {
@@ -428,9 +427,8 @@ export class FolderView extends React.Component<
   typeFormatter(cell: string, row: BootstrapTableFolderEntry) {
     if (cell) {
       return cell[0].toUpperCase() + cell.slice(1, cell.length);
-    } else {
-      return "";
     }
+    return "";
   }
 
   dataFormatter(cell: Date, row: BootstrapTableFolderEntry) {
@@ -438,12 +436,12 @@ export class FolderView extends React.Component<
   }
 
   onRowSelect(row: BootstrapTableFolderEntry, isSelected: Boolean, e: any) {
-    let select_key = row.id;
+    const select_key = row.id;
     const original_selection: any = this.state.selection;
 
     let updated_selection: Array<string>;
 
-    let index = original_selection.indexOf(select_key);
+    const index = original_selection.indexOf(select_key);
     if (index !== -1) {
       updated_selection = _update(original_selection, {
         $splice: [[index, 1]],
@@ -484,7 +482,7 @@ export class FolderView extends React.Component<
   ) {
     return (
       <span key={index}>
-        <Link to={relativePath("folder/" + folder_named_id.id)}>
+        <Link to={relativePath(`folder/${folder_named_id.id}`)}>
           {folder_named_id.name}
         </Link>
         {total_length != index + 1 && <span>, </span>}
@@ -512,9 +510,7 @@ export class FolderView extends React.Component<
 
   // Search
   executeSearch(searchQuery: any) {
-    let url = relativePath(
-      "search/" + this.state.folder.id + "/" + searchQuery
-    );
+    const url = relativePath(`search/${this.state.folder.id}/${searchQuery}`);
     window.location.href = url;
   }
 
@@ -533,7 +529,7 @@ export class FolderView extends React.Component<
         sharingEntries: [this.state.folder],
       });
     } else {
-      let selectedEntries = this.state.selection.map((entryID: any) => {
+      const selectedEntries = this.state.selection.map((entryID: any) => {
         return this.state.folder.entries.find((folderEntry) => {
           return folderEntry.id === entryID;
         });
@@ -564,7 +560,8 @@ export class FolderView extends React.Component<
           <div id="main-content" />
         </div>
       );
-    } else if (
+    }
+    if (
       this.state.error &&
       this.state.error.toUpperCase() === "NOT FOUND".toUpperCase()
     ) {
