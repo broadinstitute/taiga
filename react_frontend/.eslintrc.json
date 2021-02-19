@@ -1,0 +1,47 @@
+{
+  "env": {
+    "browser": true
+  },
+  "extends": ["airbnb", "airbnb/hooks", "airbnb-typescript"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "project": "./tsconfig.json",
+    "ecmaVersion": 12,
+    "sourceType": "module"
+  },
+  "plugins": ["react", "@typescript-eslint"],
+  "rules": {
+    "@typescript-eslint/explicit-module-boundary-types": ["off"],
+    "@typescript-eslint/no-var-requires": "off",
+    "react/jsx-no-target-blank": ["error", { "enforceDynamicLinks": "never" }],
+
+    // formatting is handled by prettier pre-commit hook
+    "arrow-body-style": "off",
+    "function-paren-newline": "off",
+    "implicit-arrow-linebreak": "off",
+    "max-len": "off",
+    "no-underscore-dangle": "warn",
+    "operator-linebreak": "off",
+
+    "quotes": "off",
+    "@typescript-eslint/quotes": "off",
+    "indent": "off",
+    "@typescript-eslint/indent": "off",
+    "comma-dangle": "off",
+    "@typescript-eslint/comma-dangle": "off",
+    "comma-spacing": "off",
+    "@typescript-eslint/comma-spacing": "off",
+
+    "react/jsx-curly-newline": "off",
+    "react/jsx-one-expression-per-line": "off",
+    "react/jsx-wrap-multilines": "off"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
+}

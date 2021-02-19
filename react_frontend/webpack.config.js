@@ -2,6 +2,7 @@ var webpack = require("webpack");
 var ManifestPlugin = require("webpack-manifest-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+const ESLintPlugin = require("eslint-webpack-plugin");
 const path = require("path");
 
 module.exports = {
@@ -15,6 +16,8 @@ module.exports = {
 
   // Enable sourcemaps for debugging webpack's output.
   devtool: "source-map",
+
+  plugins: [new ESLintPlugin({ extensions: ["js", "ts", "tsx"] })],
 
   resolve: {
     plugins: [new TsconfigPathsPlugin()],

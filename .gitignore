@@ -44,7 +44,11 @@ docker/taiga.tar.gz
 # Don't ignore travis.yml
 !.travis.yml
 
+# Don't ignore storybook
 !.storybook
+
+# Don't ignore eslint configs
+!react_frontend/.eslintrc.json
 
 # Ignore the migration data of taiga
 taiga2/tests/test_files/migration/*
