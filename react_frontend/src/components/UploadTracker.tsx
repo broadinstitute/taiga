@@ -134,7 +134,7 @@ export class UploadTracker {
     sid: string,
     uploadIndex: number
   ): Promise<boolean> {
-    let s3Key = s3_credentials.prefix + file.name;
+    let s3Key = `${s3_credentials.prefix}${sid}/${file.name}`;
     let params = {
       Bucket: s3_credentials.bucket,
       Key: s3Key,
