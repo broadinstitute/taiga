@@ -40,6 +40,8 @@ interface AppState {
 const tapi = new TaigaApi(relativePath("api"), (window as any).taigaUserToken); // FIXME
 
 class App extends React.Component<AppProps, AppState> {
+  buttonRef: React.Ref<FormControl>;
+
   constructor(props: AppProps) {
     super(props);
 
@@ -50,8 +52,6 @@ class App extends React.Component<AppProps, AppState> {
       message: "",
     };
   }
-
-  componentWillMount() {}
 
   componentDidMount() {
     // TODO: We should find a way to only get_user once, instead of in Home and in App
@@ -72,9 +72,9 @@ class App extends React.Component<AppProps, AppState> {
         .get_dataset_version_id(escaped_entry)
         .then((dataset_version_id) => {
           const url = relativePath(
-            `${"/dataset/" + "placeholder" + "/"}${dataset_version_id}`
+            `/dataset/placeholder/${dataset_version_id}`
           );
-          location.replace(url);
+          window.location.replace(url);
         })
         .catch((reason) => {
           let error_message;
@@ -197,6 +197,7 @@ class App extends React.Component<AppProps, AppState> {
             <a
               href="https://docs.google.com/forms/d/e/1FAIpQLSe_byA04iJsZq9WPqwNfPkEOej8KXg0XVimr6NURMJ_x3ND9w/viewform"
               target="_blank"
+              rel="noreferrer"
               className="headerTitle headerTitleMinor"
             >
               Feedback
@@ -217,6 +218,7 @@ class App extends React.Component<AppProps, AppState> {
             <a
               href="https://github.com/broadinstitute/taiga"
               target="_blank"
+              rel="noreferrer"
               className="headerTitle headerTitleMinor"
             >
               SHA {SHA}
@@ -228,67 +230,18 @@ class App extends React.Component<AppProps, AppState> {
   }
 }
 
-export interface HomeProps {
-  user: User;
-}
-export class Home extends React.Component<HomeProps, any> {
-  constructor(props: any) {
-    super(props);
-  }
-
-  render() {
-    return (
-      <Redirect to={relativePath(`folder/${this.props.user.home_folder_id}`)} />
-    );
-  }
-}
-
-// const ActivityView = React.createClass({
-//     render() {
-//         let rows: any = [];
-//         return (
-//             <table>
-//                 <thead>
-//                     <tr>
-//                         <th>Date</th>
-//                         <th>Who</th>
-//                         <th>Change</th>
-//                         <th>Comments</th>
-//                     </tr>
-//                 </thead>
-//                 <tbody>
-//                     {rows}
-//                 </tbody>
-//             </table>
-//         );
-//     }
-// });
-
-export class NoMatch extends React.Component<any, any> {
-  render() {
-    return <div>No such page</div>;
-  }
-}
-
-// TODO: let UserRoute: Component<UserRouteProps, ComponentState> = Route as any
-
+// eslint-disable-next-line import/prefer-default-export
 export function initPage(element: any) {
-  console.log("initPage", tapi);
-  console.log("initPage2", tapi);
   Promise.all([tapi.get_user(), tapi.get_all_groups_for_current_user()]).then(
     ([user, groups]) => {
-      console.log("initPage3");
-      console.log("in initPage user", user);
       ReactDOM.render(
         <BrowserRouter>
           <App tapi={tapi} user={user} showGroupLink={groups.length > 0}>
             <Switch>
-              <Route
-                path={relativePath("")}
+              <Redirect
+                from={relativePath("")}
                 exact
-                render={(_) => {
-                  return <Home user={user} />;
-                }}
+                to={relativePath(`folder/${user.home_folder_id}`)}
               />
               <Route
                 path={relativePath(
@@ -313,7 +266,6 @@ export function initPage(element: any) {
                   return (
                     <DatasetViewWrapper
                       key={`dataset/${datasetId}/${datasetVersionId}`}
-                      {...props}
                       tapi={tapi}
                       user={user}
                     />
@@ -341,7 +293,6 @@ export function initPage(element: any) {
                   return (
                     <DatasetViewWrapper
                       key={`dataset/${datasetId}`}
-                      {...props}
                       tapi={tapi}
                       user={user}
                     />
@@ -356,7 +307,6 @@ export function initPage(element: any) {
                   return (
                     <DatasetViewWrapper
                       key={`dataset_version/${datasetVersionId}`}
-                      {...props}
                       tapi={tapi}
                       user={user}
                     />
@@ -368,10 +318,12 @@ export function initPage(element: any) {
                 render={(props) => {
                   return (
                     <FolderView
-                      {...props}
                       tapi={tapi}
                       user={user}
                       currentUser={user.id}
+                      match={props.match}
+                      history={props.history}
+                      location={props.location}
                     />
                   );
                 }}
@@ -379,36 +331,70 @@ export function initPage(element: any) {
               <Route
                 path={relativePath("search/:currentFolderId/:searchQuery")}
                 render={(props) => {
-                  return <SearchView {...props} tapi={tapi} />;
+                  return (
+                    <SearchView
+                      tapi={tapi}
+                      match={props.match}
+                      history={props.history}
+                      location={props.location}
+                    />
+                  );
                 }}
               />
               <Route
                 path={relativePath("token/")}
                 render={(props) => {
-                  return <Token {...props} tapi={tapi} />;
+                  return (
+                    <Token
+                      tapi={tapi}
+                      match={props.match}
+                      history={props.history}
+                      location={props.location}
+                    />
+                  );
                 }}
               />
               <Route
                 path={relativePath("recentlyViewed/")}
                 render={(props) => {
-                  return <RecentlyViewed {...props} tapi={tapi} />;
+                  return (
+                    <RecentlyViewed
+                      tapi={tapi}
+                      match={props.match}
+                      history={props.history}
+                      location={props.location}
+                    />
+                  );
                 }}
               />
               <Route
                 path={relativePath("groups/")}
                 render={(props) => {
                   return (
-                    <GroupListView {...props} tapi={tapi} groups={groups} />
+                    <GroupListView
+                      tapi={tapi}
+                      groups={groups}
+                      match={props.match}
+                      history={props.history}
+                      location={props.location}
+                    />
                   );
                 }}
               />
               <Route
                 path={relativePath("group/:groupId")}
                 render={(props) => {
-                  return <GroupView {...props} tapi={tapi} />;
+                  return (
+                    <GroupView
+                      tapi={tapi}
+                      match={props.match}
+                      history={props.history}
+                      location={props.location}
+                    />
+                  );
                 }}
               />
-              <Route path="*" component={NoMatch} />
+              <Route path="*" render={() => <div>No such page</div>} />
             </Switch>
           </App>
         </BrowserRouter>,

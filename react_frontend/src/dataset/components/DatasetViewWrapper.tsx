@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { RouteComponentProps } from "react-router";
+import { useParams } from "react-router-dom";
+
 import { Grid } from "react-bootstrap";
 
 import { NotFound } from "src/components/NotFound";
@@ -20,11 +21,7 @@ import {
 } from "src/utilities/dataset";
 import DatasetView from "./DatasetView";
 
-interface DatasetViewMatchParams {
-  datasetId?: string;
-  datasetVersionId?: string;
-}
-interface Props extends RouteComponentProps<DatasetViewMatchParams> {
+interface Props {
   tapi: TaigaApi;
   user: User;
 }
@@ -45,15 +42,19 @@ const DatasetViewWrapper = (props: Props) => {
   const [activity, setActivity] = useState<Array<ActivityLogEntry>>(null);
   const [notFound, setNotFound] = useState(false);
 
-  const { datasetId, datasetVersionId } = props.match.params;
+  const { user, tapi } = props;
+  const { datasetId, datasetVersionId } = useParams<{
+    datasetId: string;
+    datasetVersionId: string;
+  }>();
 
   useEffect(() => {
     async function fetchData() {
       if (datasetId && datasetVersionId) {
-        await props.tapi
+        await tapi
           .get_dataset_version_with_dataset(datasetId, datasetVersionId)
           .then((datasetAndDatasetVersion) => {
-            props.tapi
+            tapi
               .get_activity_log_for_dataset_id(
                 datasetAndDatasetVersion.dataset.id
               )
@@ -63,12 +64,12 @@ const DatasetViewWrapper = (props: Props) => {
                 setActivity(activityLogEntries);
 
                 if (
-                  datasetId !=
+                  datasetId !==
                     getDatasetPermaname(datasetAndDatasetVersion.dataset) ||
-                  datasetVersionId !=
+                  datasetVersionId !==
                     datasetAndDatasetVersion.datasetVersion.name
                 ) {
-                  history.replaceState(
+                  window.history.replaceState(
                     null,
                     "",
                     relativePath(
@@ -82,13 +83,13 @@ const DatasetViewWrapper = (props: Props) => {
           })
           .catch(() => setNotFound(true));
       } else if (datasetId && !datasetVersionId) {
-        await props.tapi
+        await tapi
           .get_dataset(datasetId)
           .then(redirectToLatestDatasetVersion)
           .catch(() => setNotFound(true));
       } else {
-        await props.tapi.get_dataset_version(datasetVersionId).then((dv) => {
-          props.tapi
+        await tapi.get_dataset_version(datasetVersionId).then((dv) => {
+          tapi
             .get_dataset(dv.dataset_id)
             .then(redirectToLatestDatasetVersion)
             .catch(() => setNotFound(true));
@@ -97,7 +98,13 @@ const DatasetViewWrapper = (props: Props) => {
     }
 
     fetchData();
-  }, [datasetId, datasetVersionId]);
+  }, [datasetId, datasetVersionId, tapi]);
+
+  useEffect(() => {
+    if (dataset != null && datasetVersion != null) {
+      document.title = `${dataset.name} Version ${datasetVersion.name} | Taiga`;
+    }
+  }, [dataset, datasetVersion]);
 
   if (notFound) {
     let message = "";
@@ -121,8 +128,8 @@ const DatasetViewWrapper = (props: Props) => {
     <Grid>
       <DatasetView
         key={`dataset/${getDatasetPermaname(dataset)}/${datasetVersion.name}`}
-        tapi={props.tapi}
-        user={props.user}
+        tapi={tapi}
+        user={user}
         dataset={dataset}
         datasetVersion={datasetVersion}
         activityLog={activity}
