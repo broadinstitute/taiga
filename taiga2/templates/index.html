@@ -68,7 +68,10 @@
     </script>
     <script src="{{ pseudostatic_url('js/react_frontend.js') }}"></script>
     <script>
-      Taiga.initPage(document.getElementById("root"));
+      Taiga.initPage(
+        document.getElementById("root"),
+        "{{ url_for('static', filename='taiga3.png') }}"
+      );
     </script>
 
     <!-- Analytics -->

@@ -23,7 +23,7 @@ import { renderDescription } from "src/components/Dialogs";
 import TextEditable from "src/common/components/TextEditable";
 
 import { Dataset, DatasetVersion, StatusEnum, User } from "src/models/models";
-import { TaigaApi } from "src/models/api";
+import TaigaApi from "src/models/api";
 
 import { toLocalDateString } from "src/utilities/formats";
 import { relativePath } from "src/utilities/route";

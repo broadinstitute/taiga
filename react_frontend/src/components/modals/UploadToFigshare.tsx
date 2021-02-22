@@ -17,7 +17,7 @@ import FigshareWYSIWYGEditor from "./FigshareWYSIWYGEditor";
 import FigshareUploadStatusTable from "./FigshareUploadStatusTable";
 
 import { DatasetVersion, TaskStatus } from "../../models/models";
-import { TaigaApi } from "../../models/api";
+import TaigaApi from "../../models/api";
 import { UploadFileStatus } from "../../models/figshare";
 import { relativePath } from "../../utilities/route";
 

@@ -6,7 +6,7 @@ import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 
 import { LeftNav } from "./LeftNav";
 
-import { TaigaApi } from "../models/api";
+import TaigaApi from "../models/api";
 import { Group } from "../models/models";
 
 import { relativePath } from "../utilities/route";

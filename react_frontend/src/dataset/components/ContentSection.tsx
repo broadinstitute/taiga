@@ -14,7 +14,7 @@ import ClipboardButton from "src/common/components/ClipboardButton";
 
 import { FigshareLinkedFiles } from "src/dataset/models/models";
 import { DataFileType, DatasetVersion, StatusEnum } from "src/models/models";
-import { TaigaApi } from "src/models/api";
+import TaigaApi from "src/models/api";
 
 import { relativePath } from "src/utilities/route";
 

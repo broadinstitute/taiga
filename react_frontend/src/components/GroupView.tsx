@@ -12,7 +12,7 @@ import { LeftNav } from "./LeftNav";
 import * as Dialogs from "./Dialogs";
 import { NotFound } from "./NotFound";
 
-import { TaigaApi } from "../models/api";
+import TaigaApi from "../models/api";
 import { Group, User, UserNamedId } from "../models/models";
 
 interface GroupViewMatchProps {

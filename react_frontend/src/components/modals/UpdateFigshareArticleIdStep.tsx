@@ -9,7 +9,7 @@ import {
   HelpBlock,
 } from "react-bootstrap";
 
-import { TaigaApi } from "../../models/api";
+import TaigaApi from "../../models/api";
 import { ArticleInfo } from "../../models/figshare";
 
 enum ArticleIdStepError {

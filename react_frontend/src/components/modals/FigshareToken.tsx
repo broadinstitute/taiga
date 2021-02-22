@@ -7,7 +7,7 @@ import {
   FormControl,
   Button,
 } from "react-bootstrap";
-import { TaigaApi } from "../../models/api";
+import TaigaApi from "../../models/api";
 
 interface Props {
   tapi: TaigaApi;

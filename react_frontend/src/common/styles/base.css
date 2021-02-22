@@ -1,46 +1,17 @@
-#header {
-  background-color: #4b5b7d;
-  color: #ffffff;
-  position: sticky;
-  top: 0;
-  height: 22px;
-  z-index: 10;
+#taiga-logo {
+  margin-inline-end: 5px;
+  display: inline;
 }
 
-#left-nav {
-  position: fixed;
-  top: 22px;
-  left: 0;
-  height: 100%;
-  width: 150px;
-  border-right: 1px solid;
-  background-color: #ccc;
+#taiga-brand-name {
+  color: #428bca;
+  font-size: initial;
 }
 
-#left-nav ul {
-  padding-left: 0px;
-}
-
-#left-nav ul li {
-  padding-left: 10px;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  list-style: none;
-}
-
-#left-nav ul li:hover {
-  background-color: #4b5b7d;
-  color: #fff;
-  cursor: pointer;
-}
-
-#footer {
-  background-color: #4b5b7d;
-  color: #ffffff;
-  position: sticky;
-  bottom: 0;
-  height: 22px;
-  z-index: 10;
+main {
+  /* Height of navbar + 1px of border bottom */
+  margin-block-start: 51px;
+  margin-block-end: 50px;
 }
 
 #main-content {
@@ -53,30 +24,8 @@
   margin-bottom: 10px;
 }
 
-.folder-icon {
-  background: url("/static/ikons/folder.svg");
-  display: inline-block;
-  text-indent: -9999px;
-  width: 20px;
-  height: 15px;
-  background-size: 20px 15px;
-}
-
 .select-column {
   width: 20px;
-}
-
-.login-box {
-  display: inline;
-  padding-right: 15px;
-}
-
-.login-box .logoutLink {
-  color: #ffffff;
-}
-
-.login-box .tokenLink {
-  padding-right: 5px;
 }
 
 .headerTitle {
@@ -118,17 +67,9 @@
   margin: 0 0 0 10px;
 }
 
-.softwareAppName {
-  color: #428bca;
-}
-
 .top-page-menu {
   display: inline;
   padding-left: 15px;
-}
-
-.headerSpan {
-  padding-right: 10px;
 }
 
 .bottom-page-text {
@@ -142,11 +83,6 @@
 .conversionProgressFailure {
   background-color: lightcoral;
   white-space: normal !important;
-}
-
-#taiga_logo {
-  content: url("{{ url_for('static', filename='taiga3.png') }}");
-  padding-right: 5px;
 }
 
 #formControlsSelect {

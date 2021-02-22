@@ -16,7 +16,7 @@ import ClipboardButton from "../utilities/r-clipboard";
 import { LeftNav, MenuItem } from "./LeftNav";
 import FigshareToken from "./modals/FigshareToken";
 
-import { TaigaApi } from "../models/api";
+import TaigaApi from "../models/api";
 import { User } from "../models/models";
 
 export interface TokenProps extends RouteComponentProps {

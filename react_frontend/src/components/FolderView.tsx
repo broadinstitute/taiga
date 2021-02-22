@@ -5,7 +5,7 @@ import * as update from "immutability-helper";
 
 import { Glyphicon } from "react-bootstrap";
 import { LeftNav, MenuItem } from "./LeftNav";
-import { TaigaApi } from "../models/api";
+import TaigaApi from "../models/api";
 
 import * as Dialogs from "./Dialogs";
 import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";

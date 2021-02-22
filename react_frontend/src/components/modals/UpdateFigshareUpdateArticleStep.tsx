@@ -25,7 +25,7 @@ import {
   UpdateArticleAdditionalTaigaDatafile as AdditionalTaigaDatafile,
   UpdateArticleUnchangedFile as UnchangedFile,
 } from "../../models/figshare";
-import { TaigaApi } from "../../models/api";
+import TaigaApi from "../../models/api";
 
 interface Props {
   tapi: TaigaApi;

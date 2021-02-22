@@ -6,7 +6,7 @@ import { saveAs } from "file-saver";
 import { FigshareLinkedFiles } from "src/dataset/models/models";
 import { DatasetVersion } from "../../models/models";
 import { relativePath } from "../../utilities/route";
-import { TaigaApi } from "../../models/api";
+import TaigaApi from "../../models/api";
 import UpdateFigshare from "../../components/modals/UpdateFigshare";
 import UploadToFigshare from "../../components/modals/UploadToFigshare";
 

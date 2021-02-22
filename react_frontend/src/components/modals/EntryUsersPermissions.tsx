@@ -4,7 +4,7 @@ import { BootstrapTable, TableHeaderColumn } from "react-bootstrap-table";
 
 import { modalStyles } from "../Dialogs";
 
-import { TaigaApi } from "../../models/api";
+import TaigaApi from "../../models/api";
 
 import { AccessLog } from "../../models/models";
 import { lastAccessFormatter } from "../../utilities/formats";

@@ -6,7 +6,7 @@ import { Grid } from "react-bootstrap";
 
 import { NotFound } from "src/components/NotFound";
 
-import { TaigaApi } from "src/models/api";
+import TaigaApi from "src/models/api";
 import {
   User,
   Dataset,

@@ -8,7 +8,7 @@ import update from "immutability-helper";
 import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";
 
 import * as Models from "../models/models";
-import { TaigaApi } from "../models/api";
+import TaigaApi from "../models/api";
 
 import * as Dialogs from "./Dialogs";
 import { CreateDatasetDialog, CreateVersionDialog } from "./modals/UploadForm";

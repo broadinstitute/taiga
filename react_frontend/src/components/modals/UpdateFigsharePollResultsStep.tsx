@@ -5,7 +5,7 @@ import update from "immutability-helper";
 import FigshareUploadStatusTable from "./FigshareUploadStatusTable";
 
 import { TaskStatus, DatasetVersionDatafiles } from "../../models/models";
-import { TaigaApi } from "../../models/api";
+import TaigaApi from "../../models/api";
 import { UploadFileStatus } from "../../models/figshare";
 
 import { relativePath } from "../../utilities/route";

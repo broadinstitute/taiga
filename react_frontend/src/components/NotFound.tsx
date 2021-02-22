@@ -4,7 +4,7 @@ import * as React from "react";
 
 // import { LeftNav, MenuItem } from "./LeftNav";
 // import * as Folder from "../models/models";
-// import { TaigaApi } from "../models/api";
+// import TaigaApi from "../models/api";
 
 // import * as Dialogs from "./Dialogs";
 // import { TreeView } from "./modals/TreeView";

@@ -1,5 +1,6 @@
 import { isUndefined, isNullOrUndefined } from "util";
 
+import HTMLResponseError from "src/common/models/HTMLReponseError";
 import {
   User,
   Folder,
@@ -26,7 +27,20 @@ import {
 // import { getUserToken } from '../utilities/route';
 // import { Token } from "../components/Token";
 
-export class TaigaApi {
+const checkResponse = (response: Response): Promise<Response> => {
+  if (response.status >= 200 && response.status < 300) {
+    return Promise.resolve(response);
+  }
+
+  if (response.status === 400) {
+    return response.json().then((errorDetail) => {
+      return Promise.reject<Response>(new Error(errorDetail.detail));
+    });
+  }
+  return Promise.reject<Response>(new HTMLResponseError(response));
+};
+
+export default class TaigaApi {
   baseUrl: string;
 
   authHeaders: any;
@@ -45,27 +59,13 @@ export class TaigaApi {
     this.loading = false;
   }
 
-  _checkResponse(response: Response): Promise<Response> {
-    if (response.status >= 200 && response.status < 300) {
-      return Promise.resolve(response);
-    }
-    if (response.status === 400) {
-      console.log("response status 400");
-      return response.json().then((errorDetail) => {
-        console.log("reponse error text", errorDetail);
-        return Promise.reject<Response>(new Error(errorDetail.detail));
-      });
-    }
-    return Promise.reject<Response>(new Error(response.statusText));
-  }
-
   _fetch<T>(url: string): Promise<T> {
     return fetch(this.baseUrl + url, {
       headers: {
         Authorization: this.authHeaders.auth,
       },
     })
-      .then((response: Response) => this._checkResponse(response))
+      .then((response: Response) => checkResponse(response))
       .then<T>((response: Response) => {
         return response.json();
       });
@@ -81,7 +81,7 @@ export class TaigaApi {
       },
       body: JSON.stringify(args),
     })
-      .then((response: Response) => this._checkResponse(response))
+      .then((response: Response) => checkResponse(response))
       .then<T>((response: Response) => {
         return response.json();
       });
@@ -97,7 +97,7 @@ export class TaigaApi {
       },
       body: JSON.stringify(args),
     })
-      .then((response: Response) => this._checkResponse(response))
+      .then((response: Response) => checkResponse(response))
       .then<T>((response: Response) => {
         return response.json();
       });
@@ -112,7 +112,7 @@ export class TaigaApi {
         Authorization: this.authHeaders.auth,
       },
     })
-      .then((response: Response) => this._checkResponse(response))
+      .then((response: Response) => checkResponse(response))
       .then<T>((response: Response) => {
         return response.json();
       });

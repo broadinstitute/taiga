@@ -32,7 +32,7 @@ import {
   DatasetVersionDatafiles,
   dropExtension,
 } from "../../models/models";
-import { TaigaApi } from "../../models/api";
+import TaigaApi from "../../models/api";
 
 interface UploadFormProps {
   help?: string;

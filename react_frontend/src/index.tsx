@@ -1,15 +1,26 @@
 import * as React from "react";
+import { useState, useRef } from "react";
 import * as ReactDOM from "react-dom";
 
-import { Route, Redirect, Switch, RouteComponentProps } from "react-router";
-import { Link, BrowserRouter } from "react-router-dom";
+import { Route, Redirect, Switch } from "react-router";
+import { BrowserRouter } from "react-router-dom";
 
 import DatasetViewWrapper from "src/dataset/components/DatasetViewWrapper";
-import { FormControl, Overlay, Popover } from "react-bootstrap";
+import {
+  FormGroup,
+  FormControl,
+  FormControlProps,
+  Nav,
+  Navbar,
+  NavItem,
+  Overlay,
+  Popover,
+} from "react-bootstrap";
+import HTMLResponseError from "src/common/models/HTMLReponseError";
 import { FolderView } from "./components/FolderView";
 import { SearchView } from "./components/SearchView";
 
-import { TaigaApi } from "./models/api";
+import TaigaApi from "./models/api";
 import { User } from "./models/models";
 
 import { Token } from "./components/Token";
@@ -23,220 +34,180 @@ import { SHA } from "./version";
 
 import "src/common/styles/base.css";
 
+interface GlobalSearchProps {
+  tapi: TaigaApi;
+}
+
+const GlobalSearch = (props: GlobalSearchProps) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [message, setMessage] = useState("");
+  const target = useRef();
+
+  const { tapi } = props;
+
+  const handleSearch = (
+    e: React.KeyboardEvent<FormControl & FormControlProps>
+  ) => {
+    if (e.nativeEvent.key !== "Enter" || searchQuery.length === 0) {
+      return;
+    }
+    const escapedQuery = searchQuery.replace(/\//g, "%2F");
+    tapi
+      .get_dataset_version_id(escapedQuery)
+      .then((dataset_version_id) => {
+        const url = relativePath(`/dataset/placeholder/${dataset_version_id}`);
+        window.location.replace(url);
+      })
+      .catch((reason) => {
+        if (reason instanceof HTMLResponseError && reason.status === 404) {
+          setMessage("This dataset or dataset version id was not found");
+        } else {
+          setMessage(`Unknown error: ${reason.message}`);
+        }
+        setShowTooltip(true);
+      });
+  };
+
+  return (
+    <>
+      <FormGroup>
+        <FormControl
+          ref={target}
+          type="text"
+          value={searchQuery}
+          placeholder="Enter dataset and version (with . or / separator)"
+          onChange={(e: React.FormEvent<FormControl & FormControlProps>) =>
+            setSearchQuery(e.currentTarget.value as string)
+          }
+          onKeyPress={handleSearch}
+        />
+      </FormGroup>
+
+      <Overlay
+        show={showTooltip}
+        rootClose
+        onHide={() => setShowTooltip(false)}
+        placement="bottom"
+        target={target.current}
+      >
+        <Popover id="global-search-help-message">
+          <p>{message}</p>
+          <br />
+          <p>
+            Usage:
+            <ul>
+              <li>dataset_permaname</li>
+              <li>dataset_permaname.version</li>
+              <li>dataset_permaname/version</li>
+            </ul>
+            <ul>
+              <li>dataset_id</li>
+              <li>dataset_id.version</li>
+              <li>dataset_id/version</li>
+            </ul>
+            <ul>
+              <li>dataset_version_id</li>
+            </ul>
+          </p>
+        </Popover>
+      </Overlay>
+    </>
+  );
+};
 interface AppProps {
-  route?: any;
   tapi: TaigaApi;
   user: User;
   showGroupLink: boolean;
+  logoSrc: string;
 }
 
-interface AppState {
-  jumpToValue?: string;
-  show?: boolean;
-  target?: any;
-  message?: string;
-}
-
-const tapi = new TaigaApi(relativePath("api"), (window as any).taigaUserToken); // FIXME
-
-class App extends React.Component<AppProps, AppState> {
-  buttonRef: React.Ref<FormControl>;
-
-  constructor(props: AppProps) {
-    super(props);
-
-    this.state = {
-      jumpToValue: "",
-      show: false,
-      target: null,
-      message: "",
-    };
-  }
-
-  componentDidMount() {
-    // TODO: We should find a way to only get_user once, instead of in Home and in App
-  }
-
-  // TODO: Create a component for jumpTo instead
-  jumpToHandleChange(e: any) {
-    // if e is enter, then fetch result and change page
-    this.setState({
-      jumpToValue: e.target.value,
-    });
-  }
-
-  jumpToKeyPress(e: any) {
-    if (e.nativeEvent.key === "Enter") {
-      const escaped_entry = e.target.value.replace(/\//g, "%2F");
-      tapi
-        .get_dataset_version_id(escaped_entry)
-        .then((dataset_version_id) => {
-          const url = relativePath(
-            `/dataset/placeholder/${dataset_version_id}`
-          );
-          window.location.replace(url);
-        })
-        .catch((reason) => {
-          let error_message;
-          // TODO: Find a better way to catch the error properly and not use a string
-          if (reason.message === "NOT FOUND") {
-            error_message = [
-              <p>This dataset or dataset version id was not found</p>,
-            ];
-          } else {
-            error_message = [<p>Unknown error: + {reason.message}</p>];
-          }
-
-          // Indication of how to use it
-          error_message.push(
-            <p>
-              Usage:
-              <ul>
-                <li>dataset_permaname</li>
-                <li>dataset_permaname.version</li>
-                <li>dataset_permaname/version</li>
-              </ul>
-              <ul>
-                <li>dataset_id</li>
-                <li>dataset_id.version</li>
-                <li>dataset_id/version</li>
-              </ul>
-              <ul>
-                <li>dataset_version_id</li>
-              </ul>
-            </p>
-          );
-          // error_message += "</br>  - {dataset_id}.{version}";
-
-          // error_message += "</p>";
-          this.setState({
-            show: true,
-            message: error_message,
-          } as any);
-        });
-    }
-  }
-
-  render() {
-    // TODO: Get the revision from package.json?
-    const trash_link: any = this.props.user && (
-      <Link
-        to={relativePath(`folder/${this.props.user.trash_folder_id}`)}
-        className="headerTitle"
-      >
-        Trash
-      </Link>
-    );
-
-    return (
-      <div id="main_react">
-        <div id="header">
-          <div className="top-page-menu">
-            <img id="taiga_logo" />
-            {/* TODO: Change the way we manage spaces */}
-            <span className="headerSpan softwareAppName">Taiga</span>
-            <Link to={relativePath("")} className="headerTitle">
-              Home
-            </Link>
-            <span className="headerSpan" />
-            <Link to={relativePath("folder/public")} className="headerTitle">
-              Public
-            </Link>
-            <span className="headerSpan" />
-            {trash_link}
-            <span className="headerSpan" />
-            <Link className="headerTitle" to={relativePath("recentlyViewed/")}>
-              Recently Viewed
-            </Link>
-
-            <FormControl
-              ref={(button) => {
-                // FIXME: This is very wrong. State should never be updated like this
-                (this.state as any).target = button;
-              }}
-              type="text"
-              value={this.state.jumpToValue}
-              placeholder="Enter dataset and version (with . or / separator)"
-              onChange={(event) => this.jumpToHandleChange(event)}
-              onKeyPress={(event) => this.jumpToKeyPress(event)}
-              className="headerJumpTo"
-            />
-
-            <Overlay
-              show={this.state.show}
-              rootClose
-              onHide={() => this.setState({ show: false })}
-              placement="bottom"
-              container={this}
-              target={() => ReactDOM.findDOMNode(this.state.target)}
-            >
-              <Popover id="global-search-help-message">
-                {this.state.message}
-              </Popover>
-            </Overlay>
-          </div>
-
-          <div className="login-box pull-right">
-            <Link className="tokenLink headerTitle" to={relativePath("token/")}>
-              My Token
-            </Link>
+const App = (props: React.PropsWithChildren<AppProps>) => {
+  const { user, tapi, showGroupLink, logoSrc, children } = props;
+  // TODO: Get the revision from package.json?
+  return (
+    <>
+      <Navbar id="global-nav" fixedTop fluid inverse>
+        <Navbar.Header>
+          <Navbar.Brand>
+            <img id="taiga-logo" src={logoSrc} alt="" />
+            <span id="taiga-brand-name">Taiga</span>
+          </Navbar.Brand>
+          <Navbar.Toggle />
+        </Navbar.Header>
+        <Navbar.Collapse>
+          <Nav>
+            <NavItem href={relativePath("")}>Home</NavItem>
+            <NavItem href={relativePath("folder/public")}>Public</NavItem>
+            <NavItem href={relativePath(`folder/${user.trash_folder_id}`)}>
+              Trash
+            </NavItem>
+            <NavItem href={relativePath("recentlyViewed/")}>Recent</NavItem>
+          </Nav>
+          <Nav>
+            <Navbar.Form>
+              <GlobalSearch tapi={tapi} />
+            </Navbar.Form>
+          </Nav>
+          <Nav pullRight>
+            <NavItem href={relativePath("token/")}>Account</NavItem>
             {/* TODO: Change this a proper logout behavior */}
             {/* <Link className="logoutLink" to={relativePath('')}>Logout</Link> */}
-            <span className="headerSpan" />
-            {this.props.showGroupLink && (
-              <>
-                <Link
-                  className="tokenLink headerTitle"
-                  to={relativePath("groups/")}
-                >
-                  My Groups
-                </Link>
-                <span className="headerSpan" />
-              </>
-            )}
-            <a
+
+            {/* {showGroupLink && (
+              <NavItem href={relativePath("groups/")}>Groups</NavItem>
+            )} */}
+            <NavItem
               href="https://docs.google.com/forms/d/e/1FAIpQLSe_byA04iJsZq9WPqwNfPkEOej8KXg0XVimr6NURMJ_x3ND9w/viewform"
               target="_blank"
               rel="noreferrer"
-              className="headerTitle headerTitleMinor"
             >
               Feedback
-            </a>
-          </div>
-        </div>
+            </NavItem>
+          </Nav>
+        </Navbar.Collapse>
+      </Navbar>
 
-        <div id="content">
-          <div>{this.props.children}</div>
-        </div>
+      <main>{children}</main>
 
-        <footer id="footer">
-          <div className="top-page-menu bottom-page-text">
+      <Navbar id="global-footer" fixedBottom fluid inverse>
+        <Nav>
+          <Navbar.Text>
             Broad Institute, Cancer Program Data Science{" "}
             {new Date().getFullYear()}
-          </div>
-          <div className="login-box pull-right bottom-page-text">
-            <a
-              href="https://github.com/broadinstitute/taiga"
-              target="_blank"
-              rel="noreferrer"
-              className="headerTitle headerTitleMinor"
-            >
-              SHA {SHA}
-            </a>
-          </div>
-        </footer>
-      </div>
-    );
-  }
-}
+          </Navbar.Text>
+        </Nav>
+        <Nav pullRight>
+          <NavItem
+            href="https://github.com/broadinstitute/taiga"
+            target="_blank"
+            rel="noreferrer"
+          >
+            SHA {SHA}
+          </NavItem>
+        </Nav>
+      </Navbar>
+    </>
+  );
+};
 
 // eslint-disable-next-line import/prefer-default-export
-export function initPage(element: any) {
+export function initPage(element: any, logoSrc: string) {
+  const tapi = new TaigaApi(
+    relativePath("api"),
+    (window as any).taigaUserToken
+  ); // FIXME
+
   Promise.all([tapi.get_user(), tapi.get_all_groups_for_current_user()]).then(
     ([user, groups]) => {
       ReactDOM.render(
         <BrowserRouter>
-          <App tapi={tapi} user={user} showGroupLink={groups.length > 0}>
+          <App
+            tapi={tapi}
+            user={user}
+            showGroupLink={groups.length > 0}
+            logoSrc={logoSrc}
+          >
             <Switch>
               <Redirect
                 from={relativePath("")}

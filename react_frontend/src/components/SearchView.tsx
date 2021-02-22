@@ -14,7 +14,7 @@ import {
   BootstrapTableSearchEntry,
 } from "src/models/models";
 import { LeftNav, MenuItem } from "./LeftNav";
-import { TaigaApi } from "../models/api";
+import TaigaApi from "../models/api";
 
 import { NotFound } from "./NotFound";
 import { SearchInput } from "./Search";

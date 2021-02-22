@@ -3,7 +3,7 @@ import update from "immutability-helper";
 import * as AWS from "aws-sdk";
 import { randomLogNormal } from "d3";
 import { version } from "punycode";
-import { TaigaApi } from "../models/api";
+import TaigaApi from "../models/api";
 import {
   S3Credentials,
   TaskStatus,

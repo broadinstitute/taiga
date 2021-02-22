@@ -13,7 +13,7 @@ import {
   ActivityLogEntry,
   User,
 } from "src/models/models";
-import { TaigaApi } from "src/models/api";
+import TaigaApi from "src/models/api";
 
 import { getDatasetPermaname } from "src/utilities/dataset";
 import { getFigshareLinkedFiles } from "src/utilities/figshare";

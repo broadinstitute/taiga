@@ -12,7 +12,7 @@ import {
 
 import { LeftNav } from "./LeftNav";
 
-import { TaigaApi } from "../models/api";
+import TaigaApi from "../models/api";
 import { AccessLog } from "../models/models";
 
 import { lastAccessFormatter } from "../utilities/formats";

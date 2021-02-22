@@ -6,7 +6,7 @@ import UpdateArticleStep from "./UpdateFigshareUpdateArticleStep";
 import PollResultsStep from "./UpdateFigsharePollResultsStep";
 
 import { DatasetVersion } from "../../models/models";
-import { TaigaApi } from "../../models/api";
+import TaigaApi from "../../models/api";
 import {
   ArticleInfo,
   UpdateArticleResponse,
