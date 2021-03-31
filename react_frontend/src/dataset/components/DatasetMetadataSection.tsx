@@ -1,14 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import {
-  Row,
-  Col,
-  Well,
-  Button,
-  Label,
-  ButtonToolbar,
-  ButtonGroup,
-} from "react-bootstrap";
+import { Row, Col, Well, Button, Label, ButtonToolbar } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBell,
@@ -80,7 +72,7 @@ const DatasetMetadataSection = (props: Props) => {
   const permaname = getDatasetPermaname(dataset);
 
   const datasetIsInHomeFolder = dataset.folders.some(
-    (folder) => folder.id == user.home_folder_id
+    (folder) => folder.id === user.home_folder_id
   );
   return (
     <Row componentClass="section">
@@ -128,17 +120,32 @@ const DatasetMetadataSection = (props: Props) => {
           </Col>
         </Row>
 
-        <div>
-          Version {datasetVersion.version} created by{" "}
-          {datasetVersion.creator.name} on{" "}
-          {toLocalDateString(datasetVersion.creation_date)}
-        </div>
+        <Row>
+          <Col md={8}>
+            <span>
+              Version {datasetVersion.version} created by{" "}
+              {datasetVersion.creator.name} on{" "}
+              {toLocalDateString(datasetVersion.creation_date)}
+            </span>
+          </Col>
+          <Col md={4}>
+            {datasetVersion.state === StatusEnum.Approved && (
+              <Button bsSize="xs">Deprecate this version</Button>
+            )}
+            {datasetVersion.state === StatusEnum.Deprecated && (
+              <>
+                <Button bsSize="xs">De-deprecate this version</Button>
+                <Button bsSize="xs">Delete this version</Button>
+              </>
+            )}
+          </Col>
+        </Row>
         <Row>
           <Col md={8}>
             <div>
               Versions:{" "}
               {dataset.versions.map((dv, index) => {
-                if (dv.id == datasetVersion.id) {
+                if (dv.id === datasetVersion.id) {
                   return (
                     <React.Fragment key={dv.id}>
                       {index + 1}
@@ -161,15 +168,6 @@ const DatasetMetadataSection = (props: Props) => {
           <Col md={4}>
             <ButtonToolbar>
               <Button bsSize="xs">Create new version</Button>
-              {datasetVersion.state == StatusEnum.Approved && (
-                <Button bsSize="xs">Deprecate this version</Button>
-              )}
-              {datasetVersion.state == StatusEnum.Deprecated && (
-                <>
-                  <Button bsSize="xs">De-deprecate this version</Button>
-                  <Button bsSize="xs">Delete this version</Button>
-                </>
-              )}
             </ButtonToolbar>
           </Col>
         </Row>
@@ -180,7 +178,7 @@ const DatasetMetadataSection = (props: Props) => {
                 Contained within{" "}
                 {dataset.folders.map((f, index) => {
                   return (
-                    <span key={index}>
+                    <span key={f.id}>
                       <Link to={relativePath(`folder/${f.id}`)}>{f.name}</Link>
                       {dataset.folders.length !== index + 1 && ", "}
                     </span>
