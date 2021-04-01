@@ -30,44 +30,6 @@ export interface Props {
   updateDataset: (key: keyof Dataset, value: any) => void;
 }
 
-const Actions = (props: Props) => {
-  const { tapi, user, dataset, datasetVersion, updateDataset } = props;
-
-  return (
-    <ButtonToolbar>
-      {dataset.subscription_id ? (
-        <Button
-          bsSize="xs"
-          onClick={() =>
-            tapi
-              .delete_subscription(dataset.subscription_id)
-              .then(() => updateDataset("subscription_id", null))
-          }
-        >
-          <FontAwesomeIcon icon={faBellSlash} />
-          <span>Unsubscribe</span>
-        </Button>
-      ) : (
-        <Button
-          bsSize="xs"
-          onClick={() =>
-            tapi
-              .add_subscription(dataset.id)
-              .then((r) => updateDataset("subscription_id", r))
-          }
-        >
-          <FontAwesomeIcon icon={faBell} />
-          <span>Subscribe</span>
-        </Button>
-      )}
-      <Button bsSize="xs">
-        <FontAwesomeIcon icon={faUserLock} />
-        <span>Edit permissions</span>
-      </Button>
-    </ButtonToolbar>
-  );
-};
-
 const DatasetMetadataSection = (props: Props) => {
   const { tapi, user, dataset, datasetVersion, updateDataset } = props;
   const [description, setDescription] = useState(datasetVersion.description);
@@ -130,7 +92,37 @@ const DatasetMetadataSection = (props: Props) => {
             </Col>
 
             <Col md={4}>
-              <Actions {...props} />
+              <ButtonToolbar>
+                {dataset.subscription_id ? (
+                  <Button
+                    bsSize="xs"
+                    onClick={() =>
+                      tapi
+                        .delete_subscription(dataset.subscription_id)
+                        .then(() => updateDataset("subscription_id", null))
+                    }
+                  >
+                    <FontAwesomeIcon icon={faBellSlash} />
+                    <span>Unsubscribe</span>
+                  </Button>
+                ) : (
+                  <Button
+                    bsSize="xs"
+                    onClick={() =>
+                      tapi
+                        .add_subscription(dataset.id)
+                        .then((r) => updateDataset("subscription_id", r))
+                    }
+                  >
+                    <FontAwesomeIcon icon={faBell} />
+                    <span>Subscribe</span>
+                  </Button>
+                )}
+                <Button bsSize="xs">
+                  <FontAwesomeIcon icon={faUserLock} />
+                  <span>Edit permissions</span>
+                </Button>
+              </ButtonToolbar>
             </Col>
           </Row>
 
