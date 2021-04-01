@@ -1,6 +1,6 @@
-import * as React from "react";
+import React from "react";
 import { Modal, Button } from "react-bootstrap";
-import ReactQuill, { Quill } from "react-quill";
+import LiveMarkdownEditor from "src/common/components/LiveMarkdownEditor";
 
 interface Props {
   show: boolean;
@@ -10,26 +10,29 @@ interface Props {
 }
 
 const EditDescriptionModal = (props: Props) => {
-  const [description, setDescription] = React.useState(
-    props.initialDescription
-  );
+  const { initialDescription, show, onClose, onSave } = props;
+  const [description, setDescription] = React.useState(initialDescription);
   return (
-    <Modal show={props.show} onHide={props.onClose}>
+    <Modal show={show} onHide={onClose}>
       <Modal.Header closeButton>
         <Modal.Title>Modal heading</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <ReactQuill
-          theme="snow"
-          value={this.props.value}
-          onChange={this.props.onChange}
-          modules={modules}
-          formats={formats}
+        <LiveMarkdownEditor
+          description={description}
+          onChange={(newDescription) => setDescription(newDescription)}
         />
       </Modal.Body>
       <Modal.Footer>
-        <Button onClick={props.onClose}>Cancel</Button>
-        <Button onClick={() => props.onSave(description)}></Button>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          onClick={() => {
+            onSave(description);
+            onClose();
+          }}
+        >
+          Save
+        </Button>
       </Modal.Footer>
     </Modal>
   );

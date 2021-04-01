@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useState } from "react";
 import { Story, Meta } from "@storybook/react/types-6-0";
 
 import LiveMarkdownEditor from "src/common/components/LiveMarkdownEditor";
@@ -13,18 +13,16 @@ type WrapperProps = Omit<
   "onChange"
 >;
 
-const Wrapper = (props: WrapperProps) => {
-  const [description, setDescription] = React.useState(props.description);
+const Template: Story<WrapperProps> = (args) => {
+  const [description, setDescription] = useState(args.description);
   return (
     <LiveMarkdownEditor
       onChange={(newDescription) => setDescription(newDescription)}
       description={description}
+      defaultShowPreview={args.defaultShowPreview}
     />
   );
 };
-const Template: Story<WrapperProps> = (args: WrapperProps) => (
-  <Wrapper {...args} />
-);
 
 export const Default = Template.bind({});
 

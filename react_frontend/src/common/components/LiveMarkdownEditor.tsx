@@ -1,5 +1,5 @@
-import * as React from "react";
-import * as Showdown from "showdown";
+import React, { useState, useEffect } from "react";
+import Showdown from "showdown";
 import {
   FormGroup,
   ControlLabel,
@@ -20,9 +20,11 @@ interface LiveMarkdownEditorProps {
 const LiveMarkdownEditor = (props: LiveMarkdownEditorProps) => {
   const { description, onChange, defaultShowPreview } = props;
 
-  const [showPreview, setShowPreview] = React.useState(
-    defaultShowPreview || false
-  );
+  const [showPreview, setShowPreview] = useState(defaultShowPreview);
+
+  useEffect(() => {
+    setShowPreview(defaultShowPreview);
+  }, [defaultShowPreview]);
 
   return (
     <div>
@@ -51,11 +53,15 @@ const LiveMarkdownEditor = (props: LiveMarkdownEditorProps) => {
             dangerouslySetInnerHTML={{
               __html: converter.makeHtml(description),
             }}
-          ></div>
+          />
         </Well>
       )}
     </div>
   );
+};
+
+LiveMarkdownEditor.defaultProps = {
+  defaultShowPreview: false,
 };
 
 export default LiveMarkdownEditor;
