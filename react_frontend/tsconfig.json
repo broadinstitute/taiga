@@ -1,20 +1,20 @@
 {
-    "compilerOptions": {
-        "baseUrl": "./",
-        "outDir": "../taiga2/static/",
-        "sourceMap": true,
-        "noImplicitAny": true,
-        "module": "commonjs",
-        "target": "es6",
-        "lib": [
-            "es6",
-            "es2017",
-            "dom"
-        ],
-        "jsx": "react"
-    },
-    "files": [
-        "./src/index.tsx",
-        "./src/@types/other_modules.d.ts"
-    ]
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "../taiga2/static/",
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "module": "commonjs",
+    "target": "es6",
+    "lib": ["es6", "es2017", "dom"],
+    "jsx": "react",
+    "esModuleInterop": true
+  },
+  "exclude": [
+    "./src/tests/*",
+    "./src/**/*.test.ts",
+    "./src/**/*.test.tsx",
+    "./src/**/*.fixture.ts",
+    "./src/**/*.fixture.tsx"
+  ]
 }
