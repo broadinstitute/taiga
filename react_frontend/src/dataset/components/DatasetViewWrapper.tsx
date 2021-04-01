@@ -63,6 +63,10 @@ const DatasetViewWrapper = (props: Props) => {
                 setDatasetVersion(datasetAndDatasetVersion.datasetVersion);
                 setActivity(activityLogEntries);
 
+                tapi.create_or_update_entry_access_log(
+                  datasetAndDatasetVersion.dataset.id
+                );
+
                 if (
                   datasetId !==
                     getDatasetPermaname(datasetAndDatasetVersion.dataset) ||
