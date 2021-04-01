@@ -420,6 +420,14 @@ def update_dataset_version_description(datasetVersionId, DescriptionUpdate):
 
 
 @validate
+def update_dataset_version_changes_description(datasetVersionId, DescriptionUpdate):
+    models_controller.update_dataset_version_changes_description(
+        datasetVersionId, DescriptionUpdate["changes_description"]
+    )
+    return flask.jsonify({})
+
+
+@validate
 def deprecate_dataset_version(datasetVersionId, deprecationReasonObj):
     reason = deprecationReasonObj["deprecationReason"]
 

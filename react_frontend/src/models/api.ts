@@ -204,12 +204,6 @@ export default class TaigaApi {
     return this._post<void>(`/dataset/${dataset_id}/name`, { name });
   }
 
-  update_dataset_description(dataset_id: string, description: string) {
-    return this._post<void>(`/dataset/${dataset_id}/description`, {
-      description,
-    });
-  }
-
   update_dataset_version_description(
     dataset_version_id: string,
     description: string
@@ -217,6 +211,16 @@ export default class TaigaApi {
     return this._post<void>(
       `/datasetVersion/${dataset_version_id}/description`,
       { description }
+    );
+  }
+
+  update_dataset_version_changes_description(
+    dataset_version_id: string,
+    changes_description: string
+  ) {
+    return this._post<void>(
+      `/datasetVersion/${dataset_version_id}/changes_description`,
+      { changes_description }
     );
   }
 

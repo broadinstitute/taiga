@@ -2,6 +2,8 @@ import React from "react";
 import { Modal, Button } from "react-bootstrap";
 import LiveMarkdownEditor from "src/common/components/LiveMarkdownEditor";
 
+import "src/common/styles/edit_description_modal.css";
+
 interface Props {
   show: boolean;
   initialDescription: string;
@@ -13,7 +15,11 @@ const EditDescriptionModal = (props: Props) => {
   const { initialDescription, show, onClose, onSave } = props;
   const [description, setDescription] = React.useState(initialDescription);
   return (
-    <Modal show={show} onHide={onClose}>
+    <Modal
+      show={show}
+      onHide={onClose}
+      className="taiga-edit-description-modal"
+    >
       <Modal.Header closeButton>
         <Modal.Title>Modal heading</Modal.Title>
       </Modal.Header>
@@ -21,6 +27,7 @@ const EditDescriptionModal = (props: Props) => {
         <LiveMarkdownEditor
           description={description}
           onChange={(newDescription) => setDescription(newDescription)}
+          defaultShowPreview
         />
       </Modal.Body>
       <Modal.Footer>

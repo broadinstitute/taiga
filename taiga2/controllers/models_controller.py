@@ -897,6 +897,30 @@ def update_dataset_version_description(dataset_version_id, new_description):
     return dataset_version
 
 
+def update_dataset_version_changes_description(
+    dataset_version_id, new_changes_description
+):
+    # current_user = get_current_session_user()
+
+    dataset_version = get_dataset_version(dataset_version_id)
+
+    dataset_version.changes_description = new_changes_description
+
+    # activity = DescriptionUpdateActivity(
+    #     user_id=current_user.id,
+    #     dataset_id=dataset_version.dataset_id,
+    #     type=Activity.ActivityType.changed_description,
+    #     dataset_description=new_description,
+    #     dataset_version=dataset_version.version,
+    # )
+
+    db.session.add(dataset_version)
+    # db.session.add(activity)
+    db.session.commit()
+
+    return dataset_version
+
+
 def change_dataset_version_state(
     dataset_version_id: str,
     datasetVersionState: DatasetVersion.DatasetVersionState,

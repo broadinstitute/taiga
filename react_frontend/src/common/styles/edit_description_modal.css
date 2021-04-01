@@ -1,0 +1,5 @@
+.taiga-edit-description-modal .modal-body {
+  min-height: 300px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}

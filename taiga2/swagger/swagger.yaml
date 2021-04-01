@@ -630,6 +630,32 @@ paths:
         200:
           description: Successfully updated
 
+  /datasetVersion/{datasetVersionId}/changes_description:
+    post:
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: update_dataset_version_changes_description
+      description: Update dataset version changes description
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetVersionId
+          in: path
+          type: string
+          description: Dataset Version ID
+          required: true
+        - in: body
+          name: DescriptionUpdate
+          schema:
+            type: object
+            required:
+              - changes_description
+            properties:
+              changes_description:
+                type: string
+      responses:
+        200:
+          description: Successfully updated
+
   /datasetVersion/{datasetVersionId}/deprecate:
     post:
       x-swagger-router-controller: taiga2.controllers.endpoint
