@@ -6,6 +6,7 @@ import { Route, Redirect, Switch } from "react-router";
 import { BrowserRouter } from "react-router-dom";
 
 import DatasetViewWrapper from "src/dataset/components/DatasetViewWrapper";
+import FolderViewWrapper from "src/folder/components/FolderViewWrapper";
 import {
   FormGroup,
   FormControl,
@@ -17,7 +18,6 @@ import {
   Popover,
 } from "react-bootstrap";
 import HTMLResponseError from "src/common/models/HTMLReponseError";
-import { FolderView } from "./components/FolderView";
 import { SearchView } from "./components/SearchView";
 
 import TaigaApi from "./models/api";
@@ -81,6 +81,7 @@ const GlobalSearch = (props: GlobalSearchProps) => {
             setSearchQuery(e.currentTarget.value as string)
           }
           onKeyPress={handleSearch}
+          id="global-search"
         />
       </FormGroup>
 
@@ -287,14 +288,13 @@ export function initPage(element: any, logoSrc: string) {
               <Route
                 path={relativePath("folder/:folderId")}
                 render={(props) => {
+                  const { folderId } = props.match.params;
+
                   return (
-                    <FolderView
+                    <FolderViewWrapper
+                      key={`folder/${folderId}`}
                       tapi={tapi}
                       user={user}
-                      currentUser={user.id}
-                      match={props.match}
-                      history={props.history}
-                      location={props.location}
                     />
                   );
                 }}

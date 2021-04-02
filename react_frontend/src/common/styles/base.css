@@ -28,6 +28,14 @@ main {
   text-decoration: underline;
 }
 
+@media (min-width: 768px) {
+  #global-search {
+    min-width: 200px;
+    width: 345px;
+    max-width: calc(100vw - 570px);
+  }
+}
+
 #global-footer {
   min-height: 22px;
   max-height: 22px;
