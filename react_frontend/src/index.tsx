@@ -123,7 +123,7 @@ interface AppProps {
 }
 
 const App = (props: React.PropsWithChildren<AppProps>) => {
-  const { user, tapi, showGroupLink, logoSrc, children } = props;
+  const { user, tapi, logoSrc, children } = props;
   // TODO: Get the revision from package.json?
   return (
     <>
@@ -177,7 +177,7 @@ const App = (props: React.PropsWithChildren<AppProps>) => {
             {new Date().getFullYear()}
           </Navbar.Text>
         </Nav>
-        <Nav pullRight>
+        <Nav pullRight className="hidden-xs">
           <NavItem
             href="https://github.com/broadinstitute/taiga"
             target="_blank"
