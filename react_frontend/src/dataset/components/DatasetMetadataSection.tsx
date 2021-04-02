@@ -174,7 +174,7 @@ const DatasetMetadataSection = (props: Props) => {
                         .then(() => {
                           updateDatasetVersion({
                             state: { $set: StatusEnum.Approved },
-                            reason_state: { $set: StatusEnum.Approved },
+                            reason_state: { $set: null },
                           });
                         });
                     }}
@@ -325,7 +325,11 @@ const DatasetMetadataSection = (props: Props) => {
       <EditDescriptionModal
         show={showDeprecateDatasetVersionModal}
         title="Give deprecation reason"
-        initialDescription={null}
+        initialDescription={
+          datasetVersion.state === StatusEnum.Approved
+            ? null
+            : datasetVersion.reason_state
+        }
         onSave={(reason) => {
           tapi.deprecate_dataset_version(datasetVersion.id, reason).then(() => {
             updateDatasetVersion({

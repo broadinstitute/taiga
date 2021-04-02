@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Modal, Button } from "react-bootstrap";
 import LiveMarkdownEditor from "src/common/components/LiveMarkdownEditor";
 
@@ -15,6 +15,11 @@ interface Props {
 const EditDescriptionModal = (props: Props) => {
   const { initialDescription, title, show, onClose, onSave } = props;
   const [description, setDescription] = React.useState(initialDescription);
+
+  useEffect(() => {
+    setDescription(initialDescription);
+  }, [initialDescription]);
+
   return (
     <Modal
       show={show}
