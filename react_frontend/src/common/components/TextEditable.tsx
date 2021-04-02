@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as ReactDOM from "react-dom";
 import {
   Button,
@@ -21,11 +21,21 @@ interface Props {
   onConfirm: (newValue: string) => void;
 }
 const TextEditable = (props: Props) => {
-  const { id, title, value, disabled, placement, onConfirm } = props;
+  const {
+    id,
+    title,
+    value: defaultValue,
+    disabled,
+    placement,
+    onConfirm,
+  } = props;
+  const [value, setValue] = useState(defaultValue);
 
   const overlayRef = useRef<OverlayTrigger>();
-  const buttonRef = useRef<HTMLAnchorElement>();
-  const inputRef = useRef<FormControl>();
+
+  useEffect(() => {
+    setValue(defaultValue);
+  }, [defaultValue]);
 
   if (disabled) {
     return <span>{value}</span>;
@@ -40,18 +50,14 @@ const TextEditable = (props: Props) => {
       <Form inline>
         <FormControl
           type="text"
-          defaultValue={value}
-          ref={inputRef}
+          value={value}
           bsClass="form-control input-fixed-width"
         />
         <span className="spacer-xs" />
         <Button
           bsStyle="primary"
           onClick={() => {
-            const newValue = (ReactDOM.findDOMNode(
-              inputRef.current
-            ) as HTMLInputElement).value;
-            onConfirm(newValue);
+            onConfirm(value);
             hideOverlay();
           }}
           bsClass="btn btn-primary "
@@ -75,7 +81,7 @@ const TextEditable = (props: Props) => {
       overlay={popover}
       ref={overlayRef}
     >
-      <a ref={buttonRef} aria-label={title} title={title} className="editable">
+      <a aria-label={title} title={title} className="editable">
         {value}
       </a>
     </OverlayTrigger>

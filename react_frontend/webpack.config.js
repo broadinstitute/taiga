@@ -52,7 +52,6 @@ module.exports = {
   externals: {
     react: "React",
     "react-dom": "ReactDOM",
-    "react-bootstrap": "ReactBootstrap",
     "react-bootstrap-table": "ReactBootstrapTable",
     "react-router": "ReactRouter",
     "aws-sdk": "AWS",
