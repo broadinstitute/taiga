@@ -8,9 +8,9 @@ RUN pip install -r requirements.txt
 
 COPY react_frontend /install/taiga/react_frontend/
 # Install frontend javascript dependencies
-RUN cd /install/taiga/react_frontend && yarn install
+RUN yarn --cwd react_frontend install
 
-RUN cd /install/taiga/react_frontend && ./node_modules/.bin/webpack
+RUN yarn --cwd react_frontend webpack --env=production
 
 COPY flask setup_env.sh autoapp.py /install/taiga/
 

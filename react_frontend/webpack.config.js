@@ -1,59 +1,17 @@
-var webpack = require("webpack");
-var ManifestPlugin = require("webpack-manifest-plugin");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
-const ESLintPlugin = require("eslint-webpack-plugin");
-const path = require("path");
+const { merge } = require("webpack-merge");
 
-module.exports = {
-  mode: "development",
-  entry: "./src/index.tsx",
-  output: {
-    filename: "react_frontend.js",
-    path: __dirname + "./../taiga2/static/js",
-    library: "Taiga",
-  },
+const commonConfig = require("./webpack.config.common");
+const productionConfig = require("./webpack.config.prod");
+const developmentConfig = require("./webpack.config.dev");
 
-  // Enable sourcemaps for debugging webpack's output.
-  devtool: "source-map",
+module.exports = (env) => {
+  if (env.development) {
+    return merge(commonConfig, developmentConfig);
+  }
 
-  plugins: [new ESLintPlugin({ extensions: ["js", "ts", "tsx"] })],
+  if (env.production) {
+    return merge(commonConfig, productionConfig);
+  }
 
-  resolve: {
-    plugins: [new TsconfigPathsPlugin()],
-    // Add '.ts' and '.tsx' as resolvable extensions.
-    extensions: [".ts", ".tsx", ".js", ".json"],
-  },
-
-  module: {
-    rules: [
-      // All files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'.
-      { test: /\.tsx?$/, loader: "ts-loader" },
-      // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
-      {
-        enforce: "pre",
-        test: /\.js$/,
-        loader: "source-map-loader",
-        exclude: ["/node_modules/"],
-      },
-      // the following are only needed for processing css
-      { test: /\.css$/, use: ["style-loader", "css-loader"] },
-      {
-        test: /\.(ttf|otf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?|(jpg|gif)$/,
-        loader: "file-loader",
-      },
-      {
-        test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        loader: "url-loader?limit=10000&mimetype=application/font-woff",
-      },
-    ],
-  },
-
-  externals: {
-    react: "React",
-    "react-dom": "ReactDOM",
-    "react-bootstrap-table": "ReactBootstrapTable",
-    "react-router": "ReactRouter",
-    "aws-sdk": "AWS",
-  },
+  throw new Error("No matching configuration was found!");
 };
