@@ -1,6 +1,5 @@
-import * as React from "react";
-import { useState, useEffect, useRef } from "react";
-import * as ReactDOM from "react-dom";
+import React, { useState, useEffect, useRef } from "react";
+
 import {
   Button,
   Glyphicon,
@@ -8,6 +7,7 @@ import {
   Popover,
   Form,
   FormControl,
+  FormControlProps,
 } from "react-bootstrap";
 
 import "src/common/styles/editable.css";
@@ -24,18 +24,18 @@ const TextEditable = (props: Props) => {
   const {
     id,
     title,
-    value: defaultValue,
+    value: initialValue,
     disabled,
     placement,
     onConfirm,
   } = props;
-  const [value, setValue] = useState(defaultValue);
+  const [value, setValue] = useState(initialValue);
 
   const overlayRef = useRef<OverlayTrigger>();
 
   useEffect(() => {
-    setValue(defaultValue);
-  }, [defaultValue]);
+    setValue(initialValue);
+  }, [initialValue]);
 
   if (disabled) {
     return <span>{value}</span>;
@@ -51,6 +51,9 @@ const TextEditable = (props: Props) => {
         <FormControl
           type="text"
           value={value}
+          onChange={(e: React.FormEvent<FormControl & FormControlProps>) =>
+            setValue(e.currentTarget.value as string)
+          }
           bsClass="form-control input-fixed-width"
         />
         <span className="spacer-xs" />
@@ -81,11 +84,21 @@ const TextEditable = (props: Props) => {
       overlay={popover}
       ref={overlayRef}
     >
-      <a aria-label={title} title={title} className="editable">
-        {value}
-      </a>
+      <button
+        aria-label={title}
+        title={title}
+        className="editable"
+        type="button"
+      >
+        {initialValue}
+      </button>
     </OverlayTrigger>
   );
+};
+
+TextEditable.defaultProps = {
+  disabled: false,
+  placement: "top",
 };
 
 export default TextEditable;
