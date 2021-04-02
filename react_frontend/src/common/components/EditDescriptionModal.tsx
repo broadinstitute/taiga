@@ -39,6 +39,7 @@ const EditDescriptionModal = (props: Props) => {
       <Modal.Footer>
         <Button onClick={onClose}>Cancel</Button>
         <Button
+          disabled={!description}
           onClick={() => {
             onSave(description);
             onClose();
