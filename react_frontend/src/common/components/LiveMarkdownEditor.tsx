@@ -45,6 +45,7 @@ const LiveMarkdownEditor = (props: LiveMarkdownEditorProps) => {
           onChange={(e: React.FormEvent<FormControl & FormControlProps>) =>
             onChange(e.currentTarget.value as string)
           }
+          rows={5}
         />
       </FormGroup>
       {showPreview && (
