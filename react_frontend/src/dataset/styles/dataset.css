@@ -1,6 +1,9 @@
-.dataset-view .dataset-heading {
-  display: flex;
-  align-items: flex-end;
+@media (min-width: 992px) {
+  /* Align buttons to the bottom of the row for medium or larger screen sizes */
+  .dataset-view .dataset-heading {
+    display: flex;
+    align-items: flex-end;
+  }
 }
 
 .select-text {
