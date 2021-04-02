@@ -181,7 +181,26 @@ const DatasetMetadataSection = (props: Props) => {
                   >
                     De-deprecate this version
                   </Button>
-                  <Button bsSize="xs">Delete this version</Button>
+                  <Button
+                    bsSize="xs"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "You are about to delete permanently this version of the dataset. Are you sure?"
+                        )
+                      ) {
+                        tapi
+                          .delete_dataset_version(datasetVersion.id)
+                          .then(() => {
+                            updateDatasetVersion({
+                              state: { $set: StatusEnum.Deleted },
+                            });
+                          });
+                      }
+                    }}
+                  >
+                    Delete this version
+                  </Button>
                 </>
               )}
             </Col>
