@@ -10,6 +10,7 @@ import {
   faTimesCircle,
   faUserLock,
 } from "@fortawesome/free-solid-svg-icons";
+import { Query } from "immutability-helper";
 
 import { renderDescription } from "src/components/Dialogs";
 import TextEditable from "src/common/components/TextEditable";
@@ -28,10 +29,18 @@ export interface Props {
   dataset: Dataset;
   datasetVersion: DatasetVersion;
   updateDataset: (key: keyof Dataset, value: any) => void;
+  updateDatasetVersion: (updates: Query<DatasetVersion>) => void;
 }
 
 const DatasetMetadataSection = (props: Props) => {
-  const { tapi, user, dataset, datasetVersion, updateDataset } = props;
+  const {
+    tapi,
+    user,
+    dataset,
+    datasetVersion,
+    updateDataset,
+    updateDatasetVersion,
+  } = props;
   const [description, setDescription] = useState(datasetVersion.description);
   const [showEditDescriptionModal, setShowEditDescriptionModal] = useState(
     false
@@ -42,6 +51,10 @@ const DatasetMetadataSection = (props: Props) => {
   const [
     showEditChangesDescriptionModal,
     setShowEditChangesDescriptionModal,
+  ] = useState(false);
+  const [
+    showDeprecateDatasetVersionModal,
+    setShowDeprecateDatasetVersionModal,
   ] = useState(false);
 
   const permaname = getDatasetPermaname(dataset);
@@ -75,7 +88,10 @@ const DatasetMetadataSection = (props: Props) => {
                 {datasetVersion.state === StatusEnum.Deprecated && (
                   <small>
                     <Label bsStyle="warning">
-                      <FontAwesomeIcon icon={faExclamationCircle} />
+                      <FontAwesomeIcon
+                        icon={faExclamationCircle}
+                        style={{ marginInlineEnd: 4 }}
+                      />
                       <span>Deprecated</span>
                     </Label>
                   </small>
@@ -83,7 +99,10 @@ const DatasetMetadataSection = (props: Props) => {
                 {datasetVersion.state === StatusEnum.Deleted && (
                   <small>
                     <Label bsStyle="danger">
-                      <FontAwesomeIcon icon={faTimesCircle} />
+                      <FontAwesomeIcon
+                        icon={faTimesCircle}
+                        style={{ marginInlineEnd: 4 }}
+                      />
                       <span>Deleted</span>
                     </Label>
                   </small>
@@ -136,11 +155,32 @@ const DatasetMetadataSection = (props: Props) => {
             </Col>
             <Col md={4}>
               {datasetVersion.state === StatusEnum.Approved && (
-                <Button bsSize="xs">Deprecate this version</Button>
+                <Button
+                  bsSize="xs"
+                  onClick={() => {
+                    setShowDeprecateDatasetVersionModal(true);
+                  }}
+                >
+                  Deprecate this version
+                </Button>
               )}
               {datasetVersion.state === StatusEnum.Deprecated && (
                 <>
-                  <Button bsSize="xs">De-deprecate this version</Button>
+                  <Button
+                    bsSize="xs"
+                    onClick={() => {
+                      tapi
+                        .de_deprecate_dataset_version(datasetVersion.id)
+                        .then(() => {
+                          updateDatasetVersion({
+                            state: { $set: StatusEnum.Approved },
+                            reason_state: { $set: StatusEnum.Approved },
+                          });
+                        });
+                    }}
+                  >
+                    De-deprecate this version
+                  </Button>
                   <Button bsSize="xs">Delete this version</Button>
                 </>
               )}
@@ -252,6 +292,7 @@ const DatasetMetadataSection = (props: Props) => {
       </Row>
       <EditDescriptionModal
         show={showEditDescriptionModal}
+        title="Edit description"
         initialDescription={description}
         onSave={(newDescription) => {
           tapi
@@ -267,6 +308,7 @@ const DatasetMetadataSection = (props: Props) => {
       />
       <EditDescriptionModal
         show={showEditChangesDescriptionModal}
+        title="Edit description of changes"
         initialDescription={changesDescription}
         onSave={(newChangesDescription) => {
           tapi
@@ -279,6 +321,20 @@ const DatasetMetadataSection = (props: Props) => {
             });
         }}
         onClose={() => setShowEditChangesDescriptionModal(false)}
+      />
+      <EditDescriptionModal
+        show={showDeprecateDatasetVersionModal}
+        title="Give deprecation reason"
+        initialDescription={null}
+        onSave={(reason) => {
+          tapi.deprecate_dataset_version(datasetVersion.id, reason).then(() => {
+            updateDatasetVersion({
+              state: { $set: StatusEnum.Deprecated },
+              reason_state: { $set: reason },
+            });
+          });
+        }}
+        onClose={() => setShowDeprecateDatasetVersionModal(false)}
       />
     </>
   );

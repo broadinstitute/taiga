@@ -6,13 +6,14 @@ import "src/common/styles/edit_description_modal.css";
 
 interface Props {
   show: boolean;
+  title: string;
   initialDescription: string;
   onClose: () => void;
   onSave: (description: string) => void;
 }
 
 const EditDescriptionModal = (props: Props) => {
-  const { initialDescription, show, onClose, onSave } = props;
+  const { initialDescription, title, show, onClose, onSave } = props;
   const [description, setDescription] = React.useState(initialDescription);
   return (
     <Modal
@@ -21,7 +22,7 @@ const EditDescriptionModal = (props: Props) => {
       className="taiga-edit-description-modal"
     >
       <Modal.Header closeButton>
-        <Modal.Title>Modal heading</Modal.Title>
+        <Modal.Title>{title}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <LiveMarkdownEditor

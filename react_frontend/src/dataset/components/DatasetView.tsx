@@ -1,5 +1,5 @@
 import * as React from "react";
-import update from "immutability-helper";
+import update, { Query } from "immutability-helper";
 
 import DatasetMetadataSection from "src/dataset/components/DatasetMetadataSection";
 import ActivityLogSection from "src/dataset/components/ActivityLogSection";
@@ -31,6 +31,9 @@ interface Props {
 const DatasetView = (props: Props) => {
   const { tapi, user, dataset, datasetVersion, activityLog } = props;
   const [workingDataset, setWorkingDataset] = React.useState(dataset);
+  const [workingDatasetVersion, setWorkingDatasetVersion] = React.useState(
+    datasetVersion
+  );
 
   const datasetPermaname = getDatasetPermaname(workingDataset);
   const figshareLinkedFiles = React.useMemo(
@@ -44,26 +47,29 @@ const DatasetView = (props: Props) => {
         tapi={tapi}
         user={user}
         dataset={workingDataset}
-        datasetVersion={datasetVersion}
+        datasetVersion={workingDatasetVersion}
         updateDataset={(key: keyof Dataset, value: any) =>
           setWorkingDataset(update(workingDataset, { [key]: { $set: value } }))
         }
+        updateDatasetVersion={(updates: Query<DatasetVersion>) => {
+          setWorkingDatasetVersion(update(workingDatasetVersion, updates));
+        }}
       />
       <ContentSection
         tapi={tapi}
         datasetPermaname={datasetPermaname}
-        datasetVersion={datasetVersion}
+        datasetVersion={workingDatasetVersion}
         figshareLinkedFiles={figshareLinkedFiles}
       />
       <CodeSampleSection
         datasetPermaname={datasetPermaname}
-        datasetVersion={datasetVersion}
+        datasetVersion={workingDatasetVersion}
       />
       <FigshareSection
         tapi={tapi}
         userFigshareAccountLinked={user.figshare_account_linked}
         datasetName={workingDataset.name}
-        datasetVersion={datasetVersion}
+        datasetVersion={workingDatasetVersion}
         figshareLinkedFiles={figshareLinkedFiles}
         handleFigshareUploadComplete={null}
       />

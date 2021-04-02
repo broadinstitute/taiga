@@ -37,6 +37,7 @@ const Template: Story<WrapperProps> = (args) => {
       <div>Current description:</div>
       <div>{description}</div>
       <EditDescriptionModal
+        title="Edit description story"
         initialDescription={description}
         show={show}
         onClose={onClose}
