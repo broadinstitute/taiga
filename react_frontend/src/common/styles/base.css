@@ -133,6 +133,10 @@ main {
   white-space: pre-wrap;
 }
 
+.italicize {
+  font-style: italic;
+}
+
 /*-- Loading Overlay styling --*/
 /* Absolute Center Spinner */
 .loadingOverlay {

@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from "react";
-import Showdown from "showdown";
 import {
   FormGroup,
   ControlLabel,
   FormControl,
   Checkbox,
   FormControlProps,
-  Well,
 } from "react-bootstrap";
-
-const converter = new Showdown.Converter();
+import { renderDescription } from "src/components/Dialogs";
 
 interface LiveMarkdownEditorProps {
   description: string;
@@ -48,15 +45,12 @@ const LiveMarkdownEditor = (props: LiveMarkdownEditorProps) => {
           rows={5}
         />
       </FormGroup>
-      {showPreview && (
-        <Well>
-          <div
-            dangerouslySetInnerHTML={{
-              __html: converter.makeHtml(description),
-            }}
-          />
-        </Well>
-      )}
+      {showPreview &&
+        (description ? (
+          renderDescription(description)
+        ) : (
+          <div className="italicize">None</div>
+        ))}
     </div>
   );
 };

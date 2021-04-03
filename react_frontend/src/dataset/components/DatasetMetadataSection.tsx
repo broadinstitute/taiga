@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Row, Col, Well, Button, Label, ButtonToolbar } from "react-bootstrap";
+import { Row, Col, Button, Label, ButtonToolbar } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBell,
   faBellSlash,
-  faEdit,
   faExclamationCircle,
   faTimesCircle,
   faUserLock,
@@ -15,6 +14,7 @@ import { Query } from "immutability-helper";
 import { renderDescription } from "src/components/Dialogs";
 import TextEditable from "src/common/components/TextEditable";
 import EditDescriptionModal from "src/common/components/EditDescriptionModal";
+import EditableDescription from "src/entry/components/EditableDescription";
 
 import { Dataset, DatasetVersion, StatusEnum, User } from "src/models/models";
 import TaigaApi from "src/models/api";
@@ -41,17 +41,6 @@ const DatasetMetadataSection = (props: Props) => {
     updateDataset,
     updateDatasetVersion,
   } = props;
-  const [description, setDescription] = useState(datasetVersion.description);
-  const [showEditDescriptionModal, setShowEditDescriptionModal] = useState(
-    false
-  );
-  const [changesDescription, setChangesDescription] = useState(
-    datasetVersion.changes_description
-  );
-  const [
-    showEditChangesDescriptionModal,
-    setShowEditChangesDescriptionModal,
-  ] = useState(false);
   const [
     showDeprecateDatasetVersionModal,
     setShowDeprecateDatasetVersionModal,
@@ -273,61 +262,47 @@ const DatasetMetadataSection = (props: Props) => {
           {renderDescription(datasetVersion.reason_state)}
         </>
       )}
+      <Row>
+        <Col md={12}>
+          <EditableDescription
+            description={datasetVersion.description}
+            title="Description"
+            onSave={(newDescription) =>
+              tapi
+                .update_dataset_version_description(
+                  datasetVersion.id,
+                  newDescription
+                )
+                .then(() =>
+                  updateDatasetVersion({
+                    description: { $set: newDescription },
+                  })
+                )
+            }
+          />
+        </Col>
+      </Row>
+      <Row>
+        <Col md={12}>
+          <EditableDescription
+            description={datasetVersion.changes_description}
+            title="Description"
+            onSave={(newDescription) =>
+              tapi
+                .update_dataset_version_changes_description(
+                  datasetVersion.id,
+                  newDescription
+                )
+                .then(() =>
+                  updateDatasetVersion({
+                    changes_description: { $set: newDescription },
+                  })
+                )
+            }
+          />
+        </Col>
+      </Row>
 
-      <h3 className="h5 mb-1">
-        <span className="mr-2">Description</span>
-        <Button bsSize="xs" onClick={() => setShowEditDescriptionModal(true)}>
-          <FontAwesomeIcon icon={faEdit} />
-        </Button>
-      </h3>
-      {description ? renderDescription(description) : <div>No description</div>}
-
-      <h3 className="h5 mb-1">
-        <span className="mr-2">Changes this version</span>
-        <Button
-          bsSize="xs"
-          onClick={() => setShowEditChangesDescriptionModal(true)}
-        >
-          <FontAwesomeIcon icon={faEdit} />
-        </Button>
-      </h3>
-      {changesDescription ? (
-        <>{renderDescription(changesDescription)}</>
-      ) : (
-        <div>No description of changes</div>
-      )}
-      <EditDescriptionModal
-        show={showEditDescriptionModal}
-        title="Edit description"
-        initialDescription={description}
-        onSave={(newDescription) => {
-          tapi
-            .update_dataset_version_description(
-              datasetVersion.id,
-              newDescription
-            )
-            .then(() => {
-              setDescription(newDescription);
-            });
-        }}
-        onClose={() => setShowEditDescriptionModal(false)}
-      />
-      <EditDescriptionModal
-        show={showEditChangesDescriptionModal}
-        title="Edit description of changes"
-        initialDescription={changesDescription}
-        onSave={(newChangesDescription) => {
-          tapi
-            .update_dataset_version_changes_description(
-              datasetVersion.id,
-              newChangesDescription
-            )
-            .then(() => {
-              setChangesDescription(newChangesDescription);
-            });
-        }}
-        onClose={() => setShowEditChangesDescriptionModal(false)}
-      />
       <EditDescriptionModal
         show={showDeprecateDatasetVersionModal}
         title="Give deprecation reason"

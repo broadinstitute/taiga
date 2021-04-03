@@ -17,8 +17,10 @@ const EditDescriptionModal = (props: Props) => {
   const [description, setDescription] = React.useState(initialDescription);
 
   useEffect(() => {
-    setDescription(initialDescription);
-  }, [initialDescription]);
+    if (show) {
+      setDescription(initialDescription);
+    }
+  }, [initialDescription, show]);
 
   return (
     <Modal
