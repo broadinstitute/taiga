@@ -205,24 +205,19 @@ def get_public_article_information(
 def get_private_article_information(
     figshare_dataset_version_link: FigshareDatasetVersionLink,
 ):
-    current_user = mc.get_current_session_user()
-    if current_user.id == figshare_dataset_version_link.creator_id:
-        token = mc.get_figshare_personal_token_for_current_user()
-        if token is None:
-            return None
+    token = mc.get_figshare_personal_token_for_current_user()
+    if token is None:
+        return None
 
-        if not is_token_valid(token):
-            mc.remove_figshare_token_for_current_user()
-            return None
+    if not is_token_valid(token):
+        mc.remove_figshare_token_for_current_user()
+        return None
 
-        return issue_request(
-            "GET",
-            "account/articles/{}".format(
-                figshare_dataset_version_link.figshare_article_id
-            ),
-            token,
-        )
-    return None
+    return issue_request(
+        "GET",
+        "account/articles/{}".format(figshare_dataset_version_link.figshare_article_id),
+        token,
+    )
 
 
 def get_public_article_files(article_id: str):
