@@ -63,29 +63,9 @@ def _compress_and_upload_to_s3(
     )
 
 
-def _infer_column_types(
-    download_dest: IO, compressed_dest: IO, mime_type: str, encoding: Optional[str]
-):
-    delimiter = "," if mime_type == "text/csv" else "\t"
-    try:
-        column_types = conversion.sniff.sniff2(
-            download_dest.name,
-            encoding if encoding is not None else "iso-8859-1",
-            delimiter,
-        )
-        return column_types
-    except Exception:
-        log.warning(
-            "Could not guess column types for {}".format(compressed_dest.name),
-            exc_info=True,
-        )
-    return None
-
-
 def _from_s3_convert_to_s3(
     progress,
     upload_session_file_id,
-    calculate_column_types: bool,
     s3_object,
     download_dest,
     converted_dest,
@@ -118,13 +98,7 @@ def _from_s3_convert_to_s3(
         encoding,
     )
 
-    column_types = (
-        _infer_column_types(download_dest, compressed_dest, mime_type, encoding)
-        if calculate_column_types
-        else None
-    )
-
-    return import_result, column_types
+    return import_result
 
 
 @celery.task(bind=True)
@@ -142,8 +116,9 @@ def background_process_new_upload_session_file(
     progress = Progress(self)
 
     # If we receive a raw file, we don't need to do anything
-    from taiga2.models import DataFile
     from taiga2 import models
+
+    column_types = None
 
     # TODO: Instead of comparing two strings, we could also use DataFileType(file_type) and compare the result, or catch the exception
     if file_type == models.InitialFileType.Raw.value:
@@ -181,7 +156,6 @@ def background_process_new_upload_session_file(
             long_summary=None,
             short_summary=humanize.naturalsize(existing_obj.content_length),
         )
-        column_types = None
     else:
         if file_type == models.InitialFileType.NumericMatrixCSV.value:
             converter = conversion.csv_to_hdf5
@@ -209,14 +183,9 @@ def background_process_new_upload_session_file(
                     else:
                         mime_type = "text/tab-separated-values"
 
-                    calculate_column_types = (
-                        file_type == models.InitialFileType.TableCSV.value
-                    )
-
-                    import_result, column_types = _from_s3_convert_to_s3(
+                    import_result = _from_s3_convert_to_s3(
                         progress,
                         upload_session_file_id,
-                        calculate_column_types,
                         s3_object,
                         download_dest,
                         converted_dest,
