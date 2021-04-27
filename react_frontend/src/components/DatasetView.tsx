@@ -779,6 +779,10 @@ export class DatasetView extends React.Component<
           {descriptionDetailsFormatter(
             (row as VersionAdditionActivity).dataset_description
           )}
+          {descriptionDetailsFormatter(
+            (row as VersionAdditionActivity).changes_description,
+            "Description of changes"
+          )}
         </div>
       );
     } else if (cell == ActivityTypeEnum.started_log) {

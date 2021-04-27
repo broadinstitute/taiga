@@ -472,6 +472,19 @@ class VersionAdditionActivityLogSchema(ActivityLogBaseSchema):
     dataset_description = fields.fields.String()
     dataset_version = fields.fields.Integer()
 
+    changes_description = fields.fields.Method(
+        "get_dataset_version_changes_description"
+    )
+
+    def get_dataset_version_changes_description(self, obj):
+        dataset_version = next(
+            dv
+            for dv in obj.dataset.dataset_versions
+            if int(dv.name) == obj.dataset_version
+        )
+
+        return dataset_version.changes_description
+
 
 class LogStartActivityLogSchema(ActivityLogBaseSchema):
     dataset_name = fields.fields.String()

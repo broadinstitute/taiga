@@ -583,6 +583,7 @@ export class VersionAdditionActivity extends ActivityLogEntry {
   type: ActivityTypeEnum.added_version;
   dataset_description: string | null;
   dataset_version: number;
+  changes_description: string | null;
 }
 
 export class LogStartActivity extends ActivityLogEntry {
