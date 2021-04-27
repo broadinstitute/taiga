@@ -723,6 +723,9 @@ def _format_datafile_diff(datafile_diff):
     comments = ""
     for category in ["added", "removed", "updated", "renamed"]:
         if len(datafile_diff[category]):
+            if comments != "":
+                comments += "\n"
+
             comments += "{}:\n".format(category.capitalize())
             f = (
                 format_added_removed_updated
