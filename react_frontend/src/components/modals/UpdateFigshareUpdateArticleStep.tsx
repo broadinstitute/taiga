@@ -218,7 +218,7 @@ export default class UpdateFigshareUpdateArticleStep extends React.Component<
                 unchangedFiles.some(fileHasSameName);
 
               return (
-                <tr>
+                <tr key={file.datafileId}>
                   <td>
                     <Checkbox
                       checked={file.addFile}
@@ -318,7 +318,7 @@ export default class UpdateFigshareUpdateArticleStep extends React.Component<
       updateSubmitted,
     } = this.state;
     const addingUnnamedFile = additionalTaigaDatafiles.some(
-      (file) => file.addFile && !!file.name
+      (file) => file.addFile && !file.name
     );
     const noUpdates =
       (removedFigshareFiles.length == 0 ||
