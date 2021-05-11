@@ -17,6 +17,7 @@
     "file-saver": "^2.0.2",
     "filesize": "^3.3.0",
     "immutability-helper": "2.7.1",
+    "lodash": "^4.17.21",
     "react": "^17.0.0",
     "react-bootstrap": "^0.32.3",
     "react-bootstrap-table": "^4.3.1",
