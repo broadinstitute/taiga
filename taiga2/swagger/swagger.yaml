@@ -1580,7 +1580,9 @@ paths:
                         - "null"
                     file_name:
                       description: If adding a file, the name to use in the article (replacing a file will keep old file name)
-                      type: string
+                      type:
+                        - string
+                        - "null"
       responses:
         200:
           description: Link created

@@ -1347,36 +1347,47 @@ def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
 
     try:
         for file_to_update in files_to_update:
-            datafile = models_controller.get_datafile(file_to_update["datafile_id"])
-            if datafile.type == "gcs":
-                file_to_update["failure_reason"] = "Cannot upload GCS pointer files"
-                continue
-            elif datafile.type == "virtual":
-                datafile = datafile.underlying_data_file
+            action = file_to_update["action"]
 
-            if datafile.compressed_s3_key is None:
-                file_to_update[
-                    "failure_reason"
-                ] = "Cannot upload files without compressed S3 file"
-                continue
-
-            if file_to_update["action"] in {"Delete", "Replace"}:
+            if action == "Delete":
                 figshare.delete_file(
                     article_id, file_to_update["figshare_file_id"], token
                 )
+            elif action == "Add":
+                datafile_id = file_to_update["datafile_id"]
+                if datafile_id is None:
+                    file_to_update[
+                        "failure_reason"
+                    ] = "Cannot add or replace file without datafile ID"
+                    continue
 
-            if file_to_update["action"] in {"Add", "Replace"}:
+                datafile = models_controller.get_datafile(datafile_id)
+
+                if datafile.type == "gcs":
+                    file_to_update["failure_reason"] = "Cannot upload GCS pointer files"
+                    continue
+                elif datafile.type == "virtual":
+                    datafile = datafile.underlying_data_file
+
+                if datafile.compressed_s3_key is None:
+                    file_to_update[
+                        "failure_reason"
+                    ] = "Cannot upload files without compressed S3 file"
+                    continue
+
                 task = upload_datafile_to_figshare.delay(
                     figshare_dataset_version_link.figshare_article_id,
                     figshare_dataset_version_link.id,
                     file_to_update["file_name"],
-                    file_to_update["datafile_id"],
+                    datafile_id,
                     datafile.compressed_s3_key,
                     datafile.original_file_md5,
                     token,
                 )
 
                 file_to_update["task_id"] = task.id
+            else:
+                raise ValueError(f"Unrecognized action: {action}")
 
         r = figshare.update_article(article_id, description, token)
 
