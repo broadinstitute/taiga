@@ -1603,13 +1603,19 @@ paths:
                     - file_name
                   properties:
                     datafile_id:
-                      type: string
+                      type:
+                        - string
+                        - "null"
                     file_name:
-                      type: string
+                      type:
+                        - string
+                        - "null"
                     task_id:
                       type: string
                     failure_reason:
-                      type: string
+                      type:
+                        - string
+                        - "null"
         401:
           description: Token does not work
 
