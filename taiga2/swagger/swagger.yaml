@@ -1611,7 +1611,9 @@ paths:
                         - string
                         - "null"
                     task_id:
-                      type: string
+                      type:
+                        - string
+                        - "null"
                     failure_reason:
                       type:
                         - string
