@@ -29,6 +29,7 @@ def set_current_user_from_x_forwarded():
     default_user_email = config.get("DEFAULT_USER_EMAIL", None)
 
     # Use for production environment
+    user_name_header_name = request.headers.get("X-Forwarded-User", None)
     user_email_header_name = request.headers.get("X-Forwarded-Email", None)
 
     if user_email_header_name is not None:
@@ -53,6 +54,11 @@ def set_current_user_from_x_forwarded():
             "Looked up header user_email %s to find username: %s",
             user_email_header_name,
             user_id,
+        )
+    elif user_name_header_name is not None:
+        user = mc.get_user_by_name(user_name_header_name)
+        log.debug(
+            f"Looked up header user_name {user_name_header_name} to find user with id: {user.id}"
         )
 
     if user is None and default_user_email is not None:
