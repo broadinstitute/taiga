@@ -39,4 +39,5 @@ RUN mkdir -p /var/log/supervisor && mkdir -p /var/run
 
 # Install base versions of all python libs
 COPY requirements.txt /install/taiga/
+RUN pip install pip==21.1.2
 RUN pip install -r /install/taiga/requirements.txt

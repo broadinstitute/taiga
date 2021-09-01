@@ -6,6 +6,7 @@ import { InputGroup, FormGroup, FormControl } from "react-bootstrap";
 
 import ClipboardButton from "../utilities/r-clipboard";
 import { LeftNav, MenuItem } from "./LeftNav";
+import FigshareToken from "./modals/FigshareToken";
 
 import { TaigaApi } from "../models/api";
 import { User } from "../models/models";
@@ -15,8 +16,8 @@ export interface TokenProps extends RouteComponentProps {
 }
 
 export interface TokenState {
-  token?: string;
-  figshareAuthUrl?: string;
+  token: string;
+  showFigshareTokenModel: boolean;
 }
 
 const antiPadding = {
@@ -29,9 +30,9 @@ export class Token extends React.Component<TokenProps, TokenState> {
   constructor(props: any) {
     super(props);
 
-    // TODO: How can we ensure we are not erasing/forgetting states defined in the interface?
     this.state = {
-      token: "Loading...",
+      token: "",
+      showFigshareTokenModel: false,
     };
   }
 
@@ -50,30 +51,17 @@ export class Token extends React.Component<TokenProps, TokenState> {
       .catch((err: any) => {
         console.log(err);
       });
-
-    this.props.tapi
-      .get_figshare_authorization_url()
-      .then(({ figshare_auth_url }) => {
-        this.setState({
-          figshareAuthUrl: figshare_auth_url,
-        });
-      })
-      .catch((err: any) => {
-        console.log(err);
-      });
   }
 
   render() {
     let navItems: Array<MenuItem> = [];
 
-    if (!!this.state.figshareAuthUrl) {
-      navItems.push({
-        label: "Connect to Figshare",
-        action: () => {
-          window.location.assign(this.state.figshareAuthUrl);
-        },
-      });
-    }
+    navItems.push({
+      label: "Connect to Figshare",
+      action: () => {
+        this.setState({ showFigshareTokenModel: true });
+      },
+    });
 
     const tooltipToken = (
       <Tooltip id="token_copy_confirmation">
@@ -111,8 +99,9 @@ export class Token extends React.Component<TokenProps, TokenState> {
                     <InputGroup>
                       <FormControl
                         type="text"
-                        disabled={true}
-                        placeholder={this.state.token}
+                        readOnly={true}
+                        value={this.state.token}
+                        style={{ cursor: "text" }}
                       />
                       <InputGroup.Button>
                         <OverlayTrigger
@@ -138,6 +127,11 @@ export class Token extends React.Component<TokenProps, TokenState> {
             </Row>
           </Grid>
         </div>
+        <FigshareToken
+          tapi={this.props.tapi}
+          show={this.state.showFigshareTokenModel}
+          onHide={() => this.setState({ showFigshareTokenModel: false })}
+        />
       </div>
     );
   }

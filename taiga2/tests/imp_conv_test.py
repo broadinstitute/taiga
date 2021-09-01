@@ -6,16 +6,8 @@ from taiga2.tests.exp_conv_test import ProgressStub
 
 from flask_sqlalchemy import SessionBase
 
-from taiga2.aws import aws
-from taiga2.models import (
-    User,
-    Folder,
-    Dataset,
-    Entry,
-    DatasetVersion,
-    DataFile,
-    InitialFileType,
-)
+from taiga2.third_party_clients.aws import aws
+from taiga2.models import InitialFileType
 from taiga2.controllers import models_controller
 from taiga2.tasks import background_process_new_upload_session_file
 from taiga2.conv.imp import _get_csv_dims
@@ -26,7 +18,6 @@ from taiga2.conv import (
     csv_to_hdf5,
     hdf5_to_csv,
 )
-from taiga2.conv.sniff import sniff2
 
 test_files_folder_path = "taiga2/tests/test_files"
 
@@ -108,10 +99,8 @@ def test_upload_session_file(
     updated_upload_session_file = models_controller.get_upload_session_file(
         upload_session_file.id
     )
-    if initial_file_type == InitialFileType.TableCSV.value:
-        assert updated_upload_session_file.column_types_as_json is not None
-    else:
-        assert updated_upload_session_file.column_types_as_json is None
+
+    assert updated_upload_session_file.column_types_as_json is None
 
 
 def test_get_csv_dims(tmpdir):
@@ -177,19 +166,3 @@ def test_matrix_with_full_header_import(tmpdir):
     hdf5_to_csv(ProgressStub(), str(pandas_dest), lambda: str(pandas_final))
 
     assert r_final.read_binary() == pandas_final.read_binary()
-
-
-def test_column_type_inference():
-    tiny_table_column_types = sniff2(tiny_table_path, "UTF-8")
-    assert tiny_table_column_types == {
-        "a": "float",
-        "b": "float",
-        "c": "str",
-        "d": "float",
-    }
-
-    nonutf8_column_types = sniff2(nonutf8_file_path, "UTF-8")
-    assert nonutf8_column_types == {"row": "float", "validutf8": "str", "value": "str"}
-
-    with pytest.raises(UnicodeDecodeError):
-        sniff2(nonutf8_file_path, "ASCII")

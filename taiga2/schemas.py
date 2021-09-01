@@ -34,15 +34,13 @@ class UserSchema(ma.ModelSchema):
             "home_folder_id",
             "trash_folder_id",
             "token",
-            "figshare_account_id",
+            "figshare_account_linked",
         )
 
-    figshare_account_id = fields.fields.Method("get_figshare_account_id")
+    figshare_account_linked = fields.fields.Method("get_figshare_account_linked")
 
-    def get_figshare_account_id(self, user: User):
-        if user.figshare_authorization is None:
-            return None
-        return user.figshare_authorization.figshare_account_id
+    def get_figshare_account_linked(self, user: User):
+        return user.figshare_personal_token is not None
 
 
 class UserNamedIdSchema(ma.ModelSchema):
@@ -473,6 +471,19 @@ class DescriptionUpdateActivityLogSchema(ActivityLogBaseSchema):
 class VersionAdditionActivityLogSchema(ActivityLogBaseSchema):
     dataset_description = fields.fields.String()
     dataset_version = fields.fields.Integer()
+
+    changes_description = fields.fields.Method(
+        "get_dataset_version_changes_description"
+    )
+
+    def get_dataset_version_changes_description(self, obj):
+        dataset_version = next(
+            dv
+            for dv in obj.dataset.dataset_versions
+            if int(dv.name) == obj.dataset_version
+        )
+
+        return dataset_version.changes_description
 
 
 class LogStartActivityLogSchema(ActivityLogBaseSchema):

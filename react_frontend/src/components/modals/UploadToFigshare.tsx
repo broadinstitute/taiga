@@ -9,14 +9,16 @@ import {
   ControlLabel,
   HelpBlock,
   Table,
-  ProgressBar,
 } from "react-bootstrap";
 import update from "immutability-helper";
 import Select from "react-select";
 
 import FigshareWYSIWYGEditor from "./FigshareWYSIWYGEditor";
-import * as Models from "../../models/models";
+import FigshareUploadStatusTable from "./FigshareUploadStatusTable";
+
+import { DatasetVersion, TaskStatus } from "../../models/models";
 import { TaigaApi } from "../../models/api";
+import { UploadFileStatus } from "../../models/figshare";
 import { relativePath } from "../../utilities/route";
 
 import "../../styles/modals/uploadtofigshare.css";
@@ -26,7 +28,7 @@ type Props = {
   handleClose: (uploadComplete: boolean, figsharePrivateUrl: string) => void;
   show: boolean;
   userFigshareLinked: boolean;
-  datasetVersion: Models.DatasetVersion;
+  datasetVersion: DatasetVersion;
 };
 
 type State = {
@@ -38,22 +40,15 @@ type State = {
   articleReferences: Array<string>;
   categories?: Array<{ value: any; label: any }>;
   licenses?: Array<{ value: any; label: any }>;
-  filesToUpload: Array<{
+  filesToUpload: ReadonlyArray<{
     datafileId: string;
     datafileName: string;
     figshareFileName: string;
     include: boolean;
   }>;
-  uploadResults?: {
-    article_id: number;
-    files: Array<{
-      datafile_id: string;
-      file_name: string;
-      task_id?: string;
-      failure_reason?: string;
-      taskStatus?: Models.TaskStatus;
-    }>;
-  };
+
+  uploadResults: ReadonlyArray<UploadFileStatus>;
+  articleId: number;
 };
 
 export default class UploadToFigshare extends React.Component<Props, State> {
@@ -105,7 +100,8 @@ export default class UploadToFigshare extends React.Component<Props, State> {
           include: true,
         };
       }),
-      uploadResults: undefined,
+      uploadResults: null,
+      articleId: null,
     };
   }
 
@@ -160,7 +156,6 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     e: React.FormEvent<FormControl & FormControlProps>,
     i: number
   ) => {
-    // @ts-ignore
     this.setState({
       filesToUpload: update(this.state.filesToUpload, {
         [i]: { figshareFileName: { $set: e.currentTarget.value } },
@@ -169,7 +164,6 @@ export default class UploadToFigshare extends React.Component<Props, State> {
   };
 
   toggleIncludeFile(currentVal: boolean, i: number) {
-    // @ts-ignore
     this.setState({
       filesToUpload: update(this.state.filesToUpload, {
         [i]: { include: { $set: !currentVal } },
@@ -197,7 +191,10 @@ export default class UploadToFigshare extends React.Component<Props, State> {
         this.state.articleReferences
       )
       .then((value) => {
-        this.setState({ uploadResults: value });
+        this.setState({
+          uploadResults: value.files,
+          articleId: value.article_id,
+        });
         value.files.forEach((file, i) => {
           if (file.task_id) {
             this.pollUploadToFigshareFile(i, file.task_id);
@@ -211,78 +208,20 @@ export default class UploadToFigshare extends React.Component<Props, State> {
   }
 
   pollUploadToFigshareFile(i: number, taskId: string) {
-    this.props.tapi
-      .get_task_status(taskId)
-      .then((newStatus: Models.TaskStatus) => {
-        this.setState(
-          // @ts-ignore
-          {
-            uploadResults: update(this.state.uploadResults, {
-              files: {
-                [i]: { taskStatus: { $set: newStatus } },
-              },
-            }),
-          },
-          () => {
-            if (newStatus.state != "SUCCESS" && newStatus.state != "FAILURE") {
-              setTimeout(() => this.pollUploadToFigshareFile(i, taskId), 1000);
-            }
+    this.props.tapi.get_task_status(taskId).then((newStatus: TaskStatus) => {
+      this.setState(
+        {
+          uploadResults: update(this.state.uploadResults, {
+            [i]: { taskStatus: { $set: newStatus } },
+          }),
+        },
+        () => {
+          if (newStatus.state != "SUCCESS" && newStatus.state != "FAILURE") {
+            setTimeout(() => this.pollUploadToFigshareFile(i, taskId), 1000);
           }
-        );
-      });
-  }
-
-  renderUploadingStatusTable() {
-    return (
-      <Table responsive striped bsClass="table figshare-upload-files-table">
-        <thead>
-          <tr>
-            <th>Datafile</th>
-            <th>Upload status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {this.state.uploadResults.files.map((file, i) => {
-            let progressIndicator = null;
-
-            const state = file.taskStatus ? file.taskStatus.state : null;
-            if (file.failure_reason) {
-              progressIndicator = (
-                <ProgressBar
-                  now={0}
-                  label={`Failed to upload: ${file.failure_reason}`}
-                  bsStyle="danger"
-                />
-              );
-            } else if (state == "PROGRESS") {
-              progressIndicator = (
-                <ProgressBar
-                  now={file.taskStatus.current * 100}
-                  label="Uploading"
-                />
-              );
-            } else if (state == "SUCCESS") {
-              progressIndicator = <ProgressBar now={100} label="Uploaded" />;
-            } else if (state == "FAILURE") {
-              progressIndicator = (
-                <ProgressBar
-                  now={file.taskStatus.current * 100}
-                  label={"Failed to upload"}
-                  bsStyle="danger"
-                />
-              );
-            }
-
-            return (
-              <tr key={file.datafile_id}>
-                <td>{this.datafileIdToName.get(file.datafile_id)}</td>
-                <td>{progressIndicator}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
-    );
+        }
+      );
+    });
   }
 
   renderUploadTable() {
@@ -400,9 +339,14 @@ export default class UploadToFigshare extends React.Component<Props, State> {
           </FormGroup>
         )}
 
-        {isUploading
-          ? this.renderUploadingStatusTable()
-          : this.renderUploadTable()}
+        {isUploading ? (
+          <FigshareUploadStatusTable
+            datafileIdToName={this.datafileIdToName}
+            uploadResults={this.state.uploadResults}
+          />
+        ) : (
+          this.renderUploadTable()
+        )}
       </form>
     );
   }
@@ -424,7 +368,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
   render() {
     const uploadComplete =
       this.state.uploadResults &&
-      this.state.uploadResults.files.every(
+      this.state.uploadResults.every(
         (file) =>
           !!file.failure_reason ||
           (file.taskStatus &&
@@ -437,7 +381,7 @@ export default class UploadToFigshare extends React.Component<Props, State> {
     let primaryAction = null;
     let figsharePrivateUrl: string = null;
     if (uploadComplete) {
-      figsharePrivateUrl = `https://figshare.com/account/articles/${this.state.uploadResults.article_id}`;
+      figsharePrivateUrl = `https://figshare.com/account/articles/${this.state.articleId}`;
       primaryAction = (
         <Button bsStyle="success" href={figsharePrivateUrl} target="_blank">
           See your new Figshare article

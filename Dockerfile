@@ -4,6 +4,7 @@ COPY taiga2 /install/taiga/taiga2
 COPY requirements.txt setup.py /install/taiga/
 WORKDIR /install/taiga
 
+RUN pip install pip==21.1.2
 RUN pip install -r requirements.txt
 
 COPY react_frontend /install/taiga/react_frontend/

@@ -13,13 +13,18 @@ from requests.exceptions import HTTPError
 from typing import IO, Optional
 from urllib.parse import urlparse
 
-from taiga2.aws import aws
 import taiga2.conv as conversion
 from taiga2.conv.util import Progress, make_temp_file_generator, get_file_hashes
 from taiga2.controllers import models_controller
 from taiga2.conv.imp import ImportResult
 from taiga2.models import S3DataFile
-from taiga2.figshare import initiate_new_upload, upload_parts, complete_upload
+from taiga2.third_party_clients.aws import aws
+from taiga2.third_party_clients.gcs import upload_from_file
+from taiga2.third_party_clients.figshare import (
+    initiate_new_upload,
+    upload_parts,
+    complete_upload,
+)
 import humanize
 
 celery = Celery("taiga2")
@@ -58,29 +63,9 @@ def _compress_and_upload_to_s3(
     )
 
 
-def _infer_column_types(
-    download_dest: IO, compressed_dest: IO, mime_type: str, encoding: Optional[str]
-):
-    delimiter = "," if mime_type == "text/csv" else "\t"
-    try:
-        column_types = conversion.sniff.sniff2(
-            download_dest.name,
-            encoding if encoding is not None else "iso-8859-1",
-            delimiter,
-        )
-        return column_types
-    except Exception:
-        log.warning(
-            "Could not guess column types for {}".format(compressed_dest.name),
-            exc_info=True,
-        )
-    return None
-
-
 def _from_s3_convert_to_s3(
     progress,
     upload_session_file_id,
-    calculate_column_types: bool,
     s3_object,
     download_dest,
     converted_dest,
@@ -113,13 +98,7 @@ def _from_s3_convert_to_s3(
         encoding,
     )
 
-    column_types = (
-        _infer_column_types(download_dest, compressed_dest, mime_type, encoding)
-        if calculate_column_types
-        else None
-    )
-
-    return import_result, column_types
+    return import_result
 
 
 @celery.task(bind=True)
@@ -137,8 +116,9 @@ def background_process_new_upload_session_file(
     progress = Progress(self)
 
     # If we receive a raw file, we don't need to do anything
-    from taiga2.models import DataFile
     from taiga2 import models
+
+    column_types = None
 
     # TODO: Instead of comparing two strings, we could also use DataFileType(file_type) and compare the result, or catch the exception
     if file_type == models.InitialFileType.Raw.value:
@@ -176,7 +156,6 @@ def background_process_new_upload_session_file(
             long_summary=None,
             short_summary=humanize.naturalsize(existing_obj.content_length),
         )
-        column_types = None
     else:
         if file_type == models.InitialFileType.NumericMatrixCSV.value:
             converter = conversion.csv_to_hdf5
@@ -204,14 +183,9 @@ def background_process_new_upload_session_file(
                     else:
                         mime_type = "text/tab-separated-values"
 
-                    calculate_column_types = (
-                        file_type == models.InitialFileType.TableCSV.value
-                    )
-
-                    import_result, column_types = _from_s3_convert_to_s3(
+                    import_result = _from_s3_convert_to_s3(
                         progress,
                         upload_session_file_id,
-                        calculate_column_types,
                         s3_object,
                         download_dest,
                         converted_dest,
@@ -469,6 +443,25 @@ def backfill_compressed_file(self, datafile_id: str, cache_entry_id: Optional[st
         mime_type = "text/csv"
 
     _download_and_compress_s3_backfill(datafile_id, s3_key, mime_type)
+
+
+@celery.task(bind=True)
+def copy_datafile_to_google_bucket(
+    self, datafile_id: str, dest_bucket: str, dest_gcs_path: str
+):
+    s3 = aws.s3
+    datafile = models_controller.get_datafile(datafile_id)
+    compressed_s3_object = s3.Object(datafile.s3_bucket, datafile.compressed_s3_key)
+    with tempfile.NamedTemporaryFile() as download_dest:
+        compressed_s3_object.download_fileobj(download_dest)
+        download_dest.seek(0)
+        upload_from_file(
+            download_dest,
+            dest_bucket,
+            dest_gcs_path,
+            compressed_s3_object.content_type,
+            compressed_s3_object.content_encoding,
+        )
 
 
 @celery.task(bind=True)

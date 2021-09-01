@@ -19,6 +19,7 @@ import taiga2.controllers.models_controller as models_controller
 import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import (
+    DatasetVersion,
     DataFile,
     normalize_name,
     SearchResult,
@@ -27,11 +28,14 @@ from taiga2.models import (
 from taiga2.controllers.models_controller import DataFileAlias
 from taiga2.models import S3DataFile
 
-from taiga2.aws import aws
-from taiga2.aws import create_signed_get_obj
-from taiga2.aws import create_s3_url as aws_create_s3_url
+from taiga2.third_party_clients.aws import (
+    aws,
+    create_signed_get_obj,
+    create_s3_url as aws_create_s3_url,
+)
 
-import taiga2.figshare as figshare
+from taiga2.third_party_clients.gcs import get_blob, parse_gcs_path
+import taiga2.third_party_clients.figshare as figshare
 
 log = logging.getLogger(__name__)
 
@@ -210,17 +214,35 @@ def get_s3_credentials():
     return flask.jsonify(model_frontend_credentials)
 
 
+# TODO: Use for every DatasetVersionSchema?
+def _get_dataset_version_schema_json(
+    dataset_version: DatasetVersion,
+    dataset_version_right: models_controller.EntryRightsEnum,
+):
+    dataset_version_schema = schemas.DatasetVersionSchema()
+    dataset_version_schema.context["entry_user_right"] = dataset_version_right
+
+    if dataset_version.figshare_dataset_version_link is not None:
+        try:
+            figshare_article_info = figshare.get_article_information(
+                dataset_version.figshare_dataset_version_link
+            )
+            dataset_version_schema.context["figshare"] = figshare_article_info
+        except:
+            pass
+
+    return dataset_version_schema.dump(dataset_version).data
+
+
 @validate
 def get_dataset_last(dataset_id):
     last_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
 
     right = models_controller.get_rights(last_dataset_version.id)
 
-    dataset_version_schema = schemas.DatasetVersionSchema()
-    dataset_version_schema.context["entry_user_right"] = right
-    json_data_first_dataset_version = dataset_version_schema.dump(
-        last_dataset_version
-    ).data
+    json_data_first_dataset_version = _get_dataset_version_schema_json(
+        last_dataset_version, right
+    )
     return flask.jsonify(json_data_first_dataset_version)
 
 
@@ -366,19 +388,9 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     dataset.parents = filter_allowed_parents(dataset.parents)
     dataset.description = dataset_version.description
 
-    dataset_version_schema = schemas.DatasetVersionSchema()
-    dataset_version_schema.context["entry_user_right"] = dataset_version_right
-
-    if dataset_version.figshare_dataset_version_link is not None:
-        try:
-            figshare_article_info = figshare.get_article_information(
-                dataset_version.figshare_dataset_version_link
-            )
-            dataset_version_schema.context["figshare"] = figshare_article_info
-        except:
-            pass
-
-    json_dv_data = dataset_version_schema.dump(dataset_version).data
+    json_dv_data = _get_dataset_version_schema_json(
+        dataset_version, dataset_version_right
+    )
 
     dataset_schema = schemas.DatasetSchema()
     dataset_schema.context["entry_user_right"] = dataset_right
@@ -518,24 +530,11 @@ def create_upload_session_file(uploadMetadata, sid):
         if gcs_path is None:
             api_error("No GCS path given")
 
-        if "/" not in gcs_path:
-            api_error("Invalid GCS path: {}".format(gcs_path))
-
-        bucket_name, object_name = gcs_path.split("/", 1)
-        client = storage.Client()
-
         try:
-            bucket = client.get_bucket(bucket_name)
-        except gcs_exceptions.Forbidden as e:
-            api_error(
-                "taiga-892@cds-logging.iam.gserviceaccount.com does not have storage.buckets.get access to bucket: {}".format(
-                    bucket_name
-                )
-            )
-        except gcs_exceptions.NotFound as e:
-            api_error("No GCS bucket found: {}".format(bucket_name))
-
-        blob = bucket.get_blob(object_name)
+            bucket_name, object_name = parse_gcs_path(gcs_path)
+            blob = get_blob(bucket_name, object_name)
+        except ValueError as e:
+            api_error(str(e))
 
         if not blob:
             api_error("No object found: {}".format(object_name))
@@ -848,16 +847,7 @@ def get_datafile_column_types(
         flask.abort(400)
 
     real_datafile: S3DataFile
-    if real_datafile.column_types_as_json is not None:
-        return flask.jsonify(real_datafile.column_types_as_json)
-
-    r = aws.s3_client.get_object(
-        Bucket=real_datafile.s3_bucket, Key=real_datafile.s3_key
-    )
-
-    table_info = conversion.read_column_definitions(r["Body"])
-
-    return flask.jsonify({c.name: c.persister.type_name for c in table_info})
+    return flask.jsonify(real_datafile.column_types_as_json)
 
 
 @validate
@@ -891,6 +881,46 @@ def _backfill_compressed_file(datafile_id: str, delay=True):
             task = backfill_compressed_file.delay(datafile_id, entry.id)
 
     return flask.make_response(flask.jsonify(task.id), 202)
+
+
+@validate
+def copy_datafile_to_google_bucket(datafileGCSCopy):
+    # NOTE: This currently only works with datafiles that are s3 (or virtual s3) files
+    # that have a compressed_s3_key (i.e. files that were created after the
+    # introduction of compressed_s3_key or files that have been backfilled).
+
+    datafile_id = datafileGCSCopy["datafile_id"]
+    gcs_path = datafileGCSCopy["gcs_path"]
+
+    datafile = models_controller.get_datafile_by_taiga_id(datafile_id)
+    if datafile is None:
+        raise flask.abort(404)
+
+    if datafile.type == "virtual":
+        datafile = datafile.underlying_data_file
+
+    if datafile.type == "gcs":
+        api_error("Cannot copy GCS pointer files")
+
+    if datafile.compressed_s3_key is None:
+        # TODO: backfill?
+        api_error("Copying datafiles is only available for new files.")
+
+    try:
+        dest_bucket, dest_gcs_path = parse_gcs_path(gcs_path)
+    except ValueError as e:
+        api_error(str(e))
+
+    # kick off task to download and upload
+    from taiga2.tasks import (
+        copy_datafile_to_google_bucket as _copy_datafile_to_google_bucket,
+    )
+
+    task = _copy_datafile_to_google_bucket.delay(
+        datafile.id, dest_bucket, dest_gcs_path
+    )
+
+    return flask.jsonify(task.id)
 
 
 def entry_is_valid(entry):
@@ -1199,77 +1229,30 @@ def remove_group_user_associations(groupId, groupUserAssociationMetadata):
 
 
 @validate
-def get_figshare_auth_url():
-    config = flask.current_app.config
-    return flask.jsonify(
-        {
-            "figshare_auth_url": figshare.AUTH_URL.format(
-                "?client_id={}".format(
-                    (config["FIGSHARE_CLIENT_ID"])
-                    + "&response_type=code"
-                    + "&scope=all"
-                    + "&redirect_uri%3Dhttps%3A%2F%2Fcds.team%2Ftaiga"
-                )
-            )
-        }
-    )
+def add_figshare_token(token: str):
+    if not figshare.is_token_valid(token):
+        flask.abort(401)
 
-
-@validate
-def add_figshare_token(figshareOAuthRequest):
-    config = flask.current_app.config
-    code = figshareOAuthRequest["code"]
-    state = figshareOAuthRequest["state"]
-
-    response = requests.post(
-        figshare.BASE_URL.format(
-            "token"
-            + "?client_id={}".format(config["FIGSHARE_CLIENT_ID"])
-            + "&client_secret={}".format(config["FIGSHARE_CLIENT_SECRET"])
-            + "&grant_type=authorization_code"
-            + "&code={}".format(code)
-            + "&state={}".format(state)
-        )
-    )
-
-    try:
-        response.raise_for_status()
-        data = response.json()
-        token = data["token"]
-        refresh_token = data["refresh_token"]
-
-        account_data = figshare.issue_request("GET", "account", token)
-
-        figshare_authorization, is_new = models_controller.add_figshare_token(
-            account_data["id"], token, refresh_token
-        )
-        if is_new:
-            return flask.make_response(flask.jsonify({}), 201)
-        else:
-            return flask.jsonify({})
-    except HTTPError as error:
-        return flask.abort(400)
+    is_new = models_controller.add_figshare_token(token)
+    if is_new:
+        return flask.make_response(flask.jsonify({}), 201)
+    else:
+        return flask.jsonify({})
 
 
 def _fetch_figshare_token() -> str:
-    """Validates, refreshes if necessary, and returns Figshare token for current user."""
-    figshare_authorization = (
-        models_controller.get_figshare_authorization_for_current_user()
-    )
-    if figshare_authorization is None:
-        return None
-
-    token, refresh_token = figshare.validate_token(
-        figshare_authorization.token, figshare_authorization.refresh_token
-    )
+    """Validates and returns token for current user.
+    
+    Also removes invalid tokens.
+    """
+    token = models_controller.get_figshare_personal_token_for_current_user()
     if token is None:
-        models_controller.remove_figshare_token(figshare_authorization.id)
         return None
 
-    if token != figshare_authorization.token:
-        figshare_authorization = models_controller.update_figshare_token(
-            figshare_authorization.id, token, refresh_token
-        )
+    if not figshare.is_token_valid(token):
+        models_controller.remove_figshare_token_for_current_user()
+        return None
+
     return token
 
 
@@ -1364,36 +1347,47 @@ def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
 
     try:
         for file_to_update in files_to_update:
-            datafile = models_controller.get_datafile(file_to_update["datafile_id"])
-            if datafile.type == "gcs":
-                file_to_update["failure_reason"] = "Cannot upload GCS pointer files"
-                continue
-            elif datafile.type == "virtual":
-                datafile = datafile.underlying_data_file
+            action = file_to_update["action"]
 
-            if datafile.compressed_s3_key is None:
-                file_to_update[
-                    "failure_reason"
-                ] = "Cannot upload files without compressed S3 file"
-                continue
-
-            if file_to_update["action"] in {"Delete", "Replace"}:
+            if action == "Delete":
                 figshare.delete_file(
                     article_id, file_to_update["figshare_file_id"], token
                 )
+            elif action == "Add":
+                datafile_id = file_to_update["datafile_id"]
+                if datafile_id is None:
+                    file_to_update[
+                        "failure_reason"
+                    ] = "Cannot add or replace file without datafile ID"
+                    continue
 
-            if file_to_update["action"] in {"Add", "Replace"}:
+                datafile = models_controller.get_datafile(datafile_id)
+
+                if datafile.type == "gcs":
+                    file_to_update["failure_reason"] = "Cannot upload GCS pointer files"
+                    continue
+                elif datafile.type == "virtual":
+                    datafile = datafile.underlying_data_file
+
+                if datafile.compressed_s3_key is None:
+                    file_to_update[
+                        "failure_reason"
+                    ] = "Cannot upload files without compressed S3 file"
+                    continue
+
                 task = upload_datafile_to_figshare.delay(
                     figshare_dataset_version_link.figshare_article_id,
                     figshare_dataset_version_link.id,
                     file_to_update["file_name"],
-                    file_to_update["datafile_id"],
+                    datafile_id,
                     datafile.compressed_s3_key,
                     datafile.original_file_md5,
                     token,
                 )
 
                 file_to_update["task_id"] = task.id
+            else:
+                raise ValueError(f"Unrecognized action: {action}")
 
         r = figshare.update_article(article_id, description, token)
 

@@ -82,8 +82,6 @@ export interface DatasetViewState {
   showShareDatasetVersion?: boolean;
   sharingEntries?: Array<Entry>;
 
-  showUploadToFigshare?: boolean;
-
   activityLog?: Array<ActivityLogEntry>;
 
   figshareLinkedFiles?: Map<
@@ -781,6 +779,10 @@ export class DatasetView extends React.Component<
           {descriptionDetailsFormatter(
             (row as VersionAdditionActivity).dataset_description
           )}
+          {descriptionDetailsFormatter(
+            (row as VersionAdditionActivity).changes_description,
+            "Description of changes"
+          )}
         </div>
       );
     } else if (cell == ActivityTypeEnum.started_log) {
@@ -922,17 +924,11 @@ export class DatasetView extends React.Component<
       let entries = null;
       if (datasetVersion) {
         entries = datasetVersion.datafiles
-          .sort((datafile_one, datafile_two) => {
-            let datafile_one_upper = datafile_one.name.toUpperCase();
-            let datafile_two_upper = datafile_two.name.toUpperCase();
-            if (datafile_one_upper === datafile_two_upper) {
-              return 0;
-            } else if (datafile_one_upper > datafile_two_upper) {
-              return 1;
-            } else {
-              return -1;
-            }
-          })
+          .sort((datafile_one, datafile_two) =>
+            datafile_one.name.localeCompare(datafile_two.name, "en", {
+              sensitivity: "base",
+            })
+          )
           .map((df, index) => {
             let conversionTypesOutput = this.getConversionTypesOutput(df);
             let copy_button = this.getCopyButton(df);
@@ -1343,7 +1339,9 @@ export class DatasetView extends React.Component<
                     this.doFetch().then(() => this.updateFigshareMap())
                   }
                   datasetVersion={this.state.datasetVersion}
-                  userFigshareAccountId={this.props.user.figshare_account_id}
+                  userFigshareAccountLinked={
+                    this.props.user.figshare_account_linked
+                  }
                   figshareLinkedFiles={this.state.figshareLinkedFiles}
                 />
                 {this.renderActivityLog()}

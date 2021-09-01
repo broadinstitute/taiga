@@ -1,6 +1,5 @@
 import csv
 from collections import namedtuple
-from typing import Dict, Optional
 
 Column = namedtuple("Column", ["name", "type"])
 
@@ -110,43 +109,3 @@ class TypeAggregator2:
             return "float"
 
         return "str"
-
-
-def sniff2(filename: str, encoding: str, delimiter=",") -> Optional[Dict[str, str]]:
-    with open(filename, "rU", encoding=encoding) as fd:
-        r = csv.reader(fd, delimiter=delimiter)
-        col_header = next(r)
-
-        if len(set(col_header)) != len(col_header):
-            raise Exception("Column names are not unique")
-
-        try:
-            row = next(r)
-        except StopIteration:
-            return None
-
-        if len(col_header) == len(row):
-            has_row_names = False
-        elif len(col_header) == (len(row) - 1):
-            has_row_names = True
-        else:
-            raise Exception("First and second rows have different numbers of columns")
-
-        column_types = [TypeAggregator2() for x in row]
-        while True:
-            for i, x in enumerate(row):
-                column_types[i].add(x)
-
-            try:
-                row = next(r)
-            except StopIteration:
-                break
-
-    if has_row_names:
-        del column_types[0]
-
-    columns = {
-        col_header[i]: column_types[i].get_type() for i in range(len(column_types))
-    }
-
-    return columns

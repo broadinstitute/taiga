@@ -32,15 +32,16 @@ def set_current_user_from_x_forwarded():
     user_name_header_name = request.headers.get("X-Forwarded-User", None)
     user_email_header_name = request.headers.get("X-Forwarded-Email", None)
 
-    if user_name_header_name is not None or user_email_header_name is not None:
+    if user_email_header_name is not None:
         try:
             user = mc.get_user_by_email(user_email_header_name)
         except NoResultFound:
             # User does not exists so we can create it
-            user = mc.add_user(name=user_name_header_name, email=user_email_header_name)
+            username = user_email_header_name.split("@")[0]
+            user = mc.add_user(name=username, email=user_email_header_name)
             log.debug(
                 "We just created the user {} with email {}".format(
-                    user_name_header_name, user_email_header_name
+                    username, user_email_header_name
                 )
             )
             log.debug(
@@ -50,10 +51,14 @@ def set_current_user_from_x_forwarded():
             )
         user_id = user.id
         log.debug(
-            "Looked up header field user_name %s and user_email %s to find username: %s",
-            user_name_header_name,
+            "Looked up header user_email %s to find username: %s",
             user_email_header_name,
             user_id,
+        )
+    elif user_name_header_name is not None:
+        user = mc.get_user_by_name(user_name_header_name)
+        log.debug(
+            f"Looked up header user_name {user_name_header_name} to find user with id: {user.id}"
         )
 
     if user is None and default_user_email is not None:

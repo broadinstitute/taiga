@@ -14,7 +14,7 @@ from typing_extensions import Literal, TypedDict
 from flask import current_app
 
 import taiga2.controllers.models_controller as mc
-from taiga2.aws import aws
+from taiga2.third_party_clients.aws import aws
 from taiga2.conv.util import Progress
 from taiga2.models import DatasetVersion, FigshareDatasetVersionLink
 
@@ -44,23 +44,12 @@ def issue_request(method: str, endpoint: str, token: str, *args, **kwargs):
     return raw_issue_request(method, BASE_URL.format(endpoint), token, *args, **kwargs)
 
 
-def validate_token(token: str, refresh_token: str) -> Tuple[str, str]:
-    data = {
-        "client_id": current_app.config["FIGSHARE_CLIENT_ID"],
-        "client_secret": current_app.config["FIGSHARE_CLIENT_SECRET"],
-        "grant_type": "authorization_code",
-    }
-
+def is_token_valid(token: str) -> bool:
     try:
-        result = issue_request("GET", "token", token, data=data)
-        return token, refresh_token
+        result = issue_request("GET", "account", token)
+        return True
     except HTTPError as error:
-        try:
-            data["refresh_token"] = refresh_token
-            result = issue_request("GET", "token", token, data=data)
-            return result["token"], result["refresh_token"]
-        except HTTPError as refresh_error:
-            return None, None
+        return False
 
 
 FigshareCategory = TypedDict(
@@ -216,28 +205,19 @@ def get_public_article_information(
 def get_private_article_information(
     figshare_dataset_version_link: FigshareDatasetVersionLink,
 ):
-    current_user = mc.get_current_session_user()
-    if current_user.id == figshare_dataset_version_link.creator_id:
-        figshare_authorization = mc.get_figshare_authorization_for_current_user()
-        if figshare_authorization is None:
-            return None
+    token = mc.get_figshare_personal_token_for_current_user()
+    if token is None:
+        return None
 
-        token, refresh_token = validate_token(
-            figshare_authorization.token, figshare_authorization.refresh_token
-        )
+    if not is_token_valid(token):
+        mc.remove_figshare_token_for_current_user()
+        return None
 
-        if not token:
-            mc.remove_figshare_token(figshare_authorization.id)
-            return None
-
-        return issue_request(
-            "GET",
-            "account/articles/{}".format(
-                figshare_dataset_version_link.figshare_article_id
-            ),
-            token,
-        )
-    return None
+    return issue_request(
+        "GET",
+        "account/articles/{}".format(figshare_dataset_version_link.figshare_article_id),
+        token,
+    )
 
 
 def get_public_article_files(article_id: str):

@@ -88,6 +88,8 @@ class User(db.Model):
         "Folder", foreign_keys="User.trash_folder_id", backref="trash_user"
     )
 
+    figshare_personal_token: str = db.Column(db.String(128), nullable=True)
+
     def __str__(self):
         return "name: {}, home_folder: {}, trash_folder: {}".format(
             self.name, self.home_folder.name, self.trash_folder.name
@@ -721,20 +723,6 @@ class SearchResult:
         self.current_folder = current_folder
         self.name = name
         self.entries = entries
-
-
-class FigshareAuthorization(db.Model):
-    __tablename__ = "figshare_authorizations"
-    id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
-
-    user_id: str = db.Column(GUID, db.ForeignKey("users.id"))
-    user: User = db.relationship(
-        "User", backref=backref("figshare_authorization", uselist=False)
-    )
-
-    figshare_account_id: int = db.Column(db.Integer)
-    token: str = db.Column(db.Text, nullable=False)
-    refresh_token: str = db.Column(db.Text, nullable=False)
 
 
 class ThirdPartyDatasetVersionLink(db.Model):

@@ -13,7 +13,7 @@ type Props = {
   tapi: TaigaApi;
   datasetVersion: DatasetVersion;
   handleFigshareUploadComplete: () => Promise<any>;
-  userFigshareAccountId: number;
+  userFigshareAccountLinked: boolean;
   figshareLinkedFiles: Map<
     string,
     {
@@ -129,11 +129,11 @@ export default class FigshareSection extends React.Component<Props, State> {
   }
 
   renderFigshareNotLinkedContent() {
-    const { userFigshareAccountId } = this.props;
+    const { userFigshareAccountLinked } = this.props;
     return (
       <React.Fragment>
         <p>This dataset version is not linked with any Figshare article.</p>
-        {userFigshareAccountId === null && (
+        {!userFigshareAccountLinked && (
           <p>
             Link your Figshare account to upload this dataset version to
             Figshare through the sidebar of the{" "}
@@ -142,13 +142,13 @@ export default class FigshareSection extends React.Component<Props, State> {
         )}
         <Button
           onClick={this.showUploadToFigshare}
-          disabled={userFigshareAccountId === null}
+          disabled={!userFigshareAccountLinked}
         >
           Upload to Figshare as new article
         </Button>
         <Button
           onClick={this.showUpdateFigshare}
-          disabled={userFigshareAccountId === null}
+          disabled={!userFigshareAccountLinked}
         >
           Upload to Figshare as a new version of an existing article
         </Button>
@@ -157,6 +157,8 @@ export default class FigshareSection extends React.Component<Props, State> {
   }
 
   render() {
+    const { userFigshareAccountLinked } = this.props;
+
     return (
       <section>
         <h2>Link with Figshare</h2>
@@ -169,14 +171,13 @@ export default class FigshareSection extends React.Component<Props, State> {
               tapi={this.props.tapi}
               handleClose={this.handleCloseUploadToFigshare}
               show={this.state.showUploadToFigshare}
-              userFigshareLinked={this.props.userFigshareAccountId !== null}
+              userFigshareLinked={userFigshareAccountLinked}
               datasetVersion={this.props.datasetVersion}
             />
             <UpdateFigshare
               tapi={this.props.tapi}
               handleClose={this.handleCloseUpdateFigshare}
               show={this.state.showUpdateFigshare}
-              userFigshareAccountId={this.props.userFigshareAccountId}
               datasetVersion={this.props.datasetVersion}
             />
           </React.Fragment>
