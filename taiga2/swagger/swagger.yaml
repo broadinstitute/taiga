@@ -1994,7 +1994,13 @@ definitions:
         type: string
       filetype:
         type: string
+        enum:
+          - s3
+          - gcs
+          - virtual
       existingTaigaId:
+        type: string
+      gcsPath:
         type: string
       s3Upload:
         "$ref": "#/definitions/S3UploadedFileMetadata"
