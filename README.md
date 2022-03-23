@@ -97,18 +97,15 @@ For our case, it is pretty simple:
 4. Click on `Edit CORS Configuration`
 5. Paste the following configuration into the page that should appear (CORS Configuration Editor):
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-  <CORSRule>
-      <AllowedOrigin>*</AllowedOrigin>
-      <AllowedMethod>GET</AllowedMethod>
-      <AllowedMethod>POST</AllowedMethod>
-      <AllowedMethod>PUT</AllowedMethod>
-      <ExposeHeader>ETag</ExposeHeader>
-      <AllowedHeader>*</AllowedHeader>
-  </CORSRule>
-</CORSConfiguration>
+```json
+[
+    {
+        "AllowedOrigins": ["*"],
+        "AllowedMethods": ["GET", "POST", "PUT"],
+        "ExposeHeaders": ["ETag"],
+        "AllowedHeaders": ["*"]
+    }
+]
 ```
 
 **_Warning: Be careful to not override your existing configuration!_**
