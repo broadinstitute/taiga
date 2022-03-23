@@ -741,22 +741,6 @@ def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
     # get_data_from_flask_jsonify(endpoint.create_or_update_dataset_access_log(vdataset_id))
 
 
-def create_session_with_virtual(new_name, old_name):
-    uploadSessionFile = {
-        "filename": new_name,
-        "filetype": "virtual",
-        "existingTaigaID": old_name,
-    }
-
-    sid = new_upload_session.id
-
-    endpoint.create_upload_session_file(uploadSessionFile=uploadSessionFile, sid=sid)
-    _new_upload_session_files = models_controller.get_upload_session_files_from_session(
-        sid
-    )
-    return _new_upload_session_files[0]
-
-
 def test_create_virtual_dataset_endpoint(session: SessionBase):
     folder = models_controller.add_folder(
         "folder", models_controller.Folder.FolderType.folder, "folder desc"
@@ -844,11 +828,3 @@ def test_search_within_folder(session: SessionBase, new_dataset_in_new_folder_in
 
 # <editor-fold desc="User">
 # </editor-fold>
-
-
-def test_setup_1(session: SessionBase):
-    print("1")
-
-
-def test_setup_2(session: SessionBase):
-    print("2")
