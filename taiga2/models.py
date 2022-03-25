@@ -1,7 +1,9 @@
 import enum
+from sqlite3 import Timestamp
 import uuid
 import re
 import datetime
+from xmlrpc.client import DateTime
 from .extensions import metadata
 
 from flask_migrate import Migrate
@@ -259,6 +261,25 @@ class DataFile(db.Model):
     )
 
     __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "abstract"}
+
+
+class ReadAccessLog(db.Model):
+    __tablename__ = "read_access_log"
+
+    datafile_id: int = db.Column(db.Integer, primary_key=True)
+    user_id: str = db.Column(db.String, primary_key=True)
+    first_access: datetime.datetime = db.Column(db.DateTime)
+    last_access: datetime.datetime = db.Column(db.DateTime)
+    access_count: int = db.Column(db.Integer, default=1)
+
+    def __repr__(self):
+        return "Datafile id: {}, User id: {}, First access: {}, Last access: {}, Access count: {}".format(
+            self.datafile_id,
+            self.user_id,
+            self.first_access,
+            self.last_access,
+            self.access_count,
+        )
 
 
 class S3DataFile(DataFile):

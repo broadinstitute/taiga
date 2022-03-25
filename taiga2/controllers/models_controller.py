@@ -12,7 +12,7 @@ import json
 from sqlalchemy import and_, update
 
 import taiga2.models as models
-from taiga2.models import db
+from taiga2.models import ReadAccessLog, db
 from taiga2.third_party_clients import aws
 from taiga2.models import (
     User,
@@ -1298,6 +1298,33 @@ def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataF
         return None
 
     return resolve_virtual_datafile(datafile)
+
+
+def log_datafile_read_access_info(datafile_id: int, user_id: int):
+    # If the user has read this data file, a row with this datafiles access info will already exist, so update that
+    # row's access count and last access time info. Otherwise, add a row to track the read access of this file for this user.
+    read_access_row = (
+        db.session.query(ReadAccessLog)
+        .filter(ReadAccessLog.user_id == user_id)
+        .filter(ReadAccessLog.datafile_id == datafile_id)
+        .one_or_none()
+    )
+
+    if read_access_row is None:
+        read_access_row = ReadAccessLog(
+            datafile_id=datafile_id,
+            user_id=user_id,
+            first_access=datetime.utcnow(),
+            last_access=datetime.utcnow(),
+            access_count=1,
+        )
+        db.session.add(read_access_row)
+    else:
+        read_access_row.datafile_id = datafile_id
+        read_access_row.last_access = datetime.utcnow()
+        read_access_row.access_count = read_access_row.access_count + 1
+
+    db.session.commit()
 
 
 def add_datafiles_from_session(session_id: str):
