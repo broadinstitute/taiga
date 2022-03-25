@@ -813,11 +813,7 @@ def get_datafile(
         result["underlying_file_id"] = datafile.underlying_file_id
 
     if result:
-        user = models_controller.get_current_session_user()
-        models_controller.log_datafile_read_access_info(datafile.id, user.id)
-        import pdb
-
-        pdb.set_trace()
+        models_controller.log_datafile_read_access_info(datafile.id)
 
     return flask.jsonify(result)
 

@@ -9,7 +9,7 @@ from typing import List, Dict, Tuple, Optional
 
 import json
 
-from sqlalchemy import and_, update
+from sqlalchemy import and_
 
 import taiga2.models as models
 from taiga2.models import ReadAccessLog, db
@@ -1300,9 +1300,12 @@ def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataF
     return resolve_virtual_datafile(datafile)
 
 
-def log_datafile_read_access_info(datafile_id: int, user_id: int):
+def log_datafile_read_access_info(datafile_id: int):
     # If the user has read this data file, a row with this datafiles access info will already exist, so update that
     # row's access count and last access time info. Otherwise, add a row to track the read access of this file for this user.
+    user = get_current_session_user()
+    user_id = user.id
+
     read_access_row = (
         db.session.query(ReadAccessLog)
         .filter(ReadAccessLog.user_id == user_id)
@@ -1686,7 +1689,7 @@ def find_datafile(
 ) -> Optional[DataFile]:
     """Look up a datafile given either a permaname (and optional version number) or a dataset_version_id.  The datafile_name
     is also optional.  If unspecified, and there is a single datafile for that dataset_version, that will be returned.
-    Otherwise datafile_name is required. """
+    Otherwise datafile_name is required."""
     if dataset_permaname is not None:
         if dataset_version_id is not None:
             raise IllegalArgumentError(
