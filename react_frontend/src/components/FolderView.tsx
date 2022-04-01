@@ -329,7 +329,10 @@ export class FolderView extends React.Component<
       tapi
         .copy_to_folder(this.state.selection, folderId)
         .then(() => this.afterAction());
-    } else if (this.state.actionName === "currentFolderLinkToHome") {
+    } else if (
+      this.state.actionName === "currentFolderLinkToHome" ||
+      this.state.actionName === "currentFolderLink"
+    ) {
       tapi
         .copy_to_folder([this.props.match.params.folderId], folderId)
         .then(() => this.afterAction());
