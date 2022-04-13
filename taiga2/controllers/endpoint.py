@@ -684,8 +684,6 @@ def _get_gcs_datafile(
     datafile_name,
     dataset_name,
     dataset_permaname,
-    dl_filename,
-    force,
     format,
 ):
     if format == "metadata":
@@ -882,8 +880,6 @@ def get_datafile(
             datafile_name,
             dataset_name,
             dataset_permaname,
-            dl_filename,
-            force,
             format,
         )
     else:
