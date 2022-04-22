@@ -557,12 +557,9 @@ paths:
           schema:
             type: object
             required:
-              - sessionId
               - datasetId
               - newDescription
             properties:
-              sessionId:
-                type: string
               datasetId:
                 type: string
               newDescription:

@@ -95,7 +95,11 @@ def set_current_user_from_bearer_token():
     bearer_token = request.headers.get("Authorization", None)
     default_user_email = config.get("DEFAULT_USER_EMAIL", None)
 
-    if user is None and bearer_token is not None:
+    if (
+        user is None
+        and bearer_token is not None
+        and request.headers.get("Host") != "127.0.0.1:5000"
+    ):
         m = re.match("Bearer (\\S+)", bearer_token)
         if m is not None:
             token = m.group(1)

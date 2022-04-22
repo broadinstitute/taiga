@@ -1,3 +1,5 @@
+from collections import defaultdict
+from typing import Collection, DefaultDict, List, Optional, Tuple, Union
 import flask
 import logging
 import requests
@@ -15,12 +17,21 @@ from google.cloud import storage, exceptions as gcs_exceptions
 from requests.exceptions import HTTPError
 
 # TODO: Change the app containing db to api_app => current_app
-import taiga2.controllers.models_controller as models_controller
+from taiga2.controllers import models_controller
 import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import (
+    DatasetMetadataDict,
     DatasetVersion,
     DataFile,
+    DatasetVersionFiles,
+    DatasetVersionMetadataDict,
+    GCSObjectDataFile,
+    UploadDataFile,
+    UploadS3DataFile,
+    UploadS3DataFileDict,
+    UploadVirtualDataFile,
+    UploadVirtualDataFileDict,
     normalize_name,
     SearchResult,
     FigshareDatasetVersionLink,
@@ -232,6 +243,201 @@ def _get_dataset_version_schema_json(
             pass
 
     return dataset_version_schema.dump(dataset_version).data
+
+
+def _get_dataset_version_from_dataset(datasetId, datasetVersionId):
+    dataset_version = models_controller.get_dataset_version_by_dataset_id_and_dataset_version_id(
+        datasetId, datasetVersionId, one_or_none=True
+    )
+    if dataset_version is None:
+        # if we couldn't find a version by dataset_version_id, try permaname and version number.
+        version_number = None
+        try:
+            version_number = int(datasetVersionId)
+        except ValueError:
+            # TODO: Log the error
+            pass
+
+        if version_number is not None:
+            dataset_version = models_controller.get_dataset_version_by_permaname_and_version(
+                datasetId, version_number, one_or_none=True
+            )
+        else:
+            dataset_version = models_controller.get_latest_dataset_version_by_permaname(
+                datasetId
+            )
+
+    if dataset_version is None:
+        flask.abort(404)
+
+    dataset_version_right = models_controller.get_rights(dataset_version.id)
+
+    dataset = dataset_version.dataset
+    dataset_right = models_controller.get_rights(dataset.id)
+
+    dataset.parents = filter_allowed_parents(dataset.parents)
+    dataset.description = dataset_version.description
+
+    json_dv_data = _get_dataset_version_schema_json(
+        dataset_version, dataset_version_right
+    )
+
+    dataset_schema = schemas.DatasetSchema()
+    dataset_schema.context["entry_user_right"] = dataset_right
+    subscription = models_controller.get_dataset_subscription_for_dataset_and_user(
+        dataset_version.dataset_id
+    )
+    dataset_schema.context["subscription_id"] = (
+        subscription.id if subscription is not None else None
+    )
+    json_dataset_data = dataset_schema.dump(dataset).data
+
+    # Preparation of the dictonary to return both objects
+    json_dv_and_dataset_data = {
+        "datasetVersion": json_dv_data,
+        "dataset": json_dataset_data,
+    }
+
+    return json_dv_and_dataset_data
+
+
+def _get_dataset_version_metadata(
+    dataset_permaname: str, dataset_version: Optional[DatasetVersion]
+):
+    return _get_dataset_version_from_dataset(dataset_permaname, dataset_version)
+
+
+def _get_dataset_metadata(
+    dataset_id: str, version: Optional[DatasetVersion]
+) -> Optional[Union[DatasetMetadataDict, DatasetVersionMetadataDict]]:
+    if "." in dataset_id:
+        dataset_id, version, _ = models_controller.untangle_dataset_id_with_version(
+            dataset_id
+        )
+
+    return _get_dataset_version_metadata(dataset_id, version)
+
+
+def _modify_upload_files(
+    upload_files: List[UploadS3DataFileDict],
+    add_taiga_ids: List[UploadVirtualDataFileDict],
+    dataset_version_metadata: Optional[DatasetVersionMetadataDict] = None,
+    add_all_existing_files: bool = False,
+) -> Tuple[List[UploadS3DataFile], List[UploadVirtualDataFile]]:
+    previous_version_taiga_ids: Optional[List[UploadVirtualDataFileDict]] = None
+
+    if dataset_version_metadata is not None:
+        dataset_permaname = dataset_version_metadata["dataset"]["permanames"][-1]
+        dataset_version = dataset_version_metadata["datasetVersion"]["version"]
+        datafiles = dataset_version_metadata["datasetVersion"]["datafiles"]
+
+        # For upload files that have the same content as file in the base dataset version,
+        # add the file as a virtual datafile instead of uploading it
+        add_as_virtual = {}
+        for upload_file_dict in upload_files:
+            sha256, md5 = models_controller.get_file_hashes(upload_file_dict["path"])
+            matching_file: Optional[DatasetVersionFiles] = next(
+                (
+                    f
+                    for f in datafiles
+                    if (
+                        f.get("original_file_sha256") == sha256
+                        and f.get("original_file_md5") == md5
+                        and (
+                            models_controller.DATAFILE_UPLOAD_FORMAT_TO_STORAGE_FORMAT[
+                                upload_file_dict["format"]
+                            ]
+                            == f.get("type")
+                        )
+                    )
+                ),
+                None,
+            )
+
+            if matching_file is not None:
+                name: str = upload_file_dict.get(
+                    "name",
+                    models_controller.standardize_file_name(upload_file_dict["path"]),
+                )
+                taiga_id = (
+                    f"{dataset_permaname}.{dataset_version}/{matching_file['name']}"
+                )
+                add_as_virtual[upload_file_dict["path"]] = (name, taiga_id)
+
+        add_taiga_ids.extend(
+            {"taiga_id": taiga_id, "name": name}
+            for _, (name, taiga_id) in add_as_virtual.items()
+        )
+
+        upload_files = [
+            upload_file_dict
+            for upload_file_dict in upload_files
+            if upload_file_dict["path"] not in add_as_virtual
+        ]
+
+        if add_all_existing_files:
+            previous_version_taiga_ids = [
+                {
+                    "taiga_id": models_controller.format_datafile_id(
+                        dataset_permaname, dataset_version, datafile["name"]
+                    )
+                }
+                for datafile in dataset_version_metadata["datasetVersion"]["datafiles"]
+            ]
+
+    upload_s3_datafiles = [UploadS3DataFile(f) for f in upload_files]
+    upload_virtual_datafiles = [UploadVirtualDataFile(f) for f in add_taiga_ids]
+    previous_version_datafiles = (
+        [UploadVirtualDataFile(f) for f in previous_version_taiga_ids]
+        if previous_version_taiga_ids is not None
+        else None
+    )
+
+    # https://github.com/python/typeshed/issues/2383
+    all_upload_datafiles: Collection[UploadDataFile] = (
+        upload_s3_datafiles + upload_virtual_datafiles  # type: ignore
+    )
+
+    datafile_names: DefaultDict[str, int] = defaultdict(int)
+    for upload_datafile in all_upload_datafiles:
+        datafile_names[upload_datafile.file_name] += 1
+
+    duplicate_file_names = [
+        file_name for file_name, count in datafile_names.items() if count > 1
+    ]
+    if len(duplicate_file_names) > 0:
+        raise ValueError(
+            "Multiple files named {}.".format(", ".join(duplicate_file_names))
+        )
+
+    if previous_version_datafiles is not None:
+        for upload_datafile in previous_version_datafiles:
+            if upload_datafile.file_name not in datafile_names:
+                upload_virtual_datafiles.append(upload_datafile)
+
+    return upload_s3_datafiles, upload_virtual_datafiles
+
+
+def _validate_update_dataset_arguments(
+    datasetVersionMetadata,
+    dataset_permaname: Optional[str],
+    dataset_version: Optional[DatasetVersion],
+    upload_files: List[UploadS3DataFileDict],
+    add_taiga_ids: List[UploadVirtualDataFileDict],
+    add_existing_files: bool,
+) -> Tuple[
+    List[UploadS3DataFile], List[UploadVirtualDataFile], DatasetVersionMetadataDict
+]:
+
+    dataset_version_metadata: DatasetVersionMetadataDict = (
+        _get_dataset_metadata(dataset_permaname, dataset_version)
+    )
+
+    upload_s3_datafiles, upload_virtual_datafiles = _modify_upload_files(
+        upload_files, add_taiga_ids, dataset_version_metadata, add_existing_files
+    )
+
+    return upload_s3_datafiles, upload_virtual_datafiles, dataset_version_metadata
 
 
 @validate
@@ -469,6 +675,7 @@ from .models_controller import InvalidTaigaIdFormat
 @validate
 def create_upload_session_file(uploadMetadata, sid):
     filename = uploadMetadata["filename"]
+
     if uploadMetadata["filetype"] == "s3":
         S3UploadedFileMetadata = uploadMetadata["s3Upload"]
         s3_bucket = S3UploadedFileMetadata["bucket"]
@@ -555,10 +762,104 @@ def create_upload_session_file(uploadMetadata, sid):
         )
 
 
+def _create_upload_session_file(uploadMetadata, sid):
+    filename = uploadMetadata["filename"]
+
+    if uploadMetadata["filetype"] == "s3":
+        S3UploadedFileMetadata = uploadMetadata["s3Upload"]
+        s3_bucket = S3UploadedFileMetadata["bucket"]
+
+        initial_file_type = S3UploadedFileMetadata["format"]
+        initial_s3_key = S3UploadedFileMetadata["key"]
+
+        encoding = S3UploadedFileMetadata.get("encoding")
+
+        # Register this new file to the UploadSession received
+        upload_session_file = models_controller.add_upload_session_s3_file(
+            session_id=sid,
+            filename=filename,
+            initial_file_type=initial_file_type,
+            initial_s3_key=initial_s3_key,
+            s3_bucket=s3_bucket,
+            encoding=encoding,
+        )
+
+        # Launch a Celery process to convert and get back to populate the db + send finish to client
+        from taiga2.tasks import background_process_new_upload_session_file
+
+        task = background_process_new_upload_session_file.delay(
+            upload_session_file.id,
+            initial_s3_key,
+            initial_file_type,
+            s3_bucket,
+            upload_session_file.converted_s3_key,
+            upload_session_file.compressed_s3_key,
+            upload_session_file.encoding,
+        )
+
+        return task.id
+    elif uploadMetadata["filetype"] == "virtual":
+        existing_taiga_id = uploadMetadata["existingTaigaId"]
+
+        try:
+            data_file = models_controller.get_datafile_by_taiga_id(
+                existing_taiga_id, one_or_none=True
+            )
+        except InvalidTaigaIdFormat as ex:
+            api_error(
+                "The following was not formatted like a valid taiga ID: {}".format(
+                    ex.taiga_id
+                )
+            )
+
+        if data_file is None:
+            api_error("Unknown taiga ID: " + existing_taiga_id)
+
+        models_controller.add_upload_session_virtual_file(
+            session_id=sid, filename=filename, data_file_id=data_file.id
+        )
+
+        return "done"
+    elif uploadMetadata["filetype"] == "gcs":
+        gcs_path = uploadMetadata["gcsPath"]
+
+        if gcs_path is None:
+            api_error("No GCS path given")
+
+        try:
+            bucket_name, object_name = parse_gcs_path(gcs_path)
+            blob = get_blob(bucket_name, object_name)
+        except ValueError as e:
+            api_error(str(e))
+
+        if not blob:
+            api_error("No object found: {}".format(object_name))
+
+        generation_id = blob.generation
+
+        models_controller.add_upload_session_gcs_file(
+            session_id=sid,
+            filename=filename,
+            gcs_path=gcs_path,
+            generation_id=str(generation_id),
+        )
+
+        return "done"
+    else:
+        api_error(
+            "unknown filetype " + uploadMetadata["filetype"] + ", expected '' or ''"
+        )
+
+
 @validate
 def create_new_upload_session():
     upload_session = models_controller.add_new_upload_session()
     return flask.jsonify(upload_session.id)
+
+
+def _create_new_upload_session():
+    upload_session = models_controller.add_new_upload_session()
+    return upload_session.id
 
 
 def _find_data_file_id(data_file_id):
@@ -612,11 +913,29 @@ def create_dataset(sessionDatasetInfo):
 
 @validate
 def create_new_dataset_version(datasetVersionMetadata):
+    session_id = _create_new_upload_session()
     assert "datafileIds" not in datasetVersionMetadata
-    session_id = datasetVersionMetadata["sessionId"]
     dataset_id = datasetVersionMetadata["datasetId"]
+    dataset_version = datasetVersionMetadata["datasetVersion"]
+    dataset_permaname = datasetVersionMetadata["datasetPermaname"]
     new_description = datasetVersionMetadata["newDescription"]
     changes_description = datasetVersionMetadata.get("changesDescription", None)
+    upload_files = datasetVersionMetadata["uploadFiles"]
+    taiga_ids_to_add = datasetVersionMetadata["taigaIdsToAdd"]
+    add_existing_files = datasetVersionMetadata.get("addExistingFiles", False)
+
+    s3_upload_files, virtual_upload_files, metadata = _validate_update_dataset_arguments(
+        datasetVersionMetadata,
+        dataset_permaname,
+        dataset_version,
+        upload_files,
+        taiga_ids_to_add,
+        add_existing_files,
+    )
+
+    all_files = s3_upload_files + virtual_upload_files
+    for file in all_files:
+        _create_upload_session_file(file.to_api_param(), session_id)
 
     new_dataset_version = models_controller.create_new_dataset_version_from_session(
         session_id, dataset_id, new_description, changes_description

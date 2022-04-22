@@ -1,5 +1,6 @@
 from datetime import datetime
 import enum
+import hashlib
 import flask
 import uuid
 import os
@@ -9,10 +10,11 @@ from typing import List, Dict, Tuple, Optional
 
 import json
 
-from sqlalchemy import and_, update
+from sqlalchemy import and_
+from taiga2 import schemas
 
 import taiga2.models as models
-from taiga2.models import db
+
 from taiga2.third_party_clients import aws
 from taiga2.models import (
     User,
@@ -34,6 +36,7 @@ from taiga2.models import (
     FigshareDatasetVersionLink,
     FigshareDataFileLink,
     DatasetSubscription,
+    db,
 )
 from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
@@ -45,7 +48,7 @@ from taiga2.dataset_subscriptions import send_emails_for_dataset
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
 from sqlalchemy.sql.expression import func
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 
 DataFileAlias = namedtuple("DataFileAlias", "name data_file_id")
 
@@ -60,6 +63,95 @@ log = logging.getLogger(__name__)
 #   You need to push the context of you app => app.app_context().push() (for us frontend_app.app_context().push()
 
 # <editor-fold desc="User">
+
+DATAFILE_ID_FORMAT = "{dataset_permaname}.{dataset_version}/{datafile_name}"
+DATAFILE_ID_FORMAT_MISSING_DATAFILE = "{dataset_permaname}.{dataset_version}"
+DATAFILE_ID_REGEX_FULL = r"^(.*)\.(\d*)\/(.*)$"
+DATAFILE_ID_REGEX_MISSING_DATAFILE = r"^(.*)\.(\d*)$"
+DATAFILE_CACHE_FORMAT = "{dataset_permaname}_v{dataset_version}_{datafile_name}"
+DATAFILE_UPLOAD_FORMAT_TO_STORAGE_FORMAT = {
+    "NumericMatrixCSV": "HDF5",
+    "TableCSV": "Columnar",
+    "Raw": "Raw",
+}
+
+
+def standardize_file_name(file_name: str) -> str:
+    return os.path.basename(os.path.splitext(file_name)[0])
+
+
+def get_file_hashes(file_name: str) -> Tuple[str, str]:
+    """Returns the sha256 and md5 hashes for a file."""
+    sha256 = hashlib.sha256()
+    md5 = hashlib.md5()
+    with open(file_name, "rb") as fd:
+        while True:
+            buffer = fd.read(1024 * 1024)
+            if len(buffer) == 0:
+                break
+            sha256.update(buffer)
+            md5.update(buffer)
+    return sha256.hexdigest(), md5.hexdigest()
+
+
+def controller_error(msg):
+    raise Exception(detail=msg)
+
+
+def untangle_dataset_id_with_version(taiga_id: str,) -> Tuple[str, str, Optional[str]]:
+    """Returns dataset_permaname, dataset_version, and datafile_name from
+    `taiga_id` in the form dataset_permaname.version/datafile_name or
+    dataset_permaname.version.
+
+    Arguments:
+        taiga_id {str} -- Taiga datafile ID in the form
+            dataset_permaname.version/datafile_name or
+            dataset_permaname.version
+
+    Raises:
+        Exception: `taiga_id` not in the form
+            dataset_permaname.version/datafile_name or
+            dataset_permaname.version
+
+    Returns:
+        Tuple[str, str, Optional[str]] -- dataset_permaname, dataset_version, and
+            datafile_name or None
+    """
+    taiga_id_search = re.search(DATAFILE_ID_REGEX_FULL, taiga_id)
+    if taiga_id_search:
+        dataset_permaname, dataset_version, datafile_name = (
+            taiga_id_search.group(1),
+            taiga_id_search.group(2),
+            taiga_id_search.group(3),
+        )
+    else:
+        taiga_id_search = re.search(DATAFILE_ID_REGEX_MISSING_DATAFILE, taiga_id)
+        if taiga_id_search is None:
+            raise ValueError(
+                "{} not in the form dataset_permaname.version/datafile_name or dataset_permaname.version".format(
+                    taiga_id
+                )
+            )
+
+        dataset_permaname, dataset_version, datafile_name = (
+            taiga_id_search.group(1),
+            taiga_id_search.group(2),
+            None,
+        )
+
+    return dataset_permaname, dataset_version, datafile_name
+
+
+def filter_allowed_parents(parents):
+    allowed_parents = parents
+
+    for index, folder in enumerate(parents):
+        if not can_view(folder.id):
+            del allowed_parents[index]
+
+    return allowed_parents
+
+
 def add_user(name, email, token=None):
     new_user = User(name=name, email=email, token=token)
 
@@ -736,6 +828,26 @@ def _format_datafile_diff(datafile_diff):
     return comments
 
 
+def format_datafile_id(
+    dataset_permaname: str,
+    dataset_version: DatasetVersion,
+    datafile_name: Optional[str],
+):
+    name_parts = {
+        "dataset_permaname": dataset_permaname,
+        "dataset_version": dataset_version,
+        "datafile_name": datafile_name,
+    }
+
+    id_format = (
+        DATAFILE_ID_FORMAT
+        if datafile_name is not None
+        else DATAFILE_ID_FORMAT_MISSING_DATAFILE
+    )
+
+    return id_format.format(**name_parts)
+
+
 def create_new_dataset_version_from_session(
     session_id, dataset_id, new_description, changes_description
 ):
@@ -1136,6 +1248,16 @@ def can_view(entry_id):
         return False
 
 
+def filter_allowed_parents(parents):
+    allowed_parents = parents
+
+    for index, folder in enumerate(parents):
+        if not can_view(folder.id):
+            del allowed_parents[index]
+
+    return allowed_parents
+
+
 # </editor-fold>
 
 # <editor-fold desc="DataFile">
@@ -1405,7 +1527,10 @@ def get_user_from_upload_session(session_id: str):
 def get_upload_session_files_from_session(session_id: str) -> List[UploadSessionFile]:
     # TODO: We could also fetch the datafiles with only one query
     upload_session = (
-        db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
+        db.session.query(UploadSession)
+        .filter(UploadSession.id == session_id)
+        .with_for_update()
+        .one()
     )
 
     upload_session_files = upload_session.upload_session_files
@@ -1659,7 +1784,7 @@ def find_datafile(
 ) -> Optional[DataFile]:
     """Look up a datafile given either a permaname (and optional version number) or a dataset_version_id.  The datafile_name
     is also optional.  If unspecified, and there is a single datafile for that dataset_version, that will be returned.
-    Otherwise datafile_name is required. """
+    Otherwise datafile_name is required."""
     if dataset_permaname is not None:
         if dataset_version_id is not None:
             raise IllegalArgumentError(
