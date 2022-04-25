@@ -102,6 +102,44 @@ def get_dataset(datasetId):
     return flask.jsonify(json_dataset_data)
 
 
+def _get_dataset(datasetId):
+    # TODO: We could receive a datasetId being a permaname. This is not good as our function is not respecting the atomicity. Should handle the usage of a different function if permaname
+    # try using ID
+    dataset = models_controller.get_dataset(datasetId, one_or_none=True)
+
+    # if that failed, try by permaname
+    if dataset is None:
+        dataset = models_controller.get_dataset_from_permaname(
+            datasetId, one_or_none=True
+        )
+
+    if dataset is None:
+        flask.abort(404)
+
+    # TODO: We should instead check in the controller, but did not want to repeat
+    # Remove folders that are not allowed to be seen
+    allowed_dataset = dataset
+    allowed_dataset.parents = filter_allowed_parents(dataset.parents)
+    last_dataset_version = models_controller.get_latest_dataset_version(
+        allowed_dataset.id
+    )
+    allowed_dataset.description = last_dataset_version.description
+
+    # Get the rights of the user over the folder
+    right = models_controller.get_rights(dataset.id)
+    dataset_schema = schemas.DatasetSchema()
+    print("The right is: {}".format(right))
+    dataset_schema.context["entry_user_right"] = right
+    subscription = models_controller.get_dataset_subscription_for_dataset_and_user(
+        dataset.id
+    )
+    dataset_schema.context["subscription_id"] = (
+        subscription.id if subscription is not None else None
+    )
+    json_dataset_data = dataset_schema.dump(allowed_dataset).data
+    return json_dataset_data
+
+
 @validate
 def get_datasets(datasetIdsDict):
     array_dataset_ids = datasetIdsDict["datasetIds"]
@@ -249,6 +287,7 @@ def _get_dataset_version_from_dataset(datasetId, datasetVersionId):
     dataset_version = models_controller.get_dataset_version_by_dataset_id_and_dataset_version_id(
         datasetId, datasetVersionId, one_or_none=True
     )
+
     if dataset_version is None:
         # if we couldn't find a version by dataset_version_id, try permaname and version number.
         version_number = None
@@ -304,6 +343,9 @@ def _get_dataset_version_from_dataset(datasetId, datasetVersionId):
 def _get_dataset_version_metadata(
     dataset_permaname: str, dataset_version: Optional[DatasetVersion]
 ):
+    if dataset_version is None:
+        return _get_dataset(dataset_permaname)
+
     return _get_dataset_version_from_dataset(dataset_permaname, dataset_version)
 
 
@@ -418,8 +460,21 @@ def _modify_upload_files(
     return upload_s3_datafiles, upload_virtual_datafiles
 
 
+def _get_latest_valid_version_from_metadata(
+    dataset_metadata: DatasetMetadataDict,
+) -> str:
+    versions = dataset_metadata["versions"]
+    latest_valid_version = 1
+    for version in versions:
+        version_num = int(version["name"])
+        if version_num > latest_valid_version and version["state"] != "deleted":
+            latest_valid_version = version_num
+
+    return str(latest_valid_version)
+
+
 def _validate_update_dataset_arguments(
-    datasetVersionMetadata,
+    dataset_metadata: DatasetMetadataDict,
     dataset_permaname: Optional[str],
     dataset_version: Optional[DatasetVersion],
     upload_files: List[UploadS3DataFileDict],
@@ -428,6 +483,27 @@ def _validate_update_dataset_arguments(
 ) -> Tuple[
     List[UploadS3DataFile], List[UploadVirtualDataFile], DatasetVersionMetadataDict
 ]:
+    dataset_id = dataset_metadata["datasetId"]
+    if dataset_id is not None:
+        if "." in dataset_id:
+            (
+                dataset_permaname,
+                dataset_version,
+                _,
+            ) = models_controller.untangle_dataset_id_with_version(dataset_id)
+        else:
+            dataset_metadata: DatasetMetadataDict = _get_dataset_metadata(
+                dataset_id, None
+            )
+            dataset_permaname = dataset_metadata["permanames"][-1]
+    elif dataset_permaname is not None:
+        dataset_metadata = _get_dataset_metadata(dataset_permaname, None)
+    else:
+        # TODO standardize exceptions
+        raise ValueError("Dataset id or name must be specified.")
+
+    if dataset_version is None:
+        dataset_version = _get_latest_valid_version_from_metadata(dataset_metadata)
 
     dataset_version_metadata: DatasetVersionMetadataDict = (
         _get_dataset_metadata(dataset_permaname, dataset_version)
