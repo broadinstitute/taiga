@@ -11,7 +11,6 @@ from typing import List, Dict, Tuple, Optional
 import json
 
 from sqlalchemy import and_
-from taiga2 import schemas
 
 import taiga2.models as models
 
@@ -42,13 +41,12 @@ from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
 from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
 from taiga2.models import Group, EntryRightsEnum, resolve_virtual_datafile
-from taiga2.models import SearchResult, SearchEntry, Breadcrumb
+from taiga2.models import SearchEntry, Breadcrumb
 from taiga2.dataset_subscriptions import send_emails_for_dataset
 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
-from sqlalchemy.sql.expression import func
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 
 DataFileAlias = namedtuple("DataFileAlias", "name data_file_id")
 
@@ -1527,10 +1525,7 @@ def get_user_from_upload_session(session_id: str):
 def get_upload_session_files_from_session(session_id: str) -> List[UploadSessionFile]:
     # TODO: We could also fetch the datafiles with only one query
     upload_session = (
-        db.session.query(UploadSession)
-        .filter(UploadSession.id == session_id)
-        .with_for_update()
-        .one()
+        db.session.query(UploadSession).filter(UploadSession.id == session_id).one()
     )
 
     upload_session_files = upload_session.upload_session_files
