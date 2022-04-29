@@ -5,11 +5,12 @@ import uuid
 import os
 import re
 
-from typing import List, Dict, Tuple, Optional
+from typing import Any, List, Dict, Tuple, Optional
 
 import json
 
 from sqlalchemy import and_, update
+from taiga2 import schemas
 
 import taiga2.models as models
 from taiga2.models import db
@@ -46,6 +47,9 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
 from sqlalchemy.sql.expression import func
 from collections import namedtuple
+from connexion.exceptions import ProblemException
+from taiga2.third_party_clients.gcs import get_blob, parse_gcs_path
+from taiga2.types import DatasetVersionMetadataDict, UploadVirtualDataFile
 
 DataFileAlias = namedtuple("DataFileAlias", "name data_file_id")
 
@@ -60,6 +64,22 @@ log = logging.getLogger(__name__)
 #   You need to push the context of you app => app.app_context().push() (for us frontend_app.app_context().push()
 
 # <editor-fold desc="User">
+
+DATAFILE_ID_FORMAT = "{dataset_permaname}.{dataset_version}/{datafile_name}"
+DATAFILE_ID_FORMAT_MISSING_DATAFILE = "{dataset_permaname}.{dataset_version}"
+DATAFILE_ID_REGEX_FULL = r"^(.*)\.(\d*)\/(.*)$"
+DATAFILE_ID_REGEX_MISSING_DATAFILE = r"^(.*)\.(\d*)$"
+DATAFILE_CACHE_FORMAT = "{dataset_permaname}_v{dataset_version}_{datafile_name}"
+DATAFILE_UPLOAD_FORMAT_TO_STORAGE_FORMAT = {
+    "NumericMatrixCSV": "HDF5",
+    "TableCSV": "Columnar",
+    "Raw": "Raw",
+}
+
+def api_error(msg):
+    raise ProblemException(detail=msg)
+
+
 def add_user(name, email, token=None):
     new_user = User(name=name, email=email, token=token)
 
@@ -736,41 +756,332 @@ def _format_datafile_diff(datafile_diff):
     return comments
 
 
+def api_error(msg):
+    raise ProblemException(detail=msg)
+
+def filter_allowed_parents(parents):
+    allowed_parents = parents
+
+    for index, folder in enumerate(parents):
+        if not can_view(folder.id):
+            del allowed_parents[index]
+
+    return allowed_parents
+
+
+def get_dataset_json(datasetId):
+        # TODO: We could receive a datasetId being a permaname. This is not good as our function is not respecting the atomicity. Should handle the usage of a different function if permaname
+    # try using ID
+    dataset = get_dataset(datasetId, one_or_none=True)
+
+    # if that failed, try by permaname
+    if dataset is None:
+        dataset = get_dataset_from_permaname(
+            datasetId, one_or_none=True
+        )
+
+    if dataset is None:
+        flask.abort(404)
+
+    # TODO: We should instead check in the controller, but did not want to repeat
+    # Remove folders that are not allowed to be seen
+    allowed_dataset = dataset
+    allowed_dataset.parents = filter_allowed_parents(dataset.parents)
+    last_dataset_version = get_latest_dataset_version(
+        allowed_dataset.id
+    )
+    allowed_dataset.description = last_dataset_version.description
+
+    # Get the rights of the user over the folder
+    right = get_rights(dataset.id)
+    dataset_schema = schemas.DatasetSchema()
+    print("The right is: {}".format(right))
+    dataset_schema.context["entry_user_right"] = right
+    subscription = get_dataset_subscription_for_dataset_and_user(
+        dataset.id
+    )
+    dataset_schema.context["subscription_id"] = (
+        subscription.id if subscription is not None else None
+    )
+    json_dataset_data = dataset_schema.dump(allowed_dataset).data
+
+    return json_dataset_data
+
+
+def get_dataset_version_from_dataset(datasetId, datasetVersionId)-> Dict[str, Any]:
+    dataset_version = get_dataset_version_by_dataset_id_and_dataset_version_id(
+        datasetId, datasetVersionId, one_or_none=True
+    )
+    if dataset_version is None:
+        # if we couldn't find a version by dataset_version_id, try permaname and version number.
+        version_number = None
+        try:
+            version_number = int(datasetVersionId)
+        except ValueError:
+            # TODO: Log the error
+            pass
+
+        if version_number is not None:
+            dataset_version = get_dataset_version_by_permaname_and_version(
+                datasetId, version_number, one_or_none=True
+            )
+        else:
+            dataset_version = get_latest_dataset_version_by_permaname(
+                datasetId
+            )
+
+    if dataset_version is None:
+        flask.abort(404)
+
+    dataset_version_right = get_rights(dataset_version.id)
+
+    dataset = dataset_version.dataset
+    dataset_right = get_rights(dataset.id)
+
+    dataset.parents = filter_allowed_parents(dataset.parents)
+    dataset.description = dataset_version.description
+
+    json_dv_data = get_dataset_version_schema_json(
+        dataset_version, dataset_version_right
+    )
+
+    dataset_schema = schemas.DatasetSchema()
+    dataset_schema.context["entry_user_right"] = dataset_right
+    subscription = get_dataset_subscription_for_dataset_and_user(
+        dataset_version.dataset_id
+    )
+    dataset_schema.context["subscription_id"] = (
+        subscription.id if subscription is not None else None
+    )
+    json_dataset_data = dataset_schema.dump(dataset).data
+
+    # Preparation of the dictonary to return both objects
+    json_dv_and_dataset_data = {
+        "datasetVersion": json_dv_data,
+        "dataset": json_dataset_data,
+    }
+
+    return json_dv_and_dataset_data
+
+
+def create_upload_session_file(uploadMetadata, sid):
+    filename = uploadMetadata["filename"]
+    if uploadMetadata["filetype"] == "s3":
+        S3UploadedFileMetadata = uploadMetadata["s3Upload"]
+        s3_bucket = S3UploadedFileMetadata["bucket"]
+
+        initial_file_type = S3UploadedFileMetadata["format"]
+        initial_s3_key = S3UploadedFileMetadata["key"]
+
+        encoding = S3UploadedFileMetadata.get("encoding")
+
+        # Register this new file to the UploadSession received
+        upload_session_file = add_upload_session_s3_file(
+            session_id=sid,
+            filename=filename,
+            initial_file_type=initial_file_type,
+            initial_s3_key=initial_s3_key,
+            s3_bucket=s3_bucket,
+            encoding=encoding,
+        )
+
+        # Launch a Celery process to convert and get back to populate the db + send finish to client
+        from taiga2.tasks import background_process_new_upload_session_file
+
+        task = background_process_new_upload_session_file.delay(
+            upload_session_file.id,
+            initial_s3_key,
+            initial_file_type,
+            s3_bucket,
+            upload_session_file.converted_s3_key,
+            upload_session_file.compressed_s3_key,
+            upload_session_file.encoding,
+        )
+
+        return flask.jsonify(task.id)
+    elif uploadMetadata["filetype"] == "virtual":
+        existing_taiga_id = uploadMetadata["existingTaigaId"]
+
+        try:
+            data_file = get_datafile_by_taiga_id(
+                existing_taiga_id, one_or_none=True
+            )
+        except InvalidTaigaIdFormat as ex:
+            api_error(
+                "The following was not formatted like a valid taiga ID: {}".format(
+                    ex.taiga_id
+                )
+            )
+
+        if data_file is None:
+            api_error("Unknown taiga ID: " + existing_taiga_id)
+
+        add_upload_session_virtual_file(
+            session_id=sid, filename=filename, data_file_id=data_file.id
+        )
+
+        return "done"
+    elif uploadMetadata["filetype"] == "gcs":
+        gcs_path = uploadMetadata["gcsPath"]
+
+        if gcs_path is None:
+            api_error("No GCS path given")
+
+        try:
+            bucket_name, object_name = parse_gcs_path(gcs_path)
+            blob = get_blob(bucket_name, object_name)
+        except ValueError as e:
+            api_error(str(e))
+
+        if not blob:
+            api_error("No object found: {}".format(object_name))
+
+        generation_id = blob.generation
+
+        add_upload_session_gcs_file(
+            session_id=sid,
+            filename=filename,
+            gcs_path=gcs_path,
+            generation_id=str(generation_id),
+        )
+
+        return "done"
+    else:
+        api_error(
+            "unknown filetype " + uploadMetadata["filetype"] + ", expected '' or ''"
+        )
+
+
+def format_datafile_id(
+    dataset_permaname: str,
+    dataset_version: DatasetVersion,
+    datafile_name: Optional[str],
+):
+    name_parts = {
+        "dataset_permaname": dataset_permaname,
+        "dataset_version": dataset_version,
+        "datafile_name": datafile_name,
+    }
+
+    id_format = (
+        DATAFILE_ID_FORMAT
+        if datafile_name is not None
+        else DATAFILE_ID_FORMAT_MISSING_DATAFILE
+    )
+
+    return id_format.format(**name_parts)
+
+
+def get_preivous_version_datafiles(dataset_version_metadata: DatasetVersionMetadataDict, dataset_permaname: str, dataset_version: str):
+    previous_version_taiga_ids = [
+    {
+        "taiga_id": format_datafile_id(
+            dataset_permaname, dataset_version, datafile["name"]
+        )
+    }
+    for datafile in dataset_version_metadata["datasetVersion"]["datafiles"]
+    ]
+
+    previous_version_datafiles = (
+        [UploadVirtualDataFile(f) for f in previous_version_taiga_ids]
+        if previous_version_taiga_ids is not None
+        else None
+    )
+
+    return previous_version_datafiles
+
+
 def create_new_dataset_version_from_session(
-    session_id, dataset_id, new_description, changes_description
+    session_id,
+    dataset_id,
+    new_description,
+    changes_description,
+    dataset_version,
+    add_existing_files,
 ):
     current_user = get_current_session_user()
 
-    added_datafiles = add_datafiles_from_session(session_id)
-    all_datafile_ids = [datafile.id for datafile in added_datafiles]
+    added_files = get_upload_session_files_from_session(session_id)
+    datafile_names = [file.name for file in added_files]
 
-    latest_dataset_version = get_latest_dataset_version(dataset_id)
+    # Lock here. We don't want to look for any existing files until we're
+    # done adding files (so we don't drop files in a race condition between
+    # independent processes)
+    db.session.begin_nested()
+    db.session.execute('LOCK TABLE dataset_versions IN ACCESS EXCLUSIVE MODE;')
+    try:
+        metadata_with_existing_files: DatasetVersionMetadataDict = {}
+        if add_existing_files:
+            if dataset_version is not None:
+                # It seems like we only need the existing files, and not everything that's going on
+                # in the following functions, but there is logic about rights, etc., so I'm keeping this
+                # as is in the spirit of "better safe than sorry"
+                metadata_with_existing_files = (
+                    get_dataset_version_from_dataset(
+                        dataset_id, dataset_version
+                    )
+                )
+            else:
+                metadata_with_existing_files = get_dataset_json(dataset_id)
 
-    datafile_diff = _get_dataset_version_datafiles_diff(
-        list(added_datafiles), list(latest_dataset_version.datafiles)
-    )
+            previous_version_datafiles = get_preivous_version_datafiles(
+                metadata_with_existing_files,
+                metadata_with_existing_files["dataset"]["dataset_permaname"],
+                dataset_version,
+            )
 
-    comments = _format_datafile_diff(datafile_diff)
+            # If file names being uploaded match an existing file from the previous
+            # version, we automatically replace the existing file with the new
+            # file.
+            upload_virtual_datafiles: List[UploadVirtualDataFile] = []
+            if previous_version_datafiles is not None:
+                for upload_datafile in previous_version_datafiles:
+                    if upload_datafile.file_name not in datafile_names:
+                        upload_virtual_datafiles.append(upload_datafile)
 
-    new_dataset_version = add_dataset_version(
-        dataset_id=dataset_id,
-        datafiles_ids=all_datafile_ids,
-        new_description=new_description,
-        changes_description=changes_description,
-    )
+            for file in previous_version_datafiles:
+                create_upload_session_file(
+                    file, session_id
+                )
 
-    activity = VersionAdditionActivity(
-        user_id=current_user.id,
-        dataset_id=new_dataset_version.dataset_id,
-        type=Activity.ActivityType.added_version,
-        dataset_description=new_description
-        if new_description != latest_dataset_version.description
-        else None,
-        dataset_version=new_dataset_version.version,
-        comments=comments,
-    )
-    db.session.add(activity)
-    db.session.commit()
+            added_datafiles = add_datafiles_from_session(session_id)
+
+        else:
+            added_datafiles = add_datafiles_from_session(session_id)
+
+
+        all_datafile_ids = [datafile.id for datafile in added_datafiles]
+
+        latest_dataset_version = get_latest_dataset_version(dataset_id)
+
+        datafile_diff = _get_dataset_version_datafiles_diff(
+            list(added_datafiles), list(latest_dataset_version.datafiles)
+        )
+
+        comments = _format_datafile_diff(datafile_diff)
+
+        new_dataset_version = add_dataset_version(
+            dataset_id=dataset_id,
+            datafiles_ids=all_datafile_ids,
+            new_description=new_description,
+            changes_description=changes_description,
+        )
+
+        activity = VersionAdditionActivity(
+            user_id=current_user.id,
+            dataset_id=new_dataset_version.dataset_id,
+            type=Activity.ActivityType.added_version,
+            dataset_description=new_description
+            if new_description != latest_dataset_version.description
+            else None,
+            dataset_version=new_dataset_version.version,
+            comments=comments,
+        )
+        db.session.add(activity)
+        db.session.commit()
+    except:
+        db.session.rollback()
+        endpoint_utils.api_error("")
 
     dataset_subscriptions = get_dataset_subscriptions_for_dataset(dataset_id)
     if not any(ds.user_id == current_user.id for ds in dataset_subscriptions):
@@ -1420,18 +1731,10 @@ def get_upload_session_files_from_session(session_id: str) -> List[UploadSession
 class EnumS3FolderPath(enum.Enum):
     """Enum which could be useful to have a central way of manipulating the s3 prefixes"""
 
-    Upload = (
-        "upload/"
-    )  # key prefix which all new uploads are put under.  These are transient until conversion completes
-    Convert = (
-        "convert/"
-    )  # key prefix used for data converted to canonical form.  These are the authorative source.
-    Compress = (
-        "compressed/"
-    )  # key prefix used for compressed raw data.  These are the authorative source.
-    Export = (
-        "export/"
-    )  # key prefix used for results converted for export.  These are transient because they can be re-generated.
+    Upload = "upload/"  # key prefix which all new uploads are put under.  These are transient until conversion completes
+    Convert = "convert/"  # key prefix used for data converted to canonical form.  These are the authorative source.
+    Compress = "compressed/"  # key prefix used for compressed raw data.  These are the authorative source.
+    Export = "export/"  # key prefix used for results converted for export.  These are transient because they can be re-generated.
 
 
 def generate_convert_key():
@@ -1659,7 +1962,7 @@ def find_datafile(
 ) -> Optional[DataFile]:
     """Look up a datafile given either a permaname (and optional version number) or a dataset_version_id.  The datafile_name
     is also optional.  If unspecified, and there is a single datafile for that dataset_version, that will be returned.
-    Otherwise datafile_name is required. """
+    Otherwise datafile_name is required."""
     if dataset_permaname is not None:
         if dataset_version_id is not None:
             raise IllegalArgumentError(

@@ -8,6 +8,8 @@ import re
 from io import BytesIO
 from typing import Dict, List, Tuple
 
+from taiga2.controllers import endpoint_utils
+
 from .endpoint_validation import validate
 
 from sqlalchemy.orm.exc import NoResultFound
@@ -15,17 +17,17 @@ from google.cloud import storage, exceptions as gcs_exceptions
 from requests.exceptions import HTTPError
 
 # TODO: Change the app containing db to api_app => current_app
-import taiga2.controllers.models_controller as models_controller
+from taiga2.controllers import models_controller
 import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import (
     DatasetVersion,
     DataFile,
+    EntryRightsEnum,
     normalize_name,
     SearchResult,
     FigshareDatasetVersionLink,
 )
-from taiga2.controllers.models_controller import DataFileAlias
 from taiga2.models import S3DataFile
 
 from taiga2.third_party_clients.aws import (
@@ -70,7 +72,7 @@ def get_dataset(datasetId):
     # TODO: We should instead check in the controller, but did not want to repeat
     # Remove folders that are not allowed to be seen
     allowed_dataset = dataset
-    allowed_dataset.parents = filter_allowed_parents(dataset.parents)
+    allowed_dataset.parents = endpoint_utils.filter_allowed_parents(dataset.parents)
     last_dataset_version = models_controller.get_latest_dataset_version(
         allowed_dataset.id
     )
@@ -137,7 +139,7 @@ def get_folder(folder_id):
     if folder is None:
         flask.abort(404)
 
-    folder.parents = filter_allowed_parents(folder.parents)
+    folder.parents = endpoint_utils.filter_allowed_parents(folder.parents)
 
     # Get the rights of the user over the folder
     right = models_controller.get_rights(folder_id)
@@ -214,33 +216,13 @@ def get_s3_credentials():
     return flask.jsonify(model_frontend_credentials)
 
 
-# TODO: Use for every DatasetVersionSchema?
-def _get_dataset_version_schema_json(
-    dataset_version: DatasetVersion,
-    dataset_version_right: models_controller.EntryRightsEnum,
-):
-    dataset_version_schema = schemas.DatasetVersionSchema()
-    dataset_version_schema.context["entry_user_right"] = dataset_version_right
-
-    if dataset_version.figshare_dataset_version_link is not None:
-        try:
-            figshare_article_info = figshare.get_article_information(
-                dataset_version.figshare_dataset_version_link
-            )
-            dataset_version_schema.context["figshare"] = figshare_article_info
-        except:
-            pass
-
-    return dataset_version_schema.dump(dataset_version).data
-
-
 @validate
 def get_dataset_last(dataset_id):
     last_dataset_version = models_controller.get_latest_dataset_version(dataset_id)
 
     right = models_controller.get_rights(last_dataset_version.id)
 
-    json_data_first_dataset_version = _get_dataset_version_schema_json(
+    json_data_first_dataset_version = endpoint_utils.get_dataset_version_schema_json(
         last_dataset_version, right
     )
     return flask.jsonify(json_data_first_dataset_version)
@@ -334,6 +316,26 @@ def get_dataset_version(datasetVersion_id):
     return flask.jsonify(json_dv_data)
 
 
+# TODO: Use for every DatasetVersionSchema?
+def get_dataset_version_schema_json(
+    dataset_version: DatasetVersion,
+    dataset_version_right: EntryRightsEnum,
+):
+    dataset_version_schema = schemas.DatasetVersionSchema()
+    dataset_version_schema.context["entry_user_right"] = dataset_version_right
+
+    if dataset_version.figshare_dataset_version_link is not None:
+        try:
+            figshare_article_info = figshare.get_article_information(
+                dataset_version.figshare_dataset_version_link
+            )
+            dataset_version_schema.context["figshare"] = figshare_article_info
+        except:
+            pass
+
+    return dataset_version_schema.dump(dataset_version).data
+
+
 @validate
 def get_dataset_versions(datasetVersionIdsDict):
     array_dataset_version_ids = datasetVersionIdsDict["datasetVersionIds"]
@@ -385,10 +387,10 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     dataset = dataset_version.dataset
     dataset_right = models_controller.get_rights(dataset.id)
 
-    dataset.parents = filter_allowed_parents(dataset.parents)
+    dataset.parents = endpoint_utils.filter_allowed_parents(dataset.parents)
     dataset.description = dataset_version.description
 
-    json_dv_data = _get_dataset_version_schema_json(
+    json_dv_data = endpoint_utils.get_dataset_version_schema_json(
         dataset_version, dataset_version_right
     )
 
@@ -592,7 +594,7 @@ def _parse_data_file_aliases(files):
         data_file_id = _find_data_file_id(orig_file_id)
         if data_file_id is None:
             raise Exception("Could not find data file for {}".format(orig_file_id))
-        result.append(DataFileAlias(name=file["name"], data_file_id=data_file_id))
+        result.append(models_controller.DataFileAlias(name=file["name"], data_file_id=data_file_id))
     return result
 
 
@@ -617,9 +619,17 @@ def create_new_dataset_version(datasetVersionMetadata):
     dataset_id = datasetVersionMetadata["datasetId"]
     new_description = datasetVersionMetadata["newDescription"]
     changes_description = datasetVersionMetadata.get("changesDescription", None)
+    
+    # Older versions of taigapy don't include add_existing_files in the paramse. Instead,
+    # add_existing_files is handled within the taigapy logic. So it's safe to default this
+    # to False and avoid repeating this logic.
+    add_existing_files = datasetVersionMetadata.get("addExistingFiles", False)
+
+    # Only used if add_existing_files is True to support grabbing the existing files
+    dataset_version = datasetVersionMetadata.get("datasetVersion", None)
 
     new_dataset_version = models_controller.create_new_dataset_version_from_session(
-        session_id, dataset_id, new_description, changes_description
+        session_id, dataset_id, new_description, changes_description, dataset_version, add_existing_files
     )
 
     return flask.jsonify(new_dataset_version.id)
@@ -1069,16 +1079,6 @@ def import_provenance(provenanceData):
         )
 
     return flask.jsonify(new_graph.graph_id)
-
-
-def filter_allowed_parents(parents):
-    allowed_parents = parents
-
-    for index, folder in enumerate(parents):
-        if not models_controller.can_view(folder.id):
-            del allowed_parents[index]
-
-    return allowed_parents
 
 
 def get_dataset_version_id_by_user_entry(entry_submitted_by_user: str):
