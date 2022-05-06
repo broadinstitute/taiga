@@ -76,6 +76,7 @@ DATAFILE_UPLOAD_FORMAT_TO_STORAGE_FORMAT = {
     "Raw": "Raw",
 }
 
+
 def api_error(msg):
     raise ProblemException(detail=msg)
 
@@ -678,7 +679,6 @@ def add_dataset_version(
         id=forced_id,
     )
 
-    # We now update the dataset description with the latest datasetVersion description
     db.session.add(new_dataset_version)
     db.session.add(dataset)
     db.session.commit()
@@ -692,7 +692,7 @@ def _datafiles_equivalent(datafile, other_datafile):
     return datafile_id == other_datafile_id
 
 
-def _get_dataset_version_datafiles_diff(new_datafiles, previous_datafiles):
+def get_dataset_version_datafiles_diff(new_datafiles, previous_datafiles):
     datafile_diff = {"updated": [], "added": [], "removed": [], "renamed": []}
 
     for datafile in new_datafiles:
@@ -730,7 +730,7 @@ def _get_dataset_version_datafiles_diff(new_datafiles, previous_datafiles):
     return datafile_diff
 
 
-def _format_datafile_diff(datafile_diff):
+def format_datafile_diff(datafile_diff):
     def format_added_removed_updated(datafiles):
         return ["- {}".format(datafile.name) for datafile in datafiles]
 
@@ -759,6 +759,7 @@ def _format_datafile_diff(datafile_diff):
 def api_error(msg):
     raise ProblemException(detail=msg)
 
+
 def filter_allowed_parents(parents):
     allowed_parents = parents
 
@@ -770,15 +771,13 @@ def filter_allowed_parents(parents):
 
 
 def get_dataset_json(datasetId):
-        # TODO: We could receive a datasetId being a permaname. This is not good as our function is not respecting the atomicity. Should handle the usage of a different function if permaname
+    # TODO: We could receive a datasetId being a permaname. This is not good as our function is not respecting the atomicity. Should handle the usage of a different function if permaname
     # try using ID
     dataset = get_dataset(datasetId, one_or_none=True)
 
     # if that failed, try by permaname
     if dataset is None:
-        dataset = get_dataset_from_permaname(
-            datasetId, one_or_none=True
-        )
+        dataset = get_dataset_from_permaname(datasetId, one_or_none=True)
 
     if dataset is None:
         flask.abort(404)
@@ -787,9 +786,7 @@ def get_dataset_json(datasetId):
     # Remove folders that are not allowed to be seen
     allowed_dataset = dataset
     allowed_dataset.parents = filter_allowed_parents(dataset.parents)
-    last_dataset_version = get_latest_dataset_version(
-        allowed_dataset.id
-    )
+    last_dataset_version = get_latest_dataset_version(allowed_dataset.id)
     allowed_dataset.description = last_dataset_version.description
 
     # Get the rights of the user over the folder
@@ -797,71 +794,13 @@ def get_dataset_json(datasetId):
     dataset_schema = schemas.DatasetSchema()
     print("The right is: {}".format(right))
     dataset_schema.context["entry_user_right"] = right
-    subscription = get_dataset_subscription_for_dataset_and_user(
-        dataset.id
-    )
+    subscription = get_dataset_subscription_for_dataset_and_user(dataset.id)
     dataset_schema.context["subscription_id"] = (
         subscription.id if subscription is not None else None
     )
     json_dataset_data = dataset_schema.dump(allowed_dataset).data
 
     return json_dataset_data
-
-
-def get_dataset_version_from_dataset(datasetId, datasetVersionId)-> Dict[str, Any]:
-    dataset_version = get_dataset_version_by_dataset_id_and_dataset_version_id(
-        datasetId, datasetVersionId, one_or_none=True
-    )
-    if dataset_version is None:
-        # if we couldn't find a version by dataset_version_id, try permaname and version number.
-        version_number = None
-        try:
-            version_number = int(datasetVersionId)
-        except ValueError:
-            # TODO: Log the error
-            pass
-
-        if version_number is not None:
-            dataset_version = get_dataset_version_by_permaname_and_version(
-                datasetId, version_number, one_or_none=True
-            )
-        else:
-            dataset_version = get_latest_dataset_version_by_permaname(
-                datasetId
-            )
-
-    if dataset_version is None:
-        flask.abort(404)
-
-    dataset_version_right = get_rights(dataset_version.id)
-
-    dataset = dataset_version.dataset
-    dataset_right = get_rights(dataset.id)
-
-    dataset.parents = filter_allowed_parents(dataset.parents)
-    dataset.description = dataset_version.description
-
-    json_dv_data = get_dataset_version_schema_json(
-        dataset_version, dataset_version_right
-    )
-
-    dataset_schema = schemas.DatasetSchema()
-    dataset_schema.context["entry_user_right"] = dataset_right
-    subscription = get_dataset_subscription_for_dataset_and_user(
-        dataset_version.dataset_id
-    )
-    dataset_schema.context["subscription_id"] = (
-        subscription.id if subscription is not None else None
-    )
-    json_dataset_data = dataset_schema.dump(dataset).data
-
-    # Preparation of the dictonary to return both objects
-    json_dv_and_dataset_data = {
-        "datasetVersion": json_dv_data,
-        "dataset": json_dataset_data,
-    }
-
-    return json_dv_and_dataset_data
 
 
 def create_upload_session_file(uploadMetadata, sid):
@@ -903,9 +842,7 @@ def create_upload_session_file(uploadMetadata, sid):
         existing_taiga_id = uploadMetadata["existingTaigaId"]
 
         try:
-            data_file = get_datafile_by_taiga_id(
-                existing_taiga_id, one_or_none=True
-            )
+            data_file = get_datafile_by_taiga_id(existing_taiga_id, one_or_none=True)
         except InvalidTaigaIdFormat as ex:
             api_error(
                 "The following was not formatted like a valid taiga ID: {}".format(
@@ -972,14 +909,18 @@ def format_datafile_id(
     return id_format.format(**name_parts)
 
 
-def get_preivous_version_datafiles(dataset_version_metadata: DatasetVersionMetadataDict, dataset_permaname: str, dataset_version: str):
+def get_preivous_version_datafiles(
+    dataset_version_metadata: DatasetVersionMetadataDict,
+    dataset_permaname: str,
+    dataset_version: str,
+):
     previous_version_taiga_ids = [
-    {
-        "taiga_id": format_datafile_id(
-            dataset_permaname, dataset_version, datafile["name"]
-        )
-    }
-    for datafile in dataset_version_metadata["datasetVersion"]["datafiles"]
+        {
+            "taiga_id": format_datafile_id(
+                dataset_permaname, dataset_version, datafile["name"]
+            )
+        }
+        for datafile in dataset_version_metadata["datasetVersion"]["datafiles"]
     ]
 
     previous_version_datafiles = (
@@ -991,104 +932,24 @@ def get_preivous_version_datafiles(dataset_version_metadata: DatasetVersionMetad
     return previous_version_datafiles
 
 
-def create_new_dataset_version_from_session(
-    session_id,
-    dataset_id,
-    new_description,
-    changes_description,
-    dataset_version,
-    add_existing_files,
-):
-    current_user = get_current_session_user()
+def lock_dataset_version_table(dataset_id):
+    # db.session.begin_nested()
+    # db.session.query(DatasetVersion).filter(dataset_id==DatasetVersion.dataset_id).with_for_update().one()
 
-    added_files = get_upload_session_files_from_session(session_id)
-    datafile_names = [file.name for file in added_files]
-
-    # Lock here. We don't want to look for any existing files until we're
-    # done adding files (so we don't drop files in a race condition between
-    # independent processes)
-    db.session.begin_nested()
-    db.session.execute('LOCK TABLE dataset_versions IN ACCESS EXCLUSIVE MODE;')
-    try:
-        metadata_with_existing_files: DatasetVersionMetadataDict = {}
-        if add_existing_files:
-            if dataset_version is not None:
-                # It seems like we only need the existing files, and not everything that's going on
-                # in the following functions, but there is logic about rights, etc., so I'm keeping this
-                # as is in the spirit of "better safe than sorry"
-                metadata_with_existing_files = (
-                    get_dataset_version_from_dataset(
-                        dataset_id, dataset_version
-                    )
-                )
-            else:
-                metadata_with_existing_files = get_dataset_json(dataset_id)
-
-            previous_version_datafiles = get_preivous_version_datafiles(
-                metadata_with_existing_files,
-                metadata_with_existing_files["dataset"]["dataset_permaname"],
-                dataset_version,
-            )
-
-            # If file names being uploaded match an existing file from the previous
-            # version, we automatically replace the existing file with the new
-            # file.
-            upload_virtual_datafiles: List[UploadVirtualDataFile] = []
-            if previous_version_datafiles is not None:
-                for upload_datafile in previous_version_datafiles:
-                    if upload_datafile.file_name not in datafile_names:
-                        upload_virtual_datafiles.append(upload_datafile)
-
-            for file in previous_version_datafiles:
-                create_upload_session_file(
-                    file, session_id
-                )
-
-            added_datafiles = add_datafiles_from_session(session_id)
-
-        else:
-            added_datafiles = add_datafiles_from_session(session_id)
+    db.session.query(DatasetVersion).filter(
+        DatasetVersion.id == dataset_id
+    ).with_for_update().populate_existing()
+    # db.session.query(DatasetVersion).all().with_for_update()
+    # db.session.execute('SELECT FOR UPDATE dataset_versions IN ACCESS EXCLUSIVE MODE;')
 
 
-        all_datafile_ids = [datafile.id for datafile in added_datafiles]
+def add_version_addition_activity(activity):
+    db.session.add(activity)
+    db.session.commit()
 
-        latest_dataset_version = get_latest_dataset_version(dataset_id)
 
-        datafile_diff = _get_dataset_version_datafiles_diff(
-            list(added_datafiles), list(latest_dataset_version.datafiles)
-        )
-
-        comments = _format_datafile_diff(datafile_diff)
-
-        new_dataset_version = add_dataset_version(
-            dataset_id=dataset_id,
-            datafiles_ids=all_datafile_ids,
-            new_description=new_description,
-            changes_description=changes_description,
-        )
-
-        activity = VersionAdditionActivity(
-            user_id=current_user.id,
-            dataset_id=new_dataset_version.dataset_id,
-            type=Activity.ActivityType.added_version,
-            dataset_description=new_description
-            if new_description != latest_dataset_version.description
-            else None,
-            dataset_version=new_dataset_version.version,
-            comments=comments,
-        )
-        db.session.add(activity)
-        db.session.commit()
-    except:
-        db.session.rollback()
-        endpoint_utils.api_error("")
-
-    dataset_subscriptions = get_dataset_subscriptions_for_dataset(dataset_id)
-    if not any(ds.user_id == current_user.id for ds in dataset_subscriptions):
-        add_dataset_subscription(dataset_id)
-    send_emails_for_dataset(dataset_id, current_user.id)
-
-    return new_dataset_version
+def rollback_db_session():
+    db.session.rollback()
 
 
 def _fetch_respecting_one_or_none(q, one_or_none, expect=None):
@@ -1731,10 +1592,18 @@ def get_upload_session_files_from_session(session_id: str) -> List[UploadSession
 class EnumS3FolderPath(enum.Enum):
     """Enum which could be useful to have a central way of manipulating the s3 prefixes"""
 
-    Upload = "upload/"  # key prefix which all new uploads are put under.  These are transient until conversion completes
-    Convert = "convert/"  # key prefix used for data converted to canonical form.  These are the authorative source.
-    Compress = "compressed/"  # key prefix used for compressed raw data.  These are the authorative source.
-    Export = "export/"  # key prefix used for results converted for export.  These are transient because they can be re-generated.
+    Upload = (
+        "upload/"
+    )  # key prefix which all new uploads are put under.  These are transient until conversion completes
+    Convert = (
+        "convert/"
+    )  # key prefix used for data converted to canonical form.  These are the authorative source.
+    Compress = (
+        "compressed/"
+    )  # key prefix used for compressed raw data.  These are the authorative source.
+    Export = (
+        "export/"
+    )  # key prefix used for results converted for export.  These are transient because they can be re-generated.
 
 
 def generate_convert_key():

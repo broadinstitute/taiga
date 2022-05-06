@@ -2,6 +2,7 @@ import flask
 import logging
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple
+from taiga2 import schemas
 
 from taiga2.types import DatasetVersionMetadataDict, UploadVirtualDataFile
 
@@ -12,9 +13,7 @@ from google.cloud import storage, exceptions as gcs_exceptions
 from requests.exceptions import HTTPError
 
 # TODO: Change the app containing db to api_app => current_app
-from taiga2.models import (
-    DatasetVersion,
-)
+from taiga2.models import DatasetVersion, EntryRightsEnum
 from taiga2.third_party_clients.aws import (
     aws,
     create_signed_get_obj,
@@ -30,10 +29,3 @@ from flask import render_template, request, redirect, url_for
 import os, json
 
 from connexion.exceptions import ProblemException
-
-
-
-
-
-
-

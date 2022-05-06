@@ -293,3 +293,19 @@ def get_article_information(figshare_dataset_version_link: FigshareDatasetVersio
 
         except HTTPError as error:
             return {"is_public": False}
+
+
+def fetch_figshare_token() -> str:
+    """Validates and returns token for current user.
+    
+    Also removes invalid tokens.
+    """
+    token = mc.get_figshare_personal_token_for_current_user()
+    if token is None:
+        return None
+
+    if not is_token_valid(token):
+        mc.remove_figshare_token_for_current_user()
+        return None
+
+    return token
