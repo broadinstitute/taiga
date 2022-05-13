@@ -1,6 +1,8 @@
 from datetime import datetime
 import enum
+from random import randint
 import flask
+from flask import current_app
 import uuid
 import os
 import re
@@ -49,7 +51,7 @@ from sqlalchemy.sql.expression import func
 from collections import namedtuple
 from connexion.exceptions import ProblemException
 from taiga2.third_party_clients.gcs import get_blob, parse_gcs_path
-from taiga2.types import DatasetVersionMetadataDict, UploadVirtualDataFile
+from taiga2.types import UploadVirtualDataFile
 
 DataFileAlias = namedtuple("DataFileAlias", "name data_file_id")
 
@@ -909,18 +911,18 @@ def format_datafile_id(
     return id_format.format(**name_parts)
 
 
-def get_preivous_version_datafiles(
-    dataset_version_metadata: DatasetVersionMetadataDict,
+def get_previous_version_upload_datafiles(
+    dataset_version_datafiles: List[DataFile],
     dataset_permaname: str,
     dataset_version: str,
-):
+) -> List[UploadVirtualDataFile]:
     previous_version_taiga_ids = [
         {
             "taiga_id": format_datafile_id(
-                dataset_permaname, dataset_version, datafile["name"]
+                dataset_permaname, dataset_version, datafile.name
             )
         }
-        for datafile in dataset_version_metadata["datasetVersion"]["datafiles"]
+        for datafile in dataset_version_datafiles
     ]
 
     previous_version_datafiles = (
@@ -932,15 +934,9 @@ def get_preivous_version_datafiles(
     return previous_version_datafiles
 
 
-def lock_dataset_version_table(dataset_id):
-    # db.session.begin_nested()
-    # db.session.query(DatasetVersion).filter(dataset_id==DatasetVersion.dataset_id).with_for_update().one()
-
-    db.session.query(DatasetVersion).filter(
-        DatasetVersion.id == dataset_id
-    ).with_for_update().populate_existing()
-    # db.session.query(DatasetVersion).all().with_for_update()
-    # db.session.execute('SELECT FOR UPDATE dataset_versions IN ACCESS EXCLUSIVE MODE;')
+def lock():
+    random_val = randint(1, 999)
+    db.session.execute(f"UPDATE lock_table SET random = {random_val}")
 
 
 def add_version_addition_activity(activity):
@@ -976,6 +972,7 @@ def _fetch_respecting_one_or_none(q, one_or_none, expect=None):
 
 
 def get_dataset_version(dataset_version_id, one_or_none=False) -> DatasetVersion:
+
     q = db.session.query(Entry).filter(Entry.id == dataset_version_id)
 
     return _fetch_respecting_one_or_none(q, one_or_none, expect=[DatasetVersion])
@@ -1470,6 +1467,18 @@ def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataF
         return None
 
     return resolve_virtual_datafile(datafile)
+
+
+def get_comments_and_latest_dataset_version(dataset_id, added_datafiles):
+    latest_dataset_version = get_latest_dataset_version(dataset_id)
+
+    datafile_diff = get_dataset_version_datafiles_diff(
+        list(added_datafiles), list(latest_dataset_version.datafiles)
+    )
+
+    comments = format_datafile_diff(datafile_diff)
+
+    return comments, latest_dataset_version
 
 
 def add_datafiles_from_session(session_id: str):

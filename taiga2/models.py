@@ -1,4 +1,5 @@
 import enum
+from random import Random, randint
 import uuid
 import re
 import datetime
@@ -523,6 +524,13 @@ class LogStartActivity(Activity):
     @declared_attr
     def dataset_version(cls) -> str:
         return Activity.__table__.c.get("dataset_version", db.Column(db.Integer))
+
+
+class LockTable(db.Model):
+    __tablename__ = "lock_table"
+
+    id: int = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    random: int = db.Column(db.Integer)
 
 
 class ConversionEntryState(enum.Enum):

@@ -17,6 +17,7 @@ class DataFileUploadFormat(Enum):
     TableCSV = "TableCSV"
     Raw = "Raw"
 
+
 User = TypedDict("User", {"id": str, "name": str})
 Folder = TypedDict("Folder", {"id": str, "name": str})
 
@@ -38,44 +39,6 @@ DatasetVersionFiles = TypedDict(
         "original_file_md5": Optional[str],
         "original_file_sha256": Optional[str],
     },
-)
-DatasetVersionLongDict = TypedDict(
-    "DatasetVersionLongDict",
-    {
-        "can_edit": bool,
-        "can_view": bool,
-        "changes_description": Optional[str],
-        "creation_date": str,
-        "creator": User,
-        "datafiles": List[DatasetVersionFiles],
-        "dataset_id": str,
-        "description": str,
-        "folders": List[Folder],  # empty list (TODO: remove)
-        "id": str,
-        "name": str,
-        "reason_state": str,
-        "state": Literal["approved", "deprecated", "deleted"],
-        "version": str,
-    },
-)
-
-DatasetMetadataDict = TypedDict(
-    "DatasetMetadataDict",
-    {
-        "can_edit": bool,
-        "can_view": bool,
-        "description": str,
-        "folders": List[Folder],
-        "id": str,
-        "name": str,
-        "permanames": List[str],
-        "versions": List[DatasetVersionShortDict],
-    },
-)
-
-DatasetVersionMetadataDict = TypedDict(
-    "DatasetVersionMetadataDict",
-    {"dataset": DatasetMetadataDict, "datasetVersion": DatasetVersionLongDict},
 )
 
 DataFileMetadataDict = TypedDict(
@@ -103,6 +66,7 @@ UploadS3DataFileDict = TypedDict(
     {"path": str, "name": Optional[str], "format": str, "encoding": Optional[str]},
     total=False,
 )
+
 
 class UploadDataFile(ABC):
     file_name: str

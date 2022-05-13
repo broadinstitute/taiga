@@ -9,8 +9,7 @@ import re
 from io import BytesIO
 from typing import Any, Dict, List, Tuple
 
-from taiga2.controllers import endpoint_utils
-from taiga2.types import DatasetVersionMetadataDict, UploadVirtualDataFile
+from taiga2.types import UploadVirtualDataFile
 
 from .endpoint_validation import validate
 
@@ -33,7 +32,7 @@ from taiga2.models import (
     SearchResult,
     FigshareDatasetVersionLink,
 )
-from taiga2.models import S3DataFile, db
+from taiga2.models import S3DataFile
 
 from taiga2.third_party_clients.aws import (
     aws,
@@ -359,6 +358,54 @@ def get_dataset_versions(datasetVersionIdsDict):
     return flask.jsonify(json_data_dataset_versions)
 
 
+def get_previous_version_datafiles(
+    datasetId, datasetVersionId
+) -> List[UploadVirtualDataFile]:
+
+    if datasetVersionId is None:
+        # TODO: We could receive a datasetId being a permaname. This is not good as our function is not respecting the atomicity. Should handle the usage of a different function if permaname
+        # try using ID
+        dataset = get_dataset(datasetId, one_or_none=True)
+
+        # if that failed, try by permaname
+        if dataset is None:
+            dataset = models_controller.get_dataset_from_permaname(
+                datasetId, one_or_none=True
+            )
+    else:
+        dataset_version = models_controller.get_dataset_version_by_dataset_id_and_dataset_version_id(
+            datasetId, datasetVersionId, one_or_none=True
+        )
+        if dataset_version is None:
+            # if we couldn't find a version by dataset_version_id, try permaname and version number.
+            version_number = None
+            try:
+                version_number = int(datasetVersionId)
+            except ValueError:
+                # TODO: Log the error
+                pass
+
+            if version_number is not None:
+                dataset_version = models_controller.get_dataset_version_by_permaname_and_version(
+                    datasetId, version_number, one_or_none=True
+                )
+            else:
+                dataset_version = models_controller.get_latest_dataset_version_by_permaname(
+                    datasetId
+                )
+
+    if dataset_version is None:
+        flask.abort(404)
+
+    previous_datafiles = models_controller.get_previous_version_upload_datafiles(
+        dataset_version.datafiles,
+        dataset_version.dataset.permaname,
+        dataset_version.version,
+    )
+
+    return previous_datafiles
+
+
 @validate
 def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
@@ -417,60 +464,24 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     return flask.jsonify(json_dv_and_dataset_data)
 
 
-def get_dataset_version_from_dataset(datasetId, datasetVersionId) -> Dict[str, Any]:
-    dataset_version = models_controller.get_dataset_version_by_dataset_id_and_dataset_version_id(
-        datasetId, datasetVersionId, one_or_none=True
-    )
-    if dataset_version is None:
-        # if we couldn't find a version by dataset_version_id, try permaname and version number.
-        version_number = None
-        try:
-            version_number = int(datasetVersionId)
-        except ValueError:
-            # TODO: Log the error
-            pass
-
-        if version_number is not None:
-            dataset_version = models_controller.get_dataset_version_by_permaname_and_version(
-                datasetId, version_number, one_or_none=True
+def generate_previous_version_upload_files(existing_taiga_id, sid):
+    try:
+        data_file = models_controller.get_datafile_by_taiga_id(
+            existing_taiga_id, one_or_none=True
+        )
+    except InvalidTaigaIdFormat as ex:
+        api_error(
+            "The following was not formatted like a valid taiga ID: {}".format(
+                ex.taiga_id
             )
-        else:
-            dataset_version = models_controller.get_latest_dataset_version_by_permaname(
-                datasetId
-            )
+        )
 
-    if dataset_version is None:
-        flask.abort(404)
+    if data_file is None:
+        api_error("Unknown taiga ID: " + existing_taiga_id)
 
-    dataset_version_right = models_controller.get_rights(dataset_version.id)
-
-    dataset = dataset_version.dataset
-    dataset_right = models_controller.get_rights(dataset.id)
-
-    dataset.parents = models_controller.filter_allowed_parents(dataset.parents)
-    dataset.description = dataset_version.description
-
-    json_dv_data = get_dataset_version_schema_json(
-        dataset_version, dataset_version_right
+    return models_controller.add_upload_session_virtual_file(
+        session_id=sid, filename=data_file.name, data_file_id=data_file.id
     )
-
-    dataset_schema = schemas.DatasetSchema()
-    dataset_schema.context["entry_user_right"] = dataset_right
-    subscription = models_controller.get_dataset_subscription_for_dataset_and_user(
-        dataset_version.dataset_id
-    )
-    dataset_schema.context["subscription_id"] = (
-        subscription.id if subscription is not None else None
-    )
-    json_dataset_data = dataset_schema.dump(dataset).data
-
-    # Preparation of the dictonary to return both objects
-    json_dv_and_dataset_data = {
-        "datasetVersion": json_dv_data,
-        "dataset": json_dataset_data,
-    }
-
-    return json_dv_and_dataset_data
 
 
 @validate
@@ -526,94 +537,6 @@ def de_delete_dataset_version(datasetVersionId):
 
 
 from .models_controller import InvalidTaigaIdFormat
-
-
-def _create_upload_session_file(uploadMetadata, sid):
-    filename = uploadMetadata["filename"]
-    if uploadMetadata["filetype"] == "s3":
-        S3UploadedFileMetadata = uploadMetadata["s3Upload"]
-        s3_bucket = S3UploadedFileMetadata["bucket"]
-
-        initial_file_type = S3UploadedFileMetadata["format"]
-        initial_s3_key = S3UploadedFileMetadata["key"]
-
-        encoding = S3UploadedFileMetadata.get("encoding")
-
-        # Register this new file to the UploadSession received
-        upload_session_file = models_controller.add_upload_session_s3_file(
-            session_id=sid,
-            filename=filename,
-            initial_file_type=initial_file_type,
-            initial_s3_key=initial_s3_key,
-            s3_bucket=s3_bucket,
-            encoding=encoding,
-        )
-
-        # Launch a Celery process to convert and get back to populate the db + send finish to client
-        from taiga2.tasks import background_process_new_upload_session_file
-
-        task = background_process_new_upload_session_file.delay(
-            upload_session_file.id,
-            initial_s3_key,
-            initial_file_type,
-            s3_bucket,
-            upload_session_file.converted_s3_key,
-            upload_session_file.compressed_s3_key,
-            upload_session_file.encoding,
-        )
-
-        return task.id
-    elif uploadMetadata["filetype"] == "virtual":
-        existing_taiga_id = uploadMetadata["existingTaigaId"]
-
-        try:
-            data_file = models_controller.get_datafile_by_taiga_id(
-                existing_taiga_id, one_or_none=True
-            )
-        except InvalidTaigaIdFormat as ex:
-            api_error(
-                "The following was not formatted like a valid taiga ID: {}".format(
-                    ex.taiga_id
-                )
-            )
-
-        if data_file is None:
-            api_error("Unknown taiga ID: " + existing_taiga_id)
-
-        models_controller.add_upload_session_virtual_file(
-            session_id=sid, filename=filename, data_file_id=data_file.id
-        )
-
-        return "done"
-    elif uploadMetadata["filetype"] == "gcs":
-        gcs_path = uploadMetadata["gcsPath"]
-
-        if gcs_path is None:
-            api_error("No GCS path given")
-
-        try:
-            bucket_name, object_name = parse_gcs_path(gcs_path)
-            blob = get_blob(bucket_name, object_name)
-        except ValueError as e:
-            api_error(str(e))
-
-        if not blob:
-            api_error("No object found: {}".format(object_name))
-
-        generation_id = blob.generation
-
-        models_controller.add_upload_session_gcs_file(
-            session_id=sid,
-            filename=filename,
-            gcs_path=gcs_path,
-            generation_id=str(generation_id),
-        )
-
-        return "done"
-    else:
-        api_error(
-            "unknown filetype " + uploadMetadata["filetype"] + ", expected '' or ''"
-        )
 
 
 @validate
@@ -766,7 +689,6 @@ def create_dataset(sessionDatasetInfo):
 
 def create_new_dataset_version_from_session(
     current_user,
-    added_files,
     datafile_names,
     session_id,
     dataset_id,
@@ -775,58 +697,30 @@ def create_new_dataset_version_from_session(
     dataset_version,
     add_existing_files,
 ):
-    models_controller.lock_dataset_version_table()
+    models_controller.lock()
     try:
-        metadata_with_existing_files: DatasetVersionMetadataDict = {}
         if add_existing_files:
-            if dataset_version is not None:
-                # It seems like we only need the existing files, and not everything that's going on
-                # in the following functions, but there is logic about rights, etc., so I'm keeping this
-                # as is in the spirit of "better safe than sorry"
-                metadata_with_existing_files = get_dataset_version_from_dataset(
-                    dataset_id, dataset_version["id"]
-                )
-            else:
-                metadata_with_existing_files = models_controller.get_dataset_json(
-                    dataset_id
-                )
-
-            previous_version_datafiles = models_controller.get_preivous_version_datafiles(
-                metadata_with_existing_files,
-                metadata_with_existing_files["dataset"]["permanames"][
-                    0
-                ],  # TODO double check how to get the correct permaname
-                dataset_version["version"],
+            previous_version_datafiles = get_previous_version_datafiles(
+                dataset_id, dataset_version["id"]
             )
-
+            print(f"Session Id: {session_id}")
             # If file names being uploaded match an existing file from the previous
             # version, we automatically replace the existing file with the new
             # file.
-            upload_virtual_datafiles: List[UploadVirtualDataFile] = []
+            previous_version_virtual_datafiles: List[UploadVirtualDataFile] = []
             if previous_version_datafiles is not None:
                 for upload_datafile in previous_version_datafiles:
                     if upload_datafile.file_name not in datafile_names:
-                        upload_virtual_datafiles.append(upload_datafile)
+                        previous_version_virtual_datafiles.append(upload_datafile)
 
-            for file in upload_virtual_datafiles:
-                _create_upload_session_file(file.to_api_param(), session_id)
+            for file in previous_version_virtual_datafiles:
+                generate_previous_version_upload_files(file.taiga_id, session_id)
 
             added_datafiles = models_controller.add_datafiles_from_session(session_id)
-
         else:
             added_datafiles = models_controller.add_datafiles_from_session(session_id)
 
         all_datafile_ids = [datafile.id for datafile in added_datafiles]
-
-        latest_dataset_version = models_controller.get_latest_dataset_version(
-            dataset_id
-        )
-        print(f"LATEST VERSION: {latest_dataset_version}")
-        datafile_diff = models_controller.get_dataset_version_datafiles_diff(
-            list(added_datafiles), list(latest_dataset_version.datafiles)
-        )
-
-        comments = models_controller.format_datafile_diff(datafile_diff)
 
         new_dataset_version = models_controller.add_dataset_version(
             dataset_id=dataset_id,
@@ -834,6 +728,7 @@ def create_new_dataset_version_from_session(
             new_description=new_description,
             changes_description=changes_description,
         )
+
     except:
         ### TEMPORARY for developing
         tb = traceback.format_exc()
@@ -841,6 +736,10 @@ def create_new_dataset_version_from_session(
         ###
         models_controller.rollback_db_session()
         api_error(tb)
+
+    comments, latest_dataset_version = models_controller.get_comments_and_latest_dataset_version(
+        dataset_id, added_datafiles
+    )
 
     activity = VersionAdditionActivity(
         user_id=current_user.id,
@@ -880,12 +779,15 @@ def create_new_dataset_version(datasetVersionMetadata):
     # Only used if add_existing_files is True to support grabbing the existing files
     dataset_version = datasetVersionMetadata.get("datasetVersion", None)
     current_user = models_controller.get_current_session_user()
+
+    # The next 2 lines serve the purpose of providing a datafile names lsit that we
+    # later use for comparison with previous version datafiles (if add_existing_files is true).
+    # TODO Think about this: Would it be better to just pass the file names list as a param???
     added_files = models_controller.get_upload_session_files_from_session(session_id)
     datafile_names = [file.filename for file in added_files]
 
     new_dataset_version = create_new_dataset_version_from_session(
         current_user,
-        added_files,
         datafile_names,
         session_id,
         dataset_id,
