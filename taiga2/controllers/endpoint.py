@@ -358,49 +358,12 @@ def get_dataset_versions(datasetVersionIdsDict):
     return flask.jsonify(json_data_dataset_versions)
 
 
-def get_previous_version_datafiles(
-    datasetId, datasetVersionId
-) -> List[UploadVirtualDataFile]:
-
-    if datasetVersionId is None:
-        # TODO: We could receive a datasetId being a permaname. This is not good as our function is not respecting the atomicity. Should handle the usage of a different function if permaname
-        # try using ID
-        dataset = get_dataset(datasetId, one_or_none=True)
-
-        # if that failed, try by permaname
-        if dataset is None:
-            dataset = models_controller.get_dataset_from_permaname(
-                datasetId, one_or_none=True
-            )
-    else:
-        dataset_version = models_controller.get_dataset_version_by_dataset_id_and_dataset_version_id(
-            datasetId, datasetVersionId, one_or_none=True
-        )
-        if dataset_version is None:
-            # if we couldn't find a version by dataset_version_id, try permaname and version number.
-            version_number = None
-            try:
-                version_number = int(datasetVersionId)
-            except ValueError:
-                # TODO: Log the error
-                pass
-
-            if version_number is not None:
-                dataset_version = models_controller.get_dataset_version_by_permaname_and_version(
-                    datasetId, version_number, one_or_none=True
-                )
-            else:
-                dataset_version = models_controller.get_latest_dataset_version_by_permaname(
-                    datasetId
-                )
-
-    if dataset_version is None:
-        flask.abort(404)
+def get_previous_version_datafiles(latest_version) -> List[UploadVirtualDataFile]:
 
     previous_datafiles = models_controller.get_previous_version_upload_datafiles(
-        dataset_version.datafiles,
-        dataset_version.dataset.permaname,
-        dataset_version.version,
+        latest_version.datafiles,
+        latest_version.dataset.permaname,
+        latest_version.version,
     )
 
     return previous_datafiles
@@ -536,7 +499,7 @@ def de_delete_dataset_version(datasetVersionId):
     return flask.jsonify({})
 
 
-from .models_controller import InvalidTaigaIdFormat
+from .models_controller import InvalidTaigaIdFormat, get_latest_dataset_version
 
 
 @validate
@@ -700,10 +663,13 @@ def create_new_dataset_version_from_session(
     models_controller.lock()
     try:
         if add_existing_files:
-            previous_version_datafiles = get_previous_version_datafiles(
-                dataset_id, dataset_version["id"]
-            )
-            print(f"Session Id: {session_id}")
+            latest_version = get_latest_dataset_version(dataset_id)
+            previous_version_datafiles = get_previous_version_datafiles(latest_version)
+
+            for file in previous_version_datafiles:
+                print(
+                    f"Session Id: {session_id}, File Name: {file.file_name}, Taiga ID: {file.taiga_id}"
+                )
             # If file names being uploaded match an existing file from the previous
             # version, we automatically replace the existing file with the new
             # file.
@@ -737,7 +703,10 @@ def create_new_dataset_version_from_session(
         models_controller.rollback_db_session()
         api_error(tb)
 
-    comments, latest_dataset_version = models_controller.get_comments_and_latest_dataset_version(
+    (
+        comments,
+        latest_dataset_version,
+    ) = models_controller.get_comments_and_latest_dataset_version(
         dataset_id, added_datafiles
     )
 
@@ -1407,7 +1376,7 @@ def add_figshare_token(token: str):
 
 def _fetch_figshare_token() -> str:
     """Validates and returns token for current user.
-    
+
     Also removes invalid tokens.
     """
     token = models_controller.get_figshare_personal_token_for_current_user()
