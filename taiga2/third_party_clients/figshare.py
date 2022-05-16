@@ -1,4 +1,3 @@
-import boto3
 import gzip
 import hashlib
 import io
@@ -6,10 +5,9 @@ import json
 import os
 import requests
 import shutil
-import tempfile
 from requests.exceptions import HTTPError
-from typing import Any, Dict, IO, List, Optional, Tuple, Union
-from typing_extensions import Literal, TypedDict
+from typing import Any, Dict, IO, List, Optional
+from typing_extensions import TypedDict
 
 from flask import current_app
 

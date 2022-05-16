@@ -1,13 +1,11 @@
 import traceback
 import flask
 import logging
-import requests
 import sys
 import time
-import urllib
 import re
 from io import BytesIO
-from typing import Any, Dict, List, Tuple
+from typing import List
 
 from taiga2.types import UploadVirtualDataFile
 
@@ -24,13 +22,10 @@ import taiga2.conv as conversion
 from taiga2.models import (
     Activity,
     DatasetVersion,
-    DataFile,
-    Entry,
     EntryRightsEnum,
     VersionAdditionActivity,
     normalize_name,
     SearchResult,
-    FigshareDatasetVersionLink,
 )
 from taiga2.models import S3DataFile
 
@@ -46,8 +41,7 @@ import taiga2.third_party_clients.figshare as figshare
 log = logging.getLogger(__name__)
 
 # Handle URL upload
-from flask import render_template, request, redirect, url_for
-import os, json
+import json
 
 from connexion.exceptions import ProblemException
 
@@ -358,17 +352,6 @@ def get_dataset_versions(datasetVersionIdsDict):
     return flask.jsonify(json_data_dataset_versions)
 
 
-def get_previous_version_datafiles(latest_version) -> List[UploadVirtualDataFile]:
-
-    previous_datafiles = models_controller.get_previous_version_upload_datafiles(
-        latest_version.datafiles,
-        latest_version.dataset.permaname,
-        latest_version.version,
-    )
-
-    return previous_datafiles
-
-
 @validate
 def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
@@ -664,7 +647,11 @@ def create_new_dataset_version_from_session(
     try:
         if add_existing_files:
             latest_version = get_latest_dataset_version(dataset_id)
-            previous_version_datafiles = get_previous_version_datafiles(latest_version)
+            previous_version_datafiles = models_controller.get_previous_version_upload_datafiles(
+                latest_version.datafiles,
+                latest_version.dataset.permaname,
+                latest_version.version,
+            )
 
             for file in previous_version_datafiles:
                 print(
