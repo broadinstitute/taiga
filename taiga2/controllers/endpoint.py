@@ -6,6 +6,7 @@ import time
 import re
 from io import BytesIO
 from typing import List
+from taiga2.dataset_subscriptions import send_emails_for_dataset
 
 from taiga2.types import UploadVirtualDataFile
 
@@ -714,7 +715,7 @@ def create_new_dataset_version_from_session(
     )
     if not any(ds.user_id == current_user.id for ds in dataset_subscriptions):
         add_dataset_subscription(dataset_id)
-    models_controller.send_emails_for_dataset(dataset_id, current_user.id)
+    send_emails_for_dataset(dataset_id, current_user.id)
 
     return new_dataset_version
 
