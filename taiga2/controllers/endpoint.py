@@ -483,7 +483,11 @@ def de_delete_dataset_version(datasetVersionId):
     return flask.jsonify({})
 
 
-from .models_controller import InvalidTaigaIdFormat, get_latest_dataset_version
+from .models_controller import (
+    InvalidTaigaIdFormat,
+    get_latest_dataset_version,
+    is_db_locked,
+)
 
 
 @validate
@@ -654,10 +658,8 @@ def create_new_dataset_version_from_session(
                 latest_version.version,
             )
 
-            for file in previous_version_datafiles:
-                print(
-                    f"Session Id: {session_id}, File Name: {file.file_name}, Taiga ID: {file.taiga_id}"
-                )
+            # print(f"LOCK STATUS LINE 657: {models_controller.is_db_locked()}")
+
             # If file names being uploaded match an existing file from the previous
             # version, we automatically replace the existing file with the new
             # file.
@@ -684,12 +686,8 @@ def create_new_dataset_version_from_session(
         )
 
     except:
-        ### TEMPORARY for developing
-        tb = traceback.format_exc()
-        print(tb)
-        ###
         models_controller.rollback_db_session()
-        api_error(tb)
+        api_error("")
 
     (
         comments,
@@ -737,7 +735,7 @@ def create_new_dataset_version(datasetVersionMetadata):
     dataset_version = datasetVersionMetadata.get("datasetVersion", None)
     current_user = models_controller.get_current_session_user()
 
-    # The next 2 lines serve the purpose of providing a datafile names lsit that we
+    # The next 2 lines serve the purpose of providing a datafile names list that we
     # later use for comparison with previous version datafiles (if add_existing_files is true).
     # TODO Think about this: Would it be better to just pass the file names list as a param???
     added_files = models_controller.get_upload_session_files_from_session(session_id)

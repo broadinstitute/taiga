@@ -800,6 +800,16 @@ def get_previous_version_upload_datafiles(
     return previous_version_datafiles
 
 
+def is_db_locked():
+    try:
+        random_val = randint(1, 999)
+        db.session.execute(f"UPDATE lock_table SET random = {random_val}")
+        db.commit()
+        return False
+    except:
+        return True
+
+
 def lock():
     # There was a race condition if taigapy's update_dataset was run from multiple independent
     # processes. If add_existing_files was set to True, old files would sometimes be missing
