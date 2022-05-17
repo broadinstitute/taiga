@@ -648,14 +648,22 @@ def create_new_dataset_version_from_session(
     dataset_version,
     add_existing_files,
 ):
+    import pdb
+
+    pdb.set_trace()
     models_controller.lock()
     try:
         if add_existing_files:
-            latest_version = get_latest_dataset_version(dataset_id)
+            if dataset_version is None:
+                version = get_latest_dataset_version(dataset_id)
+            else:
+                assert dataset_version.get("version", None) is not None
+                version = models_controller.get_dataset_version_by_dataset_id_and_version(
+                    dataset_id, dataset_version["version"]
+                )
+
             previous_version_datafiles = models_controller.get_previous_version_upload_datafiles(
-                latest_version.datafiles,
-                latest_version.dataset.permaname,
-                latest_version.version,
+                version.datafiles, version.dataset.permaname, version.version
             )
 
             # print(f"LOCK STATUS LINE 657: {models_controller.is_db_locked()}")

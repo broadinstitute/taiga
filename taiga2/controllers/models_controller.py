@@ -390,6 +390,19 @@ def get_first_dataset_version(dataset_id):
     return dataset_version_first
 
 
+def get_dataset_version_by_dataset_id_and_version(dataset_id, version_number):
+    dataset_version = (
+        db.session.query(DatasetVersion)
+        .filter(
+            DatasetVersion.dataset_id == dataset_id,
+            DatasetVersion.version == version_number,
+        )
+        .one()
+    )
+
+    return dataset_version
+
+
 def get_latest_dataset_version(dataset_id):
     dataset = get_dataset(dataset_id)
     max_version = 0
