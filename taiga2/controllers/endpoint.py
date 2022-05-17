@@ -411,26 +411,6 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
     return flask.jsonify(json_dv_and_dataset_data)
 
 
-def generate_previous_version_upload_files(existing_taiga_id, sid):
-    try:
-        data_file = models_controller.get_datafile_by_taiga_id(
-            existing_taiga_id, one_or_none=True
-        )
-    except InvalidTaigaIdFormat as ex:
-        api_error(
-            "The following was not formatted like a valid taiga ID: {}".format(
-                ex.taiga_id
-            )
-        )
-
-    if data_file is None:
-        api_error("Unknown taiga ID: " + existing_taiga_id)
-
-    return models_controller.add_upload_session_virtual_file(
-        session_id=sid, filename=data_file.name, data_file_id=data_file.id
-    )
-
-
 @validate
 def update_dataset_version_description(datasetVersionId, DescriptionUpdate):
     models_controller.update_dataset_version_description(
@@ -648,39 +628,12 @@ def create_new_dataset_version_from_session(
     dataset_version,
     add_existing_files,
 ):
-    import pdb
-
-    pdb.set_trace()
     models_controller.lock()
     try:
         if add_existing_files:
-            if dataset_version is None:
-                version = get_latest_dataset_version(dataset_id)
-            else:
-                assert dataset_version.get("version", None) is not None
-                version = models_controller.get_dataset_version_by_dataset_id_and_version(
-                    dataset_id, dataset_version["version"]
-                )
-
-            previous_version_datafiles = models_controller.get_previous_version_upload_datafiles(
-                version.datafiles, version.dataset.permaname, version.version
+            added_datafiles = models_controller.get_previous_version_and_added_datafiles(
+                dataset_version, dataset_id, datafile_names, session_id
             )
-
-            # print(f"LOCK STATUS LINE 657: {models_controller.is_db_locked()}")
-
-            # If file names being uploaded match an existing file from the previous
-            # version, we automatically replace the existing file with the new
-            # file.
-            previous_version_virtual_datafiles: List[UploadVirtualDataFile] = []
-            if previous_version_datafiles is not None:
-                for upload_datafile in previous_version_datafiles:
-                    if upload_datafile.file_name not in datafile_names:
-                        previous_version_virtual_datafiles.append(upload_datafile)
-
-            for file in previous_version_virtual_datafiles:
-                generate_previous_version_upload_files(file.taiga_id, session_id)
-
-            added_datafiles = models_controller.add_datafiles_from_session(session_id)
         else:
             added_datafiles = models_controller.add_datafiles_from_session(session_id)
 
@@ -734,7 +687,7 @@ def create_new_dataset_version(datasetVersionMetadata):
     new_description = datasetVersionMetadata["newDescription"]
     changes_description = datasetVersionMetadata.get("changesDescription", None)
 
-    # Older versions of taigapy don't include add_existing_files in the paramse. Instead,
+    # Older versions of taigapy don't include add_existing_files in the params. Instead,
     # add_existing_files is handled within the taigapy logic. So it's safe to default this
     # to False and avoid repeating this logic.
     add_existing_files = datasetVersionMetadata.get("addExistingFiles", False)
@@ -745,7 +698,6 @@ def create_new_dataset_version(datasetVersionMetadata):
 
     # The next 2 lines serve the purpose of providing a datafile names list that we
     # later use for comparison with previous version datafiles (if add_existing_files is true).
-    # TODO Think about this: Would it be better to just pass the file names list as a param???
     added_files = models_controller.get_upload_session_files_from_session(session_id)
     datafile_names = [file.filename for file in added_files]
 

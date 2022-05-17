@@ -109,6 +109,25 @@ def new_datafile():
 
 
 @pytest.fixture
+def datafile_to_add():
+    # TODO: These tests should be using the endpoint and not the model
+    new_datafile_name = "Added Datafile"
+
+    _new_datafile = models_controller.add_s3_datafile(
+        name=new_datafile_name,
+        s3_bucket="broadtaiga2prototype",
+        s3_key=models_controller.generate_convert_key(),
+        compressed_s3_key=models_controller.generate_compressed_key(),
+        type=S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
+        short_summary="short",
+        long_summary="long",
+    )
+
+    return _new_datafile
+
+
+@pytest.fixture
 def new_dataset(new_datafile):
     # TODO: These tests should be using the endpoint and not the model
     new_dataset_name = "New Dataset"
@@ -122,6 +141,25 @@ def new_dataset(new_datafile):
     )
 
     return _new_dataset
+
+
+@pytest.fixture
+def dataset_to_add_to(datafile_to_add):
+    # TODO: These tests should be using the endpoint and not the model
+    _dataset_to_add = models_controller.add_dataset(
+        name="Test Adding Datafiles",
+        description="description",
+        datafiles_ids=[datafile_to_add.id],
+    )
+
+    return _dataset_to_add
+
+
+@pytest.fixture
+def new_dataset_version(new_dataset):
+    _new_dataset_version = models_controller.get_latest_dataset_version(new_dataset.id)
+
+    return _new_dataset_version
 
 
 @pytest.fixture
@@ -248,6 +286,67 @@ def test_create_dataset(session: SessionBase, new_upload_session_file):
     assert datafile.name == new_upload_session_file.filename
     assert datafile.short_summary == "short_summary_test"
     assert datafile.long_summary == "long_summary_test"
+
+
+def test_create_new_dataset_version_from_session_ignore_existing_files(
+    session: SessionBase, new_upload_session, new_dataset_version, dataset_to_add_to
+):
+    # Test if add_existing_files False
+    session_id = new_upload_session.id
+
+    # Add an initial file to add during the creation of the new dataset
+    _add_s3_file_to_upload_session(sid=session_id, file_name="File to add")
+
+    dataset_id = dataset_to_add_to.id
+    new_description = "This is the new description"
+    changes_description = "These are the changes"
+    added_datafiles = models_controller.add_datafiles_from_session(session_id)
+
+    all_datafile_ids = [datafile.id for datafile in added_datafiles]
+
+    new_dataset_version = models_controller.add_dataset_version(
+        dataset_id=dataset_id,
+        datafiles_ids=all_datafile_ids,
+        new_description=new_description,
+        changes_description=changes_description,
+    )
+
+    assert new_dataset_version.version == 2
+    assert len(new_dataset_version.datafiles) == 1
+
+
+# add_existing_files = True
+def test_create_new_dataset_version_from_session(
+    session: SessionBase, new_upload_session, new_dataset_version, dataset_to_add_to
+):
+
+    session_id = new_upload_session.id
+
+    # Add an initial file to add during the creation of the new dataset
+    _add_s3_file_to_upload_session(sid=session_id, file_name="File to add")
+
+    # datafile_names is only used for checking if existing names match new names of files to be added.
+    # We purposely make this NOT happen for this test, so ignore this variable.
+    datafile_names = []
+    dataset_id = dataset_to_add_to.id
+    new_description = "This is the new description"
+    changes_description = "These are the changes"
+
+    added_datafiles = models_controller.get_previous_version_and_added_datafiles(
+        dataset_to_add_to.dataset_versions[0], dataset_id, datafile_names, session_id
+    )
+
+    all_datafile_ids = [datafile.id for datafile in added_datafiles]
+
+    new_dataset_version = models_controller.add_dataset_version(
+        dataset_id=dataset_id,
+        datafiles_ids=all_datafile_ids,
+        new_description=new_description,
+        changes_description=changes_description,
+    )
+
+    assert new_dataset_version.version == 2
+    assert len(new_dataset_version.datafiles) == 2
 
 
 def test_create_new_dataset_version(

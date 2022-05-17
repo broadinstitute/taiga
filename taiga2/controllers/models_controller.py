@@ -813,6 +813,62 @@ def get_previous_version_upload_datafiles(
     return previous_version_datafiles
 
 
+def generate_previous_version_upload_files(existing_taiga_id, sid):
+    try:
+        data_file = get_datafile_by_taiga_id(existing_taiga_id, one_or_none=True)
+    except InvalidTaigaIdFormat as ex:
+        api_error(
+            "The following was not formatted like a valid taiga ID: {}".format(
+                ex.taiga_id
+            )
+        )
+
+    if data_file is None:
+        api_error("Unknown taiga ID: " + existing_taiga_id)
+
+    return add_upload_session_virtual_file(
+        session_id=sid, filename=data_file.name, data_file_id=data_file.id
+    )
+
+
+def get_previous_version_and_added_datafiles(
+    dataset_version: DatasetVersion,
+    dataset_id: str,
+    datafile_names: List[str],
+    session_id: str,
+) -> List[DataFile]:
+    version = None
+    if dataset_version is None:
+        version = get_latest_dataset_version(dataset_id)
+    else:
+        assert dataset_version.version is not None
+        version = get_dataset_version_by_dataset_id_and_version(
+            dataset_id, dataset_version.version
+        )
+
+    previous_version_datafiles = get_previous_version_upload_datafiles(
+        version.datafiles, version.dataset.permaname, version.version
+    )
+
+    # print(f"LOCK STATUS LINE 657: {models_controller.is_db_locked()}")
+
+    # If file names being uploaded match an existing file from the previous
+    # version, we automatically replace the existing file with the new
+    # file.
+    previous_version_virtual_datafiles: List[UploadVirtualDataFile] = []
+    if previous_version_datafiles is not None:
+        for upload_datafile in previous_version_datafiles:
+            if upload_datafile.file_name not in datafile_names:
+                previous_version_virtual_datafiles.append(upload_datafile)
+
+    for file in previous_version_virtual_datafiles:
+        generate_previous_version_upload_files(file.taiga_id, session_id)
+
+    added_datafiles = add_datafiles_from_session(session_id)
+
+    return added_datafiles
+
+
 def is_db_locked():
     try:
         random_val = randint(1, 999)
