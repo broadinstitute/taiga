@@ -22,6 +22,7 @@ import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import (
     Activity,
+    DataFile,
     DatasetVersion,
     EntryRightsEnum,
     VersionAdditionActivity,
@@ -463,11 +464,7 @@ def de_delete_dataset_version(datasetVersionId):
     return flask.jsonify({})
 
 
-from .models_controller import (
-    InvalidTaigaIdFormat,
-    get_latest_dataset_version,
-    is_db_locked,
-)
+from .models_controller import InvalidTaigaIdFormat
 
 
 @validate
@@ -620,7 +617,6 @@ def create_dataset(sessionDatasetInfo):
 
 def create_new_dataset_version_from_session(
     current_user,
-    datafile_names,
     session_id,
     dataset_id,
     new_description,
@@ -631,13 +627,33 @@ def create_new_dataset_version_from_session(
     models_controller.lock()
     try:
         if add_existing_files:
-            added_datafiles = models_controller.get_previous_version_and_added_datafiles(
-                dataset_version, dataset_id, datafile_names, session_id
+            added_files = models_controller.get_upload_session_files_from_session(
+                session_id
             )
-        else:
-            added_datafiles = models_controller.add_datafiles_from_session(session_id)
 
-        all_datafile_ids = [datafile.id for datafile in added_datafiles]
+            previous_version_datafiles = models_controller.get_previous_version_and_added_datafiles(
+                dataset_version, dataset_id
+            )
+
+            # If a new file has the same name as a previous_version_file, overrite the previous_version_file
+            datafile_names_to_exclude = [file.filename for file in added_files]
+
+            previous_version_virtual_datafiles: List[DataFile] = []
+            if previous_version_datafiles is not None:
+                for upload_datafile in previous_version_datafiles:
+                    if upload_datafile.name not in datafile_names_to_exclude:
+                        previous_version_virtual_datafiles.append(upload_datafile)
+
+            for file in previous_version_virtual_datafiles:
+                models_controller.add_upload_session_virtual_file(
+                    session_id=session_id, filename=file.name, data_file_id=file.id
+                )
+
+            total_datafiles = models_controller.add_datafiles_from_session(session_id)
+        else:
+            total_datafiles = models_controller.add_datafiles_from_session(session_id)
+
+        all_datafile_ids = [datafile.id for datafile in total_datafiles]
 
         new_dataset_version = models_controller.add_dataset_version(
             dataset_id=dataset_id,
@@ -654,7 +670,7 @@ def create_new_dataset_version_from_session(
         comments,
         latest_dataset_version,
     ) = models_controller.get_comments_and_latest_dataset_version(
-        dataset_id, added_datafiles
+        dataset_id, total_datafiles
     )
 
     activity = VersionAdditionActivity(
@@ -696,14 +712,8 @@ def create_new_dataset_version(datasetVersionMetadata):
     dataset_version = datasetVersionMetadata.get("datasetVersion", None)
     current_user = models_controller.get_current_session_user()
 
-    # The next 2 lines serve the purpose of providing a datafile names list that we
-    # later use for comparison with previous version datafiles (if add_existing_files is true).
-    added_files = models_controller.get_upload_session_files_from_session(session_id)
-    datafile_names = [file.filename for file in added_files]
-
     new_dataset_version = create_new_dataset_version_from_session(
         current_user,
-        datafile_names,
         session_id,
         dataset_id,
         new_description,
@@ -1318,22 +1328,6 @@ def add_figshare_token(token: str):
         return flask.make_response(flask.jsonify({}), 201)
     else:
         return flask.jsonify({})
-
-
-def _fetch_figshare_token() -> str:
-    """Validates and returns token for current user.
-
-    Also removes invalid tokens.
-    """
-    token = models_controller.get_figshare_personal_token_for_current_user()
-    if token is None:
-        return None
-
-    if not figshare.is_token_valid(token):
-        models_controller.remove_figshare_token_for_current_user()
-        return None
-
-    return token
 
 
 def get_figshare_article_creation_options():

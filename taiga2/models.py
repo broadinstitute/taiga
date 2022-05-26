@@ -1,5 +1,4 @@
 import enum
-from random import Random, randint
 import uuid
 import re
 import datetime
