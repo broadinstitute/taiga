@@ -1369,6 +1369,34 @@ def get_comments_and_latest_dataset_version(dataset_id, added_datafiles):
     return comments, latest_dataset_version
 
 
+def get_session_files_including_existing_files(session_id, dataset_version, dataset_id):
+    new_files = get_upload_session_files_from_session(session_id)
+
+    previous_version_datafiles = get_previous_version_and_added_datafiles(
+        dataset_version, dataset_id
+    )
+
+    datafile_names_to_exclude = [file.filename for file in new_files]
+
+    # If a new file has the same name as a previous_version_file, overrite the previous_version_file
+    previous_version_virtual_datafiles: List[DataFile] = []
+    if previous_version_datafiles is not None:
+        for upload_datafile in previous_version_datafiles:
+            if upload_datafile.name not in datafile_names_to_exclude:
+                previous_version_virtual_datafiles.append(upload_datafile)
+
+    # Add upload session file for each previous datafile
+    for file in previous_version_virtual_datafiles:
+        add_upload_session_virtual_file(
+            session_id=session_id, filename=file.name, data_file_id=file.id
+        )
+
+    # Get the all_datafiles, including previous data files. These can all now be retrieved from the session.
+    all_datafiles = add_datafiles_from_session(session_id)
+
+    return all_datafiles
+
+
 def add_datafiles_from_session(session_id: str):
     # We retrieve all the upload_session_files related to the UploadSession
     added_files = get_upload_session_files_from_session(session_id)

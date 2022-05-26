@@ -615,62 +615,42 @@ def create_dataset(sessionDatasetInfo):
     return flask.jsonify(added_dataset.id)
 
 
-def create_new_dataset_version_from_session(
-    current_user,
+def _create_new_dataset_version_from_session(
     session_id,
     dataset_id,
+    dataset_version,
     new_description,
     changes_description,
-    dataset_version,
     add_existing_files,
 ):
-    models_controller.lock()
-    try:
-        if add_existing_files:
-            added_files = models_controller.get_upload_session_files_from_session(
-                session_id
-            )
-
-            previous_version_datafiles = models_controller.get_previous_version_and_added_datafiles(
-                dataset_version, dataset_id
-            )
-
-            # If a new file has the same name as a previous_version_file, overrite the previous_version_file
-            datafile_names_to_exclude = [file.filename for file in added_files]
-
-            previous_version_virtual_datafiles: List[DataFile] = []
-            if previous_version_datafiles is not None:
-                for upload_datafile in previous_version_datafiles:
-                    if upload_datafile.name not in datafile_names_to_exclude:
-                        previous_version_virtual_datafiles.append(upload_datafile)
-
-            for file in previous_version_virtual_datafiles:
-                models_controller.add_upload_session_virtual_file(
-                    session_id=session_id, filename=file.name, data_file_id=file.id
-                )
-
-            total_datafiles = models_controller.add_datafiles_from_session(session_id)
-        else:
-            total_datafiles = models_controller.add_datafiles_from_session(session_id)
-
-        all_datafile_ids = [datafile.id for datafile in total_datafiles]
-
-        new_dataset_version = models_controller.add_dataset_version(
-            dataset_id=dataset_id,
-            datafiles_ids=all_datafile_ids,
-            new_description=new_description,
-            changes_description=changes_description,
+    if add_existing_files:
+        all_datafiles = models_controller.get_session_files_including_existing_files(
+            session_id, dataset_version, dataset_id
         )
+    else:
+        all_datafiles = models_controller.add_datafiles_from_session(session_id)
 
-    except:
-        models_controller.rollback_db_session()
-        api_error("")
+    all_datafile_ids = [datafile.id for datafile in all_datafiles]
+
+    new_dataset_version = models_controller.add_dataset_version(
+        dataset_id=dataset_id,
+        datafiles_ids=all_datafile_ids,
+        new_description=new_description,
+        changes_description=changes_description,
+    )
+
+    return new_dataset_version
+
+
+def _handle_version_addition_activity(
+    current_user, dataset_id, new_description, new_dataset_version
+):
 
     (
         comments,
         latest_dataset_version,
     ) = models_controller.get_comments_and_latest_dataset_version(
-        dataset_id, total_datafiles
+        dataset_id, new_dataset_version.datafiles
     )
 
     activity = VersionAdditionActivity(
@@ -712,14 +692,22 @@ def create_new_dataset_version(datasetVersionMetadata):
     dataset_version = datasetVersionMetadata.get("datasetVersion", None)
     current_user = models_controller.get_current_session_user()
 
-    new_dataset_version = create_new_dataset_version_from_session(
-        current_user,
-        session_id,
-        dataset_id,
-        new_description,
-        changes_description,
-        dataset_version,
-        add_existing_files,
+    models_controller.lock()
+    try:
+        new_dataset_version = _create_new_dataset_version_from_session(
+            session_id,
+            dataset_id,
+            dataset_version,
+            new_description,
+            changes_description,
+            add_existing_files,
+        )
+    except:
+        models_controller.rollback_db_session()
+        api_error("Failed to complete dataset update.")
+
+    _handle_version_addition_activity(
+        current_user, dataset_id, new_description, new_dataset_version
     )
 
     return flask.jsonify(new_dataset_version.id)
