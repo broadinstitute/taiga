@@ -300,9 +300,7 @@ def test_create_new_dataset_version_from_session_ignore_existing_files(
     dataset_id = dataset_to_add_to.id
     new_description = "This is the new description"
     changes_description = "These are the changes"
-    added_datafiles = models_controller.get_session_files_including_existing_files(
-        session_id, dataset_to_add_to.dataset_versions[0], dataset_id
-    )
+    added_datafiles = models_controller.add_datafiles_from_session(session_id)
 
     all_datafile_ids = [datafile.id for datafile in added_datafiles]
 
