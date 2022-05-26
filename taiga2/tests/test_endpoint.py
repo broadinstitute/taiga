@@ -300,7 +300,9 @@ def test_create_new_dataset_version_from_session_ignore_existing_files(
     dataset_id = dataset_to_add_to.id
     new_description = "This is the new description"
     changes_description = "These are the changes"
-    added_datafiles = models_controller.add_datafiles_from_session(session_id)
+    added_datafiles = models_controller.get_session_files_including_existing_files(
+        session_id, dataset_to_add_to.dataset_versions[0], dataset_id
+    )
 
     all_datafile_ids = [datafile.id for datafile in added_datafiles]
 
@@ -327,13 +329,12 @@ def test_create_new_dataset_version_from_session(
 
     # datafile_names is only used for checking if existing names match new names of files to be added.
     # We purposely make this NOT happen for this test, so ignore this variable.
-    datafile_names = []
     dataset_id = dataset_to_add_to.id
     new_description = "This is the new description"
     changes_description = "These are the changes"
 
-    added_datafiles = models_controller.get_previous_version_and_added_datafiles(
-        dataset_to_add_to.dataset_versions[0], dataset_id, datafile_names, session_id
+    added_datafiles = models_controller.get_session_files_including_existing_files(
+        session_id, dataset_to_add_to.dataset_versions[0], dataset_id
     )
 
     all_datafile_ids = [datafile.id for datafile in added_datafiles]
