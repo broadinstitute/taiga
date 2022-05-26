@@ -1,7 +1,6 @@
 from datetime import datetime
 import enum
 from random import randint
-from tkinter import E
 import flask
 from flask import current_app
 import uuid
@@ -13,7 +12,6 @@ from typing import List, Dict, Tuple, Optional
 import json
 
 from sqlalchemy import and_
-from taiga2 import schemas
 
 import taiga2.models as models
 from taiga2.models import db
@@ -49,7 +47,6 @@ from sqlalchemy.orm.session import make_transient
 from collections import namedtuple
 from connexion.exceptions import ProblemException
 from taiga2.third_party_clients.gcs import get_blob, parse_gcs_path
-from taiga2.types import UploadVirtualDataFile
 
 DataFileAlias = namedtuple("DataFileAlias", "name data_file_id")
 
@@ -64,9 +61,6 @@ log = logging.getLogger(__name__)
 #   You need to push the context of you app => app.app_context().push() (for us frontend_app.app_context().push()
 
 # <editor-fold desc="User">
-
-DATAFILE_ID_FORMAT = "{dataset_permaname}.{dataset_version}/{datafile_name}"
-DATAFILE_ID_FORMAT_MISSING_DATAFILE = "{dataset_permaname}.{dataset_version}"
 
 
 def api_error(msg):
@@ -769,49 +763,6 @@ def filter_allowed_parents(parents):
             del allowed_parents[index]
 
     return allowed_parents
-
-
-def format_datafile_id(
-    dataset_permaname: str,
-    dataset_version: DatasetVersion,
-    datafile_name: Optional[str],
-):
-    name_parts = {
-        "dataset_permaname": dataset_permaname,
-        "dataset_version": dataset_version,
-        "datafile_name": datafile_name,
-    }
-
-    id_format = (
-        DATAFILE_ID_FORMAT
-        if datafile_name is not None
-        else DATAFILE_ID_FORMAT_MISSING_DATAFILE
-    )
-
-    return id_format.format(**name_parts)
-
-
-def get_previous_version_upload_datafiles(
-    dataset_version_datafiles: List[DataFile],
-    dataset_permaname: str,
-    dataset_version: str,
-) -> List[UploadVirtualDataFile]:
-    previous_version_taiga_ids = [
-        {
-            "taiga_id": format_datafile_id(
-                dataset_permaname, dataset_version, datafile.name
-            )
-        }
-        for datafile in dataset_version_datafiles
-    ]
-
-    previous_version_datafiles = (
-        [UploadVirtualDataFile(f) for f in previous_version_taiga_ids]
-        if previous_version_taiga_ids is not None
-        else None
-    )
-
-    return previous_version_datafiles
 
 
 def get_previous_version_and_added_datafiles(

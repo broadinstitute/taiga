@@ -1,14 +1,10 @@
-import traceback
 import flask
 import logging
 import sys
 import time
 import re
 from io import BytesIO
-from typing import List
 from taiga2.dataset_subscriptions import send_emails_for_dataset
-
-from taiga2.types import UploadVirtualDataFile
 
 from .endpoint_validation import validate
 
@@ -22,7 +18,6 @@ import taiga2.schemas as schemas
 import taiga2.conv as conversion
 from taiga2.models import (
     Activity,
-    DataFile,
     DatasetVersion,
     EntryRightsEnum,
     VersionAdditionActivity,
