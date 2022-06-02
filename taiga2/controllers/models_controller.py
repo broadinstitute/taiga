@@ -785,16 +785,12 @@ def lock():
     # update the same row. Once the transaction which successfully updates this row is
     # either committed or rolled back the "lock" will be released
     random_val = randint(1, 999)
-    db.session.bind.execute("UPDATE lock_table SET random = ?", [random_val])
+    db.session.execute("UPDATE lock_table SET random = :val", {"val": random_val})
 
 
 def add_version_addition_activity(activity):
     db.session.add(activity)
     db.session.commit()
-
-
-def rollback_db_session():
-    db.session.rollback()
 
 
 def _fetch_respecting_one_or_none(q, one_or_none, expect=None):

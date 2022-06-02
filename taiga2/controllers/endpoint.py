@@ -688,18 +688,15 @@ def create_new_dataset_version(datasetVersionMetadata):
     current_user = models_controller.get_current_session_user()
 
     models_controller.lock()
-    try:
-        new_dataset_version = _create_new_dataset_version_from_session(
-            session_id,
-            dataset_id,
-            dataset_version,
-            new_description,
-            changes_description,
-            add_existing_files,
-        )
-    except:
-        models_controller.rollback_db_session()
-        api_error("Failed to complete dataset update.")
+
+    new_dataset_version = _create_new_dataset_version_from_session(
+        session_id,
+        dataset_id,
+        dataset_version,
+        new_description,
+        changes_description,
+        add_existing_files,
+    )
 
     _handle_version_addition_activity(
         current_user, dataset_id, new_description, new_dataset_version
