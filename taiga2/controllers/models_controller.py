@@ -631,7 +631,7 @@ def get_dataset_version_id_from_any(submitted_by_user__data: str):
 # </editor-fold>
 
 # <editor-fold desc="DatasetVersion">
-def add_dataset_version(
+def _add_dataset_version(
     dataset_id,
     datafiles_ids=None,
     new_description=None,
@@ -680,6 +680,28 @@ def add_dataset_version(
 
     db.session.add(new_dataset_version)
     db.session.add(dataset)
+
+    return new_dataset_version
+
+
+def add_dataset_version(
+    dataset_id,
+    datafiles_ids=None,
+    new_description=None,
+    changes_description=None,
+    permaname=None,
+    anterior_creation_date=None,
+    forced_id=None,
+):
+    new_dataset_version = _add_dataset_version(
+        dataset_id,
+        datafiles_ids,
+        new_description,
+        changes_description,
+        permaname,
+        anterior_creation_date,
+        forced_id,
+    )
     db.session.commit()
 
     return new_dataset_version
@@ -1188,7 +1210,7 @@ def add_s3_datafile(
     )
 
     db.session.add(new_datafile)
-    db.session.commit()
+    db.session.flush()
 
     return new_datafile
 
@@ -1202,7 +1224,8 @@ def add_virtual_datafile(name, datafile_id):
     new_datafile = VirtualDataFile(name=name, underlying_data_file=datafile)
 
     db.session.add(new_datafile)
-    db.session.commit()
+
+    db.session.flush()
 
     # some sanity checks to make sure persistence worked as expected
     _id = new_datafile.id
@@ -1223,7 +1246,9 @@ def add_gcs_datafile(name, gcs_path, generation_id):
     )
 
     db.session.add(new_datafile)
-    db.session.commit()
+
+    db.session.flush()
+
     return new_datafile
 
 
@@ -1318,7 +1343,6 @@ def get_comments_and_latest_dataset_version(dataset_id, added_datafiles):
 
 def get_session_files_including_existing_files(session_id, dataset_version, dataset_id):
     new_files = get_upload_session_files_from_session(session_id)
-
     previous_version_datafiles = get_previous_version_and_added_datafiles(
         dataset_version, dataset_id
     )
@@ -1335,16 +1359,19 @@ def get_session_files_including_existing_files(session_id, dataset_version, data
     # Add upload session file for each previous datafile
     for file in previous_version_virtual_datafiles:
         add_upload_session_virtual_file(
-            session_id=session_id, filename=file.name, data_file_id=file.id
+            session_id=session_id,
+            filename=file.name,
+            data_file_id=file.id,
+            commit=False,
         )
 
     # Get the all_datafiles, including previous data files. These can all now be retrieved from the session.
-    all_datafiles = add_datafiles_from_session(session_id)
+    all_datafiles = _add_datafiles_from_session(session_id)
 
     return all_datafiles
 
 
-def add_datafiles_from_session(session_id: str):
+def _add_datafiles_from_session(session_id: str):
     # We retrieve all the upload_session_files related to the UploadSession
     added_files = get_upload_session_files_from_session(session_id)
 
@@ -1376,6 +1403,13 @@ def add_datafiles_from_session(session_id: str):
                 original_file_md5=file.original_file_md5,
             )
         added_datafiles.append(new_datafile)
+
+    return added_datafiles
+
+
+def add_datafiles_from_session(session_id: str):
+    added_datafiles = _add_datafiles_from_session(session_id)
+    db.session.commit()
 
     return added_datafiles
 
@@ -1520,7 +1554,7 @@ def add_upload_session_s3_file(
     return upload_session_file
 
 
-def add_upload_session_virtual_file(session_id, filename, data_file_id):
+def add_upload_session_virtual_file(session_id, filename, data_file_id, commit=True):
     data_file = DataFile.query.get(data_file_id)
     assert data_file is not None
 
@@ -1528,7 +1562,12 @@ def add_upload_session_virtual_file(session_id, filename, data_file_id):
         session_id=session_id, filename=filename, data_file=data_file
     )
     db.session.add(upload_session_file)
-    db.session.commit()
+
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
+
     return upload_session_file
 
 
