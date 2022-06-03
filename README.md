@@ -99,12 +99,12 @@ For our case, it is pretty simple:
 
 ```json
 [
-    {
-        "AllowedOrigins": ["*"],
-        "AllowedMethods": ["GET", "POST", "PUT"],
-        "ExposeHeaders": ["ETag"],
-        "AllowedHeaders": ["*"]
-    }
+  {
+    "AllowedOrigins": ["*"],
+    "AllowedMethods": ["GET", "POST", "PUT"],
+    "ExposeHeaders": ["ETag"],
+    "AllowedHeaders": ["*"]
+  }
 ]
 ```
 
@@ -188,8 +188,7 @@ console and going to RDS, going to "Snapshots", and selecting "Restore
 Snapshot". You can then place the new database's endpoing into
 prod_settings.cfg.)
 
-- `cd taiga2`
-- `./manage.py -c ../prod_settings.cfg db migrate -m 'migration-msg'`
+- `TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db migrate`
 
 Review the resulting generated migration. I've found I've had to re-order
 tables to ensure fk references are created successfully. Before applying the
@@ -202,7 +201,7 @@ Depending on your changes, you may be able to apply them without stopping the se
 - (Stop the service)
 - `ssh ubuntu@cds.team sudo systemctl stop taiga`
 - (Apply changes to the DB)
-- `./manage.py -c ../prod_settings.cfg db upgrade`
+- `TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db upgrade`
 - (And then pull and start the new code)
 - `ssh ubuntu@cds.team`
 - `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
@@ -211,7 +210,7 @@ Depending on your changes, you may be able to apply them without stopping the se
 ### Applying "online" changes
 
 - (Apply changes to the DB)
-- `./manage.py -c ../prod_settings.cfg db upgrade`
+- `TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db upgrade`
 - (And then pull new code)
 - `ssh ubuntu@cds.team`
 - `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
