@@ -1165,7 +1165,7 @@ def can_view(entry_id):
 # </editor-fold>
 
 # <editor-fold desc="DataFile">
-def add_s3_datafile(
+def _add_s3_datafile(
     s3_bucket,
     s3_key,
     compressed_s3_key: Optional[str],
@@ -1215,7 +1215,41 @@ def add_s3_datafile(
     return new_datafile
 
 
-def add_virtual_datafile(name, datafile_id):
+def add_s3_datafile(
+    s3_bucket,
+    s3_key,
+    compressed_s3_key: Optional[str],
+    name,
+    type,
+    encoding,
+    short_summary,
+    long_summary,
+    column_types=None,
+    original_file_sha256=None,
+    original_file_md5=None,
+    forced_id=None,
+):
+    new_datafile = _add_s3_datafile(
+        s3_bucket=s3_bucket,
+        s3_key=s3_key,
+        compressed_s3_key=compressed_s3_key,
+        name=name,
+        type=type,
+        encoding=encoding,
+        short_summary=short_summary,
+        long_summary=long_summary,
+        column_types=column_types,
+        original_file_sha256=original_file_sha256,
+        original_file_md5=original_file_md5,
+        forced_id=forced_id,
+    )
+
+    db.session.commit()
+
+    return new_datafile
+
+
+def _add_virtual_datafile(name, datafile_id):
     assert isinstance(datafile_id, str)
 
     datafile = DataFile.query.get(datafile_id)
@@ -1240,7 +1274,14 @@ def add_virtual_datafile(name, datafile_id):
     return new_datafile
 
 
-def add_gcs_datafile(name, gcs_path, generation_id):
+def add_virtual_datafile(name, datafile_id):
+    new_datafile = _add_virtual_datafile(name=name, datafile_id=datafile_id)
+    db.session.commit()
+
+    return new_datafile
+
+
+def _add_gcs_datafile(name, gcs_path, generation_id):
     new_datafile = GCSObjectDataFile(
         name=name, gcs_path=gcs_path, generation_id=generation_id
     )
@@ -1248,6 +1289,16 @@ def add_gcs_datafile(name, gcs_path, generation_id):
     db.session.add(new_datafile)
 
     db.session.flush()
+
+    return new_datafile
+
+
+def add_gcs_datafile(name, gcs_path, generation_id):
+    new_datafile = _add_gcs_datafile(
+        name=name, gcs_path=gcs_path, generation_id=generation_id
+    )
+
+    db.session.commit()
 
     return new_datafile
 
@@ -1379,17 +1430,17 @@ def _add_datafiles_from_session(session_id: str):
     added_datafiles = []
     for file in added_files:
         if file.data_file is not None:
-            new_datafile = add_virtual_datafile(
+            new_datafile = _add_virtual_datafile(
                 name=file.filename, datafile_id=file.data_file.id
             )
         elif file.gcs_path is not None:
-            new_datafile = add_gcs_datafile(
+            new_datafile = _add_gcs_datafile(
                 name=file.filename,
                 gcs_path=file.gcs_path,
                 generation_id=file.generation_id,
             )
         else:
-            new_datafile = add_s3_datafile(
+            new_datafile = _add_s3_datafile(
                 name=file.filename,
                 s3_bucket=file.s3_bucket,
                 s3_key=file.converted_s3_key,

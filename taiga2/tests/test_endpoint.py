@@ -1,3 +1,4 @@
+from typing import List
 import flask
 import json
 import pytest
@@ -9,6 +10,7 @@ import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
 
 from taiga2.models import generate_permaname, S3DataFile, Dataset, DatasetVersion
+from taiga2.models import db
 from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
 
@@ -319,7 +321,6 @@ def test_create_new_dataset_version_from_session_ignore_existing_files(
 def test_create_new_dataset_version_from_session(
     session: SessionBase, new_upload_session, new_dataset_version, dataset_to_add_to
 ):
-
     session_id = new_upload_session.id
 
     # Add an initial file to add during the creation of the new dataset
@@ -331,9 +332,32 @@ def test_create_new_dataset_version_from_session(
     new_description = "This is the new description"
     changes_description = "These are the changes"
 
-    added_datafiles = models_controller.get_session_files_including_existing_files(
-        session_id, dataset_to_add_to.dataset_versions[0], dataset_id
+    new_files = models_controller.get_upload_session_files_from_session(session_id)
+    previous_version_datafiles = models_controller.get_previous_version_and_added_datafiles(
+        None, dataset_id
     )
+
+    datafile_names_to_exclude = [file.filename for file in new_files]
+
+    # If a new file has the same name as a previous_version_file, overrite the previous_version_file
+    previous_version_virtual_datafiles: List[DataFile] = []
+    if previous_version_datafiles is not None:
+        for upload_datafile in previous_version_datafiles:
+            if upload_datafile.name not in datafile_names_to_exclude:
+                previous_version_virtual_datafiles.append(upload_datafile)
+
+    # Add upload session file for each previous datafile
+    for file in previous_version_virtual_datafiles:
+        models_controller.add_upload_session_virtual_file(
+            session_id=session_id,
+            filename=file.name,
+            data_file_id=file.id,
+            commit=False,
+        )
+        session.commit()
+
+    # Get the all_datafiles, including previous data files. These can all now be retrieved from the session.
+    added_datafiles = models_controller._add_datafiles_from_session(session_id)
 
     all_datafile_ids = [datafile.id for datafile in added_datafiles]
 
