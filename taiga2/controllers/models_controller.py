@@ -1300,7 +1300,7 @@ def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataF
     return resolve_virtual_datafile(datafile)
 
 
-def log_datafile_read_access_info(datafile_id: int):
+def log_datafile_read_access_info(datafile_id: str):
     # If the user has read this data file, a row with this datafiles access info will already exist, so update that
     # row's access count and last access time info. Otherwise, add a row to track the read access of this file for this user.
     user = get_current_session_user()
@@ -1318,6 +1318,7 @@ def log_datafile_read_access_info(datafile_id: int):
         )
         db.session.connection().execute(stmt)
     except exc.IntegrityError:
+        db.session.rollback()
         stmt = (
             update(table)
             .values(
