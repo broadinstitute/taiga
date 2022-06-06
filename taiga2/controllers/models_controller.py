@@ -1307,26 +1307,31 @@ def log_datafile_read_access_info(datafile_id: str):
     user_id = user.id
 
     table = ReadAccessLog.__table__
+    connection = db.engine.connect()
 
-    try:
-        stmt = insert(table).values(
-            datafile_id=datafile_id,
-            user_id=user_id,
-            first_access=datetime.utcnow(),
-            last_access=datetime.utcnow(),
-            access_count=1,
-        )
-        db.session.connection().execute(stmt)
-    except exc.IntegrityError:
-        db.session.rollback()
-        stmt = (
-            update(table)
-            .values(
-                last_access=datetime.utcnow(), access_count=table.c.access_count + 1
+    with connection.begin():
+        try:
+            connection.execute("SAVEPOINT my_savepoint;")
+            stmt = insert(table).values(
+                datafile_id=datafile_id,
+                user_id=user_id,
+                first_access=datetime.utcnow(),
+                last_access=datetime.utcnow(),
+                access_count=1,
             )
-            .where(table.c.datafile_id == datafile_id and table.c.user_id == user_id)
-        )
-        db.session.connection().execute(stmt)
+            connection.execute(stmt)
+        except exc.IntegrityError:
+            connection.execute("ROLLBACK TO SAVEPOINT my_savepoint;")
+            stmt = (
+                update(table)
+                .values(
+                    last_access=datetime.utcnow(), access_count=table.c.access_count + 1
+                )
+                .where(
+                    table.c.datafile_id == datafile_id and table.c.user_id == user_id
+                )
+            )
+            connection.execute(stmt)
 
     db.session.commit()
 
