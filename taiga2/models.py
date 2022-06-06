@@ -266,7 +266,7 @@ class DataFile(db.Model):
 class ReadAccessLog(db.Model):
     __tablename__ = "read_access_log"
 
-    datafile_id: int = db.Column(db.Integer, primary_key=True)
+    datafile_id: int = db.Column(db.String, primary_key=True)
     user_id: str = db.Column(db.String, primary_key=True)
     first_access: datetime.datetime = db.Column(db.DateTime)
     last_access: datetime.datetime = db.Column(db.DateTime)

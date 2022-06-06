@@ -806,7 +806,7 @@ def lock():
     # We implement a lock by relying on the database to block clients which attempt to
     # update the same row. Once the transaction which successfully updates this row is
     # either committed or rolled back the "lock" will be released
-    random_val = randint(1, 999)
+    random_val = randint(1, 9999)
     db.session.execute("UPDATE lock_table SET random = :val", {"val": random_val})
 
 
@@ -1422,32 +1422,38 @@ def get_session_files_including_existing_files(session_id, dataset_version, data
     return all_datafiles
 
 
-def log_datafile_read_access_info(datafile_id: int):
+def log_datafile_read_access_info(datafile_id: str):
     # If the user has read this data file, a row with this datafiles access info will already exist, so update that
     # row's access count and last access time info. Otherwise, add a row to track the read access of this file for this user.
     user = get_current_session_user()
     user_id = user.id
 
     table = ReadAccessLog.__table__
+    connection = db.engine.connect()
 
-    try:
-        stmt = insert(table).values(
-            datafile_id=datafile_id,
-            user_id=user_id,
-            first_access=datetime.utcnow(),
-            last_access=datetime.utcnow(),
-            access_count=1,
-        )
-        db.session.connection().execute(stmt)
-    except exc.IntegrityError:
-        stmt = (
-            update(table)
-            .values(
-                last_access=datetime.utcnow(), access_count=table.c.access_count + 1
+    with connection.begin():
+        try:
+            connection.execute("SAVEPOINT my_savepoint;")
+            stmt = insert(table).values(
+                datafile_id=datafile_id,
+                user_id=user_id,
+                first_access=datetime.utcnow(),
+                last_access=datetime.utcnow(),
+                access_count=1,
             )
-            .where(table.c.datafile_id == datafile_id and table.c.user_id == user_id)
-        )
-        db.session.connection().execute(stmt)
+            connection.execute(stmt)
+        except exc.IntegrityError:
+            connection.execute("ROLLBACK TO SAVEPOINT my_savepoint;")
+            stmt = (
+                update(table)
+                .values(
+                    last_access=datetime.utcnow(), access_count=table.c.access_count + 1
+                )
+                .where(
+                    table.c.datafile_id == datafile_id and table.c.user_id == user_id
+                )
+            )
+            connection.execute(stmt)
 
     db.session.commit()
 
