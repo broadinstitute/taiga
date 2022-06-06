@@ -459,7 +459,11 @@ def de_delete_dataset_version(datasetVersionId):
     return flask.jsonify({})
 
 
-from .models_controller import InvalidTaigaIdFormat
+from .models_controller import (
+    InvalidTaigaIdFormat,
+    get_current_session_user,
+    log_datafile_read_access_info,
+)
 
 
 @validate
@@ -887,6 +891,9 @@ def get_datafile(
 
     if datafile.type == "virtual":
         result["underlying_file_id"] = datafile.underlying_file_id
+
+    if result:
+        models_controller.log_datafile_read_access_info(datafile.id)
 
     return flask.jsonify(result)
 
