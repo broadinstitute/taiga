@@ -6,7 +6,7 @@ import os
 from taiga2.conf import load_config
 from taiga2.auth import init_front_auth
 from taiga2 import commands
-from .extensions import db as ext_db
+from .extensions import db as ext_db, migrate
 from taiga2 import models
 
 log = logging.getLogger(__name__)
@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 def register_extensions(app):
     # Init the database with the app
     ext_db.init_app(app)
+    migrate.init_app(app, ext_db)
 
 
 def register_commands(app):
@@ -27,6 +28,7 @@ def create_app(settings_override=None, settings_file=None):
 
     app = Flask(__name__)
 
+    settings_file = os.environ.get("TAIGA_SETTINGS_FILE", settings_file)
     load_config(app, settings_file=settings_file, settings_override=settings_override)
 
     register_extensions(app)
