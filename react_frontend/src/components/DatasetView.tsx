@@ -955,7 +955,7 @@ export class DatasetView extends React.Component<
               );
             }
             if (df.gcs_path) {
-              gsPath = <div>({"gs://" + df.gcs_path})</div>;
+              gsPath = <div>({df.gcs_path})</div>;
             }
 
             let figshareLinked = null;

@@ -21,6 +21,8 @@ from taiga2.models import (
     DatasetVersion,
     EntryRightsEnum,
     VersionAdditionActivity,
+    DataFile,
+    GCSObjectDataFile,
     normalize_name,
     SearchResult,
 )
@@ -32,7 +34,11 @@ from taiga2.third_party_clients.aws import (
     create_s3_url as aws_create_s3_url,
 )
 
-from taiga2.third_party_clients.gcs import get_blob, parse_gcs_path
+from taiga2.third_party_clients.gcs import (
+    get_blob,
+    parse_gcs_path,
+    create_signed_gcs_url,
+)
 import taiga2.third_party_clients.figshare as figshare
 
 log = logging.getLogger(__name__)
@@ -754,46 +760,66 @@ def _make_dl_name(datafile_name, dataset_version_version, dataset_name, format):
     return name
 
 
-@validate
-def get_datafile(
+def _get_gcs_datafile(
+    real_datafile,
+    datafile,
+    dataset_version,
+    dataset_version_version,
+    dataset_version_id,
+    dataset_id,
+    datafile_name,
+    dataset_name,
+    dataset_permaname,
     format,
-    dataset_permaname=None,
-    version=None,
-    dataset_version_id=None,
-    datafile_name=None,
-    force=None,
 ):
-    from taiga2.tasks import start_conversion_task
+    if format == "metadata":
+        urls = None
+        conversion_status = "Completed successfully"
+    else:
+        # no conversion is necessary
+        bucket_name, object_name = parse_gcs_path(real_datafile.gcs_path)
+        urls = [create_signed_gcs_url(bucket_name, object_name)]
+        conversion_status = "Completed successfully"
 
-    datafile = models_controller.find_datafile(
-        dataset_permaname, version, dataset_version_id, datafile_name
+    # TODO: This should be handled by a Marshmallow schema and not created on the fly
+    result = dict(
+        dataset_name=dataset_name,
+        dataset_permaname=dataset_permaname,
+        dataset_version=str(dataset_version_version),
+        dataset_id=dataset_id,
+        dataset_version_id=dataset_version_id,
+        datafile_name=datafile_name,
+        status=conversion_status,
+        state=dataset_version.state.value,
+        reason_state=dataset_version.reason_state,
+        datafile_type=datafile.type,
+        gcs_path=real_datafile.gcs_path,
     )
 
-    if datafile is None:
-        flask.abort(404)
-
-    # import pdb; pdb.set_trace()
-    dataset_version = datafile.dataset_version
-    dataset_version_version = dataset_version.version
-    dataset_version_id = dataset_version.id
-    dataset_id = dataset_version.dataset.id
-    datafile_name = datafile.name
-    dataset_name = dataset_version.dataset.name
-    dataset_permaname = dataset_version.dataset.permaname
-    dl_filename = _make_dl_name(
-        datafile_name, dataset_version_version, dataset_name, format
-    )
+    if urls is not None:
+        result["urls"] = urls
 
     if datafile.type == "virtual":
-        real_datafile = datafile.underlying_data_file
-    else:
-        real_datafile = datafile
+        result["underlying_file_id"] = datafile.underlying_file_id
 
-    # TODO: Implement something for GCS pointer datafiles
-    if real_datafile.type == "gcs":
-        flask.abort(404)
+    return result
 
-    real_datafile: S3DataFile
+
+def _get_s3_datafile(
+    real_datafile,
+    datafile,
+    dataset_version,
+    dataset_version_version,
+    dataset_version_id,
+    dataset_id,
+    datafile_name,
+    dataset_name,
+    dataset_permaname,
+    dl_filename,
+    force,
+    format,
+):
+    from taiga2.tasks import start_conversion_task
 
     if format == "metadata":
         urls = None
@@ -894,6 +920,73 @@ def get_datafile(
 
     if result:
         models_controller.log_datafile_read_access_info(datafile.id)
+
+    return result
+
+
+@validate
+def get_datafile(
+    format,
+    dataset_permaname=None,
+    version=None,
+    dataset_version_id=None,
+    datafile_name=None,
+    force=None,
+):
+
+    datafile = models_controller.find_datafile(
+        dataset_permaname, version, dataset_version_id, datafile_name
+    )
+
+    if datafile is None:
+        flask.abort(404)
+
+    dataset_version = datafile.dataset_version
+    dataset_version_version = dataset_version.version
+    dataset_version_id = dataset_version.id
+    dataset_id = dataset_version.dataset.id
+    datafile_name = datafile.name
+    dataset_name = dataset_version.dataset.name
+    dataset_permaname = dataset_version.dataset.permaname
+    dl_filename = _make_dl_name(
+        datafile_name, dataset_version_version, dataset_name, format
+    )
+
+    if datafile.type == "virtual":
+        real_datafile = datafile.underlying_data_file
+    else:
+        real_datafile = datafile
+
+    if real_datafile.type == "gcs":
+        real_datafile: GCSObjectDataFile
+        result = _get_gcs_datafile(
+            real_datafile,
+            datafile,
+            dataset_version,
+            dataset_version_version,
+            dataset_version_id,
+            dataset_id,
+            datafile_name,
+            dataset_name,
+            dataset_permaname,
+            format,
+        )
+    else:
+        real_datafile: S3DataFile
+        result = _get_s3_datafile(
+            real_datafile,
+            datafile,
+            dataset_version,
+            dataset_version_version,
+            dataset_version_id,
+            dataset_id,
+            datafile_name,
+            dataset_name,
+            dataset_permaname,
+            dl_filename,
+            force,
+            format,
+        )
 
     return flask.jsonify(result)
 
@@ -1315,6 +1408,22 @@ def add_figshare_token(token: str):
         return flask.make_response(flask.jsonify({}), 201)
     else:
         return flask.jsonify({})
+
+
+def _fetch_figshare_token() -> str:
+    """Validates and returns token for current user.
+
+    Also removes invalid tokens.
+    """
+    token = models_controller.get_figshare_personal_token_for_current_user()
+    if token is None:
+        return None
+
+    if not figshare.is_token_valid(token):
+        models_controller.remove_figshare_token_for_current_user()
+        return None
+
+    return token
 
 
 def get_figshare_article_creation_options():

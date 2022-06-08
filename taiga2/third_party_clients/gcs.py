@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Optional, Tuple
 
 from google.cloud import storage, exceptions as gcs_exceptions
@@ -16,6 +17,16 @@ def get_bucket(bucket_name: str) -> storage.Bucket:
     except gcs_exceptions.NotFound as e:
         raise ValueError("No GCS bucket found: {}".format(bucket_name))
     return bucket
+
+
+def create_signed_gcs_url(bucket_name, blob_name):
+    client = storage.Client()
+    bucket = client.get_bucket(bucket_name)
+    blob = bucket.get_blob(blob_name)
+    expiration_time = timedelta(minutes=1)
+
+    url = blob.generate_signed_url(expiration=expiration_time, version="v4")
+    return url
 
 
 def upload_from_file(
