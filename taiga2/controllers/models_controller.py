@@ -1,6 +1,8 @@
 from datetime import datetime
 import enum
+from random import randint
 import flask
+from flask import current_app
 import uuid
 import os
 import re
@@ -9,10 +11,10 @@ from typing import List, Dict, Tuple, Optional
 
 import json
 
-from sqlalchemy import and_, update
+from sqlalchemy import and_, update, insert, exc
 
 import taiga2.models as models
-from taiga2.models import db
+from taiga2.models import ReadAccessLog, db
 from taiga2.third_party_clients import aws
 from taiga2.models import (
     User,
@@ -30,7 +32,6 @@ from taiga2.models import (
     CreationActivity,
     NameUpdateActivity,
     DescriptionUpdateActivity,
-    VersionAdditionActivity,
     FigshareDatasetVersionLink,
     FigshareDataFileLink,
     DatasetSubscription,
@@ -39,13 +40,13 @@ from taiga2.models import UploadSession, UploadSessionFile, ConversionCache
 from taiga2.models import UserLog
 from taiga2.models import ProvenanceGraph, ProvenanceNode, ProvenanceEdge
 from taiga2.models import Group, EntryRightsEnum, resolve_virtual_datafile
-from taiga2.models import SearchResult, SearchEntry, Breadcrumb
-from taiga2.dataset_subscriptions import send_emails_for_dataset
+from taiga2.models import SearchEntry, Breadcrumb
 
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm.session import make_transient
-from sqlalchemy.sql.expression import func
 from collections import namedtuple
+from connexion.exceptions import ProblemException
+from taiga2.third_party_clients.gcs import get_blob, parse_gcs_path
 
 DataFileAlias = namedtuple("DataFileAlias", "name data_file_id")
 
@@ -60,6 +61,12 @@ log = logging.getLogger(__name__)
 #   You need to push the context of you app => app.app_context().push() (for us frontend_app.app_context().push()
 
 # <editor-fold desc="User">
+
+
+def api_error(msg):
+    raise ProblemException(detail=msg)
+
+
 def add_user(name, email, token=None):
     new_user = User(name=name, email=email, token=token)
 
@@ -378,6 +385,19 @@ def get_first_dataset_version(dataset_id):
     return dataset_version_first
 
 
+def get_dataset_version_by_dataset_id_and_version(dataset_id, version_number):
+    dataset_version = (
+        db.session.query(DatasetVersion)
+        .filter(
+            DatasetVersion.dataset_id == dataset_id,
+            DatasetVersion.version == version_number,
+        )
+        .one()
+    )
+
+    return dataset_version
+
+
 def get_latest_dataset_version(dataset_id):
     dataset = get_dataset(dataset_id)
     max_version = 0
@@ -611,7 +631,7 @@ def get_dataset_version_id_from_any(submitted_by_user__data: str):
 # </editor-fold>
 
 # <editor-fold desc="DatasetVersion">
-def add_dataset_version(
+def _add_dataset_version(
     dataset_id,
     datafiles_ids=None,
     new_description=None,
@@ -658,9 +678,30 @@ def add_dataset_version(
         id=forced_id,
     )
 
-    # We now update the dataset description with the latest datasetVersion description
     db.session.add(new_dataset_version)
     db.session.add(dataset)
+
+    return new_dataset_version
+
+
+def add_dataset_version(
+    dataset_id,
+    datafiles_ids=None,
+    new_description=None,
+    changes_description=None,
+    permaname=None,
+    anterior_creation_date=None,
+    forced_id=None,
+):
+    new_dataset_version = _add_dataset_version(
+        dataset_id,
+        datafiles_ids,
+        new_description,
+        changes_description,
+        permaname,
+        anterior_creation_date,
+        forced_id,
+    )
     db.session.commit()
 
     return new_dataset_version
@@ -672,7 +713,7 @@ def _datafiles_equivalent(datafile, other_datafile):
     return datafile_id == other_datafile_id
 
 
-def _get_dataset_version_datafiles_diff(new_datafiles, previous_datafiles):
+def get_dataset_version_datafiles_diff(new_datafiles, previous_datafiles):
     datafile_diff = {"updated": [], "added": [], "removed": [], "renamed": []}
 
     for datafile in new_datafiles:
@@ -710,7 +751,7 @@ def _get_dataset_version_datafiles_diff(new_datafiles, previous_datafiles):
     return datafile_diff
 
 
-def _format_datafile_diff(datafile_diff):
+def format_datafile_diff(datafile_diff):
     def format_added_removed_updated(datafiles):
         return ["- {}".format(datafile.name) for datafile in datafiles]
 
@@ -736,48 +777,42 @@ def _format_datafile_diff(datafile_diff):
     return comments
 
 
-def create_new_dataset_version_from_session(
-    session_id, dataset_id, new_description, changes_description
-):
-    current_user = get_current_session_user()
+def filter_allowed_parents(parents):
+    allowed_parents = parents
 
-    added_datafiles = add_datafiles_from_session(session_id)
-    all_datafile_ids = [datafile.id for datafile in added_datafiles]
+    for index, folder in enumerate(parents):
+        if not can_view(folder.id):
+            del allowed_parents[index]
 
-    latest_dataset_version = get_latest_dataset_version(dataset_id)
+    return allowed_parents
 
-    datafile_diff = _get_dataset_version_datafiles_diff(
-        list(added_datafiles), list(latest_dataset_version.datafiles)
-    )
 
-    comments = _format_datafile_diff(datafile_diff)
+def get_previous_version_and_added_datafiles(
+    dataset_version: DatasetVersion, dataset_id: str
+) -> List[DataFile]:
+    version = None
+    if dataset_version is None:
+        version = get_latest_dataset_version(dataset_id)
+    else:
+        assert dataset_version.version is not None
+        version = get_dataset_version_by_dataset_id_and_version(
+            dataset_id, dataset_version.version
+        )
 
-    new_dataset_version = add_dataset_version(
-        dataset_id=dataset_id,
-        datafiles_ids=all_datafile_ids,
-        new_description=new_description,
-        changes_description=changes_description,
-    )
+    return version.datafiles
 
-    activity = VersionAdditionActivity(
-        user_id=current_user.id,
-        dataset_id=new_dataset_version.dataset_id,
-        type=Activity.ActivityType.added_version,
-        dataset_description=new_description
-        if new_description != latest_dataset_version.description
-        else None,
-        dataset_version=new_dataset_version.version,
-        comments=comments,
-    )
+
+def lock():
+    # We implement a lock by relying on the database to block clients which attempt to
+    # update the same row. Once the transaction which successfully updates this row is
+    # either committed or rolled back the "lock" will be released
+    random_val = randint(1, 9999)
+    db.session.execute("UPDATE lock_table SET random = :val", {"val": random_val})
+
+
+def add_version_addition_activity(activity):
     db.session.add(activity)
     db.session.commit()
-
-    dataset_subscriptions = get_dataset_subscriptions_for_dataset(dataset_id)
-    if not any(ds.user_id == current_user.id for ds in dataset_subscriptions):
-        add_dataset_subscription(dataset_id)
-    send_emails_for_dataset(dataset_id, current_user.id)
-
-    return new_dataset_version
 
 
 def _fetch_respecting_one_or_none(q, one_or_none, expect=None):
@@ -804,19 +839,10 @@ def _fetch_respecting_one_or_none(q, one_or_none, expect=None):
 
 
 def get_dataset_version(dataset_version_id, one_or_none=False) -> DatasetVersion:
+
     q = db.session.query(Entry).filter(Entry.id == dataset_version_id)
 
     return _fetch_respecting_one_or_none(q, one_or_none, expect=[DatasetVersion])
-
-
-def get_dataset_versions(dataset_id):
-    dataset_versions = (
-        db.session.query(DatasetVersion)
-        .filter(DatasetVersion.dataset_id == dataset_id)
-        .all()
-    )
-
-    return dataset_versions
 
 
 def get_dataset_versions_bulk(array_dataset_version_ids):
@@ -1139,7 +1165,7 @@ def can_view(entry_id):
 # </editor-fold>
 
 # <editor-fold desc="DataFile">
-def add_s3_datafile(
+def _add_s3_datafile(
     s3_bucket,
     s3_key,
     compressed_s3_key: Optional[str],
@@ -1184,12 +1210,46 @@ def add_s3_datafile(
     )
 
     db.session.add(new_datafile)
+    db.session.flush()
+
+    return new_datafile
+
+
+def add_s3_datafile(
+    s3_bucket,
+    s3_key,
+    compressed_s3_key: Optional[str],
+    name,
+    type,
+    encoding,
+    short_summary,
+    long_summary,
+    column_types=None,
+    original_file_sha256=None,
+    original_file_md5=None,
+    forced_id=None,
+):
+    new_datafile = _add_s3_datafile(
+        s3_bucket=s3_bucket,
+        s3_key=s3_key,
+        compressed_s3_key=compressed_s3_key,
+        name=name,
+        type=type,
+        encoding=encoding,
+        short_summary=short_summary,
+        long_summary=long_summary,
+        column_types=column_types,
+        original_file_sha256=original_file_sha256,
+        original_file_md5=original_file_md5,
+        forced_id=forced_id,
+    )
+
     db.session.commit()
 
     return new_datafile
 
 
-def add_virtual_datafile(name, datafile_id):
+def _add_virtual_datafile(name, datafile_id):
     assert isinstance(datafile_id, str)
 
     datafile = DataFile.query.get(datafile_id)
@@ -1198,7 +1258,8 @@ def add_virtual_datafile(name, datafile_id):
     new_datafile = VirtualDataFile(name=name, underlying_data_file=datafile)
 
     db.session.add(new_datafile)
-    db.session.commit()
+
+    db.session.flush()
 
     # some sanity checks to make sure persistence worked as expected
     _id = new_datafile.id
@@ -1213,13 +1274,32 @@ def add_virtual_datafile(name, datafile_id):
     return new_datafile
 
 
-def add_gcs_datafile(name, gcs_path, generation_id):
+def add_virtual_datafile(name, datafile_id):
+    new_datafile = _add_virtual_datafile(name=name, datafile_id=datafile_id)
+    db.session.commit()
+
+    return new_datafile
+
+
+def _add_gcs_datafile(name, gcs_path, generation_id):
     new_datafile = GCSObjectDataFile(
         name=name, gcs_path=gcs_path, generation_id=generation_id
     )
 
     db.session.add(new_datafile)
+
+    db.session.flush()
+
+    return new_datafile
+
+
+def add_gcs_datafile(name, gcs_path, generation_id):
+    new_datafile = _add_gcs_datafile(
+        name=name, gcs_path=gcs_path, generation_id=generation_id
+    )
+
     db.session.commit()
+
     return new_datafile
 
 
@@ -1300,7 +1380,85 @@ def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataF
     return resolve_virtual_datafile(datafile)
 
 
-def add_datafiles_from_session(session_id: str):
+def get_comments_and_latest_dataset_version(dataset_id, added_datafiles):
+    latest_dataset_version = get_latest_dataset_version(dataset_id)
+
+    datafile_diff = get_dataset_version_datafiles_diff(
+        list(added_datafiles), list(latest_dataset_version.datafiles)
+    )
+
+    comments = format_datafile_diff(datafile_diff)
+
+    return comments, latest_dataset_version
+
+
+def get_session_files_including_existing_files(session_id, dataset_version, dataset_id):
+    new_files = get_upload_session_files_from_session(session_id)
+    previous_version_datafiles = get_previous_version_and_added_datafiles(
+        dataset_version, dataset_id
+    )
+
+    datafile_names_to_exclude = [file.filename for file in new_files]
+
+    # If a new file has the same name as a previous_version_file, overrite the previous_version_file
+    previous_version_virtual_datafiles: List[DataFile] = []
+    if previous_version_datafiles is not None:
+        for upload_datafile in previous_version_datafiles:
+            if upload_datafile.name not in datafile_names_to_exclude:
+                previous_version_virtual_datafiles.append(upload_datafile)
+
+    # Add upload session file for each previous datafile
+    for file in previous_version_virtual_datafiles:
+        add_upload_session_virtual_file(
+            session_id=session_id,
+            filename=file.name,
+            data_file_id=file.id,
+            commit=False,
+        )
+
+    # Get the all_datafiles, including previous data files. These can all now be retrieved from the session.
+    all_datafiles = _add_datafiles_from_session(session_id)
+
+    return all_datafiles
+
+
+def log_datafile_read_access_info(datafile_id: str):
+    # If the user has read this data file, a row with this datafiles access info will already exist, so update that
+    # row's access count and last access time info. Otherwise, add a row to track the read access of this file for this user.
+    user = get_current_session_user()
+    user_id = user.id
+
+    table = ReadAccessLog.__table__
+    connection = db.engine.connect()
+
+    with connection.begin():
+        try:
+            connection.execute("SAVEPOINT my_savepoint;")
+            stmt = insert(table).values(
+                datafile_id=datafile_id,
+                user_id=user_id,
+                first_access=datetime.utcnow(),
+                last_access=datetime.utcnow(),
+                access_count=1,
+            )
+            connection.execute(stmt)
+        except exc.IntegrityError:
+            connection.execute("ROLLBACK TO SAVEPOINT my_savepoint;")
+            stmt = (
+                update(table)
+                .values(
+                    last_access=datetime.utcnow(), access_count=table.c.access_count + 1
+                )
+                .where(
+                    table.c.datafile_id == datafile_id and table.c.user_id == user_id
+                )
+            )
+            connection.execute(stmt)
+
+    db.session.commit()
+
+
+def _add_datafiles_from_session(session_id: str):
     # We retrieve all the upload_session_files related to the UploadSession
     added_files = get_upload_session_files_from_session(session_id)
 
@@ -1308,17 +1466,17 @@ def add_datafiles_from_session(session_id: str):
     added_datafiles = []
     for file in added_files:
         if file.data_file is not None:
-            new_datafile = add_virtual_datafile(
+            new_datafile = _add_virtual_datafile(
                 name=file.filename, datafile_id=file.data_file.id
             )
         elif file.gcs_path is not None:
-            new_datafile = add_gcs_datafile(
+            new_datafile = _add_gcs_datafile(
                 name=file.filename,
                 gcs_path=file.gcs_path,
                 generation_id=file.generation_id,
             )
         else:
-            new_datafile = add_s3_datafile(
+            new_datafile = _add_s3_datafile(
                 name=file.filename,
                 s3_bucket=file.s3_bucket,
                 s3_key=file.converted_s3_key,
@@ -1332,6 +1490,13 @@ def add_datafiles_from_session(session_id: str):
                 original_file_md5=file.original_file_md5,
             )
         added_datafiles.append(new_datafile)
+
+    return added_datafiles
+
+
+def add_datafiles_from_session(session_id: str):
+    added_datafiles = _add_datafiles_from_session(session_id)
+    db.session.commit()
 
     return added_datafiles
 
@@ -1476,7 +1641,7 @@ def add_upload_session_s3_file(
     return upload_session_file
 
 
-def add_upload_session_virtual_file(session_id, filename, data_file_id):
+def add_upload_session_virtual_file(session_id, filename, data_file_id, commit=True):
     data_file = DataFile.query.get(data_file_id)
     assert data_file is not None
 
@@ -1484,7 +1649,12 @@ def add_upload_session_virtual_file(session_id, filename, data_file_id):
         session_id=session_id, filename=filename, data_file=data_file
     )
     db.session.add(upload_session_file)
-    db.session.commit()
+
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
+
     return upload_session_file
 
 
@@ -1659,7 +1829,7 @@ def find_datafile(
 ) -> Optional[DataFile]:
     """Look up a datafile given either a permaname (and optional version number) or a dataset_version_id.  The datafile_name
     is also optional.  If unspecified, and there is a single datafile for that dataset_version, that will be returned.
-    Otherwise datafile_name is required. """
+    Otherwise datafile_name is required."""
     if dataset_permaname is not None:
         if dataset_version_id is not None:
             raise IllegalArgumentError(

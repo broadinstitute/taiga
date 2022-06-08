@@ -1,4 +1,3 @@
-import boto3
 import gzip
 import hashlib
 import io
@@ -6,10 +5,9 @@ import json
 import os
 import requests
 import shutil
-import tempfile
 from requests.exceptions import HTTPError
-from typing import Any, Dict, IO, List, Optional, Tuple, Union
-from typing_extensions import Literal, TypedDict
+from typing import Any, Dict, IO, List, Optional
+from typing_extensions import TypedDict
 
 from flask import current_app
 
@@ -293,3 +291,19 @@ def get_article_information(figshare_dataset_version_link: FigshareDatasetVersio
 
         except HTTPError as error:
             return {"is_public": False}
+
+
+def fetch_figshare_token() -> str:
+    """Validates and returns token for current user.
+    
+    Also removes invalid tokens.
+    """
+    token = mc.get_figshare_personal_token_for_current_user()
+    if token is None:
+        return None
+
+    if not is_token_valid(token):
+        mc.remove_figshare_token_for_current_user()
+        return None
+
+    return token

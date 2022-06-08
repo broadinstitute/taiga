@@ -1,13 +1,10 @@
-import datetime
 import pytest
-import uuid
 
 from flask_sqlalchemy import SessionBase
 
 import flask
 
 import taiga2.controllers.models_controller as mc
-from taiga2.controllers.models_controller import DataFileAlias
 
 from taiga2.models import db
 from taiga2.models import (
@@ -16,14 +13,10 @@ from taiga2.models import (
     Dataset,
     DatasetPermaname,
     DatasetVersion,
-    Group,
     S3DataFile,
 )
 from taiga2.models import generate_permaname
-from taiga2.models import DataFile
 from taiga2.models import EntryRightsEnum
-
-from taiga2.tests.test_endpoint import new_upload_session_file, new_upload_session
 
 
 # from taiga2.tests.factories import GroupFactory, UserFactory, FolderFactory
