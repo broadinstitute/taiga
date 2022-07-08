@@ -314,7 +314,7 @@ class VirtualDataFile(DataFile):
 
     @property
     def underlying_file_id(self):
-        assert self.underlying_data_file.type != "virtual"
+        # assert self.underlying_data_file.type != "virtual"
         dataset_version = self.underlying_data_file.dataset_version
         return "{}.{}/{}".format(
             dataset_version.dataset.permaname,
@@ -340,7 +340,7 @@ class VirtualDataFile(DataFile):
 
     @property
     def format(self):
-        assert self.underlying_data_file.type != "virtual"
+        # assert self.underlying_data_file.type != "virtual"
         return self.underlying_data_file.format
 
     @property
