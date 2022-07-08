@@ -34,6 +34,15 @@ def new_upload_session():
     return models_controller.get_upload_session(new_upload_session_id)
 
 
+@pytest.fixture
+def second_upload_session():
+    response_json_new_upload_session_id = endpoint.create_new_upload_session()
+    new_upload_session_id = get_data_from_flask_jsonify(
+        response_json_new_upload_session_id
+    )
+    return models_controller.get_upload_session(new_upload_session_id)
+
+
 def _add_s3_file_to_upload_session(
     sid, bucket="test_bucket", format="Raw", file_name="filekey", encoding=None
 ):
@@ -158,7 +167,10 @@ def dataset_to_add_to(datafile_to_add):
 
 
 @pytest.fixture
-def new_dataset_version(new_dataset):
+def new_dataset_version(new_dataset, new_upload_session):
+    new_dataset = _create_dataset_with_a_file()
+    data_file_2 = "{}.1/datafile".format(new_dataset.permaname)
+    _add_virtual_file_to_upload_session(new_upload_session.id, "alias", data_file_2)
     _new_dataset_version = models_controller.get_latest_dataset_version(new_dataset.id)
 
     return _new_dataset_version
@@ -290,39 +302,10 @@ def test_create_dataset(session: SessionBase, new_upload_session_file):
     assert datafile.long_summary == "long_summary_test"
 
 
-def test_create_new_dataset_version_from_session_ignore_existing_files(
-    session: SessionBase, new_upload_session, new_dataset_version, dataset_to_add_to
-):
-    # Test if add_existing_files False
-    session_id = new_upload_session.id
-
-    # Add an initial file to add during the creation of the new dataset
-    _add_s3_file_to_upload_session(sid=session_id, file_name="File to add")
-
-    dataset_id = dataset_to_add_to.id
-    new_description = "This is the new description"
-    changes_description = "These are the changes"
-    added_datafiles = models_controller.add_datafiles_from_session(session_id)
-
-    all_datafile_ids = [datafile.id for datafile in added_datafiles]
-
-    new_dataset_version = models_controller.add_dataset_version(
-        dataset_id=dataset_id,
-        datafiles_ids=all_datafile_ids,
-        new_description=new_description,
-        changes_description=changes_description,
-    )
-
-    assert new_dataset_version.version == 2
-    assert len(new_dataset_version.datafiles) == 1
-
-
-# add_existing_files = True
-def test_create_new_dataset_version_from_session(
-    session: SessionBase, new_upload_session, new_dataset_version, dataset_to_add_to
+def _create_new_dataset_version_include_existing_files(
+    session, new_upload_session, new_dataset_version, dataset_to_add_to
 ):
     session_id = new_upload_session.id
-
     # Add an initial file to add during the creation of the new dataset
     _add_s3_file_to_upload_session(sid=session_id, file_name="File to add")
 
@@ -361,6 +344,49 @@ def test_create_new_dataset_version_from_session(
 
     all_datafile_ids = [datafile.id for datafile in added_datafiles]
 
+    return models_controller.add_dataset_version(
+        dataset_id=dataset_id,
+        datafiles_ids=all_datafile_ids,
+        new_description=new_description,
+        changes_description=changes_description,
+    )
+
+
+def test_create_new_dataset_version_from_dataset_with_existing_virtual_files(
+    session: SessionBase,
+    new_upload_session,
+    new_dataset_version,
+    dataset_to_add_to,
+    second_upload_session,
+):
+    # Make sure virtual datafiles never have underlying_data_files that are of type virtual
+    new_version1 = _create_new_dataset_version_include_existing_files(
+        session, new_upload_session, new_dataset_version, dataset_to_add_to
+    )
+    new_version2 = _create_new_dataset_version_include_existing_files(
+        session, second_upload_session, new_version1, dataset_to_add_to
+    )
+
+    assert new_version2.datafiles[0].type == "virtual"
+    assert new_version2.datafiles[0].underlying_data_file.type != "virtual"
+
+
+def test_create_new_dataset_version_from_session_ignore_existing_files(
+    session: SessionBase, new_upload_session, new_dataset_version, dataset_to_add_to
+):
+    # Test if add_existing_files False
+    session_id = new_upload_session.id
+
+    # Add an initial file to add during the creation of the new dataset
+    _add_s3_file_to_upload_session(sid=session_id, file_name="File to add")
+
+    dataset_id = dataset_to_add_to.id
+    new_description = "This is the new description"
+    changes_description = "These are the changes"
+    added_datafiles = models_controller.add_datafiles_from_session(session_id)
+
+    all_datafile_ids = [datafile.id for datafile in added_datafiles]
+
     new_dataset_version = models_controller.add_dataset_version(
         dataset_id=dataset_id,
         datafiles_ids=all_datafile_ids,
@@ -370,6 +396,18 @@ def test_create_new_dataset_version_from_session(
 
     assert new_dataset_version.version == 2
     assert len(new_dataset_version.datafiles) == 2
+
+
+# add_existing_files = True
+def test_create_new_dataset_version_from_session(
+    session: SessionBase, new_upload_session, new_dataset_version, dataset_to_add_to
+):
+    new_dataset_version = _create_new_dataset_version_include_existing_files(
+        session, new_upload_session, new_dataset_version, dataset_to_add_to
+    )
+
+    assert new_dataset_version.version == 2
+    assert len(new_dataset_version.datafiles) == 3
 
 
 def test_create_new_dataset_version(

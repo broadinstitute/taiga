@@ -1255,6 +1255,10 @@ def _add_virtual_datafile(name, datafile_id):
     datafile = DataFile.query.get(datafile_id)
     assert datafile is not None
 
+    if datafile.type == "virtual":
+        datafile = datafile.underlying_data_file
+
+    assert datafile.type != "virtual"
     new_datafile = VirtualDataFile(name=name, underlying_data_file=datafile)
 
     db.session.add(new_datafile)
