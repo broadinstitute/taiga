@@ -1512,7 +1512,7 @@ paths:
 
   /figshare/article_for_user/{article_id}:
     get:
-      description: Returns whether the author is under the current user's figshare account
+      description: "Returns whether the author is under the current user's figshare account"
       x-swagger-router-controller: taiga2.controllers.endpoint
       operationId: get_public_article_information_for_user
       consumes:
@@ -1780,7 +1780,7 @@ definitions:
       datafiles:
         type: array
         items:
-          "$ref": "#/definitions/Provenance"
+          "$ref": "#/definitions/DataFile"
       provenance:
         "$ref": "#/definitions/Provenance"
       state:
@@ -1829,7 +1829,7 @@ definitions:
           - string
           - "null"
       gcs_path:
-        description: GCS path of the datafile or file's underlying datafile
+        description: "GCS path of the datafile or file's underlying datafile"
         type:
           - string
           - "null"
@@ -1837,6 +1837,8 @@ definitions:
         type: string
       figshare_linked:
         type: boolean
+      metadata:
+        type: object
 
   ProvenanceEdge:
     type: object
@@ -2004,6 +2006,8 @@ definitions:
         type: string
       s3Upload:
         "$ref": "#/definitions/S3UploadedFileMetadata"
+      metadata:
+        type: object
 
   # Match the S3 Data object returned by ManagedUpload
   # https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3/ManagedUpload.html#constructor-property
