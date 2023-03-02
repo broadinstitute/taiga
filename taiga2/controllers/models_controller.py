@@ -1251,7 +1251,9 @@ def add_s3_datafile(
     return new_datafile
 
 
-def _add_virtual_datafile(name, datafile_id, custom_metadata):
+def _add_virtual_datafile(
+    name, datafile_id, custom_metadata: Optional[Dict[str, Any]] = None
+):
     assert isinstance(datafile_id, str)
 
     datafile = DataFile.query.get(datafile_id)
@@ -1282,8 +1284,12 @@ def _add_virtual_datafile(name, datafile_id, custom_metadata):
     return new_datafile
 
 
-def add_virtual_datafile(name, datafile_id):
-    new_datafile = _add_virtual_datafile(name=name, datafile_id=datafile_id)
+def add_virtual_datafile(
+    name, datafile_id, custom_metadata: Optional[Dict[str, Any]] = None
+):
+    new_datafile = _add_virtual_datafile(
+        name=name, datafile_id=datafile_id, custom_metadata=custom_metadata
+    )
     db.session.commit()
 
     return new_datafile
