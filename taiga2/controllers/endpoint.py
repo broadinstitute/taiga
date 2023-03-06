@@ -478,11 +478,7 @@ def create_upload_session_file(uploadMetadata, sid):
 
     # Optional per file metadata, stored as a json encoded string.
     # Not queryable independently from files.
-    custom_metadata = (
-        None
-        if "custom_metadata" not in uploadMetadata
-        else uploadMetadata["custom_metadata"]
-    )
+    custom_metadata = uploadMetadata.get("custom_metadata")
 
     if uploadMetadata["filetype"] == "s3":
         S3UploadedFileMetadata = uploadMetadata["s3Upload"]
@@ -526,13 +522,6 @@ def create_upload_session_file(uploadMetadata, sid):
                 existing_taiga_id, one_or_none=True
             )
 
-            # When adding a reference to an existing Taiga datafile, it is possible
-            # to provide a new set of custom metadata in the form of key/value pairs.
-            # If new custom_metadata is not provided, copy the key/value pairs from the
-            # original file.
-            if data_file != None and custom_metadata == None:
-                custom_metadata = data_file.custom_metadata
-
         except InvalidTaigaIdFormat as ex:
             api_error(
                 "The following was not formatted like a valid taiga ID: {}".format(
@@ -542,6 +531,13 @@ def create_upload_session_file(uploadMetadata, sid):
 
         if data_file is None:
             api_error("Unknown taiga ID: " + existing_taiga_id)
+
+        # When adding a reference to an existing Taiga datafile, it is possible
+        # to provide a new set of custom metadata in the form of key/value pairs.
+        # If new custom_metadata is not provided, copy the key/value pairs from the
+        # original file.
+        if custom_metadata == None:
+            custom_metadata = data_file.custom_metadata
 
         models_controller.add_upload_session_virtual_file(
             session_id=sid,
