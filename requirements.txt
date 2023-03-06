@@ -33,3 +33,4 @@ SQLAlchemy==1.3.0
 swagger-spec-validator==2.4.3
 typing-extensions==3.7.4.3
 Werkzeug==0.15.4
+openapi-spec-validator==0.2.9

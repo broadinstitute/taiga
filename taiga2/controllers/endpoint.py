@@ -475,6 +475,11 @@ from .models_controller import (
 @validate
 def create_upload_session_file(uploadMetadata, sid):
     filename = uploadMetadata["filename"]
+
+    # Optional per file metadata, stored as a json encoded string.
+    # Not queryable independently from files.
+    custom_metadata = uploadMetadata.get("custom_metadata")
+
     if uploadMetadata["filetype"] == "s3":
         S3UploadedFileMetadata = uploadMetadata["s3Upload"]
         s3_bucket = S3UploadedFileMetadata["bucket"]
@@ -488,6 +493,7 @@ def create_upload_session_file(uploadMetadata, sid):
         upload_session_file = models_controller.add_upload_session_s3_file(
             session_id=sid,
             filename=filename,
+            custom_metadata=custom_metadata,
             initial_file_type=initial_file_type,
             initial_s3_key=initial_s3_key,
             s3_bucket=s3_bucket,
@@ -515,6 +521,7 @@ def create_upload_session_file(uploadMetadata, sid):
             data_file = models_controller.get_datafile_by_taiga_id(
                 existing_taiga_id, one_or_none=True
             )
+
         except InvalidTaigaIdFormat as ex:
             api_error(
                 "The following was not formatted like a valid taiga ID: {}".format(
@@ -525,8 +532,18 @@ def create_upload_session_file(uploadMetadata, sid):
         if data_file is None:
             api_error("Unknown taiga ID: " + existing_taiga_id)
 
+        # When adding a reference to an existing Taiga datafile, it is possible
+        # to provide a new set of custom metadata in the form of key/value pairs.
+        # If new custom_metadata is not provided, copy the key/value pairs from the
+        # original file.
+        if custom_metadata == None:
+            custom_metadata = data_file.custom_metadata
+
         models_controller.add_upload_session_virtual_file(
-            session_id=sid, filename=filename, data_file_id=data_file.id
+            session_id=sid,
+            filename=filename,
+            custom_metadata=custom_metadata,
+            data_file_id=data_file.id,
         )
 
         return flask.jsonify("done")
@@ -550,6 +567,7 @@ def create_upload_session_file(uploadMetadata, sid):
         models_controller.add_upload_session_gcs_file(
             session_id=sid,
             filename=filename,
+            custom_metadata=custom_metadata,
             gcs_path=gcs_path,
             generation_id=str(generation_id),
         )

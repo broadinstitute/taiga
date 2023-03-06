@@ -251,6 +251,7 @@ class DataFileBaseSchema(ma.ModelSchema):
         additional = ("id", "name", "figshare_linked")
 
     figshare_linked = fields.fields.Method("figshare_link_exists")
+    custom_metadata = fields.fields.Dict()
 
     def figshare_link_exists(self, datafile):
         if datafile.figshare_datafile_link is not None:
