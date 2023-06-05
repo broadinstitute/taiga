@@ -9,14 +9,7 @@ import werkzeug.exceptions
 import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
 
-from taiga2.models import (
-    generate_permaname,
-    S3DataFile,
-    Dataset,
-    DatasetVersion,
-    resolve_virtual_datafile,
-)
-from taiga2.models import db
+from taiga2.models import generate_permaname, S3DataFile, Dataset, DatasetVersion
 from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
 
