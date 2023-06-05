@@ -1457,6 +1457,7 @@ def get_session_files_including_existing_files(session_id, dataset_version, data
             filename=file.name,
             data_file_id=file.id,
             commit=False,
+            custom_metadata=file.custom_metadata,
         )
 
     # Get the all_datafiles, including previous data files. These can all now be retrieved from the session.
