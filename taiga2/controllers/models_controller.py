@@ -1375,13 +1375,31 @@ class InvalidTaigaIdFormat(Exception):
         self.taiga_id = taiga_id
 
 
-def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataFile]:
+def _get_permaname_version_filename_by_taiga_id(taiga_id: str, one_or_none=False):
     m = re.match("([a-z0-9-]+)\\.(\\d+)/(.*)", taiga_id)
     if m is None:
         raise InvalidTaigaIdFormat(taiga_id)
     permaname = m.group(1)
     version = m.group(2)
     filename = m.group(3)
+
+    return permaname, version, filename
+
+
+# Look at the prior datafile, no matter the datafile type, so that we can persist custom_metadata
+# that may have been added to this previous datafile.
+def get_prior_datafile_by_taiga_id(
+    taiga_id: str, one_or_none=False
+) -> Optional[DataFile]:
+    permaname, version, filename = _get_permaname_version_filename_by_taiga_id(
+        taiga_id=taiga_id, one_or_none=one_or_none
+    )
+
+    if int(version) == 1:
+        return None
+    else:
+        version = int(version) - 1
+
     dataset_version = get_dataset_version_by_permaname_and_version(
         permaname, version, one_or_none=one_or_none
     )
@@ -1391,10 +1409,34 @@ def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataF
     datafile = get_datafile_by_version_and_name(
         dataset_version.id, filename, one_or_none=one_or_none
     )
+
     if datafile is None:
         return None
 
-    return resolve_virtual_datafile(datafile)
+    return datafile
+
+
+def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataFile]:
+    permaname, version, filename = _get_permaname_version_filename_by_taiga_id(
+        taiga_id=taiga_id, one_or_none=one_or_none
+    )
+
+    dataset_version = get_dataset_version_by_permaname_and_version(
+        permaname, version, one_or_none=one_or_none
+    )
+    if dataset_version == None:
+        return None
+
+    datafile = get_datafile_by_version_and_name(
+        dataset_version.id, filename, one_or_none=one_or_none
+    )
+
+    if datafile is None:
+        return None
+
+    underlying_s3_file = resolve_virtual_datafile(datafile)
+    underlying_s3_file.custom_metadata = datafile.custom_metadata
+    return underlying_s3_file
 
 
 def get_comments_and_latest_dataset_version(dataset_id, added_datafiles):

@@ -9,7 +9,13 @@ import werkzeug.exceptions
 import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
 
-from taiga2.models import generate_permaname, S3DataFile, Dataset, DatasetVersion
+from taiga2.models import (
+    generate_permaname,
+    S3DataFile,
+    Dataset,
+    DatasetVersion,
+    resolve_virtual_datafile,
+)
 from taiga2.models import db
 from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
@@ -160,6 +166,27 @@ def new_dataset_version(new_dataset, new_upload_session):
     data_file_2 = "{}.1/datafile".format(new_dataset.permaname)
     _add_virtual_file_to_upload_session(new_upload_session.id, "alias", data_file_2)
     _new_dataset_version = models_controller.get_latest_dataset_version(new_dataset.id)
+
+    return _new_dataset_version
+
+
+@pytest.fixture
+def new_dataset_version_with_new_metadata_on_virtual_file():
+    dataset1 = _create_dataset_with_a_file()
+    data_file_1 = dataset1.dataset_versions[0].datafiles[0]
+
+    folder = models_controller.add_folder(
+        "folder", models_controller.Folder.FolderType.folder, "folder desc"
+    )
+    folder_id = folder.id
+
+    vdatafile_name = "alias"
+    vdataset = _create_dataset_with_a_virtual_file(
+        folder_id=folder_id,
+        files=[(vdatafile_name, data_file_1.id)],
+        custom_metadata={"test_key": "test_val"},
+    )
+    _new_dataset_version = models_controller.get_latest_dataset_version(vdataset.id)
 
     return _new_dataset_version
 
@@ -319,11 +346,12 @@ def _create_new_dataset_version_with_new_file_include_existing_files(
     new_dataset_version,
     dataset,
     custom_metadata: Optional[Dict[str, Any]] = None,
+    name: Optional[str] = "File to add",
 ):
     session_id = new_upload_session.id
     # Add an initial file to add during the creation of the new dataset
     _add_s3_file_to_upload_session(
-        sid=session_id, file_name="File to add", custom_metadata=custom_metadata
+        sid=session_id, file_name=name, custom_metadata=custom_metadata
     )
 
     return _create_new_dataset_version_include_existing_files(
@@ -404,6 +432,83 @@ def test_create_new_dataset_version_from_dataset_with_existing_virtual_files(
     )
 
 
+def test_add_custom_metadata_to_virtual_file(
+    session: SessionBase,
+    new_upload_session,
+    new_dataset_version_with_new_metadata_on_virtual_file,
+):
+    vdataset_datasfiles = (
+        new_dataset_version_with_new_metadata_on_virtual_file.datafiles
+    )
+
+    assert len(vdataset_datasfiles) == 1
+    assert vdataset_datasfiles[0].type == "virtual"
+    assert vdataset_datasfiles[0].custom_metadata == {"test_key": "test_val"}
+
+    _add_virtual_file_to_upload_session(
+        new_upload_session.id, name="alias2", datafile_id=vdataset_datasfiles[0].id
+    )
+
+    new_version1 = _create_new_dataset_version_with_new_file_include_existing_files(
+        session,
+        new_upload_session,
+        new_dataset_version_with_new_metadata_on_virtual_file,
+        new_dataset_version_with_new_metadata_on_virtual_file.dataset,
+        name="new v1",
+    )
+
+    # Test custom_metadata persists from 1 virtual file to the next in the chain
+    assert new_version1.datafiles[1].name == "alias2"
+    assert new_version1.datafiles[1].custom_metadata == {"test_key": "test_val"}
+    assert (
+        new_version1.datafiles[1].underlying_data_file_id
+        == vdataset_datasfiles[0].underlying_data_file_id
+    )
+
+    _add_virtual_file_to_upload_session(
+        new_upload_session.id,
+        name="alias3",
+        datafile_id=new_version1.datafiles[1].id,
+        custom_metadata={"test_key": "test_val_replacement"},
+    )
+
+    new_version2 = _create_new_dataset_version_with_new_file_include_existing_files(
+        session, new_upload_session, new_version1, new_version1.dataset, name="new v2"
+    )
+
+    # Test replace custom_metadata key with a new value
+    assert new_version2.datafiles[2].name == "alias3"
+    assert new_version2.datafiles[2].custom_metadata == {
+        "test_key": "test_val_replacement"
+    }
+    assert (
+        new_version2.datafiles[2].underlying_data_file_id
+        == new_version1.datafiles[1].underlying_data_file_id
+    )
+
+    _add_virtual_file_to_upload_session(
+        new_upload_session.id,
+        name="alias4",
+        datafile_id=new_version2.datafiles[2].id,
+        custom_metadata={"test_key_unique": "test_val_unique"},
+    )
+
+    new_version3 = _create_new_dataset_version_with_new_file_include_existing_files(
+        session, new_upload_session, new_version2, new_version2.dataset, name="new v4"
+    )
+
+    # Test replace custom_metadata key with a new value
+    assert new_version3.datafiles[3].name == "alias4"
+    assert new_version3.datafiles[3].custom_metadata == {
+        "test_key": "test_val_replacement",
+        "test_key_unique": "test_val_unique",
+    }
+    assert (
+        new_version3.datafiles[3].underlying_data_file_id
+        == new_version2.datafiles[2].underlying_data_file_id
+    )
+
+
 def test_per_file_custom_metadata(
     session: SessionBase, new_upload_session, new_dataset, new_dataset_version
 ):
@@ -429,7 +534,7 @@ def test_per_file_custom_metadata(
     assert new_version1.datafiles[1].name == "alias"
     assert new_version1.datafiles[1].custom_metadata == None
 
-    new_metadata2 = {"test2": "new metadata2"}
+    new_metadata2 = {"test": "new metadata2"}
     # Change metadata
     _add_virtual_file_to_upload_session(
         session_id,
@@ -448,9 +553,11 @@ def test_per_file_custom_metadata(
         new_version2.datafiles[2].underlying_data_file.id
         == new_version1.datafiles[2].id
     )
-    assert new_version2.datafiles[2].custom_metadata == new_metadata2
+    assert new_version2.datafiles[2].custom_metadata == {
+        **new_metadata,
+        **new_metadata2,
+    }
 
-    # Leave metadata off request when pointing to existing taiga file that already has metadata. New virtual file should still have it's original metadata.
     _add_virtual_file_to_upload_session(
         session_id,
         "persist_orig_metadata",
@@ -910,13 +1017,21 @@ from taiga2.models import DataFile
 
 
 def _create_dataset_with_a_virtual_file(
-    files, folder_id, name="virtual", description="description"
+    files,
+    folder_id,
+    name="virtual",
+    description="description",
+    custom_metadata: Optional[Dict[str, Any]] = None,
 ) -> Dataset:
     datafiles = []
     for file in files:
         datafile = DataFile.query.get(file[1])
         assert datafile is not None
-        datafiles.append(models_controller.add_virtual_datafile(file[0], datafile.id))
+        datafiles.append(
+            models_controller.add_virtual_datafile(
+                file[0], datafile.id, custom_metadata=custom_metadata
+            )
+        )
 
     dataset = models_controller.add_dataset(
         name=name, description=description, datafiles_ids=[x.id for x in datafiles]

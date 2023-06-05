@@ -516,7 +516,6 @@ def create_upload_session_file(uploadMetadata, sid):
         return flask.jsonify(task.id)
     elif uploadMetadata["filetype"] == "virtual":
         existing_taiga_id = uploadMetadata["existingTaigaId"]
-
         try:
             data_file = models_controller.get_datafile_by_taiga_id(
                 existing_taiga_id, one_or_none=True
@@ -532,12 +531,14 @@ def create_upload_session_file(uploadMetadata, sid):
         if data_file is None:
             api_error("Unknown taiga ID: " + existing_taiga_id)
 
-        # When adding a reference to an existing Taiga datafile, it is possible
-        # to provide a new set of custom metadata in the form of key/value pairs.
-        # If new custom_metadata is not provided, copy the key/value pairs from the
-        # original file.
         if custom_metadata == None:
             custom_metadata = data_file.custom_metadata
+        else:
+            custom_metadata = (
+                custom_metadata
+                if data_file.custom_metadata == None
+                else {**data_file.custom_metadata, **custom_metadata}
+            )
 
         models_controller.add_upload_session_virtual_file(
             session_id=sid,
