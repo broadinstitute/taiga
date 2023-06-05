@@ -1398,9 +1398,29 @@ def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataF
     if datafile is None:
         return None
 
-    underlying_s3_file = resolve_virtual_datafile(datafile)
-    underlying_s3_file.custom_metadata = datafile.custom_metadata
-    return underlying_s3_file
+    return datafile
+
+
+def _resolve_virtual_datafile(datafile) -> S3DataFile:
+    if datafile is None:
+        return None
+
+    return resolve_virtual_datafile(datafile)
+
+
+def get_underlying_file(datafile) -> S3DataFile:
+    return _resolve_virtual_datafile(datafile=datafile)
+
+
+def get_underlying_datafile_by_taiga_id(
+    taiga_id: str, one_or_none=False
+) -> Optional[DataFile]:
+    datafile = get_datafile_by_taiga_id(taiga_id, one_or_none)
+
+    if datafile is None:
+        return None
+
+    return _resolve_virtual_datafile(datafile)
 
 
 def get_comments_and_latest_dataset_version(dataset_id, added_datafiles):
