@@ -1377,24 +1377,50 @@ class InvalidTaigaIdFormat(Exception):
 
 def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataFile]:
     m = re.match("([a-z0-9-]+)\\.(\\d+)/(.*)", taiga_id)
+
     if m is None:
         raise InvalidTaigaIdFormat(taiga_id)
+
     permaname = m.group(1)
     version = m.group(2)
     filename = m.group(3)
+
     dataset_version = get_dataset_version_by_permaname_and_version(
         permaname, version, one_or_none=one_or_none
     )
-    if dataset_version is None:
+    if dataset_version == None:
         return None
 
     datafile = get_datafile_by_version_and_name(
         dataset_version.id, filename, one_or_none=one_or_none
     )
+
+    if datafile is None:
+        return None
+
+    return datafile
+
+
+def _resolve_virtual_datafile(datafile) -> S3DataFile:
     if datafile is None:
         return None
 
     return resolve_virtual_datafile(datafile)
+
+
+def get_underlying_file(datafile) -> S3DataFile:
+    return _resolve_virtual_datafile(datafile=datafile)
+
+
+def get_underlying_datafile_by_taiga_id(
+    taiga_id: str, one_or_none=False
+) -> Optional[DataFile]:
+    datafile = get_datafile_by_taiga_id(taiga_id, one_or_none)
+
+    if datafile is None:
+        return None
+
+    return _resolve_virtual_datafile(datafile)
 
 
 def get_comments_and_latest_dataset_version(dataset_id, added_datafiles):
