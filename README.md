@@ -120,7 +120,8 @@ For our case, it is pretty simple:
 
 1.  Install all the dependencies:
 
-        `sh install_prereqs.sh`
+        `poetry install`
+        `poetry shell`
 
 2.  Create a test database to have some data to work with:
 
