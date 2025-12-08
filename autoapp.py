@@ -6,7 +6,7 @@ from taiga2.api_app import create_app
 from taiga2.ui import create_app as ui_create_app
 from taiga2.celery_init import configure_celery, celery
 
-from werkzeug.wsgi import DispatcherMiddleware
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 settings_file = os.getenv("TAIGASETTINGSFILE", "settings.cfg")
 

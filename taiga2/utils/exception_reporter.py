@@ -1,11 +1,6 @@
 from google.cloud import error_reporting
 from flask import request
 
-try:
-    from flask import _app_ctx_stack as stack
-except ImportError:
-    from flask import _request_ctx_stack as stack
-
 
 class ExceptionReporter:
     def __init__(self, service_name=None, app=None):
@@ -37,9 +32,6 @@ class ExceptionReporter:
         return error_reporting.Client(service=self.service_name, project="cds-logging")
 
     def _get_client(self):
-        ctx = stack.top
-        if ctx is not None:
-            if not hasattr(ctx, "stackdriver_client"):
-                ctx.stackdriver_client = self._create_client()
-            return ctx.stackdriver_client
-        raise Exception("Missing context")
+        if not hasattr(flask.g, "stackdriver_client"):
+            flask.g.stackdriver_client = self._create_client()
+        return flask.g.stackdriver_client
