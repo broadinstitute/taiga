@@ -40,13 +40,19 @@ from taiga2.third_party_clients.gcs import (
     create_signed_gcs_url,
 )
 import taiga2.third_party_clients.figshare as figshare
-
-log = logging.getLogger(__name__)
+from .models_controller import (
+    InvalidTaigaIdFormat,
+    get_current_session_user,
+    log_datafile_read_access_info,
+)
 
 # Handle URL upload
 import json
 
 from connexion.exceptions import ProblemException
+
+log = logging.getLogger(__name__)
+
 
 ADMIN_USER_ID = "admin"
 
@@ -346,9 +352,9 @@ def get_dataset_versions(datasetVersionIdsDict):
     dataset_version_schema = schemas.DatasetVersionSchema(many=True)
 
     # TODO: IMPORTANT and bug potential => Manage here the missing context depending on the dataset_v
-    dataset_version_schema.context[
-        "entry_user_right"
-    ] = models_controller.EntryRightsEnum.can_view
+    dataset_version_schema.context["entry_user_right"] = (
+        models_controller.EntryRightsEnum.can_view
+    )
 
     json_data_dataset_versions = dataset_version_schema.dump(dataset_versions).data
 
@@ -358,8 +364,10 @@ def get_dataset_versions(datasetVersionIdsDict):
 @validate
 def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
-    dataset_version = models_controller.get_dataset_version_by_dataset_id_and_dataset_version_id(
-        datasetId, datasetVersionId, one_or_none=True
+    dataset_version = (
+        models_controller.get_dataset_version_by_dataset_id_and_dataset_version_id(
+            datasetId, datasetVersionId, one_or_none=True
+        )
     )
     if dataset_version is None:
         # if we couldn't find a version by dataset_version_id, try permaname and version number.
@@ -371,8 +379,10 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
             pass
 
         if version_number is not None:
-            dataset_version = models_controller.get_dataset_version_by_permaname_and_version(
-                datasetId, version_number, one_or_none=True
+            dataset_version = (
+                models_controller.get_dataset_version_by_permaname_and_version(
+                    datasetId, version_number, one_or_none=True
+                )
             )
         else:
             dataset_version = models_controller.get_latest_dataset_version_by_permaname(
@@ -463,13 +473,6 @@ def de_delete_dataset_version(datasetVersionId):
     )
 
     return flask.jsonify({})
-
-
-from .models_controller import (
-    InvalidTaigaIdFormat,
-    get_current_session_user,
-    log_datafile_read_access_info,
-)
 
 
 @validate
@@ -662,9 +665,11 @@ def _handle_version_addition_activity(
         user_id=current_user.id,
         dataset_id=new_dataset_version.dataset_id,
         type=Activity.ActivityType.added_version,
-        dataset_description=new_description
-        if new_description != latest_dataset_version.description
-        else None,
+        dataset_description=(
+            new_description
+            if new_description != latest_dataset_version.description
+            else None
+        ),
         dataset_version=new_dataset_version.version,
         comments=comments,
     )
@@ -1185,72 +1190,6 @@ def get_activity_log_for_dataset_id(datasetId):
     return flask.jsonify(json_data_access_logs_entry)
 
 
-def get_provenance_graph(gid):
-    print("We received the graph Id: {}!".format(gid))
-    provenance_full_graph_schema = schemas.ProvenanceGraphFullSchema()
-
-    graph = models_controller.get_provenance_graph_by_id(gid)
-
-    json_graph_data = provenance_full_graph_schema.dump(graph).data
-    # We also need the url, so we add this to the json
-    for provenance_node in json_graph_data["provenance_nodes"]:
-        try:
-            datafile = models_controller.get_datafile(provenance_node["datafile_id"])
-            provenance_node["url"] = datafile.dataset_version_id
-        except NoResultFound:
-            log.info(
-                "The node {} with datafile_id {} has been ignored because no datafile was matching".format(
-                    provenance_node["node_id"], provenance_node["datafile_id"]
-                )
-            )
-
-    return flask.jsonify(json_graph_data)
-
-
-def import_provenance(provenanceData):
-    """Import in the database a provenance Graph
-    Input:
-        - provenanceData => {name: string, graph: {nodes: [{label, type, id, (datafile_id)}],
-            edges: [{from_id, to_id}]}
-    """
-    graph_name = provenanceData["name"]
-    graph_nodes = provenanceData["graph"]["nodes"]
-    graph_edges = provenanceData["graph"]["edges"]
-
-    # TODO: Move this logic in models_controller
-    new_graph = models_controller.add_graph(graph_permaname=None, graph_name=graph_name)
-
-    for node in graph_nodes:
-        # TODO: Manage existing node (same id)
-        label = node["label"]
-        node_type = node["type"]
-        node_id = node.get("id")
-        datafile_id = node.get("datafile_id", None)
-
-        models_controller.add_node(
-            graph_id=new_graph.graph_id,
-            label=label,
-            type=node_type,
-            node_id=node_id,
-            datafile_id=datafile_id,
-        )
-
-    for edge in graph_edges:
-        label = edge.get("label", None)
-        from_node_id = edge["from_id"]
-        to_node_id = edge["to_id"]
-        edge_id = edge.get("edge_id")
-
-        models_controller.add_edge(
-            from_node_id=from_node_id,
-            to_node_id=to_node_id,
-            label=label,
-            edge_id=edge_id,
-        )
-
-    return flask.jsonify(new_graph.graph_id)
-
-
 def get_dataset_version_id_by_user_entry(entry_submitted_by_user: str):
     # TODO: Sanity check?
     dataset_version_id = models_controller.get_dataset_version_id_from_any(
@@ -1396,241 +1335,6 @@ def remove_group_user_associations(groupId, groupUserAssociationMetadata):
         return flask.jsonify(result)
     except AssertionError:
         return flask.abort(403)
-
-
-@validate
-def add_figshare_token(token: str):
-    if not figshare.is_token_valid(token):
-        flask.abort(401)
-
-    is_new = models_controller.add_figshare_token(token)
-    if is_new:
-        return flask.make_response(flask.jsonify({}), 201)
-    else:
-        return flask.jsonify({})
-
-
-def _fetch_figshare_token() -> str:
-    """Validates and returns token for current user.
-
-    Also removes invalid tokens.
-    """
-    token = models_controller.get_figshare_personal_token_for_current_user()
-    if token is None:
-        return None
-
-    if not figshare.is_token_valid(token):
-        models_controller.remove_figshare_token_for_current_user()
-        return None
-
-    return token
-
-
-def get_figshare_article_creation_options():
-    categories = figshare.get_public_categories()
-    licenses = figshare.get_public_licenses()
-    return flask.jsonify({"categories": categories, "licenses": licenses})
-
-
-@validate
-def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
-    dataset_version_id = figshareDatasetVersionLink["dataset_version_id"]
-    article_name = figshareDatasetVersionLink["article_name"]
-    article_description = figshareDatasetVersionLink["article_description"]
-    article_license = figshareDatasetVersionLink.get("license", 0)
-    article_categories = figshareDatasetVersionLink.get("categories", None)
-    article_keywords = figshareDatasetVersionLink.get("keywords", None)
-    article_references = figshareDatasetVersionLink.get("references", None)
-
-    files_to_upload = figshareDatasetVersionLink["files_to_upload"]
-
-    token = figshare.fetch_figshare_token()
-    if token is None:
-        flask.abort(401)
-
-    dataset_version = models_controller.get_dataset_version(dataset_version_id)
-    figshare_dataset_version_link = figshare.create_article(
-        dataset_version_id,
-        article_name,
-        article_description,
-        article_license,
-        article_categories,
-        article_keywords,
-        article_references,
-        token,
-    )
-
-    from taiga2.tasks import upload_datafile_to_figshare
-
-    for file_to_upload in files_to_upload:
-        datafile = models_controller.get_datafile(file_to_upload["datafile_id"])
-        if datafile.type == "gcs":
-            file_to_upload["failure_reason"] = "Cannot upload GCS pointer files"
-            continue
-        elif datafile.type == "virtual":
-            datafile = datafile.underlying_data_file
-
-        if datafile.compressed_s3_key is None:
-            file_to_upload[
-                "failure_reason"
-            ] = "Cannot upload files without compressed S3 file"
-            continue
-
-        task = upload_datafile_to_figshare.delay(
-            figshare_dataset_version_link.figshare_article_id,
-            figshare_dataset_version_link.id,
-            file_to_upload["file_name"],
-            file_to_upload["datafile_id"],
-            datafile.compressed_s3_key,
-            datafile.original_file_md5,
-            token,
-        )
-
-        file_to_upload["task_id"] = task.id
-
-    return flask.jsonify(
-        {
-            "article_id": figshare_dataset_version_link.figshare_article_id,
-            "files": files_to_upload,
-        }
-    )
-
-
-@validate
-def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
-    dataset_version_id = figshareDatasetVersionLink["dataset_version_id"]
-    description = figshareDatasetVersionLink["description"]
-    article_id = figshareDatasetVersionLink["article_id"]
-    current_article_version = figshareDatasetVersionLink["current_article_version"]
-    files_to_update = figshareDatasetVersionLink["files_to_update"]
-
-    token = figshare.fetch_figshare_token()
-    if token is None:
-        flask.abort(401)
-
-    dataset_version = models_controller.get_dataset_version(dataset_version_id)
-    figshare_dataset_version_link = models_controller.add_figshare_dataset_version_link(
-        dataset_version.id, article_id, current_article_version + 1
-    )
-
-    from taiga2.tasks import upload_datafile_to_figshare
-
-    try:
-        for file_to_update in files_to_update:
-            action = file_to_update["action"]
-
-            if action == "Delete":
-                figshare.delete_file(
-                    article_id, file_to_update["figshare_file_id"], token
-                )
-            elif action == "Add":
-                datafile_id = file_to_update["datafile_id"]
-                if datafile_id is None:
-                    file_to_update[
-                        "failure_reason"
-                    ] = "Cannot add or replace file without datafile ID"
-                    continue
-
-                datafile = models_controller.get_datafile(datafile_id)
-
-                if datafile.type == "gcs":
-                    file_to_update["failure_reason"] = "Cannot upload GCS pointer files"
-                    continue
-                elif datafile.type == "virtual":
-                    datafile = datafile.underlying_data_file
-
-                if datafile.compressed_s3_key is None:
-                    file_to_update[
-                        "failure_reason"
-                    ] = "Cannot upload files without compressed S3 file"
-                    continue
-
-                task = upload_datafile_to_figshare.delay(
-                    figshare_dataset_version_link.figshare_article_id,
-                    figshare_dataset_version_link.id,
-                    file_to_update["file_name"],
-                    datafile_id,
-                    datafile.compressed_s3_key,
-                    datafile.original_file_md5,
-                    token,
-                )
-
-                file_to_update["task_id"] = task.id
-            else:
-                raise ValueError(f"Unrecognized action: {action}")
-
-        r = figshare.update_article(article_id, description, token)
-
-        return flask.jsonify(
-            {
-                "article_id": figshare_dataset_version_link.figshare_article_id,
-                "files": files_to_update,
-            }
-        )
-    except HTTPError as error:
-        models_controller.delete_figshare_dataset_version_and_datafiles(
-            figshare_dataset_version_link.id
-        )
-        return flask.abort(error.code, error.reason)
-
-
-def get_public_article_information_for_user(article_id: int):
-    try:
-        article_info = figshare.get_public_article_information(article_id)
-        token = figshare.fetch_figshare_token()
-        if token is None:
-            flask.abort(404)
-        if not any(
-            figshare.get_author(author["id"], token)
-            for author in article_info["authors"]
-        ):
-            flask.abort(403)
-        return flask.jsonify(article_info)
-    except HTTPError as error:
-        flask.abort(404)
-
-
-def get_figshare_links_for_client(datasetVersionId: str):
-    dataset_version = models_controller.get_dataset_version(datasetVersionId)
-    if not dataset_version.figshare_dataset_version_link:
-        flask.abort(404)
-
-    try:
-        article_files = figshare.get_public_article_files(
-            dataset_version.figshare_dataset_version_link.figshare_article_id
-        )
-
-        figshare_file_ids_to_download_url = {
-            f["id"]: f["download_url"] for f in article_files
-        }
-        figshare_datafile_links = models_controller.get_figshare_datafile_links_for_dataset_version_link(
-            dataset_version.figshare_dataset_version_link.id
-        )
-
-        taiga_figshare_map = {
-            "{}.{}/{}".format(
-                dataset_version.dataset.permaname,
-                dataset_version.version,
-                l.datafile.name,
-            ): {
-                "download_url": figshare_file_ids_to_download_url[l.figshare_file_id],
-                "format": l.datafile.format.value,
-                "encoding": l.datafile.encoding
-                if l.datafile.type == "s3"
-                else l.datafile.underlying_data_file.encoding,
-                "column_types": l.datafile.column_types_as_json
-                if l.datafile.type == "s3"
-                else l.datafile.underlying_data_file.column_types_as_json,
-            }
-            for l in figshare_datafile_links
-        }
-
-        buffer = BytesIO()
-        buffer.write(json.dumps(taiga_figshare_map).encode())
-        buffer.seek(0)
-        return flask.jsonify({"content": json.dumps(taiga_figshare_map)})
-    except HTTPError as error:
-        flask.abort(404)
 
 
 @validate

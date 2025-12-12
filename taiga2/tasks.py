@@ -281,8 +281,6 @@ def get_converter(src_format, dst_format):
     if is_hdf5:
         if dst_format == conversion.CSV_FORMAT:
             return conversion.hdf5_to_csv
-        elif dst_format == conversion.RDS_FORMAT:
-            return conversion.hdf5_to_rds
         elif dst_format == conversion.TSV_FORMAT:
             return conversion.hdf5_to_tsv
         elif dst_format == conversion.GCT_FORMAT:
@@ -292,8 +290,6 @@ def get_converter(src_format, dst_format):
             return conversion.columnar_to_csv
         elif dst_format == conversion.TSV_FORMAT:
             return conversion.columnar_to_tsv
-        elif dst_format == conversion.RDS_FORMAT:
-            return conversion.columnar_to_rds
 
     raise Exception("No conversion for {} to {}".format(src_format, dst_format))
 
@@ -403,7 +399,7 @@ def convert_and_backfill_compressed_file(self, datafile_id: str, cache_entry_id:
     """
     Convert a HDF5 or Columnar file to CSV, then compress, upload to S3, and update
     DataFile compressed_s3_key and column types
-    
+
     Args:
         datafile_id (str): ID for the (S3) DataFile to update
         cache_entry_id (str): ID for the ConversionCache entry to update
@@ -428,7 +424,7 @@ def backfill_compressed_file(self, datafile_id: str, cache_entry_id: Optional[st
     """
     Get the S3 key from ConversionCache (if DataFile is not Raw) or s3_key field, then
     compress, upload to S3, and update DataFile compressed_s3_key and column types
-    
+
     Args:
         datafile_id (str): ID for the (S3) DataFile to update
         cache_entry_id (Optional[str]): ID for the ConversionCache entry to use, or

@@ -3,14 +3,13 @@ import flask
 import json
 import pytest
 
-from flask_sqlalchemy import SessionBase
+from .helpers import SessionBase
 import werkzeug.exceptions
 
 import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
 
 from taiga2.models import generate_permaname, S3DataFile, Dataset, DatasetVersion
-from taiga2.models import db
 from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
 
@@ -25,13 +24,17 @@ def new_user():
     return _new_user
 
 
-@pytest.fixture
-def new_upload_session():
+def create_new_upload_session():
     response_json_new_upload_session_id = endpoint.create_new_upload_session()
     new_upload_session_id = get_data_from_flask_jsonify(
         response_json_new_upload_session_id
     )
     return models_controller.get_upload_session(new_upload_session_id)
+
+
+@pytest.fixture
+def new_upload_session():
+    return create_new_upload_session()
 
 
 @pytest.fixture
@@ -316,8 +319,8 @@ def _create_new_dataset_version_include_existing_files(
     changes_description = "These are the changes"
 
     new_files = models_controller.get_upload_session_files_from_session(session_id)
-    previous_version_datafiles = models_controller.get_previous_version_and_added_datafiles(
-        None, dataset_id
+    previous_version_datafiles = (
+        models_controller.get_previous_version_and_added_datafiles(None, dataset_id)
     )
 
     datafile_names_to_exclude = [file.filename for file in new_files]
@@ -633,41 +636,6 @@ def test_retrieve_user_access_log(session: SessionBase, dataset_create_access_lo
 # <editor-fold desc="Provenance">
 
 
-def test_import_provenance(session: SessionBase, new_dataset):
-    datafile_from_dataset = new_dataset.dataset_versions[0].datafiles[0]
-    node_id = models_controller.models.generate_permaname("node_name")
-    provenanceData = {
-        "name": "Test provenance",
-        "graph": {
-            "nodes": [
-                {
-                    "label": datafile_from_dataset.name,
-                    "type": "dataset",
-                    "datafile_id": datafile_from_dataset.id,
-                    "id": node_id,
-                }
-            ],
-            "edges": [{"from_id": node_id, "to_id": node_id}],
-        },
-    }
-
-    response_graph_id = endpoint.import_provenance(provenanceData)
-    new_graph_id = get_data_from_flask_jsonify(response_graph_id)
-
-    assert new_graph_id
-
-    new_graph = models_controller.get_provenance_graph_by_id(new_graph_id)
-    assert len(new_graph.provenance_nodes) == 1
-
-    new_node = models_controller.get_provenance_node(
-        new_graph.provenance_nodes[0].node_id
-    )
-    assert new_node.datafile_id == datafile_from_dataset.id
-
-    new_edge = models_controller.get_provenance_edge(new_node.from_edges[0].edge_id)
-    assert new_edge.from_node == new_edge.to_node
-
-
 # </editor-fold>
 
 # <editor-fold desc="Security">
@@ -911,7 +879,7 @@ def test_create_virtual_dataset_endpoint(session: SessionBase):
 
     session.flush()
 
-    upload_session_1 = new_upload_session()
+    upload_session_1 = create_new_upload_session()
     _add_virtual_file_to_upload_session(upload_session_1.id, "alias", data_file_1)
 
     sessionDatasetInfo = {
@@ -937,7 +905,7 @@ def test_create_virtual_dataset_endpoint(session: SessionBase):
     # }
 
     # now update with a new version
-    upload_session_2 = new_upload_session()
+    upload_session_2 = create_new_upload_session()
     dataset2 = _create_dataset_with_a_file()
     data_file_2 = "{}.1/datafile".format(dataset2.permaname)
     _add_virtual_file_to_upload_session(upload_session_2.id, "alias", data_file_2)
