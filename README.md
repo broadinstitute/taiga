@@ -120,8 +120,12 @@ For our case, it is pretty simple:
 
 1.  Install all the dependencies:
 
-        `poetry install`
-        `poetry shell`
+```
+poetry install
+poetry shell
+yarn install --cwd react_frontend
+pre-commit install
+```
 
 2.  Create a test database to have some data to work with:
 
