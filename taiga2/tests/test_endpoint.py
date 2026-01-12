@@ -3,7 +3,7 @@ import flask
 import json
 import pytest
 
-from flask_sqlalchemy import SessionBase
+from sqlalchemy.orm import Session
 import werkzeug.exceptions
 
 import taiga2.controllers.endpoint as endpoint
@@ -17,6 +17,15 @@ from taiga2.tests.test_utils import get_dict_from_response_jsonify
 # <editor-fold desc="Fixtures and utils">
 
 
+def _create_upload_session():
+    """Helper function to create upload sessions (not a fixture)."""
+    response_json_new_upload_session_id = endpoint.create_new_upload_session()
+    new_upload_session_id = get_data_from_flask_jsonify(
+        response_json_new_upload_session_id
+    )
+    return models_controller.get_upload_session(new_upload_session_id)
+
+
 @pytest.fixture
 def new_user():
     user_name = "new user"
@@ -27,20 +36,12 @@ def new_user():
 
 @pytest.fixture
 def new_upload_session():
-    response_json_new_upload_session_id = endpoint.create_new_upload_session()
-    new_upload_session_id = get_data_from_flask_jsonify(
-        response_json_new_upload_session_id
-    )
-    return models_controller.get_upload_session(new_upload_session_id)
+    return _create_upload_session()
 
 
 @pytest.fixture
 def second_upload_session():
-    response_json_new_upload_session_id = endpoint.create_new_upload_session()
-    new_upload_session_id = get_data_from_flask_jsonify(
-        response_json_new_upload_session_id
-    )
-    return models_controller.get_upload_session(new_upload_session_id)
+    return _create_upload_session()
 
 
 def _add_s3_file_to_upload_session(
@@ -96,7 +97,7 @@ def _add_virtual_file_to_upload_session(
 
 
 @pytest.fixture
-def new_upload_session_file(session: SessionBase, new_upload_session):
+def new_upload_session_file(session: Session, new_upload_session):
     return _add_s3_file_to_upload_session(new_upload_session.id)
 
 
@@ -177,13 +178,13 @@ def new_dataset_version(new_dataset, new_upload_session):
 
 
 @pytest.fixture
-def dataset_create_access_log(session: SessionBase, new_dataset):
+def dataset_create_access_log(session: Session, new_dataset):
     endpoint.create_or_update_entry_access_log(new_dataset.id)
     return new_dataset
 
 
 @pytest.fixture
-def new_folder_in_home(session: SessionBase):
+def new_folder_in_home(session: Session):
     current_user = models_controller.get_current_session_user()
     home_folder_id = current_user.home_folder_id
     metadata = {
@@ -199,7 +200,7 @@ def new_folder_in_home(session: SessionBase):
 
 @pytest.fixture(scope="function")
 def new_dataset_in_new_folder_in_home(
-    session: SessionBase, new_folder_in_home, new_datafile
+    session: Session, new_folder_in_home, new_datafile
 ):
     new_dataset_name = "New Dataset in a folder"
     new_dataset_permaname = generate_permaname(new_dataset_name)
@@ -220,12 +221,12 @@ def get_data_from_flask_jsonify(flask_jsonified):
     return flask.json.loads(flask_jsonified.data.decode("UTF8"))
 
 
-def test_endpoint_s3_credentials(app, session: SessionBase):
+def test_endpoint_s3_credentials(app, session: Session):
     dict_credentials = endpoint.get_s3_credentials()
     # TODO: Assert the dict content
 
 
-def test_create_new_upload_session(session: SessionBase):
+def test_create_new_upload_session(session: Session):
     response_json_new_upload_session_id = endpoint.create_new_upload_session()
     new_upload_session_id = get_data_from_flask_jsonify(
         response_json_new_upload_session_id
@@ -233,7 +234,7 @@ def test_create_new_upload_session(session: SessionBase):
     assert models_controller.get_upload_session(new_upload_session_id) is not None
 
 
-def test_create_upload_session_file(app, session: SessionBase, new_upload_session):
+def test_create_upload_session_file(app, session: Session, new_upload_session):
     bucket = "test_bucket"
     format = "Raw"
     file_key = "filekey"
@@ -263,7 +264,7 @@ def test_create_upload_session_file(app, session: SessionBase, new_upload_sessio
     assert _new_upload_session_files[0].filename == file_name
 
 
-def test_create_dataset(session: SessionBase, new_upload_session_file):
+def test_create_dataset(session: Session, new_upload_session_file):
     _new_upload_session_id = new_upload_session_file.session.id
 
     models_controller.update_upload_session_file_summaries(
@@ -353,7 +354,7 @@ def _create_new_dataset_version_include_existing_files(
 
 
 def test_create_new_dataset_version_from_dataset_with_existing_virtual_files(
-    session: SessionBase,
+    session: Session,
     new_upload_session,
     new_dataset_version,
     dataset_to_add_to,
@@ -372,7 +373,7 @@ def test_create_new_dataset_version_from_dataset_with_existing_virtual_files(
 
 
 def test_create_new_dataset_version_from_session_ignore_existing_files(
-    session: SessionBase, new_upload_session, new_dataset_version, dataset_to_add_to
+    session: Session, new_upload_session, new_dataset_version, dataset_to_add_to
 ):
     # Test if add_existing_files False
     session_id = new_upload_session.id
@@ -400,7 +401,7 @@ def test_create_new_dataset_version_from_session_ignore_existing_files(
 
 # add_existing_files = True
 def test_create_new_dataset_version_from_session(
-    session: SessionBase, new_upload_session, new_dataset_version, dataset_to_add_to
+    session: Session, new_upload_session, new_dataset_version, dataset_to_add_to
 ):
     new_dataset_version = _create_new_dataset_version_include_existing_files(
         session, new_upload_session, new_dataset_version, dataset_to_add_to
@@ -411,7 +412,7 @@ def test_create_new_dataset_version_from_session(
 
 
 def test_create_new_dataset_version(
-    session: SessionBase, new_dataset, new_upload_session_file
+    session: Session, new_dataset, new_upload_session_file
 ):
     new_description = "My new description!"
 
@@ -451,7 +452,7 @@ def test_create_new_dataset_version(
     # TODO: Check if the datafiles in the new dataset_version are the same (filename/name) than in the new_upload_session_file + in the previous_dataset_version_datafiles
 
 
-def test_get_dataset_version_from_dataset(session: SessionBase, new_dataset):
+def test_get_dataset_version_from_dataset(session: Session, new_dataset):
     dataset_version_id = new_dataset.dataset_versions[0].id
 
     # test fetch by dataset version id
@@ -474,7 +475,7 @@ def test_get_dataset_version_from_dataset(session: SessionBase, new_dataset):
         endpoint.get_dataset_version_from_dataset("invalid", "invalid")
 
 
-def test_get_dataset_two_ways(session: SessionBase, new_dataset):
+def test_get_dataset_two_ways(session: Session, new_dataset):
     import werkzeug.exceptions
 
     dataset_id = new_dataset.id
@@ -493,14 +494,14 @@ def test_get_dataset_two_ways(session: SessionBase, new_dataset):
         endpoint.get_dataset("invalid")
 
 
-def test_get_dataset_permaname(session: SessionBase, new_dataset: Dataset):
+def test_get_dataset_permaname(session: Session, new_dataset: Dataset):
     ds = get_data_from_flask_jsonify(endpoint.get_dataset(new_dataset.permaname))
 
     assert ds["permanames"][0] == new_dataset.permaname
     assert ds["id"] == new_dataset.id
 
 
-def test_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
+def test_deprecate_dataset_version(session: Session, new_dataset: Dataset):
     """Check if deprecation was a success"""
     dataset_version_id = new_dataset.dataset_versions[0].id
     reason_state = "Test deprecation"
@@ -519,7 +520,7 @@ def test_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
     assert updated_dataset_version.reason_state == reason_state
 
 
-def test_error_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
+def test_error_deprecate_dataset_version(session: Session, new_dataset: Dataset):
     dataset_version_id = new_dataset.dataset_versions[0].id
     reason_state = "Test deprecation"
     deprecationReasonObj = {"deprecationReason": reason_state}
@@ -545,7 +546,7 @@ def test_error_deprecate_dataset_version(session: SessionBase, new_dataset: Data
     assert error_raised, "Error not raised despite no deprecation reason passed"
 
 
-def test_de_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
+def test_de_deprecate_dataset_version(session: Session, new_dataset: Dataset):
     # Deprecate the dataset version first
     dataset_version_id = new_dataset.dataset_versions[0].id
     models_controller.deprecate_dataset_version(
@@ -561,7 +562,7 @@ def test_de_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset
     assert updated_dataset_version.reason_state == "Test de-deprecation"
 
 
-def test_error_de_deprecate_dataset_version(session: SessionBase, new_dataset: Dataset):
+def test_error_de_deprecate_dataset_version(session: Session, new_dataset: Dataset):
     # Deprecate the dataset version first
     dataset_version_id = new_dataset.dataset_versions[0].id
     models_controller.deprecate_dataset_version(
@@ -577,14 +578,14 @@ def test_error_de_deprecate_dataset_version(session: SessionBase, new_dataset: D
     assert error_raised, "Error not raised despite no dataset_version id passed"
 
 
-def test_delete_dataset_version(session: SessionBase, new_dataset: Dataset):
+def test_delete_dataset_version(session: Session, new_dataset: Dataset):
     dataset_version = new_dataset.dataset_versions[0]
     endpoint.delete_dataset_version(dataset_version.id)
 
     assert dataset_version.state == DatasetVersion.DatasetVersionState.deleted
 
 
-def test_de_delete_dataset_version(session: SessionBase, new_dataset: Dataset):
+def test_de_delete_dataset_version(session: Session, new_dataset: Dataset):
     dataset_version = new_dataset.dataset_versions[0]
     dataset_version_id = dataset_version.id
 
@@ -607,19 +608,19 @@ def test_de_delete_dataset_version(session: SessionBase, new_dataset: Dataset):
 # <editor-fold desc="Access Logs">
 
 
-def test_create_access_log(session: SessionBase, new_dataset):
+def test_create_access_log(session: Session, new_dataset):
     json_result = endpoint.create_or_update_entry_access_log(new_dataset.id)
     assert json_result.status_code == 200
 
 
-def test_update_access_log(session: SessionBase, dataset_create_access_log):
+def test_update_access_log(session: Session, dataset_create_access_log):
     json_result = endpoint.create_or_update_entry_access_log(
         dataset_create_access_log.id
     )
     assert json_result.status_code == 200
 
 
-def test_retrieve_user_access_log(session: SessionBase, dataset_create_access_log):
+def test_retrieve_user_access_log(session: Session, dataset_create_access_log):
     entries_access_logs = get_dict_from_response_jsonify(
         endpoint.get_entries_access_logs()
     )
@@ -633,7 +634,7 @@ def test_retrieve_user_access_log(session: SessionBase, dataset_create_access_lo
 # <editor-fold desc="Provenance">
 
 
-def test_import_provenance(session: SessionBase, new_dataset):
+def test_import_provenance(session: Session, new_dataset):
     datafile_from_dataset = new_dataset.dataset_versions[0].datafiles[0]
     node_id = models_controller.models.generate_permaname("node_name")
     provenanceData = {
@@ -781,7 +782,7 @@ def _create_dataset_with_a_virtual_file(
     return dataset
 
 
-def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
+def test_dataset_endpoints_on_virtual_dataset(session: Session):
     dataset1 = _create_dataset_with_a_file()
     data_file_1 = dataset1.dataset_versions[0].datafiles[0]
     data_file_1_label = "{}.1/datafile".format(dataset1.permaname)
@@ -901,7 +902,7 @@ def test_dataset_endpoints_on_virtual_dataset(session: SessionBase):
     # get_data_from_flask_jsonify(endpoint.create_or_update_dataset_access_log(vdataset_id))
 
 
-def test_create_virtual_dataset_endpoint(session: SessionBase):
+def test_create_virtual_dataset_endpoint(session: Session):
     folder = models_controller.add_folder(
         "folder", models_controller.Folder.FolderType.folder, "folder desc"
     )
@@ -911,7 +912,7 @@ def test_create_virtual_dataset_endpoint(session: SessionBase):
 
     session.flush()
 
-    upload_session_1 = new_upload_session()
+    upload_session_1 = _create_upload_session()
     _add_virtual_file_to_upload_session(upload_session_1.id, "alias", data_file_1)
 
     sessionDatasetInfo = {
@@ -937,7 +938,7 @@ def test_create_virtual_dataset_endpoint(session: SessionBase):
     # }
 
     # now update with a new version
-    upload_session_2 = new_upload_session()
+    upload_session_2 = _create_upload_session()
     dataset2 = _create_dataset_with_a_file()
     data_file_2 = "{}.1/datafile".format(dataset2.permaname)
     _add_virtual_file_to_upload_session(upload_session_2.id, "alias", data_file_2)
@@ -974,7 +975,7 @@ def test_create_virtual_dataset_endpoint(session: SessionBase):
     assert entry.underlying_file_id != data_file_id_1
 
 
-def test_search_within_folder(session: SessionBase, new_dataset_in_new_folder_in_home):
+def test_search_within_folder(session: Session, new_dataset_in_new_folder_in_home):
     current_user = models_controller.get_current_session_user()
     home_folder_id = current_user.home_folder_id
     search_query = "New Dataset in a folder"

@@ -6,8 +6,6 @@ from taiga2.tests.mock_s3 import parse_presigned_url
 from taiga2.controllers.models_controller import find_datafile
 import pytest
 
-from flask_sqlalchemy import SessionBase
-
 MAX_TIME = 5
 
 

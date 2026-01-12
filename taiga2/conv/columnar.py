@@ -186,11 +186,11 @@ class DoubleSerializer(object):
 
     def to_buffer(self, values):
         v_array = array.array("d", [float(v) for v in values])
-        return v_array.tostring()
+        return v_array.tobytes()
 
     def from_buffer(self, buffer):
         values = array.array("d")
-        values.fromstring(buffer)
+        values.frombytes(buffer)
         return ColumnCursor(values, float)
 
 
@@ -199,11 +199,11 @@ class IntSerializer(object):
 
     def to_buffer(self, values):
         v_array = array.array("i", [int(v) for v in values])
-        return v_array.tostring()
+        return v_array.tobytes()
 
     def from_buffer(self, buffer):
         values = array.array("i")
-        values.fromstring(buffer)
+        values.frombytes(buffer)
         return ColumnCursor(values, int)
 
 
@@ -490,7 +490,7 @@ def convert_csv_to_tabular(
 
     # print("Before conversion")
     # tr.print_diff()
-    with open(input_file, "rU", encoding=encoding) as fd:
+    with open(input_file, "r", encoding=encoding) as fd:
         reader = csv.reader(fd, delimiter=delimiter)
 
         w = DatasetWriter(output_file, datafile_columns, rows_per_block=rows_per_block)

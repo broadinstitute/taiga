@@ -4,7 +4,7 @@ import os
 import csv
 from taiga2.tests.exp_conv_test import ProgressStub
 
-from flask_sqlalchemy import SessionBase
+from sqlalchemy.orm import Session
 
 from taiga2.third_party_clients.aws import aws
 from taiga2.models import InitialFileType
@@ -55,7 +55,7 @@ large_table_path = os.path.join(test_files_folder_path, large_table_name)
     ],
 )
 def test_upload_session_file(
-    filename, initial_file_type, session: SessionBase, user_id
+    filename, initial_file_type, session: Session, user_id
 ):
     print("initial_file_type", initial_file_type, filename)
 
@@ -137,7 +137,7 @@ def test_non_utf8(tmpdir):
     columnar_to_csv(None, dest, lambda: final)
     import csv
 
-    with open(final, "rU") as fd:
+    with open(final, "r") as fd:
         r = csv.DictReader(fd)
         row1 = next(r)
         assert row1["row"] == "1"

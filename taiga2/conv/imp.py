@@ -18,7 +18,7 @@ BYTES_PER_STR_OBJECT = 60
 def _get_csv_dims(progress, filename, dialect, encoding):
     sha256, md5 = get_file_hashes(filename)
     try:
-        with open(filename, "rU", encoding=encoding) as fd:
+        with open(filename, "r", encoding=encoding) as fd:
             r = csv.reader(fd, dialect)
             row_count = 0
             col_header = next(r)
