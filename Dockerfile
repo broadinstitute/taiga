@@ -1,11 +1,13 @@
 FROM us.gcr.io/cds-docker-containers/taiga-base:v2
 
 COPY taiga2 /install/taiga/taiga2
-COPY requirements.txt setup.py /install/taiga/
+COPY pyproject.toml poetry.lock /install/taiga/
 WORKDIR /install/taiga
 
-RUN pip install pip==21.1.2
-RUN pip install -r requirements.txt
+# Install Poetry and dependencies
+RUN pip install poetry
+RUN poetry config virtualenvs.create false
+RUN poetry install --no-interaction --no-ansi
 
 COPY react_frontend /install/taiga/react_frontend/
 # Install frontend javascript dependencies
