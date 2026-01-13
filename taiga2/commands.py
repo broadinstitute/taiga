@@ -24,22 +24,22 @@ def webpack():
 @with_appcontext
 def run_worker():
     """Starts a celery worker which will """
+    import sys
     from flask import current_app
 
     print("config", current_app.config)
 
-    main(
-        [
-            "",
-            "-A",
-            "taiga2.celery:app",
-            "worker",
-            "-l",
-            "info",
-            "-E",
-            "-n",
-            "worker1@%h",
-            "--max-memory-per-child",
-            "200000",
-        ]
-    )
+    sys.argv = [
+        "celery",
+        "-A",
+        "taiga2.celery:app",
+        "worker",
+        "-l",
+        "info",
+        "-E",
+        "-n",
+        "worker1@%h",
+        "--max-memory-per-child",
+        "200000",
+    ]
+    main()
