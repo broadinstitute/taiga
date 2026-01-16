@@ -41,6 +41,7 @@ connexion={version = ">=2.0.0,<3.0.0", extras = ["flask"]}
 
 #[tool.poetry.extras]
 #connexion=["flask"]
+pytest = "^9.0.2"
 
 [tool.poetry.group.dev.dependencies]
 alembic = ">=1.17.2"
