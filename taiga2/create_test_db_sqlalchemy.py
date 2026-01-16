@@ -165,7 +165,11 @@ def recreate_dev_db():
     database_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
     assert database_uri.startswith("sqlite:///")
     database_path = database_uri[len("sqlite:///") :]
-    database_path = os.path.join("taiga2", database_path)
+
+    # Flask uses an instance folder by default for relative paths
+    if not os.path.isabs(database_path):
+        database_path = os.path.join(current_app.instance_path, database_path)
+
     if os.path.exists(database_path):
         print("deleting existing DB before recreating it: {}".format(database_path))
         os.unlink(database_path)

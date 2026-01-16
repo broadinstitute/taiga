@@ -99,8 +99,6 @@ export class SearchView extends React.Component<
 
     // Get the datasets from query + current_folder
     this.doFetchSearch().then((searchResult: Models.SearchResult) => {
-      console.log("Received the search results!");
-      console.log("=> " + searchResult);
 
       this.setState({
         folder: searchResult.current_folder,
