@@ -51,6 +51,8 @@
     "@types/react-table": "6.7.3",
     "babel-core": "^6.26.3",
     "html-webpack-plugin": "^5.5.0",
+    "sass": "^1.97.2",
+    "sass-loader": "^10",
     "source-map-loader": "^4.0.1",
     "style-loader": "^3.3.2",
     "ts-loader": "^9.5.0",

@@ -53,6 +53,26 @@ module.exports = {
         use: ["style-loader", "css-loader"],
       },
 
+      // SCSS
+      {
+        test: /\.scss$/,
+        use: [
+          "style-loader",
+          {
+            loader: "css-loader",
+            options: {
+              modules: {
+                // https://webpack.js.org/loaders/css-loader/#localidentname
+                // use '[hash:base64]' for production
+                // use '[path][name]__[local]' for development
+                localIdentName: "[path][name]__[local]",
+              },
+            },
+          },
+          { loader: "sass-loader" },
+        ],
+      },
+
       // Webpack 5 asset modules replace file-loader + url-loader
       {
         test: /\.(png|jpg|gif|svg|ttf|otf|eot|woff|woff2)$/i,
