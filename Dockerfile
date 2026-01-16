@@ -24,16 +24,21 @@ ENV PYENV_ROOT=/root/.pyenv
 ENV PATH=$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH
 RUN curl https://pyenv.run | bash
 
-# Install Python 3.9.15 via pyenv
-ENV PYTHON_VERSION=3.9.15
+# Install Python 3.10 via pyenv
+ENV PYTHON_VERSION=3.10.19
 RUN pyenv install ${PYTHON_VERSION} && \
     pyenv global ${PYTHON_VERSION} && \
     pyenv rehash
 
-COPY flask setup_env.sh autoapp.py pyproject.toml README.md taiga2 /install/taiga/
+RUN pip install poetry
+
+COPY flask setup_env.sh autoapp.py pyproject.toml README.md /install/taiga/
+copy taiga2 /install/taiga/taiga2
 WORKDIR /install/taiga
 
-# Set celery as being able to run as root => Can find a better way
+RUN poetry install 
+
+# Set celery as being able to run as root => Can find a better way?
 ENV C_FORCE_ROOT=true
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
