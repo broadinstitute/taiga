@@ -36,7 +36,18 @@ COPY flask setup_env.sh autoapp.py pyproject.toml README.md /install/taiga/
 copy taiga2 /install/taiga/taiga2
 WORKDIR /install/taiga
 
+# Create virtual enviornment in /install/taiga/.venv so that it's in a known path
+RUN python -m venv .venv
+# "activate" it
+ENV VIRTUAL_ENV=/install/taiga/.venv
+ENV PATH=$VIRTUAL_ENV/bin:$PATH
+# now poetry will always use the current activated virtual env
 RUN poetry install 
+
+#RUN bash -c 'ln -s `poetry env info --path` /install/venv'
+#ENV PATH=/install/venv/bin:$PATH
+#RUN ls /install/venv/bin
+#RUN pytest
 
 # Set celery as being able to run as root => Can find a better way?
 ENV C_FORCE_ROOT=true
