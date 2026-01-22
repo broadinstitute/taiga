@@ -5,6 +5,7 @@ celery==4.1.1
 certifi==2019.6.16
 Click==7.0
 clickclick==1.2.2
+openapi-spec-validator==0.2.9
 connexion[swagger-ui]==2.3.0
 docutils==0.14
 Flask==1.0.3
@@ -16,7 +17,7 @@ google-cloud-storage==1.35.0
 h5py==2.6.0
 humanize==0.5.1
 jsonpointer==2.0
-jsonschema==2.6.0
+jsonschema==2.7.0
 kombu==4.2.1
 mailjet_rest==1.3.3
 marshmallow==2.15.1

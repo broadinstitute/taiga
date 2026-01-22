@@ -8,7 +8,7 @@ from .extensions import metadata
 
 from flask_migrate import Migrate
 
-from sqlalchemy import event, UniqueConstraint, CheckConstraint
+from sqlalchemy import JSON, event, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import backref
 from sqlalchemy.ext.declarative import declared_attr
 
@@ -238,7 +238,9 @@ class DataFile(db.Model):
     id: str = db.Column(GUID, primary_key=True, default=generate_uuid)
     name: str = db.Column(db.String(80))
     type: str = db.Column(db.String(20))
-
+    # Calling this custom_metadata to differentiate from preset metadata, as
+    # name, type, etc are referred to as fileMetadata elsewhere in the code
+    custom_metadata = db.Column(JSON, nullable=True)
     dataset_version_id: str = db.Column(GUID, db.ForeignKey("dataset_versions.id"))
     dataset_version: "DatasetVersion" = db.relationship(
         "DatasetVersion",
@@ -601,6 +603,10 @@ class UploadSessionFile(db.Model):
 
     # filename submitted by user
     filename: str = db.Column(db.Text)
+
+    # Calling this custom_metadata to differentiate from preset metadata.
+    # custom_metadata is a json encoded dictionary.
+    custom_metadata = db.Column(JSON, nullable=True)
     encoding: str = db.Column(db.Text)
 
     initial_filetype: InitialFileType = db.Column(db.Enum(InitialFileType))

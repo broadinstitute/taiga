@@ -104,3 +104,85 @@ Taiga is deployed as a containerized application:
 1. **Authentication**: Token-based authentication
 2. **Authorization**: Group-based access control (This is not really fully implemented. If there is code about group-based access, I am willing to bet it is half-implement if at all)
 3. **Secure Storage**: Taiga will sign URLs for fetching data from S3 and give them to the client, so that the transfer of large data happens directly between client and S3.
+
+## Deployment Diagram
+
+```mermaid
+graph TD
+    subgraph "Client"
+        Browser[Web Browser]
+    end
+
+    subgraph "Application Server"
+        Flask[Flask API]
+        Celery[Celery Workers]
+        Redis[Redis Queue]
+    end
+
+    subgraph "Storage"
+        Postgres[PostgreSQL]
+        S3[AWS S3]
+        GCS[Google Cloud Storage]
+    end
+
+    subgraph "External Services"
+        Figshare[Figshare]
+        Email[Email Service]
+    end
+
+    Browser -->|HTTP/HTTPS| Flask
+    Flask -->|Query/Update| Postgres
+    Flask -->|Enqueue Tasks| Redis
+    Redis -->|Process Tasks| Celery
+    Celery -->|File Operations| S3
+    Celery -->|File Operations| GCS
+    Celery -->|Publish| Figshare
+    Celery -->|Send Notifications| Email
+    Flask -->|Generate Signed URLs| S3
+    Flask -->|Generate Signed URLs| GCS
+```
+
+## Service Architecture
+
+```mermaid
+flowchart LR
+    subgraph "Frontend"
+        React[React App]
+        TypeScript[TypeScript Models]
+    end
+
+    subgraph "Backend API"
+        Endpoints[API Endpoints]
+        Controllers[Controllers]
+        Models[Data Models]
+        Auth[Authentication]
+    end
+
+    subgraph "Background Processing"
+        TaskQueue[Celery Queue]
+        Workers[Celery Workers]
+        Conversion[File Conversion]
+        Import[Data Import]
+        Export[Data Export]
+    end
+
+    subgraph "Storage"
+        MetadataDB[PostgreSQL]
+        FileStorage[S3/GCS]
+    end
+
+    React -->|API Calls| Endpoints
+    TypeScript -->|Data Types| React
+    Endpoints -->|Process Requests| Controllers
+    Controllers -->|CRUD Operations| Models
+    Models -->|Persist| MetadataDB
+    Controllers -->|Enqueue Tasks| TaskQueue
+    TaskQueue -->|Process| Workers
+    Workers -->|Execute| Conversion
+    Workers -->|Execute| Import
+    Workers -->|Execute| Export
+    Conversion -->|Read/Write| FileStorage
+    Import -->|Write| FileStorage
+    Export -->|Read| FileStorage
+    Auth -->|Secure| Endpoints
+```

@@ -7,7 +7,7 @@ import uuid
 import os
 import re
 
-from typing import List, Dict, Tuple, Optional
+from typing import Any, List, Dict, Tuple, Optional
 
 import json
 
@@ -1183,6 +1183,7 @@ def _add_s3_datafile(
     original_file_sha256=None,
     original_file_md5=None,
     forced_id=None,
+    custom_metadata: Optional[Dict[str, Any]] = None,
 ):
     assert type is not None
     received_type = type
@@ -1201,6 +1202,7 @@ def _add_s3_datafile(
 
     new_datafile = S3DataFile(
         name=new_datafile_name,
+        custom_metadata=custom_metadata,
         s3_bucket=s3_bucket,
         s3_key=s3_key,
         compressed_s3_key=compressed_s3_key,
@@ -1254,7 +1256,9 @@ def add_s3_datafile(
     return new_datafile
 
 
-def _add_virtual_datafile(name, datafile_id):
+def _add_virtual_datafile(
+    name, datafile_id, custom_metadata: Optional[Dict[str, Any]] = None
+):
     assert isinstance(datafile_id, str)
 
     datafile = DataFile.query.get(datafile_id)
@@ -1264,7 +1268,9 @@ def _add_virtual_datafile(name, datafile_id):
         datafile = datafile.underlying_data_file
 
     assert datafile.type != "virtual"
-    new_datafile = VirtualDataFile(name=name, underlying_data_file=datafile)
+    new_datafile = VirtualDataFile(
+        name=name, custom_metadata=custom_metadata, underlying_data_file=datafile
+    )
 
     db.session.add(new_datafile)
 
@@ -1283,16 +1289,23 @@ def _add_virtual_datafile(name, datafile_id):
     return new_datafile
 
 
-def add_virtual_datafile(name, datafile_id):
-    new_datafile = _add_virtual_datafile(name=name, datafile_id=datafile_id)
+def add_virtual_datafile(
+    name, datafile_id, custom_metadata: Optional[Dict[str, Any]] = None
+):
+    new_datafile = _add_virtual_datafile(
+        name=name, datafile_id=datafile_id, custom_metadata=custom_metadata
+    )
     db.session.commit()
 
     return new_datafile
 
 
-def _add_gcs_datafile(name, gcs_path, generation_id):
+def _add_gcs_datafile(name, gcs_path, generation_id, custom_metadata):
     new_datafile = GCSObjectDataFile(
-        name=name, gcs_path=gcs_path, generation_id=generation_id
+        name=name,
+        custom_metadata=custom_metadata,
+        gcs_path=gcs_path,
+        generation_id=generation_id,
     )
 
     db.session.add(new_datafile)
@@ -1369,24 +1382,50 @@ class InvalidTaigaIdFormat(Exception):
 
 def get_datafile_by_taiga_id(taiga_id: str, one_or_none=False) -> Optional[DataFile]:
     m = re.match("([a-z0-9-]+)\\.(\\d+)/(.*)", taiga_id)
+
     if m is None:
         raise InvalidTaigaIdFormat(taiga_id)
+
     permaname = m.group(1)
     version = m.group(2)
     filename = m.group(3)
+
     dataset_version = get_dataset_version_by_permaname_and_version(
         permaname, version, one_or_none=one_or_none
     )
-    if dataset_version is None:
+    if dataset_version == None:
         return None
 
     datafile = get_datafile_by_version_and_name(
         dataset_version.id, filename, one_or_none=one_or_none
     )
+
+    if datafile is None:
+        return None
+
+    return datafile
+
+
+def _resolve_virtual_datafile(datafile) -> S3DataFile:
     if datafile is None:
         return None
 
     return resolve_virtual_datafile(datafile)
+
+
+def get_underlying_file(datafile) -> S3DataFile:
+    return _resolve_virtual_datafile(datafile=datafile)
+
+
+def get_underlying_datafile_by_taiga_id(
+    taiga_id: str, one_or_none=False
+) -> Optional[DataFile]:
+    datafile = get_datafile_by_taiga_id(taiga_id, one_or_none)
+
+    if datafile is None:
+        return None
+
+    return _resolve_virtual_datafile(datafile)
 
 
 def get_comments_and_latest_dataset_version(dataset_id, added_datafiles):
@@ -1423,6 +1462,7 @@ def get_session_files_including_existing_files(session_id, dataset_version, data
             filename=file.name,
             data_file_id=file.id,
             commit=False,
+            custom_metadata=file.custom_metadata,
         )
 
     # Get the all_datafiles, including previous data files. These can all now be retrieved from the session.
@@ -1476,17 +1516,21 @@ def _add_datafiles_from_session(session_id: str):
     for file in added_files:
         if file.data_file is not None:
             new_datafile = _add_virtual_datafile(
-                name=file.filename, datafile_id=file.data_file.id
+                name=file.filename,
+                custom_metadata=file.custom_metadata,
+                datafile_id=file.data_file.id,
             )
         elif file.gcs_path is not None:
             new_datafile = _add_gcs_datafile(
                 name=file.filename,
+                custom_metadata=file.custom_metadata,
                 gcs_path=file.gcs_path,
                 generation_id=file.generation_id,
             )
         else:
             new_datafile = _add_s3_datafile(
                 name=file.filename,
+                custom_metadata=file.custom_metadata,
                 s3_bucket=file.s3_bucket,
                 s3_key=file.converted_s3_key,
                 compressed_s3_key=file.compressed_s3_key,
@@ -1618,6 +1662,7 @@ def add_upload_session_s3_file(
     initial_s3_key,
     s3_bucket,
     encoding: Optional[str],
+    custom_metadata: Optional[Dict[str, Any]] = None,
 ):
     initial_file_type = models.InitialFileType(initial_file_type)
 
@@ -1630,6 +1675,7 @@ def add_upload_session_s3_file(
     upload_session_file = UploadSessionFile(
         session_id=session_id,
         filename=filename,
+        custom_metadata=custom_metadata,
         initial_filetype=initial_file_type,
         initial_s3_key=initial_s3_key,
         s3_bucket=s3_bucket,
@@ -1638,17 +1684,27 @@ def add_upload_session_s3_file(
         compressed_s3_key=compressed_s3_key,
         encoding=encoding,
     )
+
     db.session.add(upload_session_file)
     db.session.commit()
     return upload_session_file
 
 
-def add_upload_session_virtual_file(session_id, filename, data_file_id, commit=True):
+def add_upload_session_virtual_file(
+    session_id,
+    filename,
+    data_file_id,
+    commit=True,
+    custom_metadata: Optional[Dict[str, Any]] = None,
+):
     data_file = DataFile.query.get(data_file_id)
     assert data_file is not None
 
     upload_session_file = UploadSessionFile(
-        session_id=session_id, filename=filename, data_file=data_file
+        session_id=session_id,
+        filename=filename,
+        custom_metadata=custom_metadata,
+        data_file=data_file,
     )
     db.session.add(upload_session_file)
 
@@ -1660,10 +1716,17 @@ def add_upload_session_virtual_file(session_id, filename, data_file_id, commit=T
     return upload_session_file
 
 
-def add_upload_session_gcs_file(session_id, filename, gcs_path, generation_id):
+def add_upload_session_gcs_file(
+    session_id,
+    filename,
+    gcs_path,
+    generation_id,
+    custom_metadata: Optional[Dict[str, Any]] = None,
+):
     upload_session_file = UploadSessionFile(
         session_id=session_id,
         filename=filename,
+        custom_metadata=custom_metadata,
         gcs_path=gcs_path,
         generation_id=generation_id,
     )

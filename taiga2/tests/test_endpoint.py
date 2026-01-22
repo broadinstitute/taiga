@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List, Optional
 import flask
 import json
 import pytest
@@ -10,7 +10,6 @@ import taiga2.controllers.endpoint as endpoint
 import taiga2.controllers.models_controller as models_controller
 
 from taiga2.models import generate_permaname, S3DataFile, Dataset, DatasetVersion
-from taiga2.models import db
 from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
 # <editor-fold desc="Fixtures and utils">
@@ -44,12 +43,18 @@ def second_upload_session():
 
 
 def _add_s3_file_to_upload_session(
-    sid, bucket="test_bucket", format="Raw", file_name="filekey", encoding=None
+    sid,
+    bucket="test_bucket",
+    format="Raw",
+    file_name="filekey",
+    encoding=None,
+    custom_metadata: Optional[Dict[str, Any]] = None,
 ):
     key = file_name
 
     uploadMetadata = {
         "filename": file_name,
+        "custom_metadata": custom_metadata,
         "filetype": "s3",
         "s3Upload": {"bucket": bucket, "format": format, "key": key},
     }
@@ -67,7 +72,7 @@ def _add_s3_file_to_upload_session(
 
 
 def _add_virtual_file_to_upload_session(
-    sid, name="name", taiga_id=None, datafile_id=None
+    sid, name="name", taiga_id=None, datafile_id=None, custom_metadata=None
 ):
     assert taiga_id is not None or datafile_id is not None
 
@@ -82,6 +87,7 @@ def _add_virtual_file_to_upload_session(
 
     uploadMetadata = {
         "filename": name,
+        "custom_metadata": custom_metadata,
         "filetype": "virtual",
         "existingTaigaId": taiga_id,
     }
@@ -120,25 +126,6 @@ def new_datafile():
 
 
 @pytest.fixture
-def datafile_to_add():
-    # TODO: These tests should be using the endpoint and not the model
-    new_datafile_name = "Added Datafile"
-
-    _new_datafile = models_controller.add_s3_datafile(
-        name=new_datafile_name,
-        s3_bucket="broadtaiga2prototype",
-        s3_key=models_controller.generate_convert_key(),
-        compressed_s3_key=models_controller.generate_compressed_key(),
-        type=S3DataFile.DataFileFormat.Raw,
-        encoding="UTF-8",
-        short_summary="short",
-        long_summary="long",
-    )
-
-    return _new_datafile
-
-
-@pytest.fixture
 def new_dataset(new_datafile):
     # TODO: These tests should be using the endpoint and not the model
     new_dataset_name = "New Dataset"
@@ -155,12 +142,12 @@ def new_dataset(new_datafile):
 
 
 @pytest.fixture
-def dataset_to_add_to(datafile_to_add):
+def dataset_to_add_to(new_datafile):
     # TODO: These tests should be using the endpoint and not the model
     _dataset_to_add = models_controller.add_dataset(
         name="Test Adding Datafiles",
         description="description",
-        datafiles_ids=[datafile_to_add.id],
+        datafiles_ids=[new_datafile.id],
     )
 
     return _dataset_to_add
@@ -171,6 +158,50 @@ def new_dataset_version(new_dataset, new_upload_session):
     new_dataset = _create_dataset_with_a_file()
     data_file_2 = "{}.1/datafile".format(new_dataset.permaname)
     _add_virtual_file_to_upload_session(new_upload_session.id, "alias", data_file_2)
+    _new_dataset_version = models_controller.get_latest_dataset_version(new_dataset.id)
+
+    return _new_dataset_version
+
+
+@pytest.fixture
+def new_dataset_version_with_new_metadata_on_virtual_file():
+    dataset1 = _create_dataset_with_a_file()
+    data_file_1 = dataset1.dataset_versions[0].datafiles[0]
+
+    folder = models_controller.add_folder(
+        "folder", models_controller.Folder.FolderType.folder, "folder desc"
+    )
+    folder_id = folder.id
+
+    vdatafile_name = "alias"
+    vdataset = _create_dataset_with_a_virtual_file(
+        folder_id=folder_id,
+        files=[(vdatafile_name, data_file_1.id)],
+        custom_metadata={"test_key": "test_val"},
+    )
+    _new_dataset_version = models_controller.get_latest_dataset_version(vdataset.id)
+
+    return _new_dataset_version
+
+
+@pytest.fixture
+def new_dataset_version_single_file(new_dataset, new_upload_session):
+    new_dataset = _create_dataset_with_a_file()
+    _new_dataset_version = models_controller.get_latest_dataset_version(new_dataset.id)
+
+    return _new_dataset_version
+
+
+@pytest.fixture
+def new_dataset_version_with_custom_metadata(new_dataset, new_upload_session):
+    new_dataset = _create_dataset_with_a_file()
+    data_file_2 = "{}.1/datafile".format(new_dataset.permaname)
+    _add_virtual_file_to_upload_session(
+        new_upload_session.id,
+        "virtual_file_with_metadata",
+        data_file_2,
+        custom_metadata={"new_key_1": "new_val_1"},
+    )
     _new_dataset_version = models_controller.get_latest_dataset_version(new_dataset.id)
 
     return _new_dataset_version
@@ -302,16 +333,33 @@ def test_create_dataset(session: Session, new_upload_session_file):
     assert datafile.long_summary == "long_summary_test"
 
 
-def _create_new_dataset_version_include_existing_files(
-    session, new_upload_session, new_dataset_version, dataset_to_add_to
+def _create_new_dataset_version_with_new_file_include_existing_files(
+    session,
+    new_upload_session,
+    new_dataset_version,
+    dataset,
+    custom_metadata: Optional[Dict[str, Any]] = None,
+    name: Optional[str] = "File to add",
 ):
     session_id = new_upload_session.id
     # Add an initial file to add during the creation of the new dataset
-    _add_s3_file_to_upload_session(sid=session_id, file_name="File to add")
+    _add_s3_file_to_upload_session(
+        sid=session_id, file_name=name, custom_metadata=custom_metadata
+    )
+
+    return _create_new_dataset_version_include_existing_files(
+        session, new_upload_session, new_dataset_version, dataset
+    )
+
+
+def _create_new_dataset_version_include_existing_files(
+    session, new_upload_session, new_dataset_version, dataset
+):
+    session_id = new_upload_session.id
 
     # datafile_names is only used for checking if existing names match new names of files to be added.
     # We purposely make this NOT happen for this test, so ignore this variable.
-    dataset_id = dataset_to_add_to.id
+    dataset_id = dataset.id
     new_description = "This is the new description"
     changes_description = "These are the changes"
 
@@ -336,6 +384,7 @@ def _create_new_dataset_version_include_existing_files(
             filename=file.name,
             data_file_id=file.id,
             commit=False,
+            custom_metadata=file.custom_metadata,
         )
         session.commit()
 
@@ -360,15 +409,207 @@ def test_create_new_dataset_version_from_dataset_with_existing_virtual_files(
     second_upload_session,
 ):
     # Make sure virtual datafiles never have underlying_data_files that are of type virtual
-    new_version1 = _create_new_dataset_version_include_existing_files(
+    new_version1 = _create_new_dataset_version_with_new_file_include_existing_files(
         session, new_upload_session, new_dataset_version, dataset_to_add_to
     )
-    new_version2 = _create_new_dataset_version_include_existing_files(
-        session, second_upload_session, new_version1, dataset_to_add_to
+    new_version2 = _create_new_dataset_version_with_new_file_include_existing_files(
+        session, second_upload_session, new_version1, new_version1.dataset
     )
 
+    assert new_version2.datafiles[len(new_version2.datafiles) - 1].type == "virtual"
+    assert (
+        new_version2.datafiles[
+            len(new_version2.datafiles) - 1
+        ].underlying_data_file.type
+        != "virtual"
+    )
+
+
+def test_add_custom_metadata_to_virtual_file(
+    session: SessionBase,
+    new_upload_session,
+    new_dataset_version_with_new_metadata_on_virtual_file,
+):
+    vdataset_datasfiles = (
+        new_dataset_version_with_new_metadata_on_virtual_file.datafiles
+    )
+
+    assert len(vdataset_datasfiles) == 1
+    assert vdataset_datasfiles[0].type == "virtual"
+    assert vdataset_datasfiles[0].custom_metadata == {"test_key": "test_val"}
+
+    _add_virtual_file_to_upload_session(
+        new_upload_session.id, name="alias2", datafile_id=vdataset_datasfiles[0].id
+    )
+
+    new_version1 = _create_new_dataset_version_with_new_file_include_existing_files(
+        session,
+        new_upload_session,
+        new_dataset_version_with_new_metadata_on_virtual_file,
+        new_dataset_version_with_new_metadata_on_virtual_file.dataset,
+        name="new v1",
+    )
+
+    # Test custom_metadata persists from 1 virtual file to the next in the chain
+    assert new_version1.datafiles[1].name == "alias2"
+    assert new_version1.datafiles[1].custom_metadata == {"test_key": "test_val"}
+    assert (
+        new_version1.datafiles[1].underlying_data_file_id
+        == vdataset_datasfiles[0].underlying_data_file_id
+    )
+
+    _add_virtual_file_to_upload_session(
+        new_upload_session.id,
+        name="alias3",
+        datafile_id=new_version1.datafiles[1].id,
+        custom_metadata={"test_key": "test_val_replacement"},
+    )
+
+    new_version2 = _create_new_dataset_version_with_new_file_include_existing_files(
+        session, new_upload_session, new_version1, new_version1.dataset, name="new v2"
+    )
+
+    # Test replace custom_metadata key with a new value
+    assert new_version2.datafiles[2].name == "alias3"
+    assert new_version2.datafiles[2].custom_metadata == {
+        "test_key": "test_val_replacement"
+    }
+    assert (
+        new_version2.datafiles[2].underlying_data_file_id
+        == new_version1.datafiles[1].underlying_data_file_id
+    )
+
+    _add_virtual_file_to_upload_session(
+        new_upload_session.id,
+        name="alias4",
+        datafile_id=new_version2.datafiles[2].id,
+        custom_metadata={"test_key_unique": "test_val_unique"},
+    )
+
+    new_version3 = _create_new_dataset_version_with_new_file_include_existing_files(
+        session, new_upload_session, new_version2, new_version2.dataset, name="new v4"
+    )
+
+    # Test replace custom_metadata key with a new value
+    assert new_version3.datafiles[3].name == "alias4"
+    assert new_version3.datafiles[3].custom_metadata == {
+        "test_key": "test_val_replacement",
+        "test_key_unique": "test_val_unique",
+    }
+    assert (
+        new_version3.datafiles[3].underlying_data_file_id
+        == new_version2.datafiles[2].underlying_data_file_id
+    )
+
+
+def test_per_file_custom_metadata(
+    session: SessionBase, new_upload_session, new_dataset, new_dataset_version
+):
+    session_id = new_upload_session.id
+
+    new_metadata = {"test": "new metadata"}
+    # Add a new file with metadata
+    _add_s3_file_to_upload_session(
+        sid=session_id, file_name="metadata", custom_metadata=new_metadata
+    )
+
+    new_version1 = _create_new_dataset_version_include_existing_files(
+        session, new_upload_session, new_dataset_version, new_dataset
+    )
+
+    assert len(new_version1.datafiles) == 3
+
+    assert new_version1.datafiles[2].type == "s3"
+    assert new_version1.datafiles[2].name == "metadata"
+    assert new_version1.datafiles[2].custom_metadata == new_metadata
+
+    assert new_version1.datafiles[1].type == "virtual"
+    assert new_version1.datafiles[1].name == "alias"
+    assert new_version1.datafiles[1].custom_metadata == None
+
+    new_metadata2 = {"test": "new metadata2"}
+    # Change metadata
+    _add_virtual_file_to_upload_session(
+        session_id,
+        "change_metadata",
+        datafile_id=new_version1.datafiles[2].id,
+        custom_metadata=new_metadata2,
+    )
+    new_version2 = _create_new_dataset_version_include_existing_files(
+        session, new_upload_session, new_version1, new_version1.dataset
+    )
+
+    assert len(new_version2.datafiles) == 4
+    assert new_version2.datafiles[2].type == "virtual"
+    assert new_version2.datafiles[2].name == "change_metadata"
+    assert (
+        new_version2.datafiles[2].underlying_data_file.id
+        == new_version1.datafiles[2].id
+    )
+    assert new_version2.datafiles[2].custom_metadata == {
+        **new_metadata,
+        **new_metadata2,
+    }
+
+    _add_virtual_file_to_upload_session(
+        session_id,
+        "persist_orig_metadata",
+        datafile_id=new_version1.datafiles[2].id,
+        custom_metadata=None,
+    )
+    new_version3 = _create_new_dataset_version_include_existing_files(
+        session, new_upload_session, new_version2, new_version2.dataset
+    )
+
+    assert len(new_version3.datafiles) == 5
+    assert new_version3.datafiles[4].type == "virtual"
+    assert new_version3.datafiles[4].name == "persist_orig_metadata"
+    assert (
+        new_version3.datafiles[4].underlying_data_file.id
+        == new_version1.datafiles[2].id
+    )
+    assert new_version3.datafiles[4].custom_metadata == new_metadata
+
+
+# Make sure underlying file ids from version 1 virtual datasets match
+def test_create_new_dataset_version_with_new_custom_metadata_on_virtual_file(
+    session: SessionBase,
+    new_upload_session,
+    new_dataset_version_with_custom_metadata,
+    dataset_to_add_to,
+    second_upload_session,
+):
+    # Make sure virtual datafiles never have underlying_data_files that are of type virtual
+    new_version1 = _create_new_dataset_version_include_existing_files(
+        session,
+        new_upload_session,
+        new_dataset_version_with_custom_metadata,
+        dataset_to_add_to,
+    )
+    assert new_version1.datafiles[1].custom_metadata == {"new_key_1": "new_val_1"}
+    assert new_version1.datafiles[1].type == "virtual"
+    assert new_version1.datafiles[1].underlying_data_file.type != "virtual"
+    file_0_id = new_version1.datafiles[0].id
+    file_1_id = new_version1.datafiles[0].id
+    underlying_file_0_id = new_version1.datafiles[0].underlying_data_file.id
+    underlying_file_1_id = new_version1.datafiles[1].underlying_data_file.id
+
+    new_version2 = _create_new_dataset_version_include_existing_files(
+        session, second_upload_session, new_version1, new_version1.dataset
+    )
+
+    # Both files should be virtual. Their underlying files should NOT be virtual. They should have
+    # unique ids compared to new_version2.datafiles. new_version1.datafiles and new_version2.datafiles
+    # should have the same underlying file ids.
+    assert new_version2.datafiles[1].custom_metadata == {"new_key_1": "new_val_1"}
     assert new_version2.datafiles[0].type == "virtual"
+    assert new_version2.datafiles[1].type == "virtual"
     assert new_version2.datafiles[0].underlying_data_file.type != "virtual"
+    assert new_version2.datafiles[1].underlying_data_file.type != "virtual"
+    assert new_version2.datafiles[0].id != file_0_id
+    assert new_version2.datafiles[1].id != file_1_id
+    assert new_version2.datafiles[0].underlying_data_file.id == underlying_file_0_id
+    assert new_version2.datafiles[1].underlying_data_file.id == underlying_file_1_id
 
 
 def test_create_new_dataset_version_from_session_ignore_existing_files(
@@ -377,8 +618,11 @@ def test_create_new_dataset_version_from_session_ignore_existing_files(
     # Test if add_existing_files False
     session_id = new_upload_session.id
 
+    custom_metadata = {"test_key": "test_val"}
     # Add an initial file to add during the creation of the new dataset
-    _add_s3_file_to_upload_session(sid=session_id, file_name="File to add")
+    _add_s3_file_to_upload_session(
+        sid=session_id, file_name="File to add", custom_metadata=custom_metadata
+    )
 
     dataset_id = dataset_to_add_to.id
     new_description = "This is the new description"
@@ -396,14 +640,18 @@ def test_create_new_dataset_version_from_session_ignore_existing_files(
 
     assert new_dataset_version.version == 2
     assert len(new_dataset_version.datafiles) == 2
+    assert new_dataset_version.datafiles[1].custom_metadata == None
+    assert new_dataset_version.datafiles[0].custom_metadata == custom_metadata
 
 
 # add_existing_files = True
 def test_create_new_dataset_version_from_session(
     session: Session, new_upload_session, new_dataset_version, dataset_to_add_to
 ):
-    new_dataset_version = _create_new_dataset_version_include_existing_files(
-        session, new_upload_session, new_dataset_version, dataset_to_add_to
+    new_dataset_version = (
+        _create_new_dataset_version_with_new_file_include_existing_files(
+            session, new_upload_session, new_dataset_version, dataset_to_add_to
+        )
     )
 
     assert new_dataset_version.version == 2
@@ -764,13 +1012,21 @@ from taiga2.models import DataFile
 
 
 def _create_dataset_with_a_virtual_file(
-    files, folder_id, name="virtual", description="description"
+    files,
+    folder_id,
+    name="virtual",
+    description="description",
+    custom_metadata: Optional[Dict[str, Any]] = None,
 ) -> Dataset:
     datafiles = []
     for file in files:
         datafile = DataFile.query.get(file[1])
         assert datafile is not None
-        datafiles.append(models_controller.add_virtual_datafile(file[0], datafile.id))
+        datafiles.append(
+            models_controller.add_virtual_datafile(
+                file[0], datafile.id, custom_metadata=custom_metadata
+            )
+        )
 
     dataset = models_controller.add_dataset(
         name=name, description=description, datafiles_ids=[x.id for x in datafiles]
