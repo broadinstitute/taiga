@@ -11,7 +11,7 @@ import * as Dialogs from "./Dialogs";
 import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";
 import { NotFound } from "./NotFound";
 import { SearchInput } from "./Search";
-import { CreateDatasetDialog } from "./modals/UploadForm";
+import { CreateDatasetDialog } from "./modals/UploadDialogs";
 import { toLocalDateString } from "../utilities/formats";
 import { relativePath } from "../utilities/route";
 import { LoadingOverlay } from "../utilities/loading";
@@ -103,9 +103,7 @@ export class FolderView extends React.Component<
     // respond to parameter change in scenario 3
     let oldId = prevProps.match.params.folderId;
     let newId = this.props.match.params.folderId;
-    console.log("componentDidUpdate");
     if (newId !== oldId) {
-      console.log("doFetch");
       this.doFetch().then(() => {
         this.logAccess();
       });
@@ -143,18 +141,15 @@ export class FolderView extends React.Component<
     } = {};
     let _folder: Folder.Folder = null;
 
-    console.log("get_folder fetch", this.props);
 
     return tapi
       .get_folder(this.props.match.params.folderId)
       .then((folder) => {
-        console.log("get_folder complete", folder);
         _folder = new Folder.Folder(folder);
         this.setState({ sharingEntries: [_folder] });
         return folder.entries;
       })
       .then((entries: Array<Folder.FolderEntries>) => {
-        console.log("get_folder entries", entries);
 
         // We want to ask the server a bulk of the datasets and the datasetVersions
         let datasetIds = entries
@@ -561,7 +556,6 @@ export class FolderView extends React.Component<
 
   render() {
     const { user } = this.props;
-    console.log("user", user);
 
     let entriesOutput: Array<any> = [];
     let navItems: MenuItem[] = [];

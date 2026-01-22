@@ -6,12 +6,12 @@ let Inline = Quill.import("blots/inline");
 class BoldBlot extends Inline {}
 BoldBlot.blotName = "bold";
 BoldBlot.tagName = "b";
-Quill.register("formats/bold", BoldBlot);
+Quill.register("formats/bold", BoldBlot, true);
 
 class ItalicBlot extends Inline {}
 ItalicBlot.blotName = "italic";
 ItalicBlot.tagName = "i";
-Quill.register("formats/bold", ItalicBlot);
+Quill.register("formats/bold", ItalicBlot, true);
 
 const modules = {
   toolbar: [

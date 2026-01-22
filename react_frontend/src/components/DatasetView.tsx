@@ -12,7 +12,7 @@ import * as Models from "../models/models";
 import { TaigaApi } from "../models/api";
 
 import * as Dialogs from "./Dialogs";
-import { CreateDatasetDialog, CreateVersionDialog } from "./modals/UploadForm";
+import {  CreateVersionDialog } from "./modals/UploadDialogs";
 
 import { toLocalDateString } from "../utilities/formats";
 import { LoadingOverlay } from "../utilities/loading";
@@ -461,7 +461,6 @@ export class DatasetView extends React.Component<
           // We stop the loading, and download the file because it is ready
           result.urls.forEach((url) => {
             window.location.href = url;
-            console.log("- " + url);
           });
         }
       })
@@ -1179,7 +1178,6 @@ export class DatasetView extends React.Component<
               initialValue={this.state.datasetVersion.description}
               save={(description: string) => {
                 this.setState({ showEditDescription: false });
-                console.log("Save description: " + description);
                 this.updateDescription(description);
               }}
             />

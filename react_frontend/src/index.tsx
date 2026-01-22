@@ -18,7 +18,7 @@ import { GroupListView } from "./components/GroupListView";
 import { GroupView } from "./components/GroupView";
 
 import { relativePath } from "./utilities/route";
-import { FormControl, Overlay, Popover, Tooltip } from "react-bootstrap";
+import { FormControl, Overlay, Popover } from "react-bootstrap";
 import { SHA } from "./version";
 
 interface AppProps {
@@ -122,12 +122,6 @@ class App extends React.Component<AppProps, AppState> {
       </Link>
     );
 
-    const tooltip = (
-      <Tooltip placement="right" className="in">
-        Hi
-      </Tooltip>
-    );
-
     return (
       <div id="main_react">
         <div id="header">
@@ -170,7 +164,7 @@ class App extends React.Component<AppProps, AppState> {
               container={this}
               target={() => ReactDOM.findDOMNode(this.state.target)}
             >
-              <Popover>{this.state.message}</Popover>
+              <Popover id="message">{this.state.message}</Popover>
             </Overlay>
           </div>
 
@@ -271,12 +265,8 @@ export class NoMatch extends React.Component<any, any> {
 // TODO: let UserRoute: Component<UserRouteProps, ComponentState> = Route as any
 
 export function initPage(element: any) {
-  console.log("initPage", tapi);
-  console.log("initPage2", tapi);
   Promise.all([tapi.get_user(), tapi.get_all_groups_for_current_user()]).then(
     ([user, groups]) => {
-      console.log("initPage3");
-      console.log("in initPage user", user);
       ReactDOM.render(
         <BrowserRouter>
           <App tapi={tapi} user={user} showGroupLink={groups.length > 0}>

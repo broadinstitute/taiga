@@ -14,7 +14,7 @@ Taiga 2 is built on the following stack:
 
 ### Database
 
-- PostGre (to store the app information)
+- PostgreSQL (to store the app information)
 - Psycopg2
 - SQLAlchemy
 - Amazon S3 (to store the files)

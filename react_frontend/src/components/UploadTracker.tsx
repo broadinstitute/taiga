@@ -94,7 +94,6 @@ export class UploadTracker {
     params: CreateVersionParams | CreateDatasetParams,
     uploadProgressCallback: (status: Array<UploadStatus>) => void
   ): Promise<DatasetIdAndVersionId> {
-    console.log("uploading, params:", params);
 
     this.uploadProgressCallback = uploadProgressCallback;
 
@@ -108,7 +107,6 @@ export class UploadTracker {
         return this.submitCreateDataset(credentials, uploadFiles, sid, params);
       })
       .then((datasetId) => {
-        console.log("Created new dataset", datasetId);
         return datasetId;
       });
   }
@@ -270,7 +268,6 @@ export class UploadTracker {
 
     this.uploadStatus = uploadStatus;
 
-    // console.log("kicking off upload of " + uploadPromises.length + " files");
 
     return Promise.all(uploadPromises).then(
       (successes: Array<boolean>): Promise<DatasetIdAndVersionId> => {
