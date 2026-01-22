@@ -45,6 +45,7 @@ google-cloud-error-reporting = "^1.14.0"
 google-cloud-storage = "^3.8.0"
 mailjet-rest = "^1.5.1"
 jsonpointer = "^3.0.0"
+psycopg2-binary = "^2.9.11"
 
 [tool.poetry.group.dev.dependencies]
 alembic = ">=1.17.2"
