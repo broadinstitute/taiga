@@ -6,7 +6,8 @@ log = logging.getLogger(__name__)
 
 def load_config(app, settings_override=None, settings_file=None):
     """Loads the configuration for the Flask application `app`. Uses taiga2.default_settings by default, and
-    override (if applicable) with the `settings_override` dictionary or `settings_file` filepath"""
+    override (if applicable) with the `settings_override` dictionary or `settings_file` filepath
+    """
     app.config.from_object("taiga2.default_settings")
     if settings_override is not None:
         app.config.update(settings_override)

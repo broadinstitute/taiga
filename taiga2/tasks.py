@@ -399,7 +399,7 @@ def convert_and_backfill_compressed_file(self, datafile_id: str, cache_entry_id:
     """
     Convert a HDF5 or Columnar file to CSV, then compress, upload to S3, and update
     DataFile compressed_s3_key and column types
-    
+
     Args:
         datafile_id (str): ID for the (S3) DataFile to update
         cache_entry_id (str): ID for the ConversionCache entry to update
@@ -424,7 +424,7 @@ def backfill_compressed_file(self, datafile_id: str, cache_entry_id: Optional[st
     """
     Get the S3 key from ConversionCache (if DataFile is not Raw) or s3_key field, then
     compress, upload to S3, and update DataFile compressed_s3_key and column types
-    
+
     Args:
         datafile_id (str): ID for the (S3) DataFile to update
         cache_entry_id (Optional[str]): ID for the ConversionCache entry to use, or

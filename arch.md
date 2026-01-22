@@ -21,6 +21,7 @@ Taiga uses a hybrid storage approach:
 - **S3**: Stores the actual data files (raw files, converted files, etc.)
 
 The database schema is managed through SQLAlchemy ORM with Alembic for migrations. Key models include:
+
 - `User`: User accounts and authentication
 - `Entry`: Base class for all content (folders, datasets, etc.)
 - `Folder`: Directory-like containers for organizing content
@@ -30,9 +31,9 @@ The database schema is managed through SQLAlchemy ORM with Alembic for migration
 
 In other words the schema is like:
 
-* Dataset has many
-  * DataVersions has many
-     * DataFile
+- Dataset has many
+  - DataVersions has many
+    - DataFile
 
 Those all have a "ownership model" (meaning, if you delete a dataset, all the versions and files should also be deleted).
 
@@ -48,6 +49,7 @@ The backend is built with Flask and Connexion (for OpenAPI/Swagger integration):
 4. **File Processing**: Conversion between different file formats (CSV, HDF5, etc.)
 
 Key components:
+
 - `taiga2/controllers/endpoint.py`: API endpoint implementations
 - `taiga2/controllers/models_controller.py`: Database operations
 - `taiga2/conv/`: File conversion utilities
@@ -102,4 +104,3 @@ Taiga is deployed as a containerized application:
 1. **Authentication**: Token-based authentication
 2. **Authorization**: Group-based access control (This is not really fully implemented. If there is code about group-based access, I am willing to bet it is half-implement if at all)
 3. **Secure Storage**: Taiga will sign URLs for fetching data from S3 and give them to the client, so that the transfer of large data happens directly between client and S3.
-

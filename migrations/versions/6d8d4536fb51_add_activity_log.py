@@ -5,6 +5,7 @@ Revises: 944a0b71b403
 Create Date: 2019-07-17 16:35:31.967083
 
 """
+
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -45,16 +46,14 @@ def upgrade():
     op.execute(
         "update users set name = 'admin', email = 'no-reply@broadinstitute.org' where email = 'admin@broadinstitute.org'"
     )
-    op.execute(
-        """
+    op.execute("""
         INSERT into activities (id, user_id, dataset_id, type, dataset_name, dataset_description)
         SELECT uuid_in(md5(random()::text || clock_timestamp()::text)::cstring), u.id, d.id, 'started_log', e.name, e.description
         FROM datasets d
         JOIN entries e ON e.id = d.id,
         users u
         WHERE u.name = 'admin'
-    """
-    )
+    """)
 
 
 def downgrade():

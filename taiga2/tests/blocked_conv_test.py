@@ -49,4 +49,3 @@ def test_csv_to_columnar(tmpdir):
     columnar_to_csv(StubProgress(), dst_hdf5_file, lambda: dest_csv)
 
     assert open(tall_table_file_path, "rt").read() == open(dest_csv, "rt").read()
-

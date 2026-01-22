@@ -25,6 +25,7 @@ class ProgressStub:
     def failed(self, *args, **kwargs):
         print("failed", args, kwargs)
 
+
 test_files_folder_path = "taiga2/tests/test_files"
 
 raw_file_name = "hello.txt"
@@ -60,9 +61,7 @@ large_table_path = os.path.join(test_files_folder_path, large_table_name)
         # (large_table_path, InitialFileType.TableCSV.value)
     ],
 )
-def test_upload_session_file(
-    filename, initial_file_type, session: Session, user_id
-):
+def test_upload_session_file(filename, initial_file_type, session: Session, user_id):
     print("initial_file_type", initial_file_type, filename)
 
     new_bucket = aws.s3.Bucket("bucket")
@@ -150,7 +149,6 @@ def test_non_utf8(tmpdir):
         row2 = next(r)
         assert row2["row"] == "2"
         assert row2["value"] == "R"
-
 
 
 def test_matrix_with_full_header_import(tmpdir):

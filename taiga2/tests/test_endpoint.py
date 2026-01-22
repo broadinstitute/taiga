@@ -13,7 +13,6 @@ from taiga2.models import generate_permaname, S3DataFile, Dataset, DatasetVersio
 from taiga2.models import db
 from taiga2.tests.test_utils import get_dict_from_response_jsonify
 
-
 # <editor-fold desc="Fixtures and utils">
 
 
@@ -317,8 +316,8 @@ def _create_new_dataset_version_include_existing_files(
     changes_description = "These are the changes"
 
     new_files = models_controller.get_upload_session_files_from_session(session_id)
-    previous_version_datafiles = models_controller.get_previous_version_and_added_datafiles(
-        None, dataset_id
+    previous_version_datafiles = (
+        models_controller.get_previous_version_and_added_datafiles(None, dataset_id)
     )
 
     datafile_names_to_exclude = [file.filename for file in new_files]

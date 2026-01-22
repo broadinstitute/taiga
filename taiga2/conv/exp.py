@@ -9,7 +9,6 @@ from taiga2.conv.util import _to_string_with_nan_mask
 DEFAULT_MAX_ELEMENTS_PER_BLOCK = int(50 * 1e6 // 8)
 
 
-
 def _get_matrix_dim_names(f, dedup_headers):
     row_header = [x.decode("utf8") for x in f["dim_0"]]
     col_header = [x.decode("utf8") for x in f["dim_1"]]

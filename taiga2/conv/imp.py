@@ -29,8 +29,10 @@ def _get_csv_dims(progress, filename, dialect, encoding):
                     first_row = row
                 row_count += 1
                 if row_count % 1000 == 0:
-                    message = "Scanning through file to determine size (line {})".format(
-                        row_count + 1
+                    message = (
+                        "Scanning through file to determine size (line {})".format(
+                            row_count + 1
+                        )
                     )
                     progress.progress(message, None, row_count + 1)
     except csv.Error as e:
@@ -137,7 +139,7 @@ def _make_import_result(
     current_process = psutil.Process(pid)
     log.info(
         "INFO: In _make_import_result, before processing. Memory is: {}GB".format(
-            current_process.memory_info().rss / (1024 ** 2)
+            current_process.memory_info().rss / (1024**2)
         )
     )
 
@@ -154,7 +156,7 @@ def _make_import_result(
 
     log.info(
         "INFO: In _make_import_result, after processing. Memory is: {}GB".format(
-            current_process.memory_info().rss / (1024 ** 2)
+            current_process.memory_info().rss / (1024**2)
         )
     )
 
@@ -298,7 +300,7 @@ def _read_rows_in_chunks(
         current_amount_MB_read = (
             (BYTES_PER_STR_OBJECT * len(data_row) * len(rows))
             + (total_bytes_read - last_file_position)
-        ) / 1024 ** 2
+        ) / 1024**2
 
         # If we have more rows than allowed by chunk or the memory used by the list is superior to 50MB, we yield
         if (len(rows) >= rows_per_chunk) or (current_amount_MB_read > 50):

@@ -23,7 +23,7 @@ def webpack():
 @click.command()
 @with_appcontext
 def run_worker():
-    """Starts a celery worker which will """
+    """Starts a celery worker which will"""
     import sys
     from flask import current_app
 

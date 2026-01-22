@@ -485,7 +485,7 @@ def convert_csv_to_tabular(
 
     if not rows_per_block:
         rows_per_block = MAX_MB_PER_CHUNK / (
-            (BYTES_PER_STR_OBJECT * len(datafile_columns)) / 1024 ** 2
+            (BYTES_PER_STR_OBJECT * len(datafile_columns)) / 1024**2
         )
 
     # print("Before conversion")

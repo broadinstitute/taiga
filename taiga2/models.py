@@ -723,6 +723,7 @@ class EntryRightsEnum(enum.Enum):
 
 # </editor-fold>
 
+
 # <editor-fold desc="Search">
 class Breadcrumb:
     """Object tracking the path we took to find a specific entry when performing a search

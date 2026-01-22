@@ -18,7 +18,6 @@ from taiga2.models import (
 from taiga2.models import generate_permaname
 from taiga2.models import EntryRightsEnum
 
-
 # from taiga2.tests.factories import GroupFactory, UserFactory, FolderFactory
 
 
@@ -61,6 +60,7 @@ def test_get_user(session):
 
 # </editor-fold>
 
+
 # <editor-fold desc="SessionUpload">
 def test_create_sessionUpload(session: Session):
     sessionUpload = mc.UploadSession()
@@ -69,6 +69,7 @@ def test_create_sessionUpload(session: Session):
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="Folder Tests">
 @pytest.fixture
@@ -159,9 +160,7 @@ def test_get_parent_folders(session: Session, new_folder, new_dummy_folder):
 
 
 # TODO: Test also with a DatasetVersion
-def test_add_folder_entry(
-    session: Session, new_folder, new_dummy_folder, new_dataset
-):
+def test_add_folder_entry(session: Session, new_folder, new_dummy_folder, new_dataset):
     updated_folder = mc.add_folder_entry(new_folder.id, new_dummy_folder.id)
 
     assert len(updated_folder.entries) == 1
@@ -177,6 +176,7 @@ def test_add_folder_entry(
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="Dataset Tests">
 @pytest.fixture()
@@ -307,6 +307,7 @@ def test_get_dataset_by_permaname(session: Session, new_dataset: Dataset):
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="DatasetVersion Tests">
 @pytest.fixture
@@ -447,6 +448,7 @@ def test_state_to_deleted(session: Session, new_dataset, new_dataset_version):
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="DataFile Tests">
 @pytest.fixture

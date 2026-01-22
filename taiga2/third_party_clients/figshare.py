@@ -249,21 +249,21 @@ def _update_article_information(figshare_article_info, dataset_version: DatasetV
                 and datafile.dataset_version.version <= dataset_version.version
             ):
                 figshare_article_info["files"][i]["taiga_datafile_id"] = datafile.id
-                figshare_article_info["files"][i][
-                    "taiga_datafile_readable_id"
-                ] = "{}.{}/{}".format(
-                    datafile.dataset_version.dataset.permaname,
-                    datafile.dataset_version.version,
-                    datafile.name,
+                figshare_article_info["files"][i]["taiga_datafile_readable_id"] = (
+                    "{}.{}/{}".format(
+                        datafile.dataset_version.dataset.permaname,
+                        datafile.dataset_version.version,
+                        datafile.name,
+                    )
                 )
                 if datafile.type == "virtual":
                     figshare_article_info["files"][i][
                         "underlying_file_id"
                     ] = datafile.underlying_file_id
                 else:
-                    figshare_article_info["files"][i][
-                        "underlying_file_id"
-                    ] = figshare_article_info["files"][i]["taiga_datafile_readable_id"]
+                    figshare_article_info["files"][i]["underlying_file_id"] = (
+                        figshare_article_info["files"][i]["taiga_datafile_readable_id"]
+                    )
 
     return figshare_article_info
 
@@ -295,7 +295,7 @@ def get_article_information(figshare_dataset_version_link: FigshareDatasetVersio
 
 def fetch_figshare_token() -> str:
     """Validates and returns token for current user.
-    
+
     Also removes invalid tokens.
     """
     token = mc.get_figshare_personal_token_for_current_user()

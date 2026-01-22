@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Create an application instance."""
+
 import os
 
 from taiga2.api_app import create_app
