@@ -46,7 +46,6 @@ export class TaigaApi {
     if (response.status >= 200 && response.status < 300) {
       return Promise.resolve(response);
     } else if (response.status === 400) {
-      console.log("response status 400");
       return response.json().then((errorDetail) => {
         console.log("reponse error text", errorDetail);
         return Promise.reject<Response>(new Error(errorDetail.detail));
