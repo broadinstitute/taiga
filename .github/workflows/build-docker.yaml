@@ -8,6 +8,9 @@ env:
   IMAGE_TAG: us.gcr.io/cds-docker-containers/taiga:ga-build-${{ github.run_number }}
   FINAL_IMAGE_TAG: us.gcr.io/cds-docker-containers/taiga:latest
 
+permissions:
+  security-events: write
+
 jobs:
   build-docker:
     runs-on: ubuntu-latest

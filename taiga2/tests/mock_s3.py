@@ -5,6 +5,7 @@ import io
 import tempfile
 import re
 
+
 # <editor-fold desc="MonkeyS3">
 class MockS3:
     def __init__(self, tmpdir):

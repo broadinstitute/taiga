@@ -186,11 +186,11 @@ class DoubleSerializer(object):
 
     def to_buffer(self, values):
         v_array = array.array("d", [float(v) for v in values])
-        return v_array.tostring()
+        return v_array.tobytes()
 
     def from_buffer(self, buffer):
         values = array.array("d")
-        values.fromstring(buffer)
+        values.frombytes(buffer)
         return ColumnCursor(values, float)
 
 
@@ -199,11 +199,11 @@ class IntSerializer(object):
 
     def to_buffer(self, values):
         v_array = array.array("i", [int(v) for v in values])
-        return v_array.tostring()
+        return v_array.tobytes()
 
     def from_buffer(self, buffer):
         values = array.array("i")
-        values.fromstring(buffer)
+        values.frombytes(buffer)
         return ColumnCursor(values, int)
 
 
@@ -485,12 +485,12 @@ def convert_csv_to_tabular(
 
     if not rows_per_block:
         rows_per_block = MAX_MB_PER_CHUNK / (
-            (BYTES_PER_STR_OBJECT * len(datafile_columns)) / 1024 ** 2
+            (BYTES_PER_STR_OBJECT * len(datafile_columns)) / 1024**2
         )
 
     # print("Before conversion")
     # tr.print_diff()
-    with open(input_file, "rU", encoding=encoding) as fd:
+    with open(input_file, "r", encoding=encoding) as fd:
         reader = csv.reader(fd, delimiter=delimiter)
 
         w = DatasetWriter(output_file, datafile_columns, rows_per_block=rows_per_block)
@@ -619,57 +619,3 @@ def _convert_tabular_to_csv(
 
         if output_file is not None:
             output.close()
-
-
-from typing import Callable
-
-
-def columnar_to_rds(
-    progress,
-    input_file,
-    temp_file_generator: Callable[[], str],
-    encoding="iso-8859-1",
-    max_rows=None,
-    max_bytes=50 * 1024 * 1024,
-):
-    # two step conversion: First convert to csvs, then for each use R to load CSV and write Rdata file.  Not clear that we can do better
-    # at the moment
-    csv_files = convert_tabular_to_multiple_csvs(
-        input_file,
-        temp_file_generator,
-        ",",
-        encoding="utf-8",
-        max_rows=max_rows,
-        max_bytes=max_bytes,
-    )
-    assert encoding in ["utf-8", "iso-8859-1"]
-    if encoding == "utf-8":
-        r_encoding = "UTF-8"
-    else:
-        r_encoding = "Latin-1"
-    rds_files = []
-    for csv_file in csv_files:
-        destination_file = temp_file_generator()
-
-        script = """
-            data <- read.table({csv_file}, sep=',', head=T, as.is=T, check.names=F, quote='\"', comment.char='', encoding={encoding});
-            saveRDS(data, file={dest})
-            """.format(
-            csv_file=r_escape_str(csv_file),
-            dest=r_escape_str(destination_file),
-            encoding=r_escape_str(r_encoding),
-        )
-
-        handle = subprocess.Popen(
-            ["R", "--vanilla"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-
-        stdout, stderr = handle.communicate(script.encode("utf8"))
-        if handle.returncode != 0:
-            raise Exception("R process failed: %s\n%s" % (stdout, stderr))
-
-        rds_files.append(destination_file)
-    return rds_files

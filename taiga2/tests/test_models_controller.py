@@ -1,6 +1,6 @@
 import pytest
 
-from flask_sqlalchemy import SessionBase
+from sqlalchemy.orm import Session
 
 import flask
 
@@ -17,7 +17,6 @@ from taiga2.models import (
 )
 from taiga2.models import generate_permaname
 from taiga2.models import EntryRightsEnum
-
 
 # from taiga2.tests.factories import GroupFactory, UserFactory, FolderFactory
 
@@ -61,14 +60,16 @@ def test_get_user(session):
 
 # </editor-fold>
 
+
 # <editor-fold desc="SessionUpload">
-def test_create_sessionUpload(session: SessionBase):
+def test_create_sessionUpload(session: Session):
     sessionUpload = mc.UploadSession()
 
     assert isinstance(sessionUpload, mc.UploadSession)
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="Folder Tests">
 @pytest.fixture
@@ -96,7 +97,7 @@ def new_dummy_folder():
 
 
 # TODO: Test multiple types of folders, depending on the populated attributes
-def test_add_folder(session: SessionBase, new_folder):
+def test_add_folder(session: Session, new_folder):
     current_user = flask.g.current_user
     added_folder = (
         session.query(Folder)
@@ -107,13 +108,13 @@ def test_add_folder(session: SessionBase, new_folder):
     assert new_folder == added_folder
 
 
-def test_get_folder(session: SessionBase, new_folder):
+def test_get_folder(session: Session, new_folder):
     added_folder = mc.get_folder(new_folder.id)
 
     assert new_folder == added_folder
 
 
-def test_update_folder_name(session: SessionBase, new_folder):
+def test_update_folder_name(session: Session, new_folder):
     new_folder_name = "New folder name"
     updated_folder = mc.update_folder_name(
         folder_id=new_folder.id, new_name=new_folder_name
@@ -123,7 +124,7 @@ def test_update_folder_name(session: SessionBase, new_folder):
     assert new_folder.name == new_folder_name
 
 
-def test_update_folder_description(session: SessionBase, new_folder):
+def test_update_folder_description(session: Session, new_folder):
     new_folder_description = "New folder description"
     updated_folder = mc.update_folder_description(new_folder.id, new_folder_description)
 
@@ -131,7 +132,7 @@ def test_update_folder_description(session: SessionBase, new_folder):
     assert new_folder.description == new_folder_description
 
 
-def test_get_one_parent_folders(session: SessionBase, new_folder, new_dummy_folder):
+def test_get_one_parent_folders(session: Session, new_folder, new_dummy_folder):
     new_folder.entries.append(new_dummy_folder)
 
     parent_folders = mc.get_parent_folders(new_dummy_folder.id)
@@ -140,7 +141,7 @@ def test_get_one_parent_folders(session: SessionBase, new_folder, new_dummy_fold
     assert parent_folders[0] == new_folder
 
 
-def test_get_parent_folders(session: SessionBase, new_folder, new_dummy_folder):
+def test_get_parent_folders(session: Session, new_folder, new_dummy_folder):
     folder_in_dummy_and_new_folder_folders = mc.add_folder(
         name="Inception",
         folder_type=Folder.FolderType.folder,
@@ -159,9 +160,7 @@ def test_get_parent_folders(session: SessionBase, new_folder, new_dummy_folder):
 
 
 # TODO: Test also with a DatasetVersion
-def test_add_folder_entry(
-    session: SessionBase, new_folder, new_dummy_folder, new_dataset
-):
+def test_add_folder_entry(session: Session, new_folder, new_dummy_folder, new_dataset):
     updated_folder = mc.add_folder_entry(new_folder.id, new_dummy_folder.id)
 
     assert len(updated_folder.entries) == 1
@@ -177,6 +176,7 @@ def test_add_folder_entry(
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="Dataset Tests">
 @pytest.fixture()
@@ -194,7 +194,7 @@ def new_dataset(new_datafile):
     return _new_dataset
 
 
-def test_add_dataset(session: SessionBase, new_datafile):
+def test_add_dataset(session: Session, new_datafile):
     new_dataset_name = "New Dataset"
     new_dataset_permaname = generate_permaname(new_dataset_name)
 
@@ -227,7 +227,7 @@ def test_add_dataset(session: SessionBase, new_datafile):
     assert added_dataset_by_permaname == _new_dataset
 
 
-def test_add_dataset_with_datafile(session: SessionBase, new_datafile):
+def test_add_dataset_with_datafile(session: Session, new_datafile):
     new_dataset_name = "New dataset with datasetVersion"
     new_dataset_description = "New dataset with datasetVersion"
 
@@ -249,7 +249,7 @@ def test_add_dataset_with_datafile(session: SessionBase, new_datafile):
     assert new_dataset.dataset_versions[0].datafiles[0] == new_datafile
 
 
-def test_update_dataset_name(session: SessionBase, new_dataset):
+def test_update_dataset_name(session: Session, new_dataset):
     new_dataset_name = "New name"
     updated_dataset = mc.update_dataset_name(new_dataset.id, new_dataset_name)
 
@@ -258,7 +258,7 @@ def test_update_dataset_name(session: SessionBase, new_dataset):
 
 
 # TODO: Deactivated for now since we are not yet doing updates
-# def test_update_dataset_contents(session: SessionBase,
+# def test_update_dataset_contents(session: Session,
 #                                  new_dataset,
 #                                  new_datafile):
 #     # TODO: This test showed an issue with the conftest.py with session on db fixture. Temp fix with function as scope which destroys db
@@ -291,14 +291,14 @@ def test_update_dataset_name(session: SessionBase, new_dataset):
 #     assert len(new_last_dataset_version.datafiles) == 1
 
 
-def test_get_dataset(session: SessionBase, new_dataset):
+def test_get_dataset(session: Session, new_dataset):
     fetched_dataset = mc.get_dataset(new_dataset.id)
 
     assert fetched_dataset == new_dataset
     assert fetched_dataset.id == new_dataset.id
 
 
-def test_get_dataset_by_permaname(session: SessionBase, new_dataset: Dataset):
+def test_get_dataset_by_permaname(session: Session, new_dataset: Dataset):
     fetched_dataset = mc.get_dataset_from_permaname(new_dataset.permaname)
 
     assert fetched_dataset == new_dataset
@@ -307,6 +307,7 @@ def test_get_dataset_by_permaname(session: SessionBase, new_dataset: Dataset):
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="DatasetVersion Tests">
 @pytest.fixture
@@ -326,7 +327,7 @@ def new_dataset_version(new_datafile):
     return _new_dataset_version
 
 
-def test_add_dataset_version(session: SessionBase):
+def test_add_dataset_version(session: Session):
     new_dataset_version_name = "New Dataset Version"
 
     new_dataset_name = "New Dataset for test_add_dataset_version"
@@ -391,7 +392,7 @@ def test_get_dataset_version_by_permaname_and_version(
 
 
 def test_get_dataset_version_by_dataset_id_and_dataset_version_id(
-    session: SessionBase, new_dataset, new_dataset_version
+    session: Session, new_dataset, new_dataset_version
 ):
     _dataset_version_id = new_dataset_version.dataset_id
 
@@ -403,7 +404,7 @@ def test_get_dataset_version_by_dataset_id_and_dataset_version_id(
 
 
 def test_state_approved_to_deprecated(
-    session: SessionBase, new_dataset, new_dataset_version
+    session: Session, new_dataset, new_dataset_version
 ):
     assert new_dataset_version.state == DatasetVersion.DatasetVersionState.approved
 
@@ -420,7 +421,7 @@ def test_state_approved_to_deprecated(
 
 
 def test_state_deprecated_to_approved(
-    session: SessionBase, new_dataset, new_dataset_version
+    session: Session, new_dataset, new_dataset_version
 ):
     dataset_version_id = new_dataset_version.id
 
@@ -434,7 +435,7 @@ def test_state_deprecated_to_approved(
     assert new_dataset_version.state == DatasetVersion.DatasetVersionState.approved
 
 
-def test_state_to_deleted(session: SessionBase, new_dataset, new_dataset_version):
+def test_state_to_deleted(session: Session, new_dataset, new_dataset_version):
     # TODO: Could benefit of parametrizing the state of the datasetVersion in case some switch are not allowed
     dataset_version_id = new_dataset_version.id
     mc.delete_dataset_version(dataset_version_id)
@@ -447,6 +448,7 @@ def test_state_to_deleted(session: SessionBase, new_dataset, new_dataset_version
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="DataFile Tests">
 @pytest.fixture
@@ -473,7 +475,7 @@ def new_datafile():
 # <editor-fold desc="Entry Tests">
 
 
-def test_get_entry(session: SessionBase, new_folder):
+def test_get_entry(session: Session, new_folder):
     entry = mc.get_entry(new_folder.id)
 
     # TODO: Find why entry (new_folder) is not an Entry
@@ -486,7 +488,7 @@ def test_get_entry(session: SessionBase, new_folder):
 # <editor-fold desc="Provenance Tests">
 
 
-def test_add_provenance_graph(session: SessionBase):
+def test_add_provenance_graph(session: Session):
     graph_permaname = "permaname_graph"
     graph_name = "Graph name"
     graph_user_id = flask.g.current_user.id
@@ -519,26 +521,26 @@ def new_graph():
     return _new_graph
 
 
-def test_get_provenance_graph(session: SessionBase, new_graph):
+def test_get_provenance_graph(session: Session, new_graph):
     _test_graph = mc.get_provenance_graph(new_graph.graph_id)
 
     assert _test_graph.graph_id == new_graph.graph_id
 
 
 # TODO: Implement node and edge tests
-# def test_add_provenance_node(session: SessionBase):
+# def test_add_provenance_node(session: Session):
 #     return False
 #
 #
-# def test_get_provenance_node(session: SessionBase):
+# def test_get_provenance_node(session: Session):
 #     return False
 #
 #
-# def test_add_provenance_edge(session: SessionBase):
+# def test_add_provenance_edge(session: Session):
 #     return False
 #
 #
-# def test_get_provenance_edge(session: SessionBase):
+# def test_get_provenance_edge(session: Session):
 #     return False
 
 # </editor-fold>
@@ -546,7 +548,7 @@ def test_get_provenance_graph(session: SessionBase, new_graph):
 # <editor-fold desc="Group">
 
 
-# def test_new_group(session: SessionBase):
+# def test_new_group(session: Session):
 #     name = "New group"
 #     new_group = GroupFactory(name=name)
 #
@@ -562,13 +564,13 @@ def current_user_in_admin_group():
     return admin_group
 
 
-def test_admin_group_exists(session: SessionBase, current_user_in_admin_group):
+def test_admin_group_exists(session: Session, current_user_in_admin_group):
     get_groups = mc.get_all_groups()
 
     assert len(get_groups) != 0
 
 
-def test_add_group_user_association_not_in_admin_group(session: SessionBase):
+def test_add_group_user_association_not_in_admin_group(session: Session):
     new_user = mc.add_user("test", "test@group.com")
     new_group = mc.add_group("test")
 
@@ -577,7 +579,7 @@ def test_add_group_user_association_not_in_admin_group(session: SessionBase):
 
 
 def test_add_group_user_association_in_admin_group(
-    session: SessionBase, current_user_in_admin_group
+    session: Session, current_user_in_admin_group
 ):
     new_user = mc.add_user("test", "test@group.com")
     new_group = mc.add_group("test")
@@ -591,7 +593,7 @@ def test_add_group_user_association_in_admin_group(
     assert len(group.users) == 1
 
 
-def test_remove_group_user_association_not_in_admin_group(session: SessionBase):
+def test_remove_group_user_association_not_in_admin_group(session: Session):
     new_user = mc.add_user("test", "test@group.com")
     new_group = mc.add_group("test")
 
@@ -600,7 +602,7 @@ def test_remove_group_user_association_not_in_admin_group(session: SessionBase):
 
 
 def test_remove_group_user_association_in_admin_group(
-    session: SessionBase, current_user_in_admin_group
+    session: Session, current_user_in_admin_group
 ):
     new_user = mc.add_user("test", "test@group.com")
     new_group = mc.add_group("test")
@@ -610,7 +612,7 @@ def test_remove_group_user_association_in_admin_group(
     assert new_user not in group.users
 
 
-def test_view_not_owned(session: SessionBase):
+def test_view_not_owned(session: Session):
     new_user = mc.add_user("test", "test@group.com")
     flask.g.current_user = new_user
 
@@ -627,7 +629,7 @@ def test_view_not_owned(session: SessionBase):
     assert right_not_owned == EntryRightsEnum.can_view
 
 
-def test_edit_owned(session: SessionBase):
+def test_edit_owned(session: Session):
     new_user = mc.add_user("test", "test@group.com")
     flask.g.current_user = new_user
 
@@ -650,7 +652,7 @@ def test_edit_owned(session: SessionBase):
 # <editor-fold desc="JumpTo"?
 
 
-def test_jumpto_dataset_id(session: SessionBase, new_dataset: Dataset):
+def test_jumpto_dataset_id(session: Session, new_dataset: Dataset):
     param_dataset_id = new_dataset.id
     param_latest_dataset_version = mc.get_latest_dataset_version(param_dataset_id)
     param_latest_dataset_version_id = param_latest_dataset_version.id
@@ -662,7 +664,7 @@ def test_jumpto_dataset_id(session: SessionBase, new_dataset: Dataset):
     assert param_latest_dataset_version_id == returned_latest_dataset_version_id
 
 
-def test_jumpto_dataset_version_id(session: SessionBase, new_dataset: Dataset):
+def test_jumpto_dataset_version_id(session: Session, new_dataset: Dataset):
     param_latest_dataset_version = mc.get_latest_dataset_version(new_dataset.id)
     param_latest_dataset_version_id = param_latest_dataset_version.id
 
@@ -673,7 +675,7 @@ def test_jumpto_dataset_version_id(session: SessionBase, new_dataset: Dataset):
     assert param_latest_dataset_version_id == returned_latest_dataset_version_id
 
 
-def test_basic_create_virtual_dataset(session: SessionBase):
+def test_basic_create_virtual_dataset(session: Session):
     # create mock data of a single dataset and a virtual dataset which references the files but with a different name
     _new_datafile = mc.add_s3_datafile(
         name="underlying-datafile",

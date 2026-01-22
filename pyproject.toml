@@ -1,0 +1,59 @@
+[tool.poetry]
+name = "taiga2"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.11"
+boto3 = ">=1.42.4,<2.0.0"
+celery = "5.6.0"
+certifi = ">2019.6.16"
+flask = ">=3.1.2,<4.0.0"
+flask-marshmallow = ">=0.10.0,<0.12.0"
+flask-migrate = ">=4.1.0,<5.0.0"
+flask-sqlalchemy = ">=3.0.0"
+#google-cloud-error-reporting = "1.1.0"
+#google-cloud-storage = "1.35.0"
+h5py = ">=3.15.1,<4.0.0"
+humanize = ">=4.14.0"
+#jsonpointer = "2.0"
+#jsonschema = "2.6.0"
+#kombu = "4.2.1"
+#mailjet-rest = "1.3.3"
+#markupsafe = "1.1.1"
+marshmallow = ">=2.15.1,<3.0.0"
+marshmallow-enum = "1.0"
+marshmallow-oneofschema = "1.0.3"
+marshmallow-sqlalchemy = ">=0.12.1"
+numpy = ">=1.26.4,<2.0.0"
+psutil = "5.6.7"
+pyyaml = ">=6.0.3"
+redis = ">=7.1.0,<8.0.0"
+requests = ">=2.32.5,<3.0.0"
+sqlalchemy = ">=1.4.54,<2.0.0"
+#swagger-spec-validator = "2.4.3"
+#typing-extensions = "3.7.4.3"
+#urllib3 = "1.25.11"
+#werkzeug = "0.15.4"
+connexion={version = ">=2.0.0,<3.0.0", extras = ["flask"]} 
+
+#[tool.poetry.extras]
+#connexion=["flask"]
+google-cloud-error-reporting = "^1.14.0"
+google-cloud-storage = "^3.8.0"
+mailjet-rest = "^1.5.1"
+jsonpointer = "^3.0.0"
+
+[tool.poetry.group.dev.dependencies]
+alembic = ">=1.17.2"
+factory-boy = ">=2.9.2"
+#flask-script = "2.0.5"
+#flask-shell-ipython = "0.4.1"
+pre-commit = ">=1.17.0"
+pytest = ">=3.0.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

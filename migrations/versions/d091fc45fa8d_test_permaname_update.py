@@ -5,9 +5,9 @@ Revises: 2af60fdf97d1
 Create Date: 2019-07-23 12:16:08.303441
 
 """
+
 from alembic import op
 import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision = "d091fc45fa8d"
@@ -31,14 +31,12 @@ def upgrade():
         sa.PrimaryKeyConstraint("permaname", name=op.f("pk_dataset_permanames")),
     )
 
-    op.execute(
-        """
+    op.execute("""
             INSERT into dataset_permanames (permaname, dataset_id, creation_date)
             SELECT d.permaname, d.id, e.creation_date
             FROM datasets d
             JOIN entries e ON e.id = d.id
-        """
-    )
+        """)
 
     op.drop_column("datasets", "permaname")
     # ### end Alembic commands ###
@@ -51,8 +49,7 @@ def downgrade():
         sa.Column("permaname", sa.TEXT(), autoincrement=False, nullable=True),
     )
 
-    op.execute(
-        """
+    op.execute("""
             UPDATE
                 datasets
             SET
@@ -60,8 +57,7 @@ def downgrade():
             FROM
                 datasets d
                 JOIN dataset_permanames p ON d.id = p.dataset_id
-        """
-    )
+        """)
 
     op.drop_table("dataset_permanames")
     # ### end Alembic commands ###

@@ -2,9 +2,8 @@ import pytest
 import os
 
 import csv
-from taiga2.tests.exp_conv_test import ProgressStub
 
-from flask_sqlalchemy import SessionBase
+from sqlalchemy.orm import Session
 
 from taiga2.third_party_clients.aws import aws
 from taiga2.models import InitialFileType
@@ -14,10 +13,18 @@ from taiga2.conv.imp import _get_csv_dims
 from taiga2.conv import (
     csv_to_columnar,
     columnar_to_csv,
-    columnar_to_rds,
     csv_to_hdf5,
     hdf5_to_csv,
 )
+
+
+class ProgressStub:
+    def progress(self, *args, **kwargs):
+        print("progress", args, kwargs)
+
+    def failed(self, *args, **kwargs):
+        print("failed", args, kwargs)
+
 
 test_files_folder_path = "taiga2/tests/test_files"
 
@@ -54,9 +61,7 @@ large_table_path = os.path.join(test_files_folder_path, large_table_name)
         # (large_table_path, InitialFileType.TableCSV.value)
     ],
 )
-def test_upload_session_file(
-    filename, initial_file_type, session: SessionBase, user_id
-):
+def test_upload_session_file(filename, initial_file_type, session: Session, user_id):
     print("initial_file_type", initial_file_type, filename)
 
     new_bucket = aws.s3.Bucket("bucket")
@@ -131,13 +136,12 @@ def test_get_large_csv_dims_wrong_delimeter(tmpdir):
 def test_non_utf8(tmpdir):
     dest = str(tmpdir.join("dest.columnar"))
     final = str(tmpdir.join("final.csv"))
-    rds_dest = str(tmpdir.join("final.rds"))
 
     csv_to_columnar(None, nonutf8_file_path, dest)
     columnar_to_csv(None, dest, lambda: final)
     import csv
 
-    with open(final, "rU") as fd:
+    with open(final, "r") as fd:
         r = csv.DictReader(fd)
         row1 = next(r)
         assert row1["row"] == "1"
@@ -145,9 +149,6 @@ def test_non_utf8(tmpdir):
         row2 = next(r)
         assert row2["row"] == "2"
         assert row2["value"] == "R"
-
-    # lastly, make sure we don't get an exception when converting to rds because R has its own ideas about encoding
-    columnar_to_rds(None, dest, lambda: rds_dest)
 
 
 def test_matrix_with_full_header_import(tmpdir):

@@ -346,9 +346,9 @@ def get_dataset_versions(datasetVersionIdsDict):
     dataset_version_schema = schemas.DatasetVersionSchema(many=True)
 
     # TODO: IMPORTANT and bug potential => Manage here the missing context depending on the dataset_v
-    dataset_version_schema.context[
-        "entry_user_right"
-    ] = models_controller.EntryRightsEnum.can_view
+    dataset_version_schema.context["entry_user_right"] = (
+        models_controller.EntryRightsEnum.can_view
+    )
 
     json_data_dataset_versions = dataset_version_schema.dump(dataset_versions).data
 
@@ -358,8 +358,10 @@ def get_dataset_versions(datasetVersionIdsDict):
 @validate
 def get_dataset_version_from_dataset(datasetId, datasetVersionId):
 
-    dataset_version = models_controller.get_dataset_version_by_dataset_id_and_dataset_version_id(
-        datasetId, datasetVersionId, one_or_none=True
+    dataset_version = (
+        models_controller.get_dataset_version_by_dataset_id_and_dataset_version_id(
+            datasetId, datasetVersionId, one_or_none=True
+        )
     )
     if dataset_version is None:
         # if we couldn't find a version by dataset_version_id, try permaname and version number.
@@ -371,8 +373,10 @@ def get_dataset_version_from_dataset(datasetId, datasetVersionId):
             pass
 
         if version_number is not None:
-            dataset_version = models_controller.get_dataset_version_by_permaname_and_version(
-                datasetId, version_number, one_or_none=True
+            dataset_version = (
+                models_controller.get_dataset_version_by_permaname_and_version(
+                    datasetId, version_number, one_or_none=True
+                )
             )
         else:
             dataset_version = models_controller.get_latest_dataset_version_by_permaname(
@@ -682,9 +686,11 @@ def _handle_version_addition_activity(
         user_id=current_user.id,
         dataset_id=new_dataset_version.dataset_id,
         type=Activity.ActivityType.added_version,
-        dataset_description=new_description
-        if new_description != latest_dataset_version.description
-        else None,
+        dataset_description=(
+            new_description
+            if new_description != latest_dataset_version.description
+            else None
+        ),
         dataset_version=new_dataset_version.version,
         comments=comments,
     )
@@ -1491,9 +1497,9 @@ def upload_dataset_version_to_figshare(figshareDatasetVersionLink):
             datafile = datafile.underlying_data_file
 
         if datafile.compressed_s3_key is None:
-            file_to_upload[
-                "failure_reason"
-            ] = "Cannot upload files without compressed S3 file"
+            file_to_upload["failure_reason"] = (
+                "Cannot upload files without compressed S3 file"
+            )
             continue
 
         task = upload_datafile_to_figshare.delay(
@@ -1546,9 +1552,9 @@ def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
             elif action == "Add":
                 datafile_id = file_to_update["datafile_id"]
                 if datafile_id is None:
-                    file_to_update[
-                        "failure_reason"
-                    ] = "Cannot add or replace file without datafile ID"
+                    file_to_update["failure_reason"] = (
+                        "Cannot add or replace file without datafile ID"
+                    )
                     continue
 
                 datafile = models_controller.get_datafile(datafile_id)
@@ -1560,9 +1566,9 @@ def update_figshare_article_with_dataset_version(figshareDatasetVersionLink):
                     datafile = datafile.underlying_data_file
 
                 if datafile.compressed_s3_key is None:
-                    file_to_update[
-                        "failure_reason"
-                    ] = "Cannot upload files without compressed S3 file"
+                    file_to_update["failure_reason"] = (
+                        "Cannot upload files without compressed S3 file"
+                    )
                     continue
 
                 task = upload_datafile_to_figshare.delay(
@@ -1623,8 +1629,10 @@ def get_figshare_links_for_client(datasetVersionId: str):
         figshare_file_ids_to_download_url = {
             f["id"]: f["download_url"] for f in article_files
         }
-        figshare_datafile_links = models_controller.get_figshare_datafile_links_for_dataset_version_link(
-            dataset_version.figshare_dataset_version_link.id
+        figshare_datafile_links = (
+            models_controller.get_figshare_datafile_links_for_dataset_version_link(
+                dataset_version.figshare_dataset_version_link.id
+            )
         )
 
         taiga_figshare_map = {
@@ -1635,12 +1643,16 @@ def get_figshare_links_for_client(datasetVersionId: str):
             ): {
                 "download_url": figshare_file_ids_to_download_url[l.figshare_file_id],
                 "format": l.datafile.format.value,
-                "encoding": l.datafile.encoding
-                if l.datafile.type == "s3"
-                else l.datafile.underlying_data_file.encoding,
-                "column_types": l.datafile.column_types_as_json
-                if l.datafile.type == "s3"
-                else l.datafile.underlying_data_file.column_types_as_json,
+                "encoding": (
+                    l.datafile.encoding
+                    if l.datafile.type == "s3"
+                    else l.datafile.underlying_data_file.encoding
+                ),
+                "column_types": (
+                    l.datafile.column_types_as_json
+                    if l.datafile.type == "s3"
+                    else l.datafile.underlying_data_file.column_types_as_json
+                ),
             }
             for l in figshare_datafile_links
         }

@@ -142,6 +142,7 @@ def _change_connected_user(new_user):
 
 # </editor-fold>
 
+
 # <editor-fold desc="Folder">
 def add_folder(name, folder_type, description):
     creator = get_current_session_user()
@@ -265,6 +266,7 @@ def get_parent_folders(entry_id):
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="Dataset">
 def add_dataset(
@@ -629,6 +631,7 @@ def get_dataset_version_id_from_any(submitted_by_user__data: str):
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="DatasetVersion">
 def _add_dataset_version(
@@ -1030,6 +1033,7 @@ def delete_dataset_version(
 
 # </editor-fold>
 
+
 # <editor-fold desc="Entry">
 def get_entry(entry_id):
     entry = db.session.query(Entry).filter(Entry.id == entry_id).one()
@@ -1163,6 +1167,7 @@ def can_view(entry_id):
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="DataFile">
 def _add_s3_datafile(
@@ -1629,22 +1634,15 @@ def get_upload_session_files_from_session(session_id: str) -> List[UploadSession
 
 # </editor-fold>
 
+
 # <editor-fold desc="Upload Session File">
 class EnumS3FolderPath(enum.Enum):
     """Enum which could be useful to have a central way of manipulating the s3 prefixes"""
 
-    Upload = (
-        "upload/"
-    )  # key prefix which all new uploads are put under.  These are transient until conversion completes
-    Convert = (
-        "convert/"
-    )  # key prefix used for data converted to canonical form.  These are the authorative source.
-    Compress = (
-        "compressed/"
-    )  # key prefix used for compressed raw data.  These are the authorative source.
-    Export = (
-        "export/"
-    )  # key prefix used for results converted for export.  These are transient because they can be re-generated.
+    Upload = "upload/"  # key prefix which all new uploads are put under.  These are transient until conversion completes
+    Convert = "convert/"  # key prefix used for data converted to canonical form.  These are the authorative source.
+    Compress = "compressed/"  # key prefix used for compressed raw data.  These are the authorative source.
+    Export = "export/"  # key prefix used for results converted for export.  These are transient because they can be re-generated.
 
 
 def generate_convert_key():
@@ -1958,6 +1956,7 @@ def find_datafile(
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="Provenance">
 def add_graph(

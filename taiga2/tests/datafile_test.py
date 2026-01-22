@@ -6,8 +6,6 @@ from taiga2.tests.mock_s3 import parse_presigned_url
 from taiga2.controllers.models_controller import find_datafile
 import pytest
 
-from flask_sqlalchemy import SessionBase
-
 MAX_TIME = 5
 
 
@@ -90,7 +88,6 @@ def _as_tsv(rows):
     [
         ("table", "csv", lambda x: x == b"a,b\r\n1,2\r\n"),
         ("table", "tsv", lambda x: x == b"a\tb\r\n1\t2\r\n"),
-        ("table", "rds", lambda x: len(x) > 0),
         ("matrix", "csv", lambda x: x == b",a,b\r\nc,1.0,2.0\r\n"),
         ("matrix", "tsv", lambda x: x == b"\ta\tb\r\nc\t1.0\t2.0\r\n"),
         (
@@ -106,7 +103,6 @@ def _as_tsv(rows):
                 ]
             ),
         ),
-        ("matrix", "rds", lambda x: len(x) > 0),
     ],
 )
 def test_dataset_export(
