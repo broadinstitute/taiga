@@ -42,6 +42,9 @@ connexion={version = ">=2.0.0,<3.0.0", extras = ["flask"]}
 #[tool.poetry.extras]
 #connexion=["flask"]
 google-cloud-error-reporting = "^1.14.0"
+google-cloud-storage = "^3.8.0"
+mailjet-rest = "^1.5.1"
+jsonpointer = "^3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 alembic = ">=1.17.2"
