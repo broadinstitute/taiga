@@ -1,5 +1,6 @@
 from google.cloud import error_reporting
 from flask import request
+import flask
 
 
 class ExceptionReporter:
