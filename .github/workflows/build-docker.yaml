@@ -1,8 +1,6 @@
 name: Build Taiga image
 
-on:
-  push:
-    branches: main
+on: push
 
 env:
   IMAGE_TAG: us.gcr.io/cds-docker-containers/taiga:ga-build-${{ github.run_number }}
@@ -33,6 +31,8 @@ jobs:
       - name: Push Docker image
         run: docker push ${{ env.IMAGE_TAG }}
       - name: Tag as latest
+        if: github.ref == 'refs/heads/main'
         run: docker tag ${{ env.IMAGE_TAG }} ${{ env.FINAL_IMAGE_TAG }}
       - name: Push Docker image
+        if: github.ref == 'refs/heads/main'
         run: docker push ${{ env.FINAL_IMAGE_TAG }}
