@@ -426,7 +426,7 @@ def test_create_new_dataset_version_from_dataset_with_existing_virtual_files(
 
 
 def test_add_custom_metadata_to_virtual_file(
-    session: SessionBase,
+    session: Session,
     new_upload_session,
     new_dataset_version_with_new_metadata_on_virtual_file,
 ):
@@ -503,7 +503,7 @@ def test_add_custom_metadata_to_virtual_file(
 
 
 def test_per_file_custom_metadata(
-    session: SessionBase, new_upload_session, new_dataset, new_dataset_version
+    session: Session, new_upload_session, new_dataset, new_dataset_version
 ):
     session_id = new_upload_session.id
 
@@ -573,7 +573,7 @@ def test_per_file_custom_metadata(
 
 # Make sure underlying file ids from version 1 virtual datasets match
 def test_create_new_dataset_version_with_new_custom_metadata_on_virtual_file(
-    session: SessionBase,
+    session: Session,
     new_upload_session,
     new_dataset_version_with_custom_metadata,
     dataset_to_add_to,
