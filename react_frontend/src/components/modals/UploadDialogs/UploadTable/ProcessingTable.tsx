@@ -12,13 +12,17 @@ function ProcessingTable({ files }: ProcessingTableProps) {
     let progressBar = file.progressMessage as React.ReactNode;
 
     if (file.progress != null) {
-      progressBar = (
-        <div className="progress">
-          <div className="progress-bar" style={{ width: file.progress + "%" }}>
-            {file.progressMessage}
+      if (file.progressMessage?.startsWith("Error")) {
+        progressBar = <code>{file.progressMessage}</code>;
+      } else {
+        progressBar = (
+          <div className="progress">
+            <div className="progress-bar" style={{ width: file.progress + "%" }}>
+              {file.progressMessage}
+            </div>
           </div>
-        </div>
-      );
+        );
+      }
     }
 
     return (
@@ -30,15 +34,18 @@ function ProcessingTable({ files }: ProcessingTableProps) {
   });
 
   return (
-    <table className={cx('table', styles.table)}>
-      <thead>
-        <tr>
-          <th className={styles.thName}>Name</th>
-          <th className={styles.thProgress}>Progress</th>
-        </tr>
-      </thead>
-      <tbody>{rows}</tbody>
-    </table>
+    <>
+      <div className={styles.opaqueHeaderBackground} />
+      <table className={cx("table", styles.table)}>
+        <thead>
+          <tr>
+            <th className={styles.thName}>Name</th>
+            <th className={styles.thProgress}>Progress</th>
+          </tr>
+        </thead>
+        <tbody>{rows}</tbody>
+      </table>
+    </>
   );
 }
 
