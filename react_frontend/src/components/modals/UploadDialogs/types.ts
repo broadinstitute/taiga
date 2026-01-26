@@ -42,4 +42,5 @@ export interface CreateVersionDialogProps extends DialogProps {
     params: CreateVersionParams | CreateDatasetParams,
     uploadProgressCallback: (status: Array<UploadStatus>) => void
   ): Promise<any>;
+  checkConcurrentEdit(): Promise<boolean>;
 }

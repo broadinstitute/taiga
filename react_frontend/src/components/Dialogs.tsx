@@ -91,7 +91,11 @@ export class EditName extends React.Component<EditStringProps, any> {
         onRequestClose={this.props.cancel}
         contentLabel="EditName"
       >
-        <form>
+        <form
+          onSubmit={e => {
+            formSubmitSave(this, e, this.textInput.value, null);
+          }}
+        >
           <div className="modal-content">
             <div className="modal-body">
               <div className="form-group">
@@ -115,13 +119,7 @@ export class EditName extends React.Component<EditStringProps, any> {
               >
                 Close
               </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                onClick={(e) => {
-                  formSubmitSave(this, e, this.textInput.value, null);
-                }}
-              >
+              <button type="submit" className="btn btn-primary">
                 Save changes
               </button>
             </div>
@@ -145,7 +143,11 @@ export class EditDescription extends React.Component<EditStringProps, any> {
         onRequestClose={this.props.cancel}
         contentLabel="EditDescription"
       >
-        <form>
+        <form
+          onSubmit={e => {
+            formSubmitSave(this, e, this.textArea.value, null);
+          }}
+        >
           <div className="modal-content">
             <div className="modal-body">
               <div className="form-group">
@@ -181,13 +183,7 @@ export class EditDescription extends React.Component<EditStringProps, any> {
               >
                 Close
               </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                onClick={(e) => {
-                  formSubmitSave(this, e, this.textArea.value, null);
-                }}
-              >
+              <button type="submit" className="btn btn-primary">
                 Save changes
               </button>
             </div>
@@ -211,7 +207,11 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
         onRequestClose={this.props.cancel}
         contentLabel="CreateFolder"
       >
-        <form>
+        <form
+          onSubmit={e => {
+            formSubmitSave(this, e, this.textInput.value, this.textArea.value);
+          }}
+        >
           <div className="modal-content">
             <div className="modal-body">
               <div className="form-group">
@@ -246,18 +246,7 @@ export class CreateFolder extends React.Component<CreateFolderProps, any> {
               >
                 Close
               </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                onClick={(e) => {
-                  formSubmitSave(
-                    this,
-                    e,
-                    this.textInput.value,
-                    this.textArea.value
-                  );
-                }}
-              >
+              <button type="submit" className="btn btn-primary">
                 Save changes
               </button>
             </div>
@@ -498,7 +487,12 @@ export class DeprecationReason extends React.Component<
           <div className="modal-header">
             <h2 ref="subtitle">Reason to deprecate this dataset version</h2>
           </div>
-          <form>
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              this.save();
+            }}
+          >
             <div className="modal-body">
               <input
                 type="text"
@@ -517,9 +511,9 @@ export class DeprecationReason extends React.Component<
                 Close
               </button>
               <button
-                type="button"
+                type="submit"
                 className="btn btn-primary"
-                onClick={(e) => this.save()}
+                disabled={!this.state.reason}
               >
                 Save changes
               </button>

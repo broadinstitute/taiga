@@ -181,7 +181,7 @@ export interface DatasetVersionDatafiles {
 export interface DatasetVersions {
   name: string;
   id: string;
-  status: StatusEnum;
+  state: StatusEnum;
 }
 
 export class Dataset extends Entry {

@@ -12,7 +12,7 @@ import * as Models from "../models/models";
 import { TaigaApi } from "../models/api";
 
 import * as Dialogs from "./Dialogs";
-import {  CreateVersionDialog } from "./modals/UploadDialogs";
+import { CreateVersionDialog } from "./modals/UploadDialogs";
 
 import { toLocalDateString } from "../utilities/formats";
 import { LoadingOverlay } from "../utilities/loading";
@@ -39,6 +39,8 @@ import {
 import ClipboardButton from "../utilities/r-clipboard";
 import { UploadTracker } from "./UploadTracker";
 import FigshareSection from "./dataset_view/FigshareSection";
+import confirmUserWantsToBranchVersion from "./dataset_view/confirmUserWantsToBranchVersion";
+import confirmNewVersionFromDeprecated from "./dataset_view/confirmNewVersionFromDeprecated";
 
 interface DatasetViewMatchParams {
   datasetId: string;
@@ -388,10 +390,30 @@ export class DatasetView extends React.Component<
   }
 
   // Upload
-  showUploadNewVersion() {
-    this.setState({
-      showUploadDataset: true,
-    });
+  async showUploadNewVersion() {
+    const { dataset, datasetVersion } = this.state;
+    const latestVersion = dataset.versions[dataset.versions.length - 1];
+    let confirmed = true;
+
+    if (datasetVersion.id !== latestVersion.id) {
+      confirmed = await confirmUserWantsToBranchVersion(
+        dataset,
+        datasetVersion,
+      );
+    } else if (["deprecated", "deleted"].includes(datasetVersion.state)) {
+      confirmed = await confirmNewVersionFromDeprecated(datasetVersion);
+    }
+
+    if (confirmed) {
+      this.setState({ showUploadDataset: true });
+    }
+  }
+
+  async checkConcurrentEdit() {
+    const datasetThen = this.state.dataset;
+    const datasetNow = await this.getTapi().get_dataset(datasetThen.id);
+
+    return datasetThen.versions.length < datasetNow.versions.length;
   }
 
   // filesUploadedAndConverted(sid: string, name: string, description: string, previousDatafileIds: Array<string>) {
@@ -1194,6 +1216,7 @@ export class DatasetView extends React.Component<
                 previousVersionNumber={this.state.datasetVersion.name}
                 previousVersionFiles={this.state.datasetVersion.datafiles}
                 datasetPermaname={this.state.dataset.permanames[0]}
+                checkConcurrentEdit={this.checkConcurrentEdit.bind(this)}
               />
             )}
 

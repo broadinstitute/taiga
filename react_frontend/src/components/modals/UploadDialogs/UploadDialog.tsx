@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import cx from "classnames";
 import update from "immutability-helper";
 import { relativePath } from "../../../utilities/route";
+import showInfoModal from "../../../utilities/showInfoModal";
 import {
   UploadStatus,
   UploadFileType,
@@ -39,7 +40,6 @@ interface UploadDialogState {
   isProcessing: boolean;
   error: string;
 }
-
 
 function isNonempty(v: string) {
   // this covers "" and null
@@ -166,8 +166,35 @@ export class UploadDialog extends React.Component<
           type="submit"
           className="btn btn-primary"
           disabled={this.state.formDisabled}
-          onClick={(e) => {
+          onClick={async (e) => {
             e.preventDefault();
+            const hasConcurrentEdit = await this.props.checkConcurrentEdit();
+
+            if (hasConcurrentEdit) {
+              const href = relativePath(
+                `/dataset/${this.props.datasetPermaname}/latest`
+              );
+
+              return showInfoModal({
+                title: "Newer changes detected!",
+                content: (
+                  <div>
+                    <p>
+                      Your changes could not be saved. It looks like someone
+                      else is also working on this dataset and created a new
+                      version ahead of you.
+                    </p>
+                    <p>
+                      <a href={href} target="_blank">
+                        Click here
+                      </a>{" "}
+                      to see the latest version.
+                    </p>
+                  </div>
+                ),
+                closeButtonText: "OK",
+              });
+            }
 
             let params: CreateDatasetParams | CreateVersionParams;
             if (this.props.folderId) {
@@ -226,37 +253,37 @@ export class UploadDialog extends React.Component<
           <div className="modal-header">
             <h2 ref="subtitle">{this.props.title}</h2>
           </div>
-            <div className={cx("modal-body", styles.modalBody)}>
-              <UploadForm
-                controller={this.controller}
-                name={this.state.datasetName}
-                description={this.state.datasetDescription}
-                changesDescription={this.state.changesDescription}
-                files={this.state.uploadFiles}
-                showNameField={this.props.showNameField}
-                showChangesField={this.props.showChangesField}
-                onNameChange={(value: string) => this.onNameChange(value)}
-                onDescriptionChange={(value: string) =>
-                  this.onDescriptionChange(value)
-                }
-                onChangesDescriptionChange={(value: string) =>
-                  this.onChangesDescriptionChange(value)
-                }
-                isProcessing={this.state.isProcessing}
-              />
-            </div>
-            <div className="modal-footer" style={{ marginTop: 0 }}>
-              <button
-                type="button"
-                className="btn btn-default"
-                onClick={(e) => {
-                  this.requestClose();
-                }}
-              >
-                Close
-              </button>
-              {submitButton}
-            </div>
+          <div className={cx("modal-body", styles.modalBody)}>
+            <UploadForm
+              controller={this.controller}
+              name={this.state.datasetName}
+              description={this.state.datasetDescription}
+              changesDescription={this.state.changesDescription}
+              files={this.state.uploadFiles}
+              showNameField={this.props.showNameField}
+              showChangesField={this.props.showChangesField}
+              onNameChange={(value: string) => this.onNameChange(value)}
+              onDescriptionChange={(value: string) =>
+                this.onDescriptionChange(value)
+              }
+              onChangesDescriptionChange={(value: string) =>
+                this.onChangesDescriptionChange(value)
+              }
+              isProcessing={this.state.isProcessing}
+            />
+          </div>
+          <div className="modal-footer" style={{ marginTop: 0 }}>
+            <button
+              type="button"
+              className="btn btn-default"
+              onClick={(e) => {
+                this.requestClose();
+              }}
+            >
+              Close
+            </button>
+            {submitButton}
+          </div>
         </div>
       </Modal>
     );
