@@ -42,7 +42,6 @@ def create_app(settings_override=None, settings_file=None):
     # Register the routes
     app.add_url_rule("/", view_func=index)
     app.add_url_rule("/<path:filename>", view_func=sendindex2)
-    app.add_url_rule("/js/<path:filename>", view_func=static_f)
 
     @app.context_processor
     def inject_webpack_url():
@@ -57,7 +56,7 @@ def get_webpack_manifest():
     filenames to output filenames. Each output filename contains a content hash
     which allows for cache busting."""
     try:
-        filepath = "static/webpack/manifest.json"
+        filepath = os.path.join(current_app.static_folder, "webpack", "manifest.json")
         with open(file=filepath, encoding="utf-8") as file:
             return json.load(file)
     except FileNotFoundError:
@@ -73,7 +72,7 @@ def webpack_url(name):
     # Otherwise, look up the hashed filename and
     # serve from the Webpack output directory.
     manifest = get_webpack_manifest()
-    return "/static/webpack/" + manifest[name]
+    return url_for('static', filename=f"webpack/{manifest[name]}")
 
 
 def render_index_html():
@@ -93,12 +92,3 @@ def index():
 
 def sendindex2(filename):
     return render_index_html()
-
-
-def static_f(filename):
-    return send_from_directory(os.path.abspath("node_modules"), filename)
-
-
-def pseudostatic(hash, filename):
-    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-    return flask.send_from_directory(static_dir, filename)
