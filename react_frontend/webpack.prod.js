@@ -1,37 +1,20 @@
-const webpack = require("webpack");
 const path = require("path");
+const merge = require("webpack-merge").merge;
+const common = require("./webpack.common.js");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const { WebpackManifestPlugin } = require("webpack-manifest-plugin");
 
-module.exports = {
-  mode: "development",
-
-  entry: "./src/index.tsx",
-
-  output: {
-    filename: "react_frontend.js",
-    path: path.resolve(__dirname, "../taiga2/static/js"),
-    library: "Taiga",
-
-    // Fix "digital envelope routines::unsupported" (MD4 removed in Node 20)
-    hashFunction: "sha256",
-  },
-
-  // Enable sourcemaps for debugging webpack's output.
+module.exports = merge(common, {
+  mode: "production",
   devtool: "source-map",
 
-  resolve: {
-    // Add '.ts' and '.tsx' as resolvable extensions.
-    extensions: [".ts", ".tsx", ".js", ".json"],
-    fallback: {
-      util: require.resolve("util/"), // polyfill Node util
-      process: require.resolve("process/browser"),
-    },
+  output: {
+    filename: "[name].[contenthash].js",
+    publicPath: "",
+    path: path.resolve(__dirname, "../taiga2/static/webpack"),
   },
 
-  plugins: [
-    new webpack.ProvidePlugin({
-      process: "process/browser",
-    }),
-  ],
+  plugins: [new WebpackManifestPlugin(), new CleanWebpackPlugin()],
 
   module: {
     rules: [
@@ -65,11 +48,17 @@ module.exports = {
                 // https://webpack.js.org/loaders/css-loader/#localidentname
                 // use '[hash:base64]' for production
                 // use '[path][name]__[local]' for development
-                localIdentName: "[path][name]__[local]",
+                localIdentName: "[hash:base64]",
+                localIdentHashFunction: "md5",
               },
             },
           },
-          { loader: "sass-loader" },
+          {
+            loader: "sass-loader",
+            options: {
+              webpackImporter: false,
+            },
+          },
         ],
       },
 
@@ -85,4 +74,4 @@ module.exports = {
       },
     ],
   },
-};
+});

@@ -1,13 +1,15 @@
 import hashlib
 import logging
 import flask
-from flask import Flask, render_template, send_from_directory, url_for, request, abort
+from flask import Flask, render_template, send_from_directory, url_for, current_app, abort
 import os
+import json
 from taiga2.conf import load_config
 from taiga2.auth import init_front_auth
 from taiga2 import commands
 from .extensions import db as ext_db, migrate
 from taiga2 import models
+from functools import lru_cache
 
 log = logging.getLogger(__name__)
 
@@ -39,42 +41,39 @@ def create_app(settings_override=None, settings_file=None):
 
     # Register the routes
     app.add_url_rule("/", view_func=index)
-    app.add_url_rule("/pseudostatic/<hash>/<path:filename>", view_func=pseudostatic)
     app.add_url_rule("/<path:filename>", view_func=sendindex2)
     app.add_url_rule("/js/<path:filename>", view_func=static_f)
 
     @app.context_processor
-    def inject_pseudostatic_url():
-        return dict(pseudostatic_url=pseudostatic_url)
+    def inject_webpack_url():
+        return dict(webpack_url=webpack_url)
 
     return app
 
 
-PSEUDOSTATIC_CACHE = {}
+@lru_cache(maxsize=1)
+def get_webpack_manifest():
+    """Wepback outputs a manifest.json file which is a mapping from source
+    filenames to output filenames. Each output filename contains a content hash
+    which allows for cache busting."""
+    try:
+        filepath = "static/webpack/manifest.json"
+        with open(file=filepath, encoding="utf-8") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        print("Webpack manifest.json not found. Did you forget to run webpack?")
+        raise
 
 
-def pseudostatic_url(name):
-    static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
-    abs_filename = os.path.abspath(os.path.join(static_dir, name))
-    assert abs_filename.startswith(static_dir)
+def webpack_url(name):
+    # If enabled, serve assets from webpack-dev-server.
+    if current_app.config["USE_FRONTEND_DEV_SERVER"]:
+        return "http://127.0.0.1:5001/webpack/" + name
 
-    hash = None
-    if name in PSEUDOSTATIC_CACHE:
-        hash, mtime = PSEUDOSTATIC_CACHE[abs_filename]
-        if mtime != os.path.getmtime(abs_filename):
-            hash = None
-
-    if hash is None:
-        mtime = os.path.getmtime(abs_filename)
-        hash_md5 = hashlib.md5()
-        with open(abs_filename, "rb") as fd:
-            for chunk in iter(lambda: fd.read(40960), b""):
-                hash_md5.update(chunk)
-        hash = hash_md5.hexdigest()
-        PSEUDOSTATIC_CACHE[abs_filename] = (hash, mtime)
-        log.debug("Caching hash of %s as %s", abs_filename, hash)
-
-    return flask.url_for("pseudostatic", hash=hash, filename=name)
+    # Otherwise, look up the hashed filename and
+    # serve from the Webpack output directory.
+    manifest = get_webpack_manifest()
+    return "/static/webpack/" + manifest[name]
 
 
 def render_index_html():

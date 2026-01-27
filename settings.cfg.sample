@@ -6,6 +6,7 @@ PORT = 8080
 USE_RELOADER = True
 USE_EVALEX = True
 PREFIX = '/taiga'
+USE_FRONTEND_DEV_SERVER = True
 
 # Amazon Web Services
 AWS_ACCESS_KEY_ID = ''

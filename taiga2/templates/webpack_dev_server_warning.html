@@ -1,0 +1,33 @@
+<script>
+  fetch("http://localhost:5001/webpack-dev-server", { method: 'OPTIONS' })
+    .catch(function(e) {
+      const warning = "Can't connect to Webpack dev server. Did you forget to run `./flask webpack`?";
+
+      const element = document.createElement('h2');
+      element.innerHTML = warning;
+      element.classList.add('dev-server-warning');
+
+      const style = document.createElement('style');
+      style.innerHTML = `
+        .dev-server-warning {
+          background-color: #f8d7da;
+          color: #721c24;
+          display: flex;
+          justify-content: center;
+          margin: auto 0;
+          padding: 10px;
+          position: fixed;
+          top: 0;
+          width: 100%;
+          z-index: 100000;
+        }
+      `;
+
+      document.body.appendChild(element);
+      document.body.appendChild(style);
+
+      console.warn(warning.replace(/./g, '-'));
+      console.warn(warning);
+      console.warn(warning.replace(/./g, '-'));
+    });
+</script>
