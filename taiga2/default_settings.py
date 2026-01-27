@@ -10,6 +10,7 @@ CELERY_RESULT_BACKEND = "redis://localhost:6379"
 CELERYD_MAX_TASKS_PER_CHILD = 5  # Each task can have a lot of memory used
 S3_PREFIX = "upload/"
 PREFIX = "/taiga2"
+USE_FRONTEND_DEV_SERVER = False
 # Frontend auth
 DEFAULT_USER_EMAIL = "admin@broadinstitute.org"
 
