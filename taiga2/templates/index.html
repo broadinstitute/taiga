@@ -362,10 +362,14 @@
       var taigaPrefix = "{{ prefix }}";
       var taigaUserToken = "{{ user_token }}";
     </script>
-    <script src="{{ pseudostatic_url('js/react_frontend.js') }}"></script>
+    <script src="{{ webpack_url('Taiga.js') }}"></script>
     <script>
       Taiga.initPage(document.getElementById("root"));
     </script>
+
+    {% if config.USE_FRONTEND_DEV_SERVER %}
+        {% include 'webpack_dev_server_warning.html' %}
+    {% endif %}
 
     <!-- Analytics -->
     <script>

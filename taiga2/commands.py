@@ -14,10 +14,7 @@ def recreate_dev_db():
 
 @click.command()
 def webpack():
-    subprocess.call(
-        ["./node_modules/.bin/webpack", "--watch", "--mode=development"],
-        cwd="react_frontend",
-    )
+    subprocess.call(["yarn", "dev"], cwd="react_frontend")
 
 
 @click.command()

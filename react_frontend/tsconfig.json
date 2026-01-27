@@ -10,7 +10,9 @@
             "es2017",
             "dom"
         ],
-        "jsx": "react"
+        "jsx": "react",
+        "skipLibCheck": true,
+        "types": []
     },
     "include": [
         "./src/**/*"

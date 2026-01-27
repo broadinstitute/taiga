@@ -1,1 +1,1 @@
-./node_modules/.bin/webpack "--watch" "--mode=development"
+yarn dev
