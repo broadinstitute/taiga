@@ -1,0 +1,34 @@
+@use "../../styles/mixins";
+
+.tableContainer {
+  min-height: 150px;
+  max-height: calc(100vh - 318px);
+  overflow: auto;
+  font-size: 16px;
+  @include mixins.scroll-shadow;
+
+  table {
+    width: 100%;
+
+    thead {
+      position: sticky;
+      top: 0;
+      background-color: #fff;
+      outline: 2px solid #ccc;
+      z-index: 1;
+    }
+
+    tr td {
+      padding: 5px;
+      border-bottom: 2px solid #eee;
+    }
+  }
+}
+
+.deprecated {
+  color: orange;
+}
+
+.deleted {
+  color: red;
+}
