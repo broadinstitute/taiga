@@ -38,6 +38,7 @@ export class RecentlyViewed extends React.Component<
   }
 
   componentDidMount() {
+    document.title = "Recently Viewed - Taiga";
     this.doFetch();
   }
 

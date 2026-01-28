@@ -50,6 +50,7 @@ export interface FolderViewState {
   folder?: Folder.Folder;
   datasetLastDatasetVersion?: { [dataset_id: string]: Folder.DatasetVersion };
   datasetsVersion?: { [datasetVersion_id: string]: Folder.DatasetVersion };
+  allDatasets?: DatasetFullDatasetVersions[];
 
   showEditName?: boolean;
   showEditDescription?: boolean;
@@ -158,6 +159,7 @@ export class FolderView extends React.Component<
     let _folder: Folder.Folder = null;
 
     const request = ++this.lastRequestNumber;
+    let allDatasets: DatasetFullDatasetVersions[] = [];
 
     return tapi
       .get_folder(this.props.match.params.folderId)
@@ -199,6 +201,8 @@ export class FolderView extends React.Component<
         return tapi
           .get_datasets(datasetIds)
           .then((arrayDatasets: Array<DatasetFullDatasetVersions>) => {
+            allDatasets = arrayDatasets;
+
             arrayDatasets.forEach((dataset: DatasetFullDatasetVersions) => {
               // We get the latest datasetVersion
               let latestDatasetVersion: DatasetVersion = dataset.versions[0];
@@ -229,6 +233,7 @@ export class FolderView extends React.Component<
           selection: new Array<string>(),
           datasetLastDatasetVersion: datasetsLatestDv,
           datasetsVersion: datasetsVersion,
+          allDatasets,
           loading: false,
         });
       })
@@ -646,10 +651,12 @@ export class FolderView extends React.Component<
           ];
           let full_datasetVersion: Folder.DatasetVersion = this.state
             .datasetsVersion[entry.id];
+
           return new BootstrapTableFolderEntry(
             entry,
             latestDatasetVersion,
-            full_datasetVersion
+            full_datasetVersion,
+            this.state.allDatasets,
           );
         }
       );

@@ -22,6 +22,10 @@ export class GroupListView extends React.Component<
   GroupListProps,
   GroupListState
 > {
+  componentDidMount() {
+    document.title = "My Groups - Taiga";
+  }
+
   groupLinkFormatter(
     cell: string,
     row: Pick<Group, Exclude<keyof Group, "users">>

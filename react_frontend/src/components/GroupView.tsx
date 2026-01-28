@@ -49,7 +49,13 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
   }
 
   componentDidMount() {
-    this.doFetch().then(() => {
+    document.title = "My Groups - Taiga";
+
+    this.doFetch().then(group => {
+      if (group) {
+        document.title = `My Groups - ${group.name} - Taiga`;
+      }
+
       this.props.tapi.get_all_users().then((r: Array<User>) => {
         this.setState({ allUsers: r });
       });
@@ -58,7 +64,12 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
 
   componentDidUpdate(prevProps: GroupViewProps) {
     if (prevProps.match.params.groupId != this.props.match.params.groupId) {
-      this.doFetch();
+      this.doFetch()
+        .then(group => {
+          if (group) {
+            document.title = `My Groups - ${group.name} - Taiga`;
+          }
+        });
     }
   }
 
@@ -67,6 +78,7 @@ export class GroupView extends React.Component<GroupViewProps, GroupViewState> {
       .get_group(this.props.match.params.groupId)
       .then((r: Group) => {
         this.setState({ group: r, errorMessage: null });
+        return r;
       })
       .catch((err: Error) => {
         this.setState({ errorMessage: err.message });

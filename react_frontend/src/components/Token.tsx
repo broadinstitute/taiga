@@ -37,6 +37,7 @@ export class Token extends React.Component<TokenProps, TokenState> {
   }
 
   componentDidMount() {
+    document.title = "My Token - Taiga";
     this.doFetch();
   }
 

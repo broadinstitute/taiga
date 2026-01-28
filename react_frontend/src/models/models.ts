@@ -319,13 +319,41 @@ export class BootstrapTableFolderEntry {
   url: string;
   creation_date: Date;
   creator_name: string;
-
   type: FolderEntriesTypeEnum;
+
+  constructor(
+    entry: FolderEntries,
+    latestDatasetVersion?: DatasetVersion,
+    fullDatasetVersion?: DatasetVersion,
+    allDatasets?: DatasetFullDatasetVersions[]
+  ) {
+    this.id = entry.id;
+    this.name = entry.name;
+
+    this.url = this.processFolderEntryUrl(
+      entry,
+      latestDatasetVersion,
+      fullDatasetVersion,
+      allDatasets
+    );
+
+    this.creation_date = this.processCreationDate(entry, latestDatasetVersion);
+
+    // TODO: Think about what to do with an entry without a user
+    if (entry.creator && entry.creator.name) {
+      this.creator_name = entry.creator.name;
+    } else {
+      this.creator_name = undefined;
+    }
+
+    this.type = entry.type;
+  }
 
   processFolderEntryUrl(
     entry: FolderEntries,
     latestDatasetVersion?: DatasetVersion,
-    full_datasetVersion?: DatasetVersion
+    full_datasetVersion?: DatasetVersion,
+    allDatasets?: DatasetFullDatasetVersions[]
   ) {
     let processedUrl = null;
     if (entry.type === FolderEntriesTypeEnum.Folder) {
@@ -338,9 +366,18 @@ export class BootstrapTableFolderEntry {
       entry.type === FolderEntriesTypeEnum.Dataset ||
       entry.type === FolderEntriesTypeEnum.VirtualDataset
     ) {
-      processedUrl = relativePath(
-        "dataset/" + entry.id + "/" + latestDatasetVersion.id
-      );
+      const dataset = (allDatasets || []).find(d => d.id === entry.id);
+      const permaname = dataset.permanames.slice(-1)[0];
+
+      if (dataset) {
+        processedUrl = relativePath(
+          `/dataset/${permaname}/${latestDatasetVersion.name}`
+        );
+      } else {
+        processedUrl = relativePath(
+          "dataset/" + entry.id + "/" + latestDatasetVersion.id
+        );
+      }
     }
 
     return processedUrl;
@@ -363,32 +400,6 @@ export class BootstrapTableFolderEntry {
     }
 
     return processedCreationDate;
-  }
-
-  constructor(
-    entry: FolderEntries,
-    latestDatasetVersion?: DatasetVersion,
-    fullDatasetVersion?: DatasetVersion
-  ) {
-    this.id = entry.id;
-    this.name = entry.name;
-
-    this.url = this.processFolderEntryUrl(
-      entry,
-      latestDatasetVersion,
-      fullDatasetVersion
-    );
-
-    this.creation_date = this.processCreationDate(entry, latestDatasetVersion);
-
-    // TODO: Think about what to do with an entry without a user
-    if (entry.creator && entry.creator.name) {
-      this.creator_name = entry.creator.name;
-    } else {
-      this.creator_name = undefined;
-    }
-
-    this.type = entry.type;
   }
 }
 
