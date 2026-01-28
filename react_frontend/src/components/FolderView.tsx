@@ -94,12 +94,16 @@ export class FolderView extends React.Component<
 > {
   constructor(props: any) {
     super(props);
+    this.lastRequestNumber = 0;
+    this.unmounted = false;
   }
 
   private bootstrapTable: any;
   uploadTracker: UploadTracker;
+  lastRequestNumber: number;
+  unmounted: boolean;
 
-  componentDidUpdate(prevProps: FolderViewProps) {
+  componentDidUpdate(prevProps: FolderViewProps, prevState: FolderViewState) {
     // respond to parameter change in scenario 3
     let oldId = prevProps.match.params.folderId;
     let newId = this.props.match.params.folderId;
@@ -109,7 +113,11 @@ export class FolderView extends React.Component<
       });
 
       // Clean selected
-      this.bootstrapTable.cleanSelected();
+      this.bootstrapTable?.cleanSelected();
+    }
+
+    if (prevState?.folder !== this.state.folder) {
+      this.updatePageTitle(this.state.folder);
     }
   }
 
@@ -122,9 +130,17 @@ export class FolderView extends React.Component<
   }
 
   componentDidMount() {
+    if (history.state?.title) {
+      document.title = history.state.title;
+    }
+
     this.doFetch().then(() => {
       this.logAccess();
     });
+  }
+
+  componentWillUnmount() {
+    this.unmounted = true;
   }
 
   doFetch() {
@@ -141,10 +157,15 @@ export class FolderView extends React.Component<
     } = {};
     let _folder: Folder.Folder = null;
 
+    const request = ++this.lastRequestNumber;
 
     return tapi
       .get_folder(this.props.match.params.folderId)
       .then((folder) => {
+        if (request !== this.lastRequestNumber || this.unmounted) {
+          throw new Error("stale_request");
+        }
+
         _folder = new Folder.Folder(folder);
         this.setState({ sharingEntries: [_folder] });
         return folder.entries;
@@ -212,6 +233,10 @@ export class FolderView extends React.Component<
         });
       })
       .catch((error) => {
+        if (error.message === "stale_request") {
+          return Promise.reject("stale_request");
+        }
+
         this.setState({
           error: error.message,
         });
@@ -244,6 +269,13 @@ export class FolderView extends React.Component<
       .then(() => {
         return this.doFetch();
       });
+  }
+
+  updatePageTitle(folder: Folder.Folder) {
+    const title = `${folder.name} - Taiga`;
+
+    document.title = title;
+    history.replaceState({ ...history.state, title }, "");
   }
 
   createFolder(name: string, description: string) {

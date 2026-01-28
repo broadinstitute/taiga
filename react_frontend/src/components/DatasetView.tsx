@@ -136,16 +136,20 @@ export class DatasetView extends React.Component<
   DatasetViewState
 > {
   uploadTracker: UploadTracker;
+  lastRequestNumber: number;
+  unmounted: boolean;
 
   constructor(props: DatasetViewProps) {
     super(props);
+    this.lastRequestNumber = 0;
+    this.unmounted = false;
   }
 
   getTapi(): TaigaApi {
     return this.props.tapi;
   }
 
-  componentDidUpdate(prevProps: DatasetViewProps) {
+  componentDidUpdate(prevProps: DatasetViewProps, prevState: DatasetViewState) {
     // respond to parameter change in scenario 3
     const oldId = prevProps.match.params.datasetId;
     const newId = this.props.match.params.datasetId;
@@ -170,6 +174,10 @@ export class DatasetView extends React.Component<
         });
       });
     }
+
+    if (prevState?.datasetVersion !== this.state.datasetVersion) {
+      this.updatePageTitle(this.state.datasetVersion);
+    }
   }
 
   componentWillMount() {
@@ -177,6 +185,10 @@ export class DatasetView extends React.Component<
   }
 
   componentDidMount() {
+    if (history.state?.title) {
+      document.title = history.state.title;
+    }
+
     this.setLoading(true);
 
     this.doFetch()
@@ -217,7 +229,13 @@ export class DatasetView extends React.Component<
       });
   }
 
+  componentWillUnmount() {
+    this.unmounted = true;
+  }
+
   doFetch() {
+    const request = ++this.lastRequestNumber;
+
     // could do fetches in parallel if url encoded both ids
     return this.getTapi()
       .get_dataset_version_with_dataset(
@@ -230,6 +248,10 @@ export class DatasetView extends React.Component<
             | Models.DatasetAndDatasetVersion
             | Models.Dataset
         ) => {
+          if (request !== this.lastRequestNumber || this.unmounted) {
+            throw new Error("stale_request");
+          }
+
           let dataset: Models.Dataset;
           let datasetVersion: Models.DatasetVersion;
 
@@ -275,6 +297,10 @@ export class DatasetView extends React.Component<
         }
       )
       .catch((error) => {
+        if (error.message === "stale_request") {
+          return Promise.reject("stale_request");
+        }
+
         this.setState({
           fetchError: error.message,
         });
@@ -285,6 +311,17 @@ export class DatasetView extends React.Component<
             " does not exist"
         );
       });
+  }
+
+  updatePageTitle(datasetVersion: Models.DatasetVersion) {
+    const { dataset, version } = datasetVersion;
+    const { name, permanames } = dataset;
+
+    const permaname = permanames.slice(-1)[0];
+    const title = `${name} - ${permaname} (v${version}) - Taiga`;
+
+    document.title = title;
+    history.replaceState({ ...history.state, title }, "");
   }
 
   // TODO: Refactor logAccess in an util or in RecentlyViewed class
