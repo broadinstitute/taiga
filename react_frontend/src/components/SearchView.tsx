@@ -93,6 +93,8 @@ export class SearchView extends React.Component<
   componentDidUpdate(prevProps: SearchViewProps) {}
 
   componentDidMount() {
+    document.title = "Search Results - Taiga";
+
     // this.doFetch().then(() => {
     //     this.logAccess();
     // });
