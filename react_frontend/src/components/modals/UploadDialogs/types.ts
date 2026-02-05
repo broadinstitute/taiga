@@ -1,6 +1,6 @@
-import {  DatasetVersionDatafiles } from "../../../models/models";
+import { DatasetVersionDatafiles } from "../../../models/models";
 import { UploadFile } from "../../UploadTracker";
-import { DialogProps  } from "../../Dialogs";
+import { DialogProps } from "../../Dialogs";
 import {
   UploadStatus,
   CreateVersionParams,
@@ -42,5 +42,5 @@ export interface CreateVersionDialogProps extends DialogProps {
     params: CreateVersionParams | CreateDatasetParams,
     uploadProgressCallback: (status: Array<UploadStatus>) => void
   ): Promise<any>;
-  checkConcurrentEdit(): Promise<boolean>;
+  checkConcurrentEdit: () => Promise<boolean>;
 }

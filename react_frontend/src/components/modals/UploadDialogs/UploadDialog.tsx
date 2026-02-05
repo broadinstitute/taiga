@@ -21,13 +21,14 @@ import type {
 } from "./types";
 import styles from "./UploadDialogs.scss";
 
-interface UploadDialogProps
-  extends Partial<CreateDatasetDialogProps>,
-    Partial<CreateVersionDialogProps> {
+type UploadDialogProps = (
+  | CreateDatasetDialogProps
+  | CreateVersionDialogProps
+) & {
   title: string;
-  showNameField?: boolean;
+  showNameField: boolean;
   showChangesField: boolean;
-}
+};
 
 interface UploadDialogState {
   uploadFiles: Array<UploadTableFile>; // uploadFiles and uploadStatus are ordered the same so they can be indexed together
@@ -55,13 +56,14 @@ export class UploadDialog extends React.Component<
   constructor(props: UploadDialogProps) {
     super(props);
 
+    const createVersionProps = this.props as CreateVersionDialogProps;
     let files: Array<UploadTableFile> = [];
-    if (this.props.previousVersionFiles) {
+    if ("previousVersionFiles" in this.props) {
       files = this.props.previousVersionFiles.map((file) => {
         let taigaId =
-          this.props.datasetPermaname +
+          createVersionProps.datasetPermaname +
           "." +
-          this.props.previousVersionNumber +
+          createVersionProps.previousVersionNumber +
           "/" +
           file.name;
         return {
@@ -82,7 +84,7 @@ export class UploadDialog extends React.Component<
       uploadFiles: files,
       formDisabled: false,
       datasetName: "",
-      datasetDescription: this.props.previousDescription,
+      datasetDescription: createVersionProps.previousDescription || "",
       changesDescription: "",
       isProcessing: false,
       error: null,
@@ -113,7 +115,9 @@ export class UploadDialog extends React.Component<
       validationError = "Description of changes cannot be empty";
     }
 
-    if (!this.props.datasetId && !isNonempty(this.state.datasetName)) {
+    const createVersionProps = this.props as CreateVersionDialogProps;
+
+    if (!createVersionProps.datasetId && !isNonempty(this.state.datasetName)) {
       validationError = "Dataset name is required";
     } else if (this.state.uploadFiles.length == 0) {
       validationError = "At least one file is required";
@@ -168,11 +172,19 @@ export class UploadDialog extends React.Component<
           disabled={this.state.formDisabled}
           onClick={async (e) => {
             e.preventDefault();
-            const hasConcurrentEdit = await this.props.checkConcurrentEdit();
+
+            const createDatasetProps = this.props as CreateDatasetDialogProps;
+            const createVersionProps = this.props as CreateVersionDialogProps;
+
+            let hasConcurrentEdit = false;
+
+            if (createVersionProps.checkConcurrentEdit) {
+              hasConcurrentEdit = await createVersionProps.checkConcurrentEdit();
+            }
 
             if (hasConcurrentEdit) {
               const href = relativePath(
-                `/dataset/${this.props.datasetPermaname}/latest`
+                `/dataset/${createVersionProps.datasetPermaname}/latest`
               );
 
               return showInfoModal({
@@ -197,17 +209,17 @@ export class UploadDialog extends React.Component<
             }
 
             let params: CreateDatasetParams | CreateVersionParams;
-            if (this.props.folderId) {
+            if (createDatasetProps.folderId) {
               // create a new dataset
               params = {
                 name: this.state.datasetName,
                 description: this.state.datasetDescription,
-                folderId: this.props.folderId,
+                folderId: createDatasetProps.folderId,
               };
             } else {
               // create a new version
               params = {
-                datasetId: this.props.datasetId,
+                datasetId: createVersionProps.datasetId,
                 description: this.state.datasetDescription,
                 changesDescription: this.state.changesDescription,
               };
