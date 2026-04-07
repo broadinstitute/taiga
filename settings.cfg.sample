@@ -9,13 +9,27 @@ PREFIX = '/taiga'
 USE_FRONTEND_DEV_SERVER = True
 
 # Amazon Web Services
+# Option A — Local dev with MiniStack (no real AWS needed):
+#   docker run -d --name ministack -p 4566:4566 nahuelnucera/ministack
+#   Then uncomment the MiniStack block below and comment out Option B.
+#
+# Option B — Real AWS or no S3 (browse seeded data only):
+#   Leave S3_ENDPOINT_URL empty and fill in real AWS keys, or leave all blank.
+
+# --- Option A: MiniStack ---
+# S3_ENDPOINT_URL = 'http://localhost:4566'
+# AWS_ACCESS_KEY_ID = 'test'
+# AWS_SECRET_ACCESS_KEY = 'test'
+# S3_BUCKET = 'taiga-dev'
+
+# --- Option B: Real AWS (or blank for no uploads) ---
+S3_ENDPOINT_URL = ''
 AWS_ACCESS_KEY_ID = ''
 AWS_SECRET_ACCESS_KEY = ''
+S3_BUCKET = ''
 
 CLIENT_UPLOAD_AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID
 CLIENT_UPLOAD_AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY
-
-S3_BUCKET = ''
 
 # Database configuration
 SQLALCHEMY_DATABASE_URI = 'sqlite:///db.sqlite3'

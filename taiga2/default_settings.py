@@ -16,3 +16,6 @@ DEFAULT_USER_EMAIL = "admin@broadinstitute.org"
 
 # S3 settings
 CLIENT_UPLOAD_TOKEN_EXPIRY = 86400  # A day
+
+ENV = "dev"
+REPORT_EXCEPTIONS = False

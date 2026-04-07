@@ -243,6 +243,8 @@ paths:
                 type: string
               prefix:
                 type: string
+              endpointUrl:
+                type: string
 
   /upload_session:
     get:

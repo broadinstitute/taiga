@@ -236,6 +236,7 @@ export interface S3Credentials {
   sessionToken: string;
   bucket: string;
   prefix: string;
+  endpointUrl?: string;
 }
 
 export interface S3UploadedData {
