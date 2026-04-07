@@ -12,7 +12,14 @@ class AWSClients:
         return config.get("S3_ENDPOINT_URL") or None
 
     def _region(self, config):
-        return config.get("AWS_REGION", "us-east-1")
+        """Only force a region when using a custom endpoint (local emulators need it).
+        For real AWS, return None so boto3 resolves from the environment as before."""
+        explicit = config.get("AWS_REGION")
+        if explicit:
+            return explicit
+        if self._endpoint_url(config):
+            return "us-east-1"
+        return None
 
     @property
     def s3(self):
