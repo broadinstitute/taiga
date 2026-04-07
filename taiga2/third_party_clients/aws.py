@@ -8,6 +8,12 @@ log = logging.getLogger(__name__)
 
 
 class AWSClients:
+    def _endpoint_url(self, config):
+        return config.get("S3_ENDPOINT_URL") or None
+
+    def _region(self, config):
+        return config.get("AWS_REGION", "us-east-1")
+
     @property
     def s3(self):
         """
@@ -21,6 +27,8 @@ class AWSClients:
             log.info("Getting S3 resource with access key %s", aws_access_key_id)
             g._s3_resource = boto3.resource(
                 "s3",
+                endpoint_url=self._endpoint_url(config),
+                region_name=self._region(config),
                 aws_access_key_id=aws_access_key_id,
                 aws_secret_access_key=config["AWS_SECRET_ACCESS_KEY"],
             )
@@ -34,7 +42,8 @@ class AWSClients:
             log.info("Getting S3 client with access key %s", aws_access_key_id)
             g._s3_client = boto3.client(
                 "s3",
-                #   config=Config(signature_version='s3v4'),
+                endpoint_url=self._endpoint_url(config),
+                region_name=self._region(config),
                 aws_access_key_id=aws_access_key_id,
                 aws_secret_access_key=config["AWS_SECRET_ACCESS_KEY"],
             )
@@ -54,6 +63,8 @@ class AWSClients:
             log.warn("Getting STS client with access key %s", aws_access_key_id)
             g._sts_client = boto3.client(
                 "sts",
+                endpoint_url=self._endpoint_url(config),
+                region_name=self._region(config),
                 aws_access_key_id=aws_access_key_id,
                 aws_secret_access_key=config["CLIENT_UPLOAD_AWS_SECRET_ACCESS_KEY"],
             )

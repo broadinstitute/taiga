@@ -10,37 +10,111 @@ See deployment for notes on how to deploy the project on a live system (Coming s
 
 ## Prerequisites
 
-Taiga 2 is built on the following stack:
+- **Python 3.10** (required — the project pins `>=3.10,<3.11`)
+- **Poetry** (dependency manager)
+- **Node.js** and **Yarn** (for the React frontend)
+- **Redis** (Celery broker and result backend)
+- **Docker** (optional — only needed if you want to test file uploads via MiniStack)
 
-### Database
+### Stack overview
 
-- PostgreSQL (to store the app information)
-- Psycopg2
-- SQLAlchemy
-- Amazon S3 (to store the files)
+| Layer | Technologies |
+|-------|-------------|
+| Database | SQLite (local dev), PostgreSQL (production), SQLAlchemy |
+| Backend/API | Python 3.10, Flask, Connexion (Swagger/OpenAPI), Celery/Redis |
+| Object storage | AWS S3 (production), MiniStack (optional, local dev) |
+| Frontend | React, TypeScript, Webpack, Yarn |
 
-### Backend/API
+## Installing
 
-- Python 3.6
-- Flask
-- Celery/Redis
-- Swagger
+1. Install Python dependencies:
 
-### FrontEnd
+        poetry install
 
-- React
-- TypeScript
-- Webpack
-- Yarn
+2. Install frontend dependencies:
 
-### Configuring AWS users
+        cd react_frontend && yarn install && cd ..
+
+3. Copy the sample settings file (if you don't already have one):
+
+        cp settings.cfg.sample settings.cfg
+
+4. Create the dev database:
+
+        poetry run bash -c 'source setup_env.sh && flask recreate-dev-db'
+
+## Running Locally
+
+Start these four processes in separate terminal windows:
+
+```bash
+# Terminal 1 — Redis (skip if already running; check with `redis-cli ping`)
+redis-server
+
+# Terminal 2 — Webpack dev server (frontend hot reload)
+poetry run bash -c 'source setup_env.sh && flask webpack'
+
+# Terminal 3 — Flask app server
+poetry run bash -c 'source setup_env.sh && flask run'
+
+# Terminal 4 — Celery worker (async file conversion tasks)
+poetry run bash -c 'source setup_env.sh && flask run-worker'
+```
+
+Open your browser to: **http://127.0.0.1:5000/taiga/**
+
+You are automatically logged in as the seeded admin user (`admin@broadinstitute.org`) via the `DEFAULT_USER_EMAIL` setting.
+
+Without S3 configured, you can browse/search the seeded data, create folders, and work with the UI. File uploads require either MiniStack or real AWS credentials (see below).
+
+## Local S3 with MiniStack (Optional)
+
+[MiniStack](https://github.com/Nahuel990/ministack) is a free, open-source AWS emulator that runs 33 AWS services (including S3 and STS) in a single Docker container. It lets you test the full upload pipeline locally without an AWS account.
+
+### Setup
+
+1. Start MiniStack:
+
+        docker run -d --name ministack -p 4566:4566 nahuelnucera/ministack
+
+2. Create the local S3 bucket (run once):
+
+    ```bash
+    python -c "import boto3; boto3.client('s3', endpoint_url='http://localhost:4566', aws_access_key_id='test', aws_secret_access_key='test').create_bucket(Bucket='taiga-dev')"
+    ```
+
+3. In `settings.cfg`, uncomment the MiniStack block (Option A) and comment out Option B:
+
+    ```python
+    S3_ENDPOINT_URL = 'http://localhost:4566'
+    AWS_ACCESS_KEY_ID = 'test'
+    AWS_SECRET_ACCESS_KEY = 'test'
+    S3_BUCKET = 'taiga-dev'
+    ```
+
+4. Restart Flask and the Celery worker to pick up the new settings.
+
+### Managing MiniStack
+
+```bash
+docker start ministack   # start (if previously stopped)
+docker stop ministack    # stop
+docker rm ministack      # remove entirely
+```
+
+### Switching back to no-S3 mode
+
+Set `S3_ENDPOINT_URL = ''` and clear the AWS keys in `settings.cfg`. The app runs fine without S3 — you just can't upload files.
+
+## Configuring AWS (Production)
 
 We need two users: One IAM account (main) is used in general by the app to read/write to S3. The second (uploader) has it's rights delegated via STS on a short term basis. However, this user should
 only have access to upload to a single location within S3.
 
 Permissions for the main user:
 
-```{
+```json
+{
     "Version": "2012-10-17",
     "Statement": [
         {
@@ -57,7 +131,8 @@ Permissions for the main user:
 
 Permissions for the "upload" user:
 
-```{
+```json
+{
     "Version": "2012-10-17",
     "Statement": [
         {
@@ -112,46 +187,13 @@ For our case, it is pretty simple:
 
 #### Configure Taiga to use your Bucket
 
-1. Copy `settings.cfg.sample` to `settings.cfg`
-2. edit `settings.cfg` and set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
-3. also set S3_BUCKET to the bucket created above
+1. Edit `settings.cfg` and set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+2. Set `S3_BUCKET` to the bucket created above
+3. Remove `S3_ENDPOINT_URL` (or leave it empty) so the app connects to real AWS
 
-## Installing
+## Adding user to admin group
 
-1.  Install all the dependencies:
-
-        `poetry install`
-        `poetry shell`
-
-2.  Create a test database to have some data to work with:
-
-        `./flask recreate-dev-db`
-
-3.  Open 4 terminal windows to launch Webpack, Taiga 2, Celery and Redis processes:
-
-    a. In terminal 1:
-
-        `./flask webpack`
-
-    b. In terminal 2:
-
-        `redis-server`
-
-    c. In terminal 3:
-
-        `./flask run`
-
-    d. In terminal 4:
-
-        `./flask run-worker`
-
-4.  Congratulations! You can now access to Taiga 2 through your browser at:
-
-        `http://127.0.0.1:5000/taiga/`
-
-## adding user to admin group
-
-```
+```sql
 INSERT INTO group_user_association (group_id, user_id) select 1, id FROM users WHERE name =
 'pmontgom';
 ```

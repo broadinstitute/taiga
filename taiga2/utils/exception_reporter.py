@@ -12,7 +12,7 @@ class ExceptionReporter:
     def init_app(self, app, service_name=None):
         if service_name is not None:
             self.service_name = service_name
-        self.disabled = not app.config["REPORT_EXCEPTIONS"]
+        self.disabled = not app.config.get("REPORT_EXCEPTIONS", False)
         # attempt to create a client, so we'll get an error on startup if there's a problem with credentials
         if not self.disabled:
             self._create_client()

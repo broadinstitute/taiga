@@ -1507,6 +1507,17 @@ def log_datafile_read_access_info(datafile_id: str):
     db.session.commit()
 
 
+def validate_session_has_no_duplicate_filenames(session_id: str):
+    """Check that no two files in the upload session share the same name.
+    Returns a list of duplicate names (empty if none)."""
+    files = get_upload_session_files_from_session(session_id)
+    seen = {}
+    for f in files:
+        name = f.filename.strip()
+        seen[name] = seen.get(name, 0) + 1
+    return [name for name, count in seen.items() if count > 1]
+
+
 def _add_datafiles_from_session(session_id: str):
     # We retrieve all the upload_session_files related to the UploadSession
     added_files = get_upload_session_files_from_session(session_id)

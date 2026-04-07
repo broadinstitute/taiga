@@ -207,14 +207,19 @@ export class UploadTracker {
   ): Promise<DatasetIdAndVersionId> {
     // TODO: If we change the page, we lose the download
     // Configure the AWS S3 object with the received credentials
-    let s3 = new AWS.S3({
+    let s3Options: AWS.S3.ClientConfiguration = {
       apiVersion: "2006-03-01",
       credentials: {
         accessKeyId: s3_credentials.accessKeyId,
         secretAccessKey: s3_credentials.secretAccessKey,
         sessionToken: s3_credentials.sessionToken,
       },
-    });
+    };
+    if (s3_credentials.endpointUrl) {
+      s3Options.endpoint = s3_credentials.endpointUrl;
+      s3Options.s3ForcePathStyle = true;
+    }
+    let s3 = new AWS.S3(s3Options);
 
     // Looping through all the files
     let uploadPromises: Array<Promise<boolean>> = [];

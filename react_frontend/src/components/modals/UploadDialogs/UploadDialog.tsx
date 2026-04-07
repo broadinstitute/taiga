@@ -123,6 +123,20 @@ export class UploadDialog extends React.Component<
       validationError = "At least one file is required";
     }
 
+    if (!validationError) {
+      const nameCounts = new Map<string, number>();
+      for (const file of this.state.uploadFiles) {
+        const trimmed = file.name.trim();
+        nameCounts.set(trimmed, (nameCounts.get(trimmed) || 0) + 1);
+      }
+      const duplicates = Array.from(nameCounts.entries())
+        .filter(([_, count]) => count > 1)
+        .map(([name]) => name);
+      if (duplicates.length > 0) {
+        validationError = `Duplicate file name${duplicates.length > 1 ? "s" : ""}: ${duplicates.join(", ")}`;
+      }
+    }
+
     let submitButton: any;
 
     // If we have a new datasetVersion in the state, we can show the link button

@@ -213,6 +213,10 @@ def get_s3_credentials():
         "prefix": prefix,
     }
 
+    endpoint_url = flask.current_app.config.get("S3_ENDPOINT_URL")
+    if endpoint_url:
+        model_frontend_credentials["endpointUrl"] = endpoint_url
+
     # See frontend/models/models.ts for the S3Credentials object and Swagger.yaml
     return flask.jsonify(model_frontend_credentials)
 
@@ -637,6 +641,10 @@ def create_dataset(sessionDatasetInfo):
     dataset_description = sessionDatasetInfo.get("datasetDescription", None)
     current_folder_id = sessionDatasetInfo["currentFolderId"]
 
+    duplicates = models_controller.validate_session_has_no_duplicate_filenames(session_id)
+    if duplicates:
+        api_error("Duplicate file names in upload: {}".format(", ".join(duplicates)))
+
     added_dataset = models_controller.add_dataset_from_session(
         session_id, dataset_name, dataset_description, current_folder_id
     )
@@ -722,6 +730,10 @@ def create_new_dataset_version(datasetVersionMetadata):
     # Only used if add_existing_files is True to support grabbing the existing files
     dataset_version = datasetVersionMetadata.get("datasetVersion", None)
     current_user = models_controller.get_current_session_user()
+
+    duplicates = models_controller.validate_session_has_no_duplicate_filenames(session_id)
+    if duplicates:
+        api_error("Duplicate file names in upload: {}".format(", ".join(duplicates)))
 
     models_controller.lock()
 

@@ -53,7 +53,7 @@ def create_app(settings_override=None, settings_file=None):
     init_backend_auth(app)
 
     # Exception report with StackDriver
-    exception_reporter.init_app(app=app, service_name="taiga-" + app.config["ENV"])
+    exception_reporter.init_app(app=app, service_name="taiga-" + app.config.get("ENV", "dev"))
     register_errorhandlers(app=app)
 
     return api_app, app
