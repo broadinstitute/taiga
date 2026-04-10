@@ -761,7 +761,7 @@ def task_status(taskStatusId):
     return flask.jsonify(status)
 
 
-def _no_transform_needed(requested_format, datafile_type):
+def _no_transform_needed(requested_format, datafile_type, custom_metadata=None):
     if (
         requested_format == conversion.RAW_FORMAT
         and datafile_type == S3DataFile.DataFileFormat.Raw
@@ -779,6 +779,16 @@ def _no_transform_needed(requested_format, datafile_type):
         and datafile_type == S3DataFile.DataFileFormat.Columnar
     ):
         return True
+
+    if datafile_type == S3DataFile.DataFileFormat.Raw and custom_metadata:
+        csf = custom_metadata.get("client_storage_format")
+        if requested_format == conversion.HDF5_FORMAT and csf == "raw_hdf5_matrix":
+            return True
+        if (
+            requested_format == conversion.PARQUET_FORMAT
+            and csf == "raw_parquet_table"
+        ):
+            return True
 
     return False
 
@@ -862,7 +872,7 @@ def _get_s3_datafile(
     if format == "metadata":
         urls = None
         conversion_status = "Completed successfully"
-    elif _no_transform_needed(format, real_datafile.format):
+    elif _no_transform_needed(format, real_datafile.format, real_datafile.custom_metadata):
         # no conversion is necessary
         urls = [
             create_signed_get_obj(

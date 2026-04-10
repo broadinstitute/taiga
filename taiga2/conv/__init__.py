@@ -37,3 +37,4 @@ COMPRESSED_FORMAT = "raw_test"
 # Canonical format
 HDF5_FORMAT = "hdf5"
 COLUMNAR_FORMAT = "columnar"
+PARQUET_FORMAT = "parquet"
