@@ -45,7 +45,23 @@ See deployment for notes on how to deploy the project on a live system (Coming s
 
 ## Running Locally
 
-Start these four processes in separate terminal windows:
+### One command (recommended)
+
+```bash
+./dev.sh
+```
+
+This single script handles everything:
+
+- Starts **Redis** (if not already running)
+- Starts **MiniStack** Docker container for local S3 (if `settings.cfg` is configured for it)
+- Creates the **S3 bucket** and **dev database** if they don't exist
+- Launches the **Webpack dev server**, **Flask app**, and **Celery worker** as background processes
+- **Ctrl+C** stops all services cleanly
+
+Open your browser to: **http://127.0.0.1:5000/taiga/**
+
+### Manual (if you prefer separate terminals)
 
 ```bash
 # Terminal 1 — Redis (skip if already running; check with `redis-cli ping`)
@@ -62,6 +78,8 @@ poetry run bash -c 'source setup_env.sh && flask run-worker'
 ```
 
 Open your browser to: **http://127.0.0.1:5000/taiga/**
+
+### Notes
 
 You are automatically logged in as the seeded admin user (`admin@broadinstitute.org`) via the `DEFAULT_USER_EMAIL` setting.
 
@@ -200,9 +218,16 @@ INSERT INTO group_user_association (group_id, user_id) select 1, id FROM users W
 
 ## Running the tests
 
-Install rhdf5 R library => http://bioconductor.org/packages/release/bioc/html/rhdf5.html
+```bash
+# Run all tests
+poetry run pytest
 
-`pytest` from the root
+# Run a specific test file
+poetry run pytest taiga2/tests/datafile_test.py
+
+# Run with verbose output (shows each test name)
+poetry run pytest -v
+```
 
 ## Deployment
 
