@@ -392,12 +392,9 @@ def get_allowed_conversion_type(datafile: S3DataFile) -> List[str]:
         return allowed_conversion_types
 
     if datafile.format == S3DataFile.DataFileFormat.Raw:
-        if datafile.custom_metadata:
-            csf = datafile.custom_metadata.get("client_storage_format")
-            if csf == "raw_hdf5_matrix":
-                return [conversion.HDF5_FORMAT]
-            elif csf == "raw_parquet_table":
-                return [conversion.PARQUET_FORMAT]
+        resolved = conversion.resolve_raw_storage_format(datafile.custom_metadata)
+        if resolved:
+            return [resolved]
         return [conversion.RAW_FORMAT]
 
     raise Exception(

@@ -38,3 +38,18 @@ COMPRESSED_FORMAT = "raw_test"
 HDF5_FORMAT = "hdf5"
 COLUMNAR_FORMAT = "columnar"
 PARQUET_FORMAT = "parquet"
+
+# Maps taigapy client_storage_format values to the actual download format.
+# Used to resolve the real format of Raw S3DataFiles that contain known binary types.
+RAW_STORAGE_FORMAT_MAP = {
+    "raw_hdf5_matrix": HDF5_FORMAT,
+    "raw_parquet_table": PARQUET_FORMAT,
+}
+
+
+def resolve_raw_storage_format(custom_metadata):
+    """Return the actual download format for a Raw datafile, or None if unknown."""
+    if custom_metadata:
+        csf = custom_metadata.get("client_storage_format")
+        return RAW_STORAGE_FORMAT_MAP.get(csf)
+    return None

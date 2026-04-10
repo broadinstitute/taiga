@@ -780,14 +780,9 @@ def _no_transform_needed(requested_format, datafile_type, custom_metadata=None):
     ):
         return True
 
-    if datafile_type == S3DataFile.DataFileFormat.Raw and custom_metadata:
-        csf = custom_metadata.get("client_storage_format")
-        if requested_format == conversion.HDF5_FORMAT and csf == "raw_hdf5_matrix":
-            return True
-        if (
-            requested_format == conversion.PARQUET_FORMAT
-            and csf == "raw_parquet_table"
-        ):
+    if datafile_type == S3DataFile.DataFileFormat.Raw:
+        resolved = conversion.resolve_raw_storage_format(custom_metadata)
+        if resolved and requested_format == resolved:
             return True
 
     return False
