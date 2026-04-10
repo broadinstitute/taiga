@@ -204,18 +204,23 @@ Install rhdf5 R library => http://bioconductor.org/packages/release/bioc/html/rh
 
 `pytest` from the root
 
-## Deployment
+## Deployment to Production
 
-Each commit on the taiga2 branch results in a Travis test/build. Travis, on test success, will build an image and push
-it the Taiga image to GCP's container registry.
+Every push triggers the GitHub Actions workflow (`.github/workflows/build-docker.yaml`), which:
 
-Once travis is complete, you can `ssh` into `ubuntu@cds.team` and execute:
+1. Builds the Docker image from the root `Dockerfile`
+2. Runs `pytest` inside the image
+3. Pushes to `us.gcr.io/cds-docker-containers/taiga:ga-build-<run_number>`
+4. On `main`, also tags and pushes as `us.gcr.io/cds-docker-containers/taiga:latest`
 
-- `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
-- `sudo systemctl restart taiga`
+Once the workflow completes, `ssh` into `ubuntu@cds.team`:
 
-If there's any problems you can look for information in the logs (stored at
-/var/log/taiga) or asking journald for the output from the service ( `journalctl -u taiga` )
+1. Pull the latest image: `bash GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
+2. Tag the image with `taiga-prod` and `taiga-staging`. For example: `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker tag us.gcr.io/cds-docker-containers/taiga:ga-build-68 us.gcr.io/cds-docker-containers/taiga:taiga-staging` and `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker tag us.gcr.io/cds-docker-containers/taiga:ga-build-68 us.gcr.io/cds-docker-containers/taiga:taiga-prod`
+3. Restart the service: `sudo systemctl restart taiga`
+
+If there's any problem, then you can look for information in the logs (stored at
+`/var/log/taiga`) or ask journald for the output from the service (`journalctl -u taiga`).
 
 ## Migrate the database
 
