@@ -176,6 +176,7 @@ export interface DatasetVersionDatafiles {
   gcs_path: string;
   original_file_md5?: string;
   original_file_sha256?: string;
+  custom_metadata?: Record<string, string>;
 }
 
 export interface DatasetVersions {

@@ -194,3 +194,29 @@ def test_find_datafile(session, db, user_id):
 
     # using dataset version id and dataset name
     assert find_datafile(None, None, dataset_version_id, "invalid") is None
+
+
+@pytest.mark.parametrize(
+    "client_storage_format, expected_conversion_types",
+    [
+        ("raw_hdf5_matrix", ["hdf5"]),
+        ("raw_parquet_table", ["parquet"]),
+    ],
+)
+def test_raw_files_with_known_format_get_proper_conversion_type(
+    session, db, user_id, client_storage_format, expected_conversion_types
+):
+    df = mc.add_s3_datafile(
+        name="testfile",
+        s3_bucket="bucket",
+        s3_key="key",
+        compressed_s3_key=None,
+        type=models.S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
+        short_summary="short",
+        long_summary="long",
+    )
+    df.custom_metadata = {"client_storage_format": client_storage_format}
+    db.session.commit()
+
+    assert models.get_allowed_conversion_type(df) == expected_conversion_types

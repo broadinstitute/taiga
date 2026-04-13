@@ -392,6 +392,9 @@ def get_allowed_conversion_type(datafile: S3DataFile) -> List[str]:
         return allowed_conversion_types
 
     if datafile.format == S3DataFile.DataFileFormat.Raw:
+        detected_format = conversion.resolve_raw_storage_format(datafile.custom_metadata)
+        if detected_format:
+            return [detected_format]
         return [conversion.RAW_FORMAT]
 
     raise Exception(

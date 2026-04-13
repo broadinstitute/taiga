@@ -160,6 +160,87 @@ def create_db_and_populate():
     # create a sample dataset in a known location with a known permaname
     create_sample_dataset(forced_permaname="sample-1", folder_id="public")
 
+    # Create a dataset that demonstrates all file format labels
+    create_format_examples_dataset(folder_id="public")
+
+
+def create_format_examples_dataset(folder_id):
+    """Create a dataset with files of every format type to verify download labels."""
+    from taiga2.models import db
+
+    parquet_file = models_controller.add_s3_datafile(
+        name="gene_expression",
+        s3_bucket=bucket_name,
+        s3_key=models_controller.generate_convert_key(),
+        compressed_s3_key=None,
+        type=models.S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
+        short_summary="Parquet table uploaded via taigapy v3",
+        long_summary="",
+    )
+    parquet_file.custom_metadata = {"client_storage_format": "raw_parquet_table"}
+
+    hdf5_raw_file = models_controller.add_s3_datafile(
+        name="cell_viability",
+        s3_bucket=bucket_name,
+        s3_key=models_controller.generate_convert_key(),
+        compressed_s3_key=None,
+        type=models.S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
+        short_summary="HDF5 matrix uploaded via taigapy v3",
+        long_summary="",
+    )
+    hdf5_raw_file.custom_metadata = {"client_storage_format": "raw_hdf5_matrix"}
+
+    raw_file = models_controller.add_s3_datafile(
+        name="model_weights",
+        s3_bucket=bucket_name,
+        s3_key=models_controller.generate_convert_key(),
+        compressed_s3_key=None,
+        type=models.S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
+        short_summary="Opaque binary file",
+        long_summary="",
+    )
+
+    matrix_file = models_controller.add_s3_datafile(
+        name="crispr_scores",
+        s3_bucket=bucket_name,
+        s3_key=models_controller.generate_convert_key(),
+        compressed_s3_key=None,
+        type=models.S3DataFile.DataFileFormat.HDF5,
+        encoding="UTF-8",
+        short_summary="Numeric matrix (server-converted to HDF5)",
+        long_summary="",
+    )
+
+    table_file = models_controller.add_s3_datafile(
+        name="sample_metadata",
+        s3_bucket=bucket_name,
+        s3_key=models_controller.generate_convert_key(),
+        compressed_s3_key=None,
+        type=models.S3DataFile.DataFileFormat.Columnar,
+        encoding="UTF-8",
+        short_summary="Table (server-converted to Columnar)",
+        long_summary="",
+    )
+
+    db.session.flush()
+
+    ds = models_controller.add_dataset(
+        name="Format Examples",
+        permaname=models.generate_permaname("Format Examples"),
+        description="Dataset with one file per format type — use to verify download labels and code snippets",
+        datafiles_ids=[
+            parquet_file.id,
+            hdf5_raw_file.id,
+            raw_file.id,
+            matrix_file.id,
+            table_file.id,
+        ],
+    )
+    models_controller.add_folder_entry(folder_id, ds.id)
+
 
 def recreate_dev_db():
     database_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
