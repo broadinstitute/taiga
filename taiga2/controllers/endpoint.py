@@ -762,6 +762,12 @@ def task_status(taskStatusId):
 
 
 def _no_transform_needed(requested_format, datafile_type, custom_metadata=None):
+    assert isinstance(requested_format, str), (
+        f"Expected requested_format to be a string, got {type(requested_format)}"
+    )
+    assert isinstance(datafile_type, S3DataFile.DataFileFormat), (
+        f"Expected datafile_type to be a DataFileFormat enum, got {type(datafile_type)}"
+    )
     if (
         requested_format == conversion.RAW_FORMAT
         and datafile_type == S3DataFile.DataFileFormat.Raw
@@ -781,8 +787,8 @@ def _no_transform_needed(requested_format, datafile_type, custom_metadata=None):
         return True
 
     if datafile_type == S3DataFile.DataFileFormat.Raw:
-        resolved = conversion.resolve_raw_storage_format(custom_metadata)
-        if resolved and requested_format == resolved:
+        detected_format = conversion.resolve_raw_storage_format(custom_metadata)
+        if detected_format and requested_format == detected_format:
             return True
 
     return False

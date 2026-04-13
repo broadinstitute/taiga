@@ -51,13 +51,16 @@ See deployment for notes on how to deploy the project on a live system (Coming s
 ./dev.sh
 ```
 
-This single script handles everything:
+This single script handles setup and launches all services via [mprocs](https://github.com/pvolok/mprocs):
 
 - Starts **Redis** (if not already running)
 - Starts **MiniStack** Docker container for local S3 (if `settings.cfg` is configured for it)
 - Creates the **S3 bucket** and **dev database** if they don't exist
-- Launches the **Webpack dev server**, **Flask app**, and **Celery worker** as background processes
-- **Ctrl+C** stops all services cleanly
+- Launches the **Webpack dev server**, **Flask app**, and **Celery worker** via mprocs
+
+mprocs gives you a TUI where you can switch between process outputs with `j`/`k`, restart individual processes with `r`, and quit everything with `q`.
+
+**Prerequisite:** Install mprocs with `brew install mprocs`
 
 Open your browser to: **http://127.0.0.1:5000/taiga/**
 

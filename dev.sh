@@ -1,25 +1,11 @@
 #!/usr/bin/env bash
-# Start all Taiga services for local development with one command.
+# Start all Taiga services for local development.
+# Runs setup (Redis, MiniStack, DB) then launches mprocs.
 # Usage: ./dev.sh
 set -e
 
 export FLASK_APP='autoapp.py'
 export FLASK_DEBUG=1
-
-PIDS=()
-
-cleanup() {
-    echo ""
-    echo "Shutting down..."
-    for pid in "${PIDS[@]}"; do
-        kill "$pid" 2>/dev/null
-    done
-    for pid in "${PIDS[@]}"; do
-        wait "$pid" 2>/dev/null
-    done
-    echo "Done."
-}
-trap cleanup EXIT INT TERM
 
 # --- Redis ---
 if redis-cli ping &>/dev/null; then
@@ -67,24 +53,9 @@ else
     echo "[ok] Dev database exists (instance/db.sqlite3)"
 fi
 
-# --- Start services ---
+# --- Launch all services via mprocs ---
 echo ""
-echo "Starting Taiga services..."
-
-poetry run flask webpack &
-PIDS+=($!)
-
-poetry run flask run &
-PIDS+=($!)
-
-poetry run flask run-worker &
-PIDS+=($!)
-
+echo "Starting Taiga services with mprocs..."
+echo "  http://127.0.0.1:5000/taiga/"
 echo ""
-echo "  Webpack dev server  http://127.0.0.1:5001"
-echo "  Flask app server    http://127.0.0.1:5000/taiga/"
-echo "  Celery worker       (background)"
-echo ""
-echo "Press Ctrl+C to stop all services."
-
-wait
+exec mprocs --config mprocs.yaml

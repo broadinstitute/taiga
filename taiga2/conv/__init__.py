@@ -48,8 +48,12 @@ RAW_STORAGE_FORMAT_MAP = {
 
 
 def resolve_raw_storage_format(custom_metadata):
-    """Return the actual download format for a Raw datafile, or None if unknown."""
+    """Return the actual download format for a Raw datafile, or None if unknown.
+    """
     if custom_metadata:
+        assert isinstance(custom_metadata, dict), (
+            f"custom_metadata must be a dict, got {type(custom_metadata)}"
+        )
         csf = custom_metadata.get("client_storage_format")
         return RAW_STORAGE_FORMAT_MAP.get(csf)
     return None

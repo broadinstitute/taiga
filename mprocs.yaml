@@ -1,0 +1,7 @@
+procs:
+  webpack:
+    shell: "source setup_env.sh && poetry run flask webpack"
+  flask:
+    shell: "source setup_env.sh && poetry run flask run"
+  worker:
+    shell: "source setup_env.sh && poetry run flask run-worker"
