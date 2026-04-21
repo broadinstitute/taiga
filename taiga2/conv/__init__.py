@@ -41,3 +41,23 @@ COLUMNAR_FORMAT = "columnar"
 # Preview bounds
 PREVIEW_MAX_ROWS = 50
 PREVIEW_MAX_COLUMNS = 50
+PARQUET_FORMAT = "parquet"
+
+# Maps taigapy client_storage_format values to the actual download format.
+# Used to resolve the real format of Raw S3DataFiles that contain known binary types.
+RAW_STORAGE_FORMAT_MAP = {
+    "raw_hdf5_matrix": HDF5_FORMAT,
+    "raw_parquet_table": PARQUET_FORMAT,
+}
+
+
+def resolve_raw_storage_format(custom_metadata):
+    """Return the actual download format for a Raw datafile, or None if unknown.
+    """
+    if custom_metadata:
+        assert isinstance(custom_metadata, dict), (
+            f"custom_metadata must be a dict, got {type(custom_metadata)}"
+        )
+        csf = custom_metadata.get("client_storage_format")
+        return RAW_STORAGE_FORMAT_MAP.get(csf)
+    return None

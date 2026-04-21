@@ -761,7 +761,13 @@ def task_status(taskStatusId):
     return flask.jsonify(status)
 
 
-def _no_transform_needed(requested_format, datafile_type):
+def _no_transform_needed(requested_format, datafile_type, custom_metadata=None):
+    assert isinstance(requested_format, str), (
+        f"Expected requested_format to be a string, got {type(requested_format)}"
+    )
+    assert isinstance(datafile_type, S3DataFile.DataFileFormat), (
+        f"Expected datafile_type to be a DataFileFormat enum, got {type(datafile_type)}"
+    )
     if (
         requested_format == conversion.RAW_FORMAT
         and datafile_type == S3DataFile.DataFileFormat.Raw
@@ -779,6 +785,11 @@ def _no_transform_needed(requested_format, datafile_type):
         and datafile_type == S3DataFile.DataFileFormat.Columnar
     ):
         return True
+
+    if datafile_type == S3DataFile.DataFileFormat.Raw:
+        detected_format = conversion.resolve_raw_storage_format(custom_metadata)
+        if detected_format and requested_format == detected_format:
+            return True
 
     return False
 
@@ -862,7 +873,7 @@ def _get_s3_datafile(
     if format == "metadata":
         urls = None
         conversion_status = "Completed successfully"
-    elif _no_transform_needed(format, real_datafile.format):
+    elif _no_transform_needed(format, real_datafile.format, real_datafile.custom_metadata):
         # no conversion is necessary
         urls = [
             create_signed_get_obj(
