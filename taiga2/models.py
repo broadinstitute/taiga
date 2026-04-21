@@ -823,6 +823,21 @@ class FigshareDataFileLink(ThirdPartyDataFileLink):
     __mapper_args__ = {"polymorphic_identity": "figshare"}
 
 
+class DatafilePreview(db.Model):
+    __tablename__ = "datafile_previews"
+
+    datafile_id: str = db.Column(
+        GUID, db.ForeignKey("datafiles.id"), primary_key=True
+    )
+    datafile: DataFile = db.relationship(
+        "DataFile", backref=db.backref("preview", uselist=False)
+    )
+    preview_data = db.Column(JSON, nullable=True)
+    created_at: datetime.datetime = db.Column(
+        db.DateTime, default=datetime.datetime.utcnow, nullable=False
+    )
+
+
 class DatasetSubscription(db.Model):
     __tablename__ = "dataset_subscriptions"
 
