@@ -2476,6 +2476,8 @@ def delete_dataset_subscription(subscription_id: str) -> bool:
 
 
 def get_datafile_preview(datafile_id: str) -> Optional[DatafilePreview]:
+    # This first block returns the preview if it is already in the database
+    # and not pointing to a virtual datafile.
     preview = (
         db.session.query(DatafilePreview)
         .filter(DatafilePreview.datafile_id == datafile_id)
@@ -2484,6 +2486,9 @@ def get_datafile_preview(datafile_id: str) -> Optional[DatafilePreview]:
     if preview is not None:
         return preview
 
+    # If the preview is not in the database, we need to get the datafile
+    # and check if it is a virtual datafile. If it is, we need to get the
+    # real datafile and return the preview for that.
     try:
         datafile = get_datafile(datafile_id)
     except NoResultFound:
