@@ -612,3 +612,15 @@ export class Group {
   users: Array<UserNamedId>;
   num_users: number;
 }
+
+export interface TopLeftPreview {
+  column_names: string[];
+  row_names: string[] | null;
+  data: any[][];
+}
+
+export interface DatafilePreview {
+  num_rows: number | null;
+  num_columns: number | null;
+  top_left_preview: TopLeftPreview | null;
+}

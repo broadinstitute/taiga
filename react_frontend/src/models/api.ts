@@ -14,6 +14,7 @@ import {
   SearchResult,
   ActivityLogEntry,
   Group,
+  DatafilePreview,
 } from "./models";
 import {
   ArticleInfo as FigshareArticleInfo,
@@ -471,6 +472,22 @@ export class TaigaApi {
       current_article_version,
       dataset_version_id,
       files_to_update,
+    });
+  }
+
+  get_datafile_preview(datafile_id: string): Promise<DatafilePreview | null> {
+    return fetch(this.baseUrl + "/datafile-preview/" + datafile_id, {
+      headers: {
+        Authorization: this.authHeaders.auth,
+      },
+    }).then((response: Response) => {
+      if (response.status === 404) {
+        return null;
+      }
+      if (response.status >= 200 && response.status < 300) {
+        return response.json();
+      }
+      return Promise.reject(new Error(response.statusText));
     });
   }
 

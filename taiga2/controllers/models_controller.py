@@ -2476,11 +2476,28 @@ def delete_dataset_subscription(subscription_id: str) -> bool:
 
 
 def get_datafile_preview(datafile_id: str) -> Optional[DatafilePreview]:
-    return (
+    preview = (
         db.session.query(DatafilePreview)
         .filter(DatafilePreview.datafile_id == datafile_id)
         .one_or_none()
     )
+    if preview is not None:
+        return preview
+
+    try:
+        datafile = get_datafile(datafile_id)
+    except NoResultFound:
+        return None
+
+    if datafile.type == "virtual":
+        real_datafile = resolve_virtual_datafile(datafile)
+        return (
+            db.session.query(DatafilePreview)
+            .filter(DatafilePreview.datafile_id == real_datafile.id)
+            .one_or_none()
+        )
+
+    return None
 
 
 def save_datafile_preview(datafile_id: str, preview_data: dict) -> Tuple[DatafilePreview, bool]:
