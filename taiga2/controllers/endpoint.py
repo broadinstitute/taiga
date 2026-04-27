@@ -1704,3 +1704,99 @@ def delete_dataset_subscription(subscription_id: str):
     if deleted:
         return flask.jsonify(True)
     flask.abort(404)
+
+
+def _validate_preview_data(body):
+    """Validate and sanitize the preview_data payload. Returns the cleaned dict or raises ProblemException."""
+    if not isinstance(body, dict):
+        raise ProblemException(detail="Request body must be a JSON object")
+
+    preview_data = {}
+
+    if "num_rows" in body:
+        val = body["num_rows"]
+        if val is not None and not isinstance(val, int):
+            raise ProblemException(detail="num_rows must be an integer or null")
+        preview_data["num_rows"] = val
+    else:
+        preview_data["num_rows"] = None
+
+    if "num_columns" in body:
+        val = body["num_columns"]
+        if val is not None and not isinstance(val, int):
+            raise ProblemException(detail="num_columns must be an integer or null")
+        preview_data["num_columns"] = val
+    else:
+        preview_data["num_columns"] = None
+
+    if "top_left_preview" in body and body["top_left_preview"] is not None:
+        tlp = body["top_left_preview"]
+        if not isinstance(tlp, dict):
+            raise ProblemException(detail="top_left_preview must be an object or null")
+
+        if "column_names" not in tlp or not isinstance(tlp["column_names"], list):
+            raise ProblemException(
+                detail="top_left_preview.column_names is required and must be a list"
+            )
+        if "data" not in tlp or not isinstance(tlp["data"], list):
+            raise ProblemException(
+                detail="top_left_preview.data is required and must be a list of lists"
+            )
+
+        column_names = tlp["column_names"][:conversion.PREVIEW_MAX_COLUMNS]
+        data = [row[:conversion.PREVIEW_MAX_COLUMNS] for row in tlp["data"][:conversion.PREVIEW_MAX_ROWS]]
+
+        row_names = tlp.get("row_names")
+        if row_names is not None:
+            if not isinstance(row_names, list):
+                raise ProblemException(
+                    detail="top_left_preview.row_names must be a list or null"
+                )
+            row_names = row_names[:conversion.PREVIEW_MAX_ROWS]
+
+        preview_data["top_left_preview"] = {
+            "column_names": column_names,
+            "row_names": row_names,
+            "data": data,
+        }
+    else:
+        preview_data["top_left_preview"] = None
+
+    return preview_data
+
+
+def _resolve_datafile_id(datafile_id):
+    """Resolve a datafile_id that may be either an internal GUID or a permaname.version/filename string."""
+    resolved = _find_data_file_id(datafile_id)
+    if resolved is not None:
+        return resolved
+    return datafile_id
+
+
+def post_datafile_preview(datafile_id, body):
+    datafile_id = _resolve_datafile_id(datafile_id)
+
+    try:
+        models_controller.get_datafile(datafile_id)
+    except NoResultFound:
+        flask.abort(404)
+
+    preview_data = _validate_preview_data(body)
+
+    _preview, is_new = models_controller.save_datafile_preview(
+        datafile_id, preview_data
+    )
+
+    if is_new:
+        return flask.make_response(flask.jsonify({}), 201)
+    return flask.jsonify({})
+
+
+def get_datafile_preview(datafile_id):
+    datafile_id = _resolve_datafile_id(datafile_id)
+
+    preview = models_controller.get_datafile_preview(datafile_id)
+    if preview is None:
+        flask.abort(404)
+
+    return flask.jsonify(preview.preview_data)
