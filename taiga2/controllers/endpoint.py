@@ -1777,9 +1777,15 @@ def post_datafile_preview(datafile_id, body):
     datafile_id = _resolve_datafile_id(datafile_id)
 
     try:
-        models_controller.get_datafile(datafile_id)
+        datafile = models_controller.get_datafile(datafile_id)
     except NoResultFound:
         flask.abort(404)
+
+    if datafile.type == "virtual":
+        raise ProblemException(
+            status=400,
+            detail="Previews cannot be stored on virtual datafiles. Use the canonical datafile ID instead.",
+        )
 
     preview_data = _validate_preview_data(body)
 
