@@ -123,6 +123,14 @@ docker stop ministack    # stop
 docker rm ministack      # remove entirely
 ```
 
+### File uploads and the S3 copy workaround
+
+> **Warning:** File uploads may fail with MiniStack because MiniStack omits the `ETag` header that boto3's high-level `Bucket.copy()` uses for validation. When `S3_ENDPOINT_URL` is set in `settings.cfg`, `aws.copy_object()` (in `taiga2/third_party_clients/aws.py`) automatically uses the low-level client API which does not require ETags. When `S3_ENDPOINT_URL` is empty or unset, the standard resource-level `Bucket.copy()` is used.
+>
+> If you see upload failures locally (errors mentioning ETag or copy validation), make sure `S3_ENDPOINT_URL` is set to your MiniStack endpoint (`http://localhost:4566`).
+>
+> **Note on tests:** The test suite does not set `S3_ENDPOINT_URL`, so tests always exercise the `Bucket.copy()` path. If you add `S3_ENDPOINT_URL` to the test config, `imp_conv_test.py` will fail because `MockS3Client` does not implement `copy_object`. This is intentional — tests validate the production (real AWS) code path.
+
 ### Switching back to no-S3 mode
 
 Set `S3_ENDPOINT_URL = ''` and clear the AWS keys in `settings.cfg`. The app runs fine without S3 — you just can't upload files.

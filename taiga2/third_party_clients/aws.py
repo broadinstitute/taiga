@@ -77,6 +77,23 @@ class AWSClients:
             )
         return g._sts_client
 
+    def copy_object(self, bucket_name, source_key, dest_key):
+        """Copy an object within a bucket.
+
+        When S3_ENDPOINT_URL is configured (local S3 emulators like MiniStack),
+        uses the low-level client API because MiniStack omits the ETag header
+        that the resource-level Bucket.copy() requires for validation.
+        """
+        copy_source = {"Bucket": bucket_name, "Key": source_key}
+        if self._endpoint_url(flask.current_app.config):
+            self.s3_client.copy_object(
+                Bucket=bucket_name,
+                Key=dest_key,
+                CopySource=copy_source,
+            )
+        else:
+            self.s3.Bucket(bucket_name).copy(copy_source, dest_key)
+
 
 aws = AWSClients()
 
