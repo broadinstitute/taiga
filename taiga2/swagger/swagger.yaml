@@ -1665,6 +1665,49 @@ paths:
         404:
           description: No subscription found
 
+  /datafile-preview/{datafile_id}:
+    post:
+      description: Create or replace the preview for a datafile
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: post_datafile_preview
+      consumes:
+        - application/json
+      parameters:
+        - name: datafile_id
+          in: path
+          type: string
+          description: The ID of the datafile
+          required: true
+        - name: body
+          in: body
+          required: true
+          schema:
+            "$ref": "#/definitions/DatafilePreviewData"
+      responses:
+        200:
+          description: Preview replaced
+        201:
+          description: Preview created
+        404:
+          description: Datafile not found
+    get:
+      description: Get the stored preview for a datafile
+      x-swagger-router-controller: taiga2.controllers.endpoint
+      operationId: get_datafile_preview
+      parameters:
+        - name: datafile_id
+          in: path
+          type: string
+          description: The ID of the datafile
+          required: true
+      responses:
+        200:
+          description: The preview data
+          schema:
+            "$ref": "#/definitions/DatafilePreviewData"
+        404:
+          description: No preview exists for this datafile
+
 definitions:
   User:
     title: User
@@ -2093,3 +2136,38 @@ definitions:
         type: array
         items:
           "$ref": "#/definitions/NamedId"
+
+  DatafilePreviewData:
+    type: object
+    properties:
+      num_rows:
+        type:
+          - integer
+          - "null"
+        description: Total row count in the full file
+      num_columns:
+        type:
+          - integer
+          - "null"
+        description: Total column count in the full file
+      top_left_preview:
+        type:
+          - object
+          - "null"
+        description: "The top-left corner subset of the table. If present, contains column_names (list of strings), row_names (list of strings or null), and data (list of lists)."
+        properties:
+          column_names:
+            type: array
+            items:
+              type: string
+          row_names:
+            type:
+              - array
+              - "null"
+            items:
+              type: string
+          data:
+            type: array
+            items:
+              type: array
+              items: {}

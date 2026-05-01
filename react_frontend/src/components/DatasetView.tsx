@@ -7,6 +7,7 @@ import update from "immutability-helper";
 
 import { LeftNav } from "./LeftNav";
 import { EntryUsersPermissions } from "./modals/EntryUsersPermissions";
+import { PreviewModal } from "./modals/PreviewModal";
 
 import * as Models from "../models/models";
 import { TaigaApi } from "../models/api";
@@ -94,6 +95,9 @@ export interface DatasetViewState {
       readableTaigaId?: string;
     }
   >;
+
+  previewFileId?: string;
+  previewFileName?: string;
 }
 
 const buttonUploadNewVersionStyle = {
@@ -1071,6 +1075,20 @@ export class DatasetView extends React.Component<
                 {this.state.figshareLinkedFiles && <td>{figshareLinked}</td>}
                 <td>{conversionTypesOutput}</td>
                 <td>{copy_button}</td>
+                <td>
+                  <button
+                    className="btn btn-default btn-xs"
+                    title="Preview data"
+                    onClick={() =>
+                      this.setState({
+                        previewFileId: df.id,
+                        previewFileName: df.name,
+                      })
+                    }
+                  >
+                    <span className="glyphicon glyphicon-eye-open" />
+                  </button>
+                </td>
               </tr>
             );
           });
@@ -1363,6 +1381,7 @@ export class DatasetView extends React.Component<
                       )}
                       <th>Download</th>
                       <th>Datafile Id</th>
+                      <th>Preview</th>
                     </tr>
                   </thead>
                   <tbody>{entries}</tbody>
@@ -1422,6 +1441,16 @@ export class DatasetView extends React.Component<
             isVisible={this.state.showDeprecationReason}
             cancel={() => this.cancelDeprecation()}
             save={(reason) => this.deprecateDatasetVersion(reason)}
+          />
+
+          <PreviewModal
+            isOpen={!!this.state.previewFileId}
+            datafileId={this.state.previewFileId || null}
+            datafileName={this.state.previewFileName || null}
+            tapi={this.getTapi()}
+            onClose={() =>
+              this.setState({ previewFileId: undefined, previewFileName: undefined })
+            }
           />
         </div>
       );

@@ -9,7 +9,7 @@ from taiga2.celery_init import configure_celery, celery
 
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
-settings_file = os.getenv("TAIGASETTINGSFILE", "settings.cfg")
+settings_file = os.getenv("TAIGA_SETTINGS_FILE", "settings.cfg")
 
 print("Using settings from: {}".format(settings_file))
 

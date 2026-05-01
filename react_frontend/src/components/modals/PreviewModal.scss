@@ -1,0 +1,104 @@
+.Modal {
+  position: absolute;
+  margin: auto;
+  top: 30px;
+  left: 5vw;
+  right: 5vw;
+  bottom: 30px;
+  border-radius: 4px;
+  outline: none;
+  border: none;
+  padding: 0;
+  overflow: visible;
+  max-width: 1800px;
+}
+
+.Overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+}
+
+.modalBody {
+  overflow: auto;
+  max-height: calc(100vh - 180px);
+  padding: 15px 20px;
+}
+
+.tableWrapper {
+  overflow: auto;
+  max-height: calc(100vh - 260px);
+  border: 1px solid #ddd;
+}
+
+.previewTable {
+  margin-bottom: 0;
+  font-size: 13px;
+  white-space: nowrap;
+
+  th, td {
+    padding: 4px 8px !important;
+    border: 1px solid #ddd !important;
+    vertical-align: middle !important;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f5f5f5;
+    z-index: 2;
+    font-weight: 600;
+  }
+}
+
+.rowNameCell {
+  position: sticky;
+  left: 0;
+  background-color: #f9f9f9;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.cornerCell {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  background-color: #f5f5f5;
+}
+
+.dimensionsBadge {
+  color: #777;
+  font-size: 13px;
+  font-weight: normal;
+  margin-left: 10px;
+}
+
+.footerNote {
+  color: #777;
+  font-size: 12px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: #777;
+  font-size: 16px;
+}
+
+.emptyState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: #999;
+  font-size: 15px;
+}

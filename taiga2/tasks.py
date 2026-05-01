@@ -130,10 +130,9 @@ def background_process_new_upload_session_file(
         )
 
         # We copy the file to 'convert/'
-        copy_source = {"Bucket": bucket_name, "Key": initial_s3_key}
         b = s3.Bucket(bucket_name)
         existing_obj = b.Object(initial_s3_key)
-        b.copy(copy_source, converted_s3_key)
+        aws.copy_object(bucket_name, initial_s3_key, converted_s3_key)
         compressed_s3_object = s3.Object(bucket_name, compressed_s3_key)
         with tempfile.NamedTemporaryFile("w+b") as download_dest:
             with tempfile.NamedTemporaryFile("w+b") as compressed_dest:

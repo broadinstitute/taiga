@@ -220,3 +220,118 @@ def test_raw_files_with_known_format_get_proper_conversion_type(
     db.session.commit()
 
     assert models.get_allowed_conversion_type(df) == expected_conversion_types
+
+
+# ---------------------------------------------------------------------------
+# Datafile preview endpoint tests
+# ---------------------------------------------------------------------------
+
+SAMPLE_PREVIEW = {
+    "num_rows": 200,
+    "num_columns": 5,
+    "top_left_preview": {
+        "column_names": ["a", "b", "c", "d", "e"],
+        "row_names": ["r1", "r2", "r3"],
+        "data": [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13, 14, 15]],
+    },
+}
+
+
+def _create_s3_datafile():
+    """Create a minimal S3 datafile and its parent dataset, returning the datafile."""
+    df = mc.add_s3_datafile(
+        name="preview_test_file",
+        s3_bucket="bucket",
+        s3_key="key",
+        compressed_s3_key=None,
+        type=models.S3DataFile.DataFileFormat.Raw,
+        encoding="UTF-8",
+        short_summary="short",
+        long_summary="long",
+    )
+    mc.add_dataset(
+        name="preview dataset",
+        description="desc",
+        datafiles_ids=[df.id],
+    )
+    return df
+
+
+def test_post_and_get_datafile_preview(app, session, db, user_id):
+    """POST creates a preview (201), GET returns it with all fields intact."""
+    df = _create_s3_datafile()
+
+    with app.test_client() as c:
+        r = c.post(
+            f"/datafile-preview/{df.id}",
+            data=json.dumps(SAMPLE_PREVIEW),
+            content_type="application/json",
+        )
+        assert r.status_code == 201
+
+        r = c.get(f"/datafile-preview/{df.id}")
+        assert r.status_code == 200
+        body = json.loads(r.data)
+        assert body["num_rows"] == 200
+        assert body["num_columns"] == 5
+        assert body["top_left_preview"]["column_names"] == ["a", "b", "c", "d", "e"]
+        assert len(body["top_left_preview"]["data"]) == 3
+
+
+def test_post_preview_replaces_existing(app, session, db, user_id):
+    """A second POST to the same datafile overwrites (200), not duplicates."""
+    df = _create_s3_datafile()
+
+    with app.test_client() as c:
+        c.post(
+            f"/datafile-preview/{df.id}",
+            data=json.dumps(SAMPLE_PREVIEW),
+            content_type="application/json",
+        )
+
+        updated = {"num_rows": 500, "num_columns": 10}
+        r = c.post(
+            f"/datafile-preview/{df.id}",
+            data=json.dumps(updated),
+            content_type="application/json",
+        )
+        assert r.status_code == 200
+
+        r = c.get(f"/datafile-preview/{df.id}")
+        body = json.loads(r.data)
+        assert body["num_rows"] == 500
+        assert body["num_columns"] == 10
+        assert body["top_left_preview"] is None
+
+
+def test_post_preview_rejects_virtual_datafile(app, session, db, user_id):
+    """POST on a virtual file returns 400 — previews belong on canonical files only."""
+    df = _create_s3_datafile()
+    vdf = mc.add_virtual_datafile(name="alias", datafile_id=df.id)
+
+    with app.test_client() as c:
+        r = c.post(
+            f"/datafile-preview/{vdf.id}",
+            data=json.dumps(SAMPLE_PREVIEW),
+            content_type="application/json",
+        )
+        assert r.status_code == 400
+
+
+def test_get_preview_resolves_virtual_datafile(app, session, db, user_id):
+    """GET on a virtual file transparently returns the underlying canonical file's preview."""
+    df = _create_s3_datafile()
+    vdf = mc.add_virtual_datafile(name="alias", datafile_id=df.id)
+
+    with app.test_client() as c:
+        c.post(
+            f"/datafile-preview/{df.id}",
+            data=json.dumps(SAMPLE_PREVIEW),
+            content_type="application/json",
+        )
+
+        r = c.get(f"/datafile-preview/{vdf.id}")
+        assert r.status_code == 200
+        body = json.loads(r.data)
+        assert body["num_rows"] == 200
+        assert body["num_columns"] == 5

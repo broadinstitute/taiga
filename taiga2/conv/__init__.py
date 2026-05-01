@@ -37,6 +37,10 @@ COMPRESSED_FORMAT = "raw_test"
 # Canonical format
 HDF5_FORMAT = "hdf5"
 COLUMNAR_FORMAT = "columnar"
+
+# Preview bounds
+PREVIEW_MAX_ROWS = 50
+PREVIEW_MAX_COLUMNS = 50
 PARQUET_FORMAT = "parquet"
 
 # Maps taigapy client_storage_format values to the actual download format.
