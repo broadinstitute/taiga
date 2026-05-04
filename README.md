@@ -62,7 +62,7 @@ mprocs gives you a TUI where you can switch between process outputs with `j`/`k`
 
 **Prerequisite:** Install mprocs with `brew install mprocs`
 
-Open your browser to: **http://127.0.0.1:5000/taiga/**
+Open your browser to: **[http://127.0.0.1:5000/taiga/](http://127.0.0.1:5000/taiga/)**
 
 ### Manual (if you prefer separate terminals)
 
@@ -80,7 +80,7 @@ poetry run bash -c 'source setup_env.sh && flask run'
 poetry run bash -c 'source setup_env.sh && flask run-worker'
 ```
 
-Open your browser to: **http://127.0.0.1:5000/taiga/**
+Open your browser to: **[http://127.0.0.1:5000/taiga/](http://127.0.0.1:5000/taiga/)**
 
 ### Notes
 
@@ -212,7 +212,7 @@ For our case, it is pretty simple:
 ]
 ```
 
-**_Warning: Be careful to not override your existing configuration!_**
+***Warning: Be careful to not override your existing configuration!***
 
 #### Configure Taiga to use your Bucket
 
@@ -251,55 +251,105 @@ Every push triggers the GitHub Actions workflow (`.github/workflows/build-docker
 
 Once the workflow completes, `ssh` into `ubuntu@cds.team`:
 
-1. Pull the latest image: `bash GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
+1. Pull the ga build of the image that you want to deploy: `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga:ga-build-68`
 2. Tag the image with `taiga-prod` and `taiga-staging`. For example: `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker tag us.gcr.io/cds-docker-containers/taiga:ga-build-68 us.gcr.io/cds-docker-containers/taiga:taiga-staging` and `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker tag us.gcr.io/cds-docker-containers/taiga:ga-build-68 us.gcr.io/cds-docker-containers/taiga:taiga-prod`
-3. Restart the service: `sudo systemctl restart taiga`
+3. Push the images with new tags. For example, `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker push us.gcr.io/cds-docker-containers/taiga:taiga-staging` and `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker push us.gcr.io/cds-docker-containers/taiga:taiga-prod`
+4. Restart the service: `sudo systemctl restart taiga`
 
 If there's any problem, then you can look for information in the logs (stored at
 `/var/log/taiga`) or ask journald for the output from the service (`journalctl -u taiga`).
 
 ## Migrate the database
 
-If your model change in SQLAlchemy and you already have a database you can't drop/recreate, you can use Alembic to
-manage the migrations:
+The production database is a PostgreSQL instance on Google Cloud SQL in the `cds-servers` project (instance: `cds-servers:us-central1:migrate-taiga-prod`). Migrations are run from your local machine using Alembic via Flask, connected through the Cloud SQL Auth Proxy.
 
-Example (but use accordingly to the state of you database, see [Alembic](http://alembic.zzzcomputing.com/en/latest/)):
+### Prerequisites
 
-(Note, this requires that you put the config for the production database at
-../prod_settings.cfg so that it can find the current schema to compare
-against. You can test against a snapshot of a database by going to the AWS
-console and going to RDS, going to "Snapshots", and selecting "Restore
-Snapshot". You can then place the new database's endpoing into
-prod_settings.cfg.)
+- **Cloud SQL Auth Proxy** installed locally (`brew install cloud-sql-proxy` or download from [Google](https://cloud.google.com/sql/docs/postgres/connect-auth-proxy))
+- **`gcloud` CLI** authenticated with access to the `cds-servers` project
+- The **`cds-ansible-configs`** repo cloned locally (for retrieving the database credentials)
 
-- `TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db migrate`
+### Step 1 — Get the database URI
 
-Review the resulting generated migration. I've found I've had to re-order
-tables to ensure fk references are created successfully. Before applying the
-migration, take a snapshot of the current Taiga db.
+The production connection string is stored in the Ansible vault. From the `cds-ansible-configs` repo:
 
-Depending on your changes, you may be able to apply them without stopping the service and minimizing downtime. You can apply online changes **if** they are compatible with both the old and new versions of the code that will be deployed. In general changes that migrate data are not safe, but trivial changes like adding new nullable fields or new tables are safe. See "Applying online changes" for updating the DB without stopping the service.
+```bash
+ansible-vault view --vault-id prod@secret-manager-client roles/taiga2/vars/taiga.yaml
+```
 
-### Applying "offline" changes
+Copy the `SQLALCHEMY_DATABASE_URI` value from the output.
 
-- (Stop the service)
-- `ssh ubuntu@cds.team sudo systemctl stop taiga`
-- (Apply changes to the DB)
-- `TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db upgrade`
-- (And then pull and start the new code)
-- `ssh ubuntu@cds.team`
-- `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
-- `sudo systemctl start taiga`
+### Step 2 — Update `prod_settings.cfg`
+
+In the `taiga` repo root, create or edit `prod_settings.cfg` (this file is in `.gitignore` and will not be committed):
+
+```python
+SQLALCHEMY_DATABASE_URI = 'postgresql://USER:PASSWORD@127.0.0.1:5432/taiga'
+```
+
+Use `127.0.0.1` as the host — the Cloud SQL Auth Proxy will tunnel the connection locally.
+
+### Step 3 — Start the Cloud SQL Auth Proxy
+
+In a separate terminal:
+
+```bash
+cloud-sql-proxy cds-servers:us-central1:migrate-taiga-prod --port 5432
+```
+
+Wait until it prints "Ready for new connections" before proceeding.
+
+### Step 4 — Check the current migration state
+
+```bash
+cd ~/Github/taiga
+TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db current
+```
+
+This should show the current Alembic revision. Verify it matches the expected parent of your new migration.
+
+### Step 5 — Apply the migration
+
+Depending on the nature of your changes, choose online or offline:
+
+- **Online-safe changes** (additive only — new tables, new nullable columns): can be applied while the service is running. Apply the migration first, then deploy the new code.
+- **Offline changes** (data migrations, column renames, dropping columns): stop the service first, then apply, then deploy.
 
 ### Applying "online" changes
 
-- (Apply changes to the DB)
-- `TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db upgrade`
-- (And then pull new code)
-- `ssh ubuntu@cds.team`
-- `GOOGLE_APPLICATION_CREDENTIALS=/etc/google/auth/docker-pull-creds.json docker pull us.gcr.io/cds-docker-containers/taiga`
-- (start the service running the new code)
-- `sudo systemctl restart taiga`
+1. Take a snapshot of the database in the GCP console (recommended)
+2. Apply the migration (with Cloud SQL Auth Proxy running):
+   ```bash
+   TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db upgrade
+   ```
+3. Deploy the new code — see [Deployment to Production](#deployment-to-production) above
+
+### Applying "offline" changes
+
+1. Take a snapshot of the database in the GCP console
+2. Stop the service: `ssh ubuntu@cds.team sudo systemctl stop taiga`
+3. Apply the migration (with Cloud SQL Auth Proxy running):
+   ```bash
+   TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db upgrade
+   ```
+4. Deploy the new code and start the service — see [Deployment to Production](#deployment-to-production) above
+
+### Rolling back a migration
+
+```bash
+# Downgrade to a specific revision (with Cloud SQL Auth Proxy running)
+TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db downgrade <previous_revision_id>
+```
+
+### Generating a new migration
+
+When you change SQLAlchemy models and need to create a new migration file:
+
+```bash
+TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db migrate -m "description of change"
+```
+
+Review the generated file in `migrations/versions/`. You may need to re-order table creation statements to satisfy foreign key dependencies.
 
 ## Undeletion
 
