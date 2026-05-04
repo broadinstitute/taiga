@@ -336,8 +336,13 @@ Depending on the nature of your changes, choose online or offline:
 
 ### Rolling back a migration
 
+The safest rollback path is to **restore from the database snapshot** taken before the migration. This is slow but guaranteed to be correct.
+
+Alembic's `flask db downgrade` can be used for simple, trivially reversible migrations. But highly discouraged. 
+
+If you are confident the downgrade script is valid:
+
 ```bash
-# Downgrade to a specific revision (with Cloud SQL Auth Proxy running)
 TAIGA_SETTINGS_FILE=prod_settings.cfg ./flask db downgrade <previous_revision_id>
 ```
 
