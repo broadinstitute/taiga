@@ -704,11 +704,6 @@ def _handle_version_addition_activity(
     )
     models_controller.add_version_addition_activity(activity)
 
-    dataset_subscriptions = models_controller.get_dataset_subscriptions_for_dataset(
-        dataset_id
-    )
-    if not any(ds.user_id == current_user.id for ds in dataset_subscriptions):
-        add_dataset_subscription(dataset_id)
     send_emails_for_dataset(dataset_id, current_user.id)
 
     return new_dataset_version

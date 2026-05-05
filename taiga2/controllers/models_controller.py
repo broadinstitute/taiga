@@ -345,8 +345,6 @@ def add_dataset_from_session(
     db.session.add(activity)
     db.session.commit()
 
-    add_dataset_subscription(added_dataset.id)
-
     return added_dataset
 
 
